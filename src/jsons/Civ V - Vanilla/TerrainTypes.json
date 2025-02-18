@@ -1,0 +1,47 @@
+[
+	// TerrainType
+	{
+		"name": "Water",
+		"type": "TerrainType",
+		"RGB": [45,108,145]
+	},
+	{
+		"name": "Flatland",
+		"type": "TerrainType",
+		"RGB": [97,171,58]
+	},
+	{
+		"name": "Hill",
+		"type": "TerrainType",
+		"production": 2,
+		"movementCost": 2,
+		"overrideStats": true,
+		"defenceBonus": 0.25,
+		"RGB": [105,125,72],
+		"occursOnBase": ["Tundra","Plain","Grassland","Desert","Snow"],
+		"uniques": ["Rough terrain",
+			"[+5] Strength for cities built on this terrain",
+			"Has an elevation of [2] for visibility calculations",
+			"Occurs in groups around high elevations",
+			"[+1] to Fertility for Map Generation",
+			"A Region is formed with at least [40]% [Hill] tiles, with priority [5]",
+			"Base Terrain on this tile is not counted for Region determination",
+			"Starts in regions of this type receive an extra [Sheep]",
+			"Considered [Desirable] when determining start locations",
+			"Considered [Production] when determining start locations",
+			"Every [22] tiles with this terrain will receive a major deposit of a strategic resource."]
+	},
+	{
+		"name": "Mountain",
+		"type": "TerrainType",
+		"impassable": true,
+		"defenceBonus": 0.25,
+		"RGB": [120, 120, 120],
+		"uniques": ["Rough terrain",
+			"Has an elevation of [4] for visibility calculations",
+			"Occurs in chains at high elevations",
+			"Units ending their turn on this terrain take [50] damage",
+			"Always Fertility [-2] for Map Generation",
+			"Considered [Undesirable] when determining start locations"]
+	}
+]
