@@ -81,67 +81,90 @@ pub struct Ruleset {
 
 impl Ruleset {
     pub fn new() -> Self {
-        let folder = "src/jsons/Civ V - Gods & Kings/";
-        let full_path = |filename| format!("{}{}", folder, filename);
-
-        let beliefs: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Beliefs.json"));
+        // TODO: load from json, for now just hardcode. This is a temporary solution.
+        let beliefs: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Beliefs.json"
+        ));
 
         //serde buildings
-        let json_string_without_comment =
-            load_json_file_and_strip_json_comments(&full_path("Buildings.json"));
+        let json_string_without_comment = load_json_file_and_strip_json_comments(include_str!(
+            "../jsons/Civ V - Gods & Kings/Buildings.json"
+        ));
         let mut buildings: Vec<Building> =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
-        let difficulties: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("Difficulties.json"));
+        let difficulties: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Difficulties.json"
+        ));
 
-        let eras: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Eras.json"));
+        let eras: HashMap<_, _> =
+            create_hashmap_from_json_file(include_str!("../jsons/Civ V - Gods & Kings/Eras.json"));
 
-        let nations: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Nations.json"));
+        let nations: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Nations.json"
+        ));
 
-        let policy_branches: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("Policies.json"));
+        let policy_branches: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Policies.json"
+        ));
 
-        let quests: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Quests.json"));
+        let quests: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Quests.json"
+        ));
 
         // serde religions
-        let json_string_without_comment =
-            load_json_file_and_strip_json_comments(&full_path("Religions.json"));
+        let json_string_without_comment = load_json_file_and_strip_json_comments(include_str!(
+            "../jsons/Civ V - Gods & Kings/Religions.json"
+        ));
         let religions: Vec<String> = serde_json::from_str(&json_string_without_comment).unwrap();
 
-        let ruins: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Ruins.json"));
+        let ruins: HashMap<_, _> =
+            create_hashmap_from_json_file(include_str!("../jsons/Civ V - Gods & Kings/Ruins.json"));
 
-        let specialists: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("Specialists.json"));
+        let specialists: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Specialists.json"
+        ));
 
         // serde terrains
-        let terrain_types: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("TerrainTypes.json"));
+        let terrain_types: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/TerrainTypes.json"
+        ));
 
-        let base_terrains: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("BaseTerrains.json"));
+        let base_terrains: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/BaseTerrains.json"
+        ));
 
-        let features: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Features.json"));
+        let features: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/Features.json"
+        ));
 
-        let natural_wonders: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("NaturalWonders.json"));
+        let natural_wonders: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/NaturalWonders.json"
+        ));
 
-        let tile_improvements: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("TileImprovements.json"));
+        let tile_improvements: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/TileImprovements.json"
+        ));
 
-        let tile_resources: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("TileResources.json"));
+        let tile_resources: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/TileResources.json"
+        ));
 
-        let units: HashMap<_, _> = create_hashmap_from_json_file(&full_path("Units.json"));
+        let units: HashMap<_, _> =
+            create_hashmap_from_json_file(include_str!("../jsons/Civ V - Gods & Kings/Units.json"));
 
-        let unit_promotions: HashMap<_, _> =
-            create_hashmap_from_json_file(&full_path("UnitPromotions.json"));
+        let unit_promotions: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/UnitPromotions.json"
+        ));
 
-        let unit_types: HashMap<_, _> = create_hashmap_from_json_file(&full_path("UnitTypes.json"));
+        let unit_types: HashMap<_, _> = create_hashmap_from_json_file(include_str!(
+            "../jsons/Civ V - Gods & Kings/UnitTypes.json"
+        ));
 
         // serde tech_columnes
-        let json_string_without_comment =
-            load_json_file_and_strip_json_comments(&full_path("Techs.json"));
+        let json_string_without_comment = load_json_file_and_strip_json_comments(include_str!(
+            "../jsons/Civ V - Gods & Kings/Techs.json"
+        ));
         let mut tech_columnes: Vec<TechColumn> =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
@@ -183,8 +206,9 @@ impl Ruleset {
             .collect();
 
         // serde global_uniques
-        let json_string_without_comment =
-            load_json_file_and_strip_json_comments(&full_path("GlobalUniques.json"));
+        let json_string_without_comment = load_json_file_and_strip_json_comments(include_str!(
+            "../jsons/Civ V - Gods & Kings/GlobalUniques.json"
+        ));
         let global_uniques: GlobalUnique =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
@@ -216,7 +240,7 @@ impl Ruleset {
 }
 
 fn load_json_file_and_strip_json_comments(path: &str) -> String {
-    let json_string_with_comment = fs::read_to_string(path).unwrap();
+    let json_string_with_comment = /* fs::read_to_string(path).unwrap() */path;
     strip_json_comments(&json_string_with_comment, true)
 }
 
