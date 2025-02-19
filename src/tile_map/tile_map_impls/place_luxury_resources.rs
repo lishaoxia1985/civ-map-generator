@@ -256,7 +256,8 @@ impl TileMap {
         let world_size = 2; // TODO: This should be a parameter.
         for region_index in 0..self.region_list.len() {
             let luxury_resource = self.region_list[region_index].luxury_resource.clone();
-            let luxury_assignment_count: u32 = self.placed_resource_count(&luxury_resource);
+            let luxury_assignment_count: u32 =
+                self.luxury_assign_to_region_count[&luxury_resource.to_string()];
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(&luxury_resource);
 
@@ -734,7 +735,7 @@ impl TileMap {
 
     // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
     /// Removes the feature ice from the tile and returns the region info for luxury.
-    /// `Remove the feature ice` should be removed in the future.
+    /// TODO: `Remove the feature ice` should be implemented as a separate method, rather than being included in the current method.
     /// TODO: Sometimes this function is used for strategic resources, so the name should be changed.
     pub fn generate_luxury_plot_lists_at_city_site(
         &mut self,
@@ -759,6 +760,8 @@ impl TileMap {
         let mut region_flood_plain_tile_list = Vec::new();
         let mut region_jungle_flat_tile_list = Vec::new();
 
+        // In original CIV5 code, the max radius which city site can extend is 5.
+        // So we only consider the tiles within the radius of 5 from the city site.
         if radius > 0 && radius < 6 {
             for ripple_radius in 1..=radius {
                 tile
@@ -1107,13 +1110,12 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:GetIndicesForLuxuryType
-    /// Before running this function, make sure `generate_luxury_plot_lists_at_city_site` has been run.
-    /// Running `generate_luxury_plot_lists_at_city_site` will generate the lists of plots that are available for placing Luxury resources.
+    /// Before running this function, make sure [`TileMap::generate_luxury_plot_lists_at_city_site`] has been run.
+    /// Running [`TileMap::generate_luxury_plot_lists_at_city_site`] will generate the lists of plots that are available for placing Luxury resources.
     /// The lists are stored in `luxury_plot_lists`， which is vectors of vectors of `TileIndex`.
     /// And then this function's purpose is to get the indices of the vectors in `luxury_plot_lists` that contain the plots that are available for placing the Luxury resource.
     /// The returned indices are used to access the vectors in `luxury_plot_lists` and get the plots that are available for placing the Luxury resource.
     /// The order of the indices is important, because the first index is the primary index, the second index is the secondary index, the third index is the tertiary index, and the fourth index is the quaternary index.
-    /// TODO: It will panic because the index is out of bounds. Fix this in the future.
     pub fn get_indices_for_luxury_type(&self, resource: &str) -> Vec<usize> {
         let vec = match resource {
             "Whales" | "Pearls" => vec![0],
@@ -1147,6 +1149,7 @@ impl TileMap {
 fn get_region_luxury_target_numbers(world_size: i32) -> Vec<u32> {
     // This data was separated out to allow easy replacement in map scripts.
     // This table, indexed by civ-count, provides the target amount of luxuries to place in each region.
+    // These vector's length is 22, which is the maximum number of civilizations in the game.
 
     let duel_values = vec![1; 22]; // Max is one per region for all player counts at this size.
 

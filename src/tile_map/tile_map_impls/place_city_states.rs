@@ -21,11 +21,11 @@ impl TileMap {
     // function AssignStartingPlots:PlaceCityStates
     /// Place city states on the map.
     ///
-    /// This function is dependent on AssignLuxuryRoles() having been executed first.
-    /// This is because some city state placements are made in compensation for drawing
-    /// the short straw in regard to multiple regions being assigned the same luxury type.
+    /// This function depends on [`TileMap::assign_luxury_roles`] being executed first.
+    /// This is because some city state placements are made as compensation for situations where
+    /// multiple regions are assigned the same luxury resource type.
     pub fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.assign_city_states_to_regions_or_to_uninhabited(map_parameters, ruleset);
+        self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
         let mut city_state_list = ruleset
             .nations
@@ -305,14 +305,18 @@ impl TileMap {
     /// Assigns city states to regions or uninhabited landmass.
     ///
     /// This function will do as follows:
-    /// 1. Assign n city states to Per Region
-    /// 2. Assign city states to uninhabited landmasses
-    /// 3. Assign city states to regions with shared luxury resources
-    /// 4. Assign city states to low fertility regions
-    pub fn assign_city_states_to_regions_or_to_uninhabited(
+    /// 1. Assign n city states to Per Region;
+    /// 2. Assign city states to uninhabited landmasses;
+    /// 3. Assign city states to regions with shared luxury resources.
+    ///    These city states are compensated for multiple regions assigned the same luxury resource type.\
+    ///    It only compensates when one luxury resource type is assigned to 3 different regions.
+    ///    3 is the maximum number of regions that can share the same luxury resource type,
+    ///    This parameter is defined by the const `MAX_REGIONS_PER_LUXURY_TYPE` variable in [`TileMap::assign_luxury_to_region`].
+    ///    View [`TileMap::assign_luxury_to_region`] for more information.
+    /// 4. Assign city states to low fertility regions.
+    pub fn assign_city_states_to_regions_or_uninhabited_landmasses(
         &mut self,
         map_parameters: &MapParameters,
-        ruleset: &Ruleset,
     ) {
         let mut num_city_states_unassigned = map_parameters.city_state_num;
 
@@ -333,13 +337,13 @@ impl TileMap {
             _ => 0,
         };
 
-        if num_city_states_per_region > 0 {
+        // if num_city_states_per_region is 0, the code below will not be executed.
+        for _ in 0..num_city_states_per_region {
             for region_index in 0..self.region_list.len() {
-                for _ in 0..num_city_states_per_region {
-                    city_state_region_assignments.push(Some(region_index));
-                }
+                city_state_region_assignments.push(Some(region_index));
             }
         }
+
         num_city_states_unassigned -= city_state_region_assignments.len() as u32;
         /***** Assign the "Per Region" City States to their regions ******/
 
@@ -445,13 +449,6 @@ impl TileMap {
         /***** Assign city states to uninhabited landmasses ******/
 
         /***** Assign city states to regions with shared luxury resources ******/
-        let luxury_resource_list = ruleset
-            .tile_resources
-            .iter()
-            .filter(|(_, resource)| resource.resource_type == "Luxury")
-            .map(|(resource_name, _)| resource_name)
-            .collect::<Vec<_>>();
-
         let mut num_city_states_shared_luxury = 0;
         let num_city_states_low_fertility;
 
@@ -459,8 +456,9 @@ impl TileMap {
             let mut num_regions_shared_luxury = 0;
             let mut shared_luxury = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
-            for luxury_resource in luxury_resource_list.iter() {
-                let luxury_assignment_count: u32 = self.placed_resource_count(&luxury_resource);
+            for (luxury_resource, &luxury_assignment_count) in
+                self.luxury_assign_to_region_count.iter()
+            {
                 if luxury_assignment_count == 3 {
                     num_regions_shared_luxury += 3;
                     shared_luxury.push(luxury_resource);
@@ -480,7 +478,7 @@ impl TileMap {
             if num_city_states_shared_luxury > 0 {
                 for luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
-                        if &&&region.luxury_resource == luxury_resource {
+                        if &&region.luxury_resource == luxury_resource {
                             city_state_region_assignments.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }
@@ -492,10 +490,13 @@ impl TileMap {
             /***** Assign city states to regions with low fertility ******/
             if num_city_states_low_fertility > 0 {
                 // If more to assign than number of regions, assign per region.
-                while num_city_states_unassigned >= map_parameters.civilization_num {
-                    for (region_index, _) in self.region_list.iter().enumerate() {
+                let num_regions = self.region_list.len() as u32;
+                let num_assignments_per_region = num_city_states_unassigned / num_regions;
+                num_city_states_unassigned = num_city_states_unassigned % num_regions;
+
+                for _ in 0..num_assignments_per_region {
+                    for region_index in 0..self.region_list.len() {
                         city_state_region_assignments.push(Some(region_index));
-                        num_city_states_unassigned -= 1;
                     }
                 }
             }

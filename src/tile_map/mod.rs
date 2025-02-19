@@ -77,6 +77,19 @@ pub struct TileMap {
     city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
     /// Determine every type of luxury resources are the role: assigned to region, city_state, special case, random, or unused.
     luxury_resource_role: LuxuryResourceRole,
+    /// The count of luxury resource types assigned to regions.
+    ///
+    /// In Civ5, the maximum number of luxury resource types that can be assigned to regions is 8.
+    /// This value has a maximum length of 8. See [`TileMap::assign_luxury_to_region`] for more information.
+    ///
+    /// If a luxury resource type has been assigned to a region, it will be added to this count.
+    ///
+    /// For example, if the count is 2, it means that one luxury resource type has been assigned to two different regions.
+    ///
+    /// This count is used to adjust the probability of assigning the same luxury resource to another region.
+    /// The higher the count, the lower the chance of assigning that luxury resource to an additional region.
+    /// This is achieved by reducing the weight of the resource as the count increases.
+    luxury_assign_to_region_count: HashMap<String, u32>,
 }
 
 impl TileMap {
@@ -128,6 +141,7 @@ impl TileMap {
             city_state_region_assignments,
             city_state_starting_tile_and_region_index: Vec::new(),
             luxury_resource_role: LuxuryResourceRole::default(),
+            luxury_assign_to_region_count: HashMap::new(),
         }
     }
 
