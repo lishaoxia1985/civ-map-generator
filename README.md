@@ -3,6 +3,11 @@
 This is a civilization map generator. This algorithm is primarily based on the implementation in *Civilization V*, with some references from *Civilization VI*.
 
 
+## Example
+
+[Civilization-Remastered](https://github.com/lishaoxia1985/Civilization-Remastered)
+
+
 ## Innovation Highlights
 
 This project introduces several key innovations:
