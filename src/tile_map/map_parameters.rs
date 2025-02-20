@@ -49,16 +49,92 @@ pub struct MapParameters {
 pub struct MapSize {
     pub width: i32,
     pub height: i32,
+    pub world_size: WorldSize,
 }
 
-/* pub enum MapSize {
+impl MapSize {
+    pub fn new(width: i32, height: i32) -> Self {
+        Self {
+            width,
+            height,
+            world_size: WorldSize::new(width, height),
+        }
+    }
+
+    pub const fn from_world_size(world_size: WorldSize) -> Self {
+        match world_size {
+            WorldSize::Duel => MapSize {
+                width: 40,
+                height: 24,
+                world_size: WorldSize::Duel,
+            },
+            WorldSize::Tiny => MapSize {
+                width: 56,
+                height: 36,
+                world_size: WorldSize::Tiny,
+            },
+            WorldSize::Small => MapSize {
+                width: 66,
+                height: 42,
+                world_size: WorldSize::Small,
+            },
+            WorldSize::Standard => MapSize {
+                width: 80,
+                height: 52,
+                world_size: WorldSize::Standard,
+            },
+            WorldSize::Large => MapSize {
+                width: 104,
+                height: 64,
+                world_size: WorldSize::Large,
+            },
+            WorldSize::Huge => MapSize {
+                width: 128,
+                height: 80,
+                world_size: WorldSize::Huge,
+            },
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum WorldSize {
     Duel,
     Tiny,
     Small,
     Standard,
     Large,
     Huge,
-} */
+}
+
+impl WorldSize {
+    // Function to determine the WorldSize based on the width and height product
+    fn new(width: i32, height: i32) -> WorldSize {
+        let area = width * height;
+        match area {
+            // When area <= 40 * 24, set the WorldSize to "Duel" and give a warning message
+            area if area < 960 => {
+                eprintln!(
+                    "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is 40 * 24 = 960 in the original CIV5 game.",
+                    width, height, area
+                );
+                WorldSize::Duel
+            }
+            // For "Duel" size: area <= 56 * 36
+            area if area < 2016 => WorldSize::Duel,
+            // For "Tiny" size: area <= 66 * 42
+            area if area < 2772 => WorldSize::Tiny,
+            // For "Small" size: area <= 80 * 52
+            area if area < 4160 => WorldSize::Small,
+            // For "Standard" size: area <= 104 * 64
+            area if area < 6656 => WorldSize::Standard,
+            // For "Large" size: area <= 128 * 80
+            area if area < 10240 => WorldSize::Large,
+            // For "Huge" size: area >= 128 * 80
+            _ => WorldSize::Huge,
+        }
+    }
+}
 
 pub enum MapType {
     Fractal,
@@ -127,10 +203,7 @@ impl Default for MapParameters {
     fn default() -> Self {
         let mut map_parameters = Self {
             name: "perlin map".to_owned(),
-            map_size: MapSize {
-                width: 100,
-                height: 50,
-            },
+            map_size: MapSize::from_world_size(WorldSize::Standard),
             map_type: MapType::Fractal,
             hex_layout: HexLayout {
                 orientation: HexOrientation::Flat,

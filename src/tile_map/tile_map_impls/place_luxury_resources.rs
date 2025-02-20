@@ -12,14 +12,15 @@ use crate::{
     component::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
-    tile_map::{tile::Tile, MapParameters, ResourceSetting, TileMap},
+    ruleset::Ruleset,
+    tile_map::{tile::Tile, MapParameters, ResourceSetting, TileMap, WorldSize},
 };
 
 use crate::tile_map::Layer;
 
 impl TileMap {
     // function AssignStartingPlots:PlaceLuxuries
-    pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters) {
+    pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let mut luxury_low_fert_compensation = HashMap::new();
         let mut region_low_fert_compensation = vec![0; map_parameters.civilization_num as usize];
 
@@ -253,7 +254,8 @@ impl TileMap {
         }
 
         // Place Regional Luxuries
-        let world_size = 2; // TODO: This should be a parameter.
+        let world_size = map_parameters.map_size.world_size;
+        let resource_setting = map_parameters.resource_setting;
         for region_index in 0..self.region_list.len() {
             let luxury_resource = self.region_list[region_index].luxury_resource.clone();
             let luxury_assignment_count: u32 =
@@ -309,24 +311,25 @@ impl TileMap {
         // Place Random Luxuries
         let num_random_luxury_types = self.luxury_resource_role.resource_assigned_to_random.len();
         if num_random_luxury_types > 0 {
-            // This table defines the target total number of luxuries placed in the world, excluding
-            // the "extra types" of luxuries placed at start locations. These targets are approximate.
-            // A random factor is added based on the number of civilizations.
-            // Any difference between regional and city-state luxuries placed and the target
-            // is compensated by randomly placed luxuries that are distributed.
-            let world_size_data = get_region_luxury_target_numbers(world_size);
-            let target_luxury_for_this_world_size = world_size_data[0];
-            let loop_target = world_size_data[1];
+            // This table defines the target total number of luxuries placed in the world,
+            // excluding "extra types" of luxuries placed at start locations. These targets
+            // are approximate, and a random factor is added based on the number of civilizations.
+            //
+            // Any difference between the number of regional and city-state luxuries placed
+            // versus the target will be compensated by randomly distributed luxuries to meet
+            // the overall target.
+            let [target_luxury, loop_target] =
+                get_world_luxury_target_numbers(world_size, resource_setting);
             let extra_luxury = self
                 .random_number_generator
                 .gen_range(0..map_parameters.civilization_num);
-            // TODO: Should be edited in the future.
-            let num_random_luxury_target = target_luxury_for_this_world_size + extra_luxury /* - self.totalLuxPlacedSoFar */;
+            let num_placed_luxuries = self.num_placed_luxury_resources(ruleset);
+            let num_random_luxury_target = target_luxury + extra_luxury - num_placed_luxuries;
 
             let mut num_this_luxury_to_place;
 
             // This table weights the amount of random luxuries to place, with first-selected getting heavier weighting.
-            let random_lux_ratios_table = [
+            let random_luxury_ratios_table = [
                 vec![1.],
                 vec![0.55, 0.45],
                 vec![0.40, 0.33, 0.27],
@@ -344,19 +347,19 @@ impl TileMap {
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(&luxury_resource);
 
-                if self.luxury_resource_role.resource_assigned_to_random.len() * 3
-                    > num_random_luxury_target as usize
-                {
+                // If calculated number of randoms is low, just place 3 of each radom luxury type.
+                if num_random_luxury_types * 3 > num_random_luxury_target as usize {
                     num_this_luxury_to_place = 3;
-                } else if self.luxury_resource_role.resource_assigned_to_random.len() > 8 {
+                } else if num_random_luxury_types > 8 {
                     num_this_luxury_to_place =
                         max(3, (num_random_luxury_target as f64 / 10.).ceil() as u32);
                 } else {
-                    let lux_minimum = max(3, loop_target - i as u32);
+                    // num_random_luxury_types <= 8
+                    let luxury_minimum = max(3, loop_target - i as u32);
                     let luxury_share_of_remaining = (num_random_luxury_target as f64
-                        * random_lux_ratios_table[num_random_luxury_types - 1][i])
+                        * random_luxury_ratios_table[num_random_luxury_types - 1][i])
                         .ceil() as u32;
-                    num_this_luxury_to_place = max(lux_minimum, luxury_share_of_remaining);
+                    num_this_luxury_to_place = max(luxury_minimum, luxury_share_of_remaining);
                 }
 
                 let mut priority_list_indices_iter =
@@ -592,7 +595,6 @@ impl TileMap {
                 // Placing this resource in this plot.
                 self.resource_query[tile.index()] =
                     Some((Resource::Resource(luxury_resource.to_string()), 1));
-                // self.total_lux_placed_so_far += 1;
                 num_left_to_place -= 1;
                 // println!("Still need to place {} more units of Marble.", num_left_to_place);
                 self.place_resource_impact(map_parameters, tile, Layer::Luxury, 1);
@@ -1110,7 +1112,7 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:GetIndicesForLuxuryType
-    /// Before running this function, make sure [`TileMap::generate_luxury_plot_lists_at_city_site`] has been run.
+    /// Before use this function's return value, make sure [`TileMap::generate_luxury_plot_lists_at_city_site`] has been run.
     /// Running [`TileMap::generate_luxury_plot_lists_at_city_site`] will generate the lists of plots that are available for placing Luxury resources.
     /// The lists are stored in `luxury_plot_lists`， which is vectors of vectors of `TileIndex`.
     /// And then this function's purpose is to get the indices of the vectors in `luxury_plot_lists` that contain the plots that are available for placing the Luxury resource.
@@ -1143,10 +1145,24 @@ impl TileMap {
 
         vec
     }
+
+    fn num_placed_luxury_resources(&self, ruleset: &Ruleset) -> u32 {
+        let luxury_resources: Vec<_> = ruleset
+            .tile_resources
+            .iter()
+            .filter(|(_, resource)| resource.resource_type == "Luxury")
+            .map(|(resource, _)| resource)
+            .collect();
+        let mut count = 0;
+        for resource in &luxury_resources {
+            count += self.placed_resource_count(resource);
+        }
+        count
+    }
 }
 
 /// TODO: This function will implement in file 'map_parameters.rs' in the future.
-fn get_region_luxury_target_numbers(world_size: i32) -> Vec<u32> {
+fn get_region_luxury_target_numbers(world_size: WorldSize) -> Vec<u32> {
     // This data was separated out to allow easy replacement in map scripts.
     // This table, indexed by civ-count, provides the target amount of luxuries to place in each region.
     // These vector's length is 22, which is the maximum number of civilizations in the game.
@@ -1173,22 +1189,55 @@ fn get_region_luxury_target_numbers(world_size: i32) -> Vec<u32> {
         0, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2,
     ];
 
-    // Map the world size ID to the corresponding target values
-    let worldsizes: HashMap<i32, Vec<u32>> = vec![
-        (1, duel_values),
-        (2, tiny_values),
-        (3, small_values),
-        (4, standard_values),
-        (5, large_values),
-        (6, huge_values),
-    ]
-    .into_iter()
-    .collect();
+    match world_size {
+        WorldSize::Duel => duel_values,
+        WorldSize::Tiny => tiny_values,
+        WorldSize::Small => small_values,
+        WorldSize::Standard => standard_values,
+        WorldSize::Large => large_values,
+        WorldSize::Huge => huge_values,
+    }
+}
 
-    // Return the target list based on the provided world size
-    if let Some(target_list) = worldsizes.get(&world_size) {
-        target_list.clone()
-    } else {
-        Vec::new() // Return an empty vector if the world size is not found
+// function AssignStartingPlots:GetWorldLuxuryTargetNumbers
+/// Returns an array of 2 numbers according to the world size and resource setting.
+///
+/// The first number represents the target for the total number of luxuries in the world.
+/// This does **not** include the "second type" of luxuries added at each civilization's start location.
+///
+/// The second number influences the minimum number of random luxuries that should be placed.
+/// It is important to note that it is just one factor in the formula for placing luxuries,
+/// meaning other elements (such as civilization count) also contribute to the final result.
+fn get_world_luxury_target_numbers(
+    world_size: WorldSize,
+    resource_setting: ResourceSetting,
+) -> [u32; 2] {
+    match resource_setting {
+        ResourceSetting::Sparse => match world_size {
+            WorldSize::Duel => [14, 3],
+            WorldSize::Tiny => [24, 4],
+            WorldSize::Small => [36, 4],
+            WorldSize::Standard => [48, 5],
+            WorldSize::Large => [60, 5],
+            WorldSize::Huge => [76, 6],
+        },
+
+        ResourceSetting::Abundant => match world_size {
+            WorldSize::Duel => [24, 3],
+            WorldSize::Tiny => [40, 4],
+            WorldSize::Small => [60, 4],
+            WorldSize::Standard => [80, 5],
+            WorldSize::Large => [100, 5],
+            WorldSize::Huge => [128, 6],
+        },
+
+        _ => match world_size {
+            WorldSize::Duel => [18, 3],
+            WorldSize::Tiny => [30, 4],
+            WorldSize::Small => [45, 4],
+            WorldSize::Standard => [60, 5],
+            WorldSize::Large => [75, 5],
+            WorldSize::Huge => [95, 6],
+        },
     }
 }

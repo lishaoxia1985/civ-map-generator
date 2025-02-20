@@ -452,6 +452,7 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceSmallQuantitiesOfStrategics
+    /// Distributes small quantities of strategic resources.
     fn place_small_quantities_of_strategics(
         &mut self,
         map_parameters: &MapParameters,
@@ -463,7 +464,7 @@ impl TileMap {
         }
 
         let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] =
-            Self::get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
+            get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
 
         let num_to_place = (plot_list.len() as f64 / frequency).ceil() as u32;
 
@@ -662,10 +663,12 @@ impl TileMap {
 
     // function AssignStartingPlots:AddModernMinorStrategicsToCityStates
     /// Add modern minor strategics to city states.
+    ///
+    /// This function places small quantities of modern strategic resources (Oil, Aluminum, Coal) in city states.
     /// Mordern strategics contain Oil, Aluminum, Coal.
     fn add_modern_minor_strategics_to_city_states(&mut self, map_parameters: &MapParameters) {
         let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] =
-            Self::get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
+            get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
         for _ in 0..map_parameters.city_state_num {
             let city_state_starting_tile = self.city_state_starting_tile_and_region_index[1].0;
             let candidate_strategic_resources = ["Coal", "Oil", "Aluminum"];
@@ -680,7 +683,7 @@ impl TileMap {
             if choosen_resource_index < 3 {
                 let strategic_resource = candidate_strategic_resources[choosen_resource_index];
                 let resource_amount = candidate_resources_amount[choosen_resource_index];
-                let priority_list_indices_of_strategic_resource =
+                let priority_list_indices_of_chosen_resource =
                     priority_list_indices_of_strategic_resources[choosen_resource_index];
                 let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
                     map_parameters,
@@ -689,9 +692,8 @@ impl TileMap {
                     false,
                 );
 
-                let mut priority_list_indices_iter = priority_list_indices_of_strategic_resource
-                    .iter()
-                    .peekable();
+                let mut priority_list_indices_iter =
+                    priority_list_indices_of_chosen_resource.iter().peekable();
 
                 let mut num_left_to_place = resource_amount;
 
@@ -713,18 +715,6 @@ impl TileMap {
                 }
             }
         }
-    }
-
-    // TODO: We will implement this function later in the future.
-    fn get_small_strategic_resource_quantity_values(resource_setting: ResourceSetting) -> [u32; 6] {
-        // According to resource_setting, calculate the number of resources to place.
-        let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] = match resource_setting {
-            ResourceSetting::Sparse => [1, 1, 2, 1, 2, 2], // Sparse
-            ResourceSetting::Abundant => [3, 3, 3, 3, 3, 3], // Abundant
-            _ => [2, 2, 3, 2, 3, 3],                       // Default
-        };
-
-        [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt]
     }
 
     /// Calculates the total quantity of a specified resource
@@ -893,4 +883,16 @@ impl TileMap {
 
         lists
     }
+}
+
+/// This function determines quantity per tile for each strategic resource's small deposit size.
+fn get_small_strategic_resource_quantity_values(resource_setting: ResourceSetting) -> [u32; 6] {
+    // According to resource_setting, calculate the number of resources to place.
+    let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] = match resource_setting {
+        ResourceSetting::Sparse => [1, 1, 2, 1, 2, 2], // Sparse
+        ResourceSetting::Abundant => [3, 3, 3, 3, 3, 3], // Abundant
+        _ => [2, 2, 3, 2, 3, 3],                       // Default
+    };
+
+    [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt]
 }

@@ -49,7 +49,7 @@ impl TileMap {
         /* -- Generate global plot lists for resource distribution.
         self:GenerateGlobalResourcePlotLists() */
 
-        self.place_luxury_resources(map_parameters);
+        self.place_luxury_resources(map_parameters, ruleset);
 
         self.place_strategic_resources(map_parameters);
 
@@ -426,7 +426,7 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:ProcessResourceList
-    /// This function is responsible for placing resources on the map based on the given parameters.
+    /// Placing bonus or strategic resources on the map based on the given parameters.
     /// It iterates through the list of plots and places resources on eligible plots based on the
     /// resource type, quantity, and radius.
     ///
@@ -439,6 +439,14 @@ impl TileMap {
     /// * `resource_list_to_place` - A vector of resource to place, which contains the resource type,
     /// quantity, minimum radius, and maximum radius for each resource.
     ///
+    /// # Panics
+    ///
+    /// This function will panic if the layer is not `Layer::Bonus` or `Layer::Strategic`. That means if you place luxury resources, it will panic.
+    ///
+    /// # Notice
+    ///
+    /// Although in the original CIV5, this function has some code about placing luxury resources, but in fact, it is never used to place luxury resources. So, we forbid placing luxury resources in this function.
+    /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].
     pub fn process_resource_list(
         &mut self,
         map_parameters: &MapParameters,
@@ -449,6 +457,10 @@ impl TileMap {
     ) {
         if plot_list.is_empty() {
             return;
+        }
+
+        if layer != Layer::Bonus || layer != Layer::Strategic {
+            panic!("This function is only used to place strategic and bonus resources on the map, not luxury resources.");
         }
 
         let resource_weight = resource_list_to_place
@@ -476,28 +488,9 @@ impl TileMap {
             // First pass: Seek the first eligible 0 value on impact matrix
             while let Some(&tile) = plot_list_iter.next() {
                 if self.layer_data[&layer][tile.index()] == 0 && tile.resource(self).is_none() {
-                    match layer {
-                        Layer::Strategic => {
-                            self.resource_query[tile.index()] =
-                                Some((Resource::Resource(resource.to_string()), quantity));
-                            // TODO: What is this?
-                            /* if (Game.GetResourceUsageType(res_ID[use_this_res_index]) == ResourceUsageTypes.RESOURCEUSAGE_LUXURY) then
-                                self.totalLuxPlacedSoFar = self.totalLuxPlacedSoFar + 1;
-                            end */
-                            self.place_resource_impact(map_parameters, tile, layer, radius);
-                        }
-                        Layer::Luxury => {
-                            self.resource_query[tile.index()] =
-                                Some((Resource::Resource(resource.to_string()), quantity));
-                            self.place_resource_impact(map_parameters, tile, layer, radius);
-                        }
-                        Layer::Bonus => {
-                            self.resource_query[tile.index()] =
-                                Some((Resource::Resource(resource.to_string()), quantity));
-                            self.place_resource_impact(map_parameters, tile, layer, radius);
-                        }
-                        _ => {}
-                    }
+                    self.resource_query[tile.index()] =
+                        Some((Resource::Resource(resource.to_string()), quantity));
+                    self.place_resource_impact(map_parameters, tile, layer, radius);
                     break;
                 }
             }
