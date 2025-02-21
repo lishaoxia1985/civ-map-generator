@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
     grid::OffsetCoordinate,
-    tile_map::{tile::Tile, MapParameters, RegionDivideMethod, TileMap},
+    tile_map::{tile::Tile, MapParameters, RegionDivideMethod, TileMap, WrapType},
 };
 
 impl TileMap {
@@ -363,7 +363,7 @@ impl TileMap {
         let mut north_y = 0;
 
         // Check if the landmass wraps around the map horizontally.
-        if map_parameters.wrap_x {
+        if map_parameters.map_wrapping.x == WrapType::Wrap {
             let mut found_first_column = false;
             let mut found_last_column = false;
 
@@ -399,7 +399,7 @@ impl TileMap {
         }
 
         // Check if the landmass wraps around the map vertically.
-        if map_parameters.wrap_y {
+        if map_parameters.map_wrapping.y == WrapType::Wrap {
             let mut found_first_row = false;
             let mut found_last_row = false;
             for x in 0..map_width {

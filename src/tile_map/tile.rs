@@ -12,7 +12,7 @@ use crate::{
     ruleset::Ruleset,
 };
 
-use super::{tile_map_impls::generate_regions::Region, Layer, MapParameters, TileMap};
+use super::{tile_map_impls::generate_regions::Region, Layer, MapParameters, TileMap, WrapType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 /// `Tile` represents a tile on the map, where the `usize` is the index of the current tile.
@@ -53,10 +53,10 @@ impl Tile {
         // Check if the offset coordinate is inside the map
         let [mut x, mut y] = offset_coordinate.to_array();
 
-        if map_parameters.wrap_x {
+        if map_parameters.map_wrapping.x == WrapType::Wrap {
             x = x.rem_euclid(width);
         };
-        if map_parameters.wrap_y {
+        if map_parameters.map_wrapping.y == WrapType::Wrap {
             y = y.rem_euclid(height);
         };
 

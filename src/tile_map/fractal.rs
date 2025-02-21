@@ -12,8 +12,7 @@ use crate::grid::{
     Direction, OffsetCoordinate,
 };
 
-const DEFAULT_WIDTH_EXP: i32 = 7;
-const DEFAULT_HEIGHT_EXP: i32 = 6;
+use super::{MapWrapping, WrapType};
 
 struct VoronoiSeed {
     /// The hex coordinate of the seed
@@ -88,16 +87,10 @@ pub struct CvFractal {
 
 #[derive(PartialEq, Eq)]
 pub struct Flags {
-    /// It determines whether the map wraps horizontally. When it's `true`, the rightmost and leftmost edges of the map are connected to form a circular map.
-    pub wrap_x: bool,
-    /// It determines whether the map wraps vertically. When it's `true`, the top and bottom edges of the map are connected to form a circular map.
-    pub wrap_y: bool,
+    /// Determines the type of the wrapping, for example: wrap x, wrap y...
+    pub map_wrapping: MapWrapping,
     /// When it's `false` the value of the height is in `0..=255`, otherwise the value is in `0..=99`
     pub percent: bool,
-    /// Sets polar regions to zero, the parameter is only meaningful if at least one of [`Flags::wrap_x`] or [`Flags::wrap_y`] is false.\
-    /// - When `Flags::wrap_x` is `true` and `Flags::wrap_y` is `false`, and then the parameter is `true`, the height of the top and bottom edges of the map tends towards `0`.
-    /// - When `Flags::wrap_x` is `false` and `Flags::wrap_y` is `true`, and then the parameter is `true`, the height of the left and right edges of the map tends towards `0`.
-    pub polar: bool,
     /// Draws rift in center of world    
     pub center_rift: bool,
     /// Draws inverts the heights, the value of the invert height equals to `255 - the value of the original height`
@@ -108,10 +101,11 @@ impl Default for Flags {
     /// Default values of ridge_flags are false
     fn default() -> Self {
         Self {
-            wrap_x: false,
-            wrap_y: false,
+            map_wrapping: MapWrapping {
+                x: WrapType::None,
+                y: WrapType::None,
+            },
             percent: false,
-            polar: true,
             center_rift: false,
             invert_heights: false,
         }
@@ -119,20 +113,18 @@ impl Default for Flags {
 }
 
 impl CvFractal {
-    pub fn new(
-        map_width: i32,
-        map_height: i32,
-        flags: Flags,
-        width_exp: i32,
-        height_exp: i32,
-    ) -> Self {
+    const DEFAULT_WIDTH_EXP: i32 = 7;
+    const DEFAULT_HEIGHT_EXP: i32 = 6;
+
+    /// Creates a new empty fractal with the given parameters.
+    fn new(map_width: i32, map_height: i32, flags: Flags, width_exp: i32, height_exp: i32) -> Self {
         let width_exp = if width_exp < 0 {
-            DEFAULT_WIDTH_EXP
+            Self::DEFAULT_WIDTH_EXP
         } else {
             width_exp
         };
         let height_exp = if height_exp < 0 {
-            DEFAULT_HEIGHT_EXP
+            Self::DEFAULT_HEIGHT_EXP
         } else {
             height_exp
         };
@@ -195,20 +187,6 @@ impl CvFractal {
     ///   the points where adjacent grid lines meet are called **the vertices of the grid**,
     ///   we assign an initial value to each vertex by `hint_array` for later use in the diamond-square algorithm.
     ///
-    /// We can obtain the value of `hint_width` and `hint_height` through the following code:
-    ///
-    /// ```
-    /// let min_exp = min(self.width_exp, self.height_exp);
-    /// let hint_width = (self.width_exp - min_exp + grain) + if self.flags.WrapX { 0 } else { 1 };
-    /// let hint_height = (self.height_exp - min_exp + grain) + if self.flags.WrapY { 0 } else { 1 };
-    /// ```
-    ///
-    /// hint_array should satisfy the following condition:
-    ///
-    /// ```
-    /// hint_array.len() == hint_width as usize && hint_array[0].len() == hint_height as usize
-    /// ```
-    ///
     /// # Panics
     ///
     /// Panics if `min(self.width_exp, self.height_exp) - grain >= 8`
@@ -233,12 +211,22 @@ impl CvFractal {
         // Notice: when the fractal is WrapX, we don't consider the last row (row index: `self.fractal_width`),
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
-        let hint_width = (self.fractal_width >> smooth) + if self.flags.wrap_x { 0 } else { 1 };
+        let hint_width = (self.fractal_width >> smooth)
+            + if self.flags.map_wrapping.x == WrapType::Wrap {
+                0
+            } else {
+                1
+            };
         // `hint_height` is the num of `Vertices` in every column after dividing.
         // Notice: when the fractal is WrapY, we don't consider the last column (column index: `self.fractal_height`),
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
-        let hint_height = (self.fractal_height >> smooth) + if self.flags.wrap_y { 0 } else { 1 };
+        let hint_height = (self.fractal_height >> smooth)
+            + if self.flags.map_wrapping.y == WrapType::Wrap {
+                0
+            } else {
+                1
+            };
 
         // The `hint_array` is the array of the vertices of the grid, every element is in [0..=255],
         // The array size is `[hint_width][hint_width]`
@@ -269,36 +257,44 @@ impl CvFractal {
             /*********** start to preprocess fractal_array[][] at the beginning of every iter stage in Diamond-Square algorithm. ***********/
 
             // If wrapping in the Y direction is needed, copy the bottom row to the top
-            if self.flags.wrap_y {
-                for x in 0..=self.fractal_width {
-                    self.fractal_array[x as usize][self.fractal_height as usize] =
-                        self.fractal_array[x as usize][0];
+            match self.flags.map_wrapping.y {
+                WrapType::Wrap => {
+                    for x in 0..=self.fractal_width {
+                        self.fractal_array[x as usize][self.fractal_height as usize] =
+                            self.fractal_array[x as usize][0];
+                    }
                 }
-            } else if self.flags.polar {
-                // Polar coordinate transformation, the bottom and the top row will be set to 0
-                for x in 0..=self.fractal_width {
-                    self.fractal_array[x as usize][0] = 0;
-                    self.fractal_array[x as usize][self.fractal_height as usize] = 0;
+                WrapType::Polar => {
+                    // Polar coordinate transformation, the top row will be set to 0
+                    for x in 0..=self.fractal_width {
+                        self.fractal_array[x as usize][0] = 0;
+                        self.fractal_array[x as usize][self.fractal_height as usize] = 0;
+                    }
                 }
+                WrapType::None => {}
             }
 
             // If wrapping in the X direction is needed, copy the leftmost column to the rightmost
-            if self.flags.wrap_x {
-                for y in 0..=self.fractal_height {
-                    self.fractal_array[self.fractal_width as usize][y as usize] =
-                        self.fractal_array[0][y as usize];
+            match self.flags.map_wrapping.x {
+                WrapType::Wrap => {
+                    for y in 0..=self.fractal_height {
+                        self.fractal_array[self.fractal_width as usize][y as usize] =
+                            self.fractal_array[0][y as usize];
+                    }
                 }
-            } else if self.flags.polar {
-                // Polar coordinate transformation, the rightmost and the leftmost column will be set to 0
-                for y in 0..=self.fractal_height {
-                    self.fractal_array[0][y as usize] = 0;
-                    self.fractal_array[self.fractal_width as usize][y as usize] = 0;
+                WrapType::Polar => {
+                    // Polar coordinate transformation, the rightmost and the leftmost column will be set to 0
+                    for y in 0..=self.fractal_height {
+                        self.fractal_array[0][y as usize] = 0;
+                        self.fractal_array[self.fractal_width as usize][y as usize] = 0;
+                    }
                 }
+                WrapType::None => {}
             }
 
             // If crust construction is needed, perform the processing
             if self.flags.center_rift {
-                if self.flags.wrap_y {
+                if self.flags.map_wrapping.y == WrapType::Wrap {
                     for x in 0..=self.fractal_width {
                         for y in 0..=(self.fractal_height / 6) {
                             self.fractal_array[x as usize][y as usize] /=
@@ -310,7 +306,7 @@ impl CvFractal {
                     }
                 }
 
-                if self.flags.wrap_x {
+                if self.flags.map_wrapping.x == WrapType::Wrap {
                     for y in 0..=self.fractal_height {
                         for x in 0..=(self.fractal_width / 6) {
                             self.fractal_array[x as usize][y as usize] /=
@@ -334,8 +330,19 @@ impl CvFractal {
             //         in this code them are in the same iter.
             //      2. In the original Square Step will use the calculation result of the Diamond Step,
             //         in this code Square Step doesn't use the calculation result of the Diamond Step.
-            for x in 0..((self.fractal_width >> pass) + if self.flags.wrap_x { 0 } else { 1 }) {
-                for y in 0..((self.fractal_height >> pass) + if self.flags.wrap_y { 0 } else { 1 })
+            for x in 0..((self.fractal_width >> pass)
+                + if self.flags.map_wrapping.x == WrapType::Wrap {
+                    0
+                } else {
+                    1
+                })
+            {
+                for y in 0..((self.fractal_height >> pass)
+                    + if self.flags.map_wrapping.y == WrapType::Wrap {
+                        0
+                    } else {
+                        1
+                    })
                 {
                     // Interpolate
                     let mut sum = 0;
@@ -570,6 +577,8 @@ impl CvFractal {
                         // make the influence of the seed on its surrounding area more random
                         modified_hex_distance += current_voronoi_seed.weakness;
 
+                        modified_hex_distance += random.gen_range(0..3);
+
                         let relative_direction = Self::estimate_direction(
                             current_voronoi_seed.hex_coordinate,
                             current_hex,
@@ -727,7 +736,7 @@ mod tests {
 
     use rand::{rngs::StdRng, SeedableRng};
 
-    use crate::tile_map::fractal::Flags;
+    use crate::tile_map::{fractal::Flags, MapWrapping, WrapType};
 
     use super::CvFractal;
 
@@ -762,18 +771,15 @@ mod tests {
     fn create_fractal_image() {
         let filename = "fractal.png";
 
-        let mut fractal = CvFractal::new(
-            1024,
-            512,
-            Flags {
-                wrap_x: true,
-                ..Default::default()
-            },
-            8,
-            7,
-        );
         let mut random = StdRng::seed_from_u64(77777777);
-        fractal.frac_init_internal(2, &mut random, None, None);
+        let flags = Flags {
+            map_wrapping: MapWrapping {
+                x: WrapType::Wrap,
+                y: WrapType::Polar,
+            },
+            ..Default::default()
+        };
+        let fractal = CvFractal::create(&mut random, 1024, 512, 2, flags, 8, 7);
         // get the fractal map of the 2d Array which is used in the civ map
         let width = fractal.map_width;
         let height = fractal.map_height;

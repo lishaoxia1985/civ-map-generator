@@ -14,8 +14,7 @@ pub struct MapParameters {
     pub map_size: MapSize,
     pub map_type: MapType,
     pub hex_layout: HexLayout,
-    pub wrap_x: bool,
-    pub wrap_y: bool,
+    pub map_wrapping: MapWrapping,
     /// the map use which type of offset coordinate
     pub offset: Offset,
     pub no_ruins: bool,
@@ -62,37 +61,19 @@ impl MapSize {
     }
 
     pub const fn from_world_size(world_size: WorldSize) -> Self {
-        match world_size {
-            WorldSize::Duel => MapSize {
-                width: 40,
-                height: 24,
-                world_size: WorldSize::Duel,
-            },
-            WorldSize::Tiny => MapSize {
-                width: 56,
-                height: 36,
-                world_size: WorldSize::Tiny,
-            },
-            WorldSize::Small => MapSize {
-                width: 66,
-                height: 42,
-                world_size: WorldSize::Small,
-            },
-            WorldSize::Standard => MapSize {
-                width: 80,
-                height: 52,
-                world_size: WorldSize::Standard,
-            },
-            WorldSize::Large => MapSize {
-                width: 104,
-                height: 64,
-                world_size: WorldSize::Large,
-            },
-            WorldSize::Huge => MapSize {
-                width: 128,
-                height: 80,
-                world_size: WorldSize::Huge,
-            },
+        let (width, height) = match world_size {
+            WorldSize::Duel => (40, 24),
+            WorldSize::Tiny => (56, 36),
+            WorldSize::Small => (66, 42),
+            WorldSize::Standard => (80, 52),
+            WorldSize::Large => (104, 64),
+            WorldSize::Huge => (128, 80),
+        };
+
+        MapSize {
+            width,
+            height,
+            world_size,
         }
     }
 }
@@ -136,6 +117,29 @@ impl WorldSize {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+/// The map wrapping settings.
+pub struct MapWrapping {
+    /// - If `x` is `WrapType::Wrap`, the map will wrap around in the x direction.
+    /// - If `x` is `WrapType::Polar`, the left and right edges of the map will be all water tiles.
+    /// - If `x` is `WrapType::None`, the map will not wrap around in the x direction and the edges of the map will not be processed.
+    pub x: WrapType,
+    /// - If `y` is `WrapType::Wrap`, the map will wrap around in the y direction.
+    /// - If `y` is `WrapType::Polar`, the top and bottom edges of the map will be all water tiles.
+    /// - If `y` is `WrapType::None`, the map will not wrap around in the y direction and the edges of the map will not be processed.
+    pub y: WrapType,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum WrapType {
+    /// The map will not wrap around.
+    None,
+    /// The map will wrap around.
+    Wrap,
+    /// The edges of the map will be all water tiles.
+    Polar,
+}
+
 pub enum MapType {
     Fractal,
     Pangaea,
@@ -149,8 +153,11 @@ pub enum SeaLevel {
 }
 
 pub enum WorldAge {
+    /// 5 Billion Years
     Old,
+    /// 4 Billion Years
     Normal,
+    /// 3 Billion Years
     New,
 }
 
@@ -210,8 +217,10 @@ impl Default for MapParameters {
                 size: DVec2::new(8., 8.),
                 origin: DVec2::new(0., 0.),
             },
-            wrap_x: true,
-            wrap_y: false,
+            map_wrapping: MapWrapping {
+                x: WrapType::Wrap,
+                y: WrapType::Polar,
+            },
             offset: Offset::Odd,
             no_ruins: false,
             seed: SystemTime::now()
@@ -222,7 +231,7 @@ impl Default for MapParameters {
                 .unwrap(),
             large_lake_num: 2,
             lake_max_area_size: 9,
-            coast_expand_chance: vec![0.25, 0.25, 0.25],
+            coast_expand_chance: vec![0.25, 0.25],
             sea_level: SeaLevel::Normal,
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,

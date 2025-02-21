@@ -7,6 +7,8 @@ use crate::{
 
 impl TileMap {
     pub fn generate_terrain(&mut self, map_parameters: &MapParameters) {
+        let grain_amount = 3;
+
         let temperature_shift = 0.1;
         let desert_shift = 16;
         let mut desert_percent = 32;
@@ -44,10 +46,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            3,
+            grain_amount,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             -1,
@@ -57,10 +58,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            3,
+            grain_amount,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             -1,
@@ -70,10 +70,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            3,
+            grain_amount,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             -1,

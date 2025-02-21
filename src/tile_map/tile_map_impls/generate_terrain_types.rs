@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{
     component::terrain_type::TerrainType,
-    tile_map::{CvFractal, Flags, MapParameters, MapType, SeaLevel, TileMap, WorldAge},
+    tile_map::{CvFractal, Flags, MapParameters, MapType, SeaLevel, TileMap, WorldAge, WorldSize},
 };
 
 impl TileMap {
@@ -15,8 +15,6 @@ impl TileMap {
     }
 
     pub fn generate_terrain_types_for_fractal(&mut self, map_parameters: &MapParameters) {
-        let continent_grain = 2;
-
         let sea_level_low = 65;
         let sea_level_normal = 72;
         let sea_level_high = 78;
@@ -32,6 +30,12 @@ impl TileMap {
             WorldAge::Old => world_age_old,
             WorldAge::Normal => world_age_normal,
             WorldAge::New => world_age_new,
+        };
+
+        let adjust_plates = match map_parameters.world_age {
+            WorldAge::Old => 0.75,
+            WorldAge::Normal => 1.0,
+            WorldAge::New => 1.5,
         };
 
         let mountains = 97 - adjustment - extra_mountains;
@@ -51,6 +55,35 @@ impl TileMap {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
+        let grain = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 3,
+            WorldSize::Tiny => 3,
+            WorldSize::Small => 4,
+            WorldSize::Standard => 4,
+            WorldSize::Large => 5,
+            WorldSize::Huge => 5,
+        };
+
+        let mut num_plates = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 6,
+            WorldSize::Tiny => 9,
+            WorldSize::Small => 12,
+            WorldSize::Standard => 18,
+            WorldSize::Large => 24,
+            WorldSize::Huge => 30,
+        };
+
+        num_plates = (num_plates as f64 * adjust_plates) as i32;
+
+        let num_plates_for_continents = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 4,
+            WorldSize::Tiny => 8,
+            WorldSize::Small => 16,
+            WorldSize::Standard => 20,
+            WorldSize::Large => 24,
+            WorldSize::Huge => 32,
+        };
+
         let orientation = map_parameters.hex_layout.orientation;
         let offset = map_parameters.offset;
 
@@ -60,8 +93,7 @@ impl TileMap {
             map_parameters.map_size.height,
             2,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -70,10 +102,9 @@ impl TileMap {
 
         continents_fractal.ridge_builder(
             &mut self.random_number_generator,
-            15,
+            num_plates_for_continents,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             1,
@@ -86,10 +117,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            2,
+            grain,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -98,10 +128,9 @@ impl TileMap {
 
         mountains_fractal.ridge_builder(
             &mut self.random_number_generator,
-            10,
+            num_plates * 2 / 3,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             6,
@@ -114,10 +143,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            2,
+            grain,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -126,10 +154,9 @@ impl TileMap {
 
         hills_fractal.ridge_builder(
             &mut self.random_number_generator,
-            15,
+            num_plates,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             1,
@@ -223,6 +250,12 @@ impl TileMap {
             WorldAge::New => world_age_new,
         };
 
+        let adjust_plates = match map_parameters.world_age {
+            WorldAge::Old => 0.75,
+            WorldAge::Normal => 1.0,
+            WorldAge::New => 1.5,
+        };
+
         let mountains = 97 - adjustment - extra_mountains;
         let hills_near_mountains = 91 - (adjustment * 2) - extra_mountains;
         let hills_bottom1 = 28 - adjustment;
@@ -240,6 +273,33 @@ impl TileMap {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
+        let grain = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 3,
+            WorldSize::Tiny => 3,
+            WorldSize::Small => 4,
+            WorldSize::Standard => 4,
+            WorldSize::Large => 5,
+            WorldSize::Huge => 5,
+        };
+
+        let mut num_plates = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 6,
+            WorldSize::Tiny => 9,
+            WorldSize::Small => 12,
+            WorldSize::Standard => 18,
+            WorldSize::Large => 24,
+            WorldSize::Huge => 30,
+        };
+
+        let num_plates_for_continents = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 4,
+            WorldSize::Tiny => 8,
+            WorldSize::Small => 16,
+            WorldSize::Standard => 20,
+            WorldSize::Large => 24,
+            WorldSize::Huge => 32,
+        };
+
         let orientation = map_parameters.hex_layout.orientation;
         let offset = map_parameters.offset;
 
@@ -249,8 +309,7 @@ impl TileMap {
             map_parameters.map_size.height,
             2,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -259,10 +318,9 @@ impl TileMap {
 
         continents_fractal.ridge_builder(
             &mut self.random_number_generator,
-            15,
+            num_plates_for_continents,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             1,
@@ -275,10 +333,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            2,
+            4,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -287,10 +344,9 @@ impl TileMap {
 
         mountains_fractal.ridge_builder(
             &mut self.random_number_generator,
-            10,
+            num_plates * 2 / 3,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             6,
@@ -303,10 +359,9 @@ impl TileMap {
             &mut self.random_number_generator,
             map_parameters.map_size.width,
             map_parameters.map_size.height,
-            2,
+            grain,
             Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             7,
@@ -315,10 +370,9 @@ impl TileMap {
 
         hills_fractal.ridge_builder(
             &mut self.random_number_generator,
-            15,
+            num_plates,
             &Flags {
-                wrap_x: map_parameters.wrap_x,
-                wrap_y: map_parameters.wrap_y,
+                map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
             },
             1,
