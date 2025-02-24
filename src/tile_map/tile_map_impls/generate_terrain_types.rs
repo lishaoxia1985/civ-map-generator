@@ -75,48 +75,17 @@ impl TileMap {
 
         num_plates = (num_plates as f64 * adjust_plates) as i32;
 
-        let num_plates_for_continents = match map_parameters.map_size.world_size {
-            WorldSize::Duel => 4,
-            WorldSize::Tiny => 8,
-            WorldSize::Small => 16,
-            WorldSize::Standard => 20,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 32,
-        };
-
         let orientation = map_parameters.hex_layout.orientation;
         let offset = map_parameters.offset;
+        let width = map_parameters.map_size.width;
+        let height = map_parameters.map_size.height;
 
-        let mut continents_fractal = CvFractal::create(
-            &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
-            2,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            7,
-            6,
-        );
-
-        continents_fractal.ridge_builder(
-            &mut self.random_number_generator,
-            num_plates_for_continents,
-            &Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            1,
-            2,
-            orientation,
-            offset,
-        );
+        let continents_fractal = self.continents_fractal(map_parameters);
 
         let mut mountains_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            width,
+            height,
             grain,
             Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -141,8 +110,8 @@ impl TileMap {
 
         let mut hills_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            width,
+            height,
             grain,
             Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -233,8 +202,6 @@ impl TileMap {
     }
 
     pub fn generate_terrain_types_for_pangaea(&mut self, map_parameters: &MapParameters) {
-        let continent_grain = 2;
-
         let sea_level_low = 71;
         let sea_level_normal = 78;
         let sea_level_high = 84;
@@ -248,12 +215,6 @@ impl TileMap {
             WorldAge::Old => world_age_old,
             WorldAge::Normal => world_age_normal,
             WorldAge::New => world_age_new,
-        };
-
-        let adjust_plates = match map_parameters.world_age {
-            WorldAge::Old => 0.75,
-            WorldAge::Normal => 1.0,
-            WorldAge::New => 1.5,
         };
 
         let mountains = 97 - adjustment - extra_mountains;
@@ -282,7 +243,7 @@ impl TileMap {
             WorldSize::Huge => 5,
         };
 
-        let mut num_plates = match map_parameters.map_size.world_size {
+        let num_plates = match map_parameters.map_size.world_size {
             WorldSize::Duel => 6,
             WorldSize::Tiny => 9,
             WorldSize::Small => 12,
@@ -291,48 +252,17 @@ impl TileMap {
             WorldSize::Huge => 30,
         };
 
-        let num_plates_for_continents = match map_parameters.map_size.world_size {
-            WorldSize::Duel => 4,
-            WorldSize::Tiny => 8,
-            WorldSize::Small => 16,
-            WorldSize::Standard => 20,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 32,
-        };
-
         let orientation = map_parameters.hex_layout.orientation;
         let offset = map_parameters.offset;
+        let width = map_parameters.map_size.width;
+        let height = map_parameters.map_size.height;
 
-        let mut continents_fractal = CvFractal::create(
-            &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
-            2,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            7,
-            6,
-        );
-
-        continents_fractal.ridge_builder(
-            &mut self.random_number_generator,
-            num_plates_for_continents,
-            &Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            1,
-            2,
-            orientation,
-            offset,
-        );
+        let continents_fractal = self.continents_fractal(map_parameters);
 
         let mut mountains_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            width,
+            height,
             4,
             Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -357,8 +287,8 @@ impl TileMap {
 
         let mut hills_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            width,
+            height,
             grain,
             Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -463,5 +393,81 @@ impl TileMap {
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             };
         });
+    }
+
+    fn continents_fractal(&mut self, map_parameters: &MapParameters) -> CvFractal {
+        let continent_grain = 2;
+        // Default no rifts. Set grain to between 1 and 3 to add rifts.
+        let rift_grain = -1;
+
+        let num_plates_for_continents = match map_parameters.map_size.world_size {
+            WorldSize::Duel => 4,
+            WorldSize::Tiny => 8,
+            WorldSize::Small => 16,
+            WorldSize::Standard => 20,
+            WorldSize::Large => 24,
+            WorldSize::Huge => 32,
+        };
+
+        let orientation = map_parameters.hex_layout.orientation;
+        let offset = map_parameters.offset;
+        let width = map_parameters.map_size.width;
+        let height = map_parameters.map_size.height;
+
+        let mut continents_fractal = if rift_grain > 0 && rift_grain < 4 {
+            let rift_fractal = CvFractal::create(
+                &mut self.random_number_generator,
+                width,
+                height,
+                rift_grain,
+                Flags::default(),
+                7,
+                6,
+            );
+
+            CvFractal::create_rifts(
+                &mut self.random_number_generator,
+                width,
+                height,
+                continent_grain,
+                Flags {
+                    map_wrapping: map_parameters.map_wrapping,
+                    ..Default::default()
+                },
+                &rift_fractal,
+                7,
+                6,
+            )
+        } else {
+            CvFractal::create(
+                &mut self.random_number_generator,
+                width,
+                height,
+                continent_grain,
+                Flags {
+                    map_wrapping: map_parameters.map_wrapping,
+                    ..Default::default()
+                },
+                7,
+                6,
+            )
+        };
+
+        // Blend a bit of ridge into the fractal.
+        // This will do things like roughen the coastlines and build inland seas.
+        continents_fractal.ridge_builder(
+            &mut self.random_number_generator,
+            num_plates_for_continents,
+            &Flags {
+                map_wrapping: map_parameters.map_wrapping,
+                ..Default::default()
+            },
+            1,
+            2,
+            orientation,
+            offset,
+        );
+
+        continents_fractal
     }
 }
