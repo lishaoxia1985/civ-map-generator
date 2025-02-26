@@ -94,7 +94,7 @@ pub struct TileMap {
 
 impl TileMap {
     /// Creates an empty tile map with the given parameters.
-    fn new(map_parameters: &MapParameters) -> Self {
+    pub fn new(map_parameters: &MapParameters) -> Self {
         let random_number_generator = StdRng::seed_from_u64(map_parameters.seed);
 
         let height = map_parameters.map_size.height;

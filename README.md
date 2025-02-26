@@ -2,6 +2,15 @@
 
 This is a civilization map generator. This algorithm is primarily based on the implementation in *Civilization V*, with some references from *Civilization VI*.
 
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+civ_map_generator = {git = "https://github.com/lishaoxia1985/civ-map-generator.git", branch = "master"}
+```
+
 ## Example
 
 [Civilization-Remastered](https://github.com/lishaoxia1985/Civilization-Remastered)
@@ -43,4 +52,21 @@ This project introduces several key innovations:
 
 ## Reference project
 
-[Unciv](https://github.com/yairm210/Unciv)
+ * [Unciv](https://github.com/yairm210/Unciv)  
+ * [Community Patch for Civilization V - Brave New World](https://github.com/LoneGazebo/Community-Patch-DLL)  
+ * [Red Blob Games](https://www.redblobgames.com/grids/hexagons/)
+
+## License
+
+Licensed under either of
+
+ * [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+ * [MIT license](http://opensource.org/licenses/MIT)
+
+at your option.
+
+**Contributions**
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

@@ -1,35 +1,42 @@
+use glam::{DVec2, IVec2};
 use rand::Rng;
 
-use crate::{
-    component::terrain_type::TerrainType,
-    tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize},
-};
+use crate::{terrain_type::TerrainType, tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize}};
 
-impl TileMap {
-    /// Generate terrain types for the map. 
-    /// This function uses the map's parameters to determine the terrain types for each tile.
-    pub fn generate_terrain_types(&mut self, map_parameters: &MapParameters) {
-        let sea_level_low = 65;
-        let sea_level_normal = 72;
-        let sea_level_high = 78;
+use super::Generator;
+
+pub struct PangaeaMap(TileMap);
+
+impl PangaeaMap {
+    pub fn new(map_parameters: &MapParameters) -> Self {
+        Self(TileMap::new(map_parameters))
+    }
+}
+
+impl Generator for PangaeaMap {
+    fn into_inner(self) -> TileMap {
+        self.0
+    }
+    fn tile_map_mut(&mut self) -> &mut TileMap {
+        &mut self.0
+    }
+
+    fn generate_terrain_types(&mut self, map_parameters: &MapParameters) {
+        let tile_map = self.tile_map_mut();
+
+        let sea_level_low = 71;
+        let sea_level_normal = 78;
+        let sea_level_high = 84;
         let world_age_old = 2;
         let world_age_normal = 3;
         let world_age_new = 5;
 
         let extra_mountains = 0;
 
-        let tectonic_islands = false;
-
         let adjustment = match map_parameters.world_age {
             WorldAge::Old => world_age_old,
             WorldAge::Normal => world_age_normal,
             WorldAge::New => world_age_new,
-        };
-
-        let adjust_plates = match map_parameters.world_age {
-            WorldAge::Old => 0.75,
-            WorldAge::Normal => 1.0,
-            WorldAge::New => 1.5,
         };
 
         let mountains = 97 - adjustment - extra_mountains;
@@ -44,7 +51,7 @@ impl TileMap {
             SeaLevel::Low => sea_level_low,
             SeaLevel::Normal => sea_level_normal,
             SeaLevel::High => sea_level_high,
-            SeaLevel::Random => self
+            SeaLevel::Random => tile_map
                 .random_number_generator
                 .gen_range(sea_level_low..=sea_level_high),
         };
@@ -58,7 +65,7 @@ impl TileMap {
             WorldSize::Huge => 5,
         };
 
-        let mut num_plates = match map_parameters.map_size.world_size {
+        let num_plates = match map_parameters.map_size.world_size {
             WorldSize::Duel => 6,
             WorldSize::Tiny => 9,
             WorldSize::Small => 12,
@@ -67,20 +74,18 @@ impl TileMap {
             WorldSize::Huge => 30,
         };
 
-        num_plates = (num_plates as f64 * adjust_plates) as i32;
-
         let orientation = map_parameters.hex_layout.orientation;
         let offset = map_parameters.offset;
         let width = map_parameters.map_size.width;
         let height = map_parameters.map_size.height;
 
-        let continents_fractal = self.continents_fractal(map_parameters);
+        let continents_fractal = tile_map.continents_fractal(map_parameters);
 
         let mut mountains_fractal = CvFractal::create(
-            &mut self.random_number_generator,
+            &mut tile_map.random_number_generator,
             width,
             height,
-            grain,
+            4,
             Flags {
                 map_wrapping: map_parameters.map_wrapping,
                 ..Default::default()
@@ -90,7 +95,7 @@ impl TileMap {
         );
 
         mountains_fractal.ridge_builder(
-            &mut self.random_number_generator,
+            &mut tile_map.random_number_generator,
             num_plates * 2 / 3,
             &Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -103,7 +108,7 @@ impl TileMap {
         );
 
         let mut hills_fractal = CvFractal::create(
-            &mut self.random_number_generator,
+            &mut tile_map.random_number_generator,
             width,
             height,
             grain,
@@ -116,7 +121,7 @@ impl TileMap {
         );
 
         hills_fractal.ridge_builder(
-            &mut self.random_number_generator,
+            &mut tile_map.random_number_generator,
             num_plates,
             &Flags {
                 map_wrapping: map_parameters.map_wrapping,
@@ -160,114 +165,55 @@ impl TileMap {
             panic!("Vec length does not match the pattern")
         };
 
-        self.iter_tiles().for_each(|tile| {
+        let width = map_parameters.map_size.width;
+        let height = map_parameters.map_size.height;
+        let center_position = DVec2::new(width as f64 / 2., height as f64 / 2.);
+
+        let axis = center_position * 3. / 5.;
+
+        tile_map.iter_tiles().for_each(|tile| {
             let [x, y] = tile.to_offset_coordinate(map_parameters).to_array();
             let height = continents_fractal.get_height(x, y);
 
             let mountain_height = mountains_fractal.get_height(x, y);
             let hill_height = hills_fractal.get_height(x, y);
 
+            let mut h = water_threshold as f64;
+
+            let delta = IVec2::from([x, y]).as_dvec2() - center_position;
+            let d = (delta / axis).length_squared();
+
+            if d <= 1. {
+                h = h + (h * 0.125)
+            } else {
+                h = h - (h * 0.125)
+            }
+
+            let height = ((height as f64 + h + h) * 0.33) as i32;
+
             if height <= water_threshold {
-                self.terrain_type_query[tile.index()] = TerrainType::Water;
-                if tectonic_islands {
-                    if mountain_height == mountain_100 {
-                        self.terrain_type_query[tile.index()] = TerrainType::Mountain;
-                    } else if mountain_height == mountain_99 {
-                        self.terrain_type_query[tile.index()] = TerrainType::Hill;
-                    } else if (mountain_height == mountain_97) || (mountain_height == mountain_95) {
-                        self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-                    }
+                tile_map.terrain_type_query[tile.index()] = TerrainType::Water;
+                if height == mountain_100 {
+                    tile_map.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                } else if height == mountain_99 {
+                    tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
+                } else if height == mountain_97 || height == mountain_95 {
+                    tile_map.terrain_type_query[tile.index()] = TerrainType::Flatland;
                 }
             } else if mountain_height >= mountain_threshold {
                 if hill_height >= pass_threshold {
-                    self.terrain_type_query[tile.index()] = TerrainType::Hill;
+                    tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
                 } else {
-                    self.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                    tile_map.terrain_type_query[tile.index()] = TerrainType::Mountain;
                 }
             } else if mountain_height >= hills_near_mountains
                 || (hill_height >= hills_bottom1 && hill_height <= hills_top1)
                 || (hill_height >= hills_bottom2 && hill_height <= hills_top2)
             {
-                self.terrain_type_query[tile.index()] = TerrainType::Hill;
+                tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
             } else {
-                self.terrain_type_query[tile.index()] = TerrainType::Flatland;
+                tile_map.terrain_type_query[tile.index()] = TerrainType::Flatland;
             };
         });
-    }
-
-    pub fn continents_fractal(&mut self, map_parameters: &MapParameters) -> CvFractal {
-        let continent_grain = 2;
-        // Default no rifts. Set grain to between 1 and 3 to add rifts.
-        let rift_grain = -1;
-
-        let num_plates_for_continents = match map_parameters.map_size.world_size {
-            WorldSize::Duel => 4,
-            WorldSize::Tiny => 8,
-            WorldSize::Small => 16,
-            WorldSize::Standard => 20,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 32,
-        };
-
-        let orientation = map_parameters.hex_layout.orientation;
-        let offset = map_parameters.offset;
-        let width = map_parameters.map_size.width;
-        let height = map_parameters.map_size.height;
-
-        let mut continents_fractal = if rift_grain > 0 && rift_grain < 4 {
-            let rift_fractal = CvFractal::create(
-                &mut self.random_number_generator,
-                width,
-                height,
-                rift_grain,
-                Flags::default(),
-                7,
-                6,
-            );
-
-            CvFractal::create_rifts(
-                &mut self.random_number_generator,
-                width,
-                height,
-                continent_grain,
-                Flags {
-                    map_wrapping: map_parameters.map_wrapping,
-                    ..Default::default()
-                },
-                &rift_fractal,
-                7,
-                6,
-            )
-        } else {
-            CvFractal::create(
-                &mut self.random_number_generator,
-                width,
-                height,
-                continent_grain,
-                Flags {
-                    map_wrapping: map_parameters.map_wrapping,
-                    ..Default::default()
-                },
-                7,
-                6,
-            )
-        };
-
-        // Blend a bit of ridge into the fractal.
-        // This will do things like roughen the coastlines and build inland seas.
-        continents_fractal.ridge_builder(
-            &mut self.random_number_generator,
-            num_plates_for_continents,
-            &Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            1,
-            2,
-            orientation,
-            offset,
-        );
-
-        continents_fractal
     }
 }
