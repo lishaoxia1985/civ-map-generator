@@ -6,7 +6,7 @@ use crate::{
 };
 
 impl TileMap {
-    /// Generate terrain types for the map. 
+    /// Generate terrain types for the map.
     /// This function uses the map's parameters to determine the terrain types for each tile.
     pub fn generate_terrain_types(&mut self, map_parameters: &MapParameters) {
         let sea_level_low = 65;

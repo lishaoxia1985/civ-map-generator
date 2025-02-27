@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// A trait that allows for the generation of a tile map.
-/// 
+///
 /// If you want to create a new map generator, you need to implement this trait.
 pub trait Generator {
     fn into_inner(self) -> TileMap;

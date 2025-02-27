@@ -11,6 +11,11 @@ Add this to your `Cargo.toml`:
 civ_map_generator = {git = "https://github.com/lishaoxia1985/civ-map-generator.git", branch = "master"}
 ```
 
+
+## How to add a map type
+
+[How to add a map type](./src/map/How%20to%20add%20a%20map%20type.MD)
+
 ## Example
 
 [Civilization-Remastered](https://github.com/lishaoxia1985/Civilization-Remastered)

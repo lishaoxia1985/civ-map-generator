@@ -1,19 +1,22 @@
 use glam::{DVec2, IVec2};
 use rand::Rng;
 
-use crate::{terrain_type::TerrainType, tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize}};
+use crate::{
+    terrain_type::TerrainType,
+    tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize},
+};
 
 use super::Generator;
 
-pub struct PangaeaMap(TileMap);
+pub struct Pangaea(TileMap);
 
-impl PangaeaMap {
+impl Pangaea {
     pub fn new(map_parameters: &MapParameters) -> Self {
         Self(TileMap::new(map_parameters))
     }
 }
 
-impl Generator for PangaeaMap {
+impl Generator for Pangaea {
     fn into_inner(self) -> TileMap {
         self.0
     }

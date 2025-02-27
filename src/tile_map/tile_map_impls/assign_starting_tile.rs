@@ -458,7 +458,7 @@ impl TileMap {
         if plot_list.is_empty() {
             return;
         }
-        
+
         assert!(layer == Layer::Bonus || layer == Layer::Strategic, "This function is only used to place strategic and bonus resources on the map, not luxury resources.");
 
         let resource_weight = resource_list_to_place
