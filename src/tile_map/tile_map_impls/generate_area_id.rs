@@ -1,10 +1,6 @@
 use std::collections::{BTreeSet, VecDeque};
 
-#[cfg(feature = "use-hashbrown")]
-use hashbrown::{HashMap, HashSet};
-
-#[cfg(not(feature = "use-hashbrown"))]
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::{
     component::terrain_type::TerrainType,

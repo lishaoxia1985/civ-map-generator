@@ -6,25 +6,13 @@ If you want to add a new map type to the map, you need to do the following:
 2. In the new file, define a struct named `InlandSea`. For example:
 ```rust
 pub struct InlandSea(TileMap);
-
-impl InlandSea {
-    pub fn new(map_parameters: &MapParameters) -> Self {
-        Self(TileMap::new(map_parameters))
-    }
-}
 ```
 3. Implement the `Generator` trait for the new map type. This trait defines the behavior of the map, such as how to generate the map, how to place the player, ..., For example:
 ```rust
-impl Generator for PangaeaMap {
-    // This must be implemented
-    fn into_inner(self) -> TileMap {
-        self.0
-    }
-
-    // This must be implemented
-    fn tile_map_mut(&mut self) -> &mut TileMap {
-        &mut self.0
-    }
+impl Generator for InlandSea {
+    // Use macros to generate common methods for the map type
+    // This is necessary
+    generate_common_methods!();
 
     // If you don't want to use default implementation, you can implement this for custom map type
     fn generate_terrain_types(&mut self, map_parameters: &MapParameters) {
@@ -48,10 +36,10 @@ pub enum MapType {
 5. Add code to the `generate_map` function in the `src/lib.rs` file to handle the new map type. For example:
 ```rust
 pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMap {
-    match map_type {
-       MapType::Fractal => generate_map_from_type!(map_parameters, ruleset, Fractal),
-        MapType::Pangaea => generate_map_from_type!(map_parameters, ruleset, Pangaea),
-        MapType::InlandSea => generate_map_from_type!(map_parameters, ruleset, InlandSea), // Add this line
+    match map_parameters.map_type {
+        MapType::Fractal => Fractal::generate(map_parameters, ruleset),
+        MapType::Pangaea => Pangaea::generate(map_parameters, ruleset),
+        MapType::InlandSea => InlandSea::generate(map_parameters, ruleset), // Add this line
     }
 }
 ```

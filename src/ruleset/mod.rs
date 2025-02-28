@@ -1,8 +1,4 @@
-#[cfg(feature = "use-hashbrown")]
-use hashbrown::{HashMap, HashSet};
-
-#[cfg(not(feature = "use-hashbrown"))]
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use serde::de::DeserializeOwned;
 use std::fs;

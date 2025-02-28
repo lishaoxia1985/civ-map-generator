@@ -1,9 +1,5 @@
 use std::cmp::Reverse;
 
-#[cfg(feature = "use-hashbrown")]
-use hashbrown::{HashMap, HashSet};
-
-#[cfg(not(feature = "use-hashbrown"))]
 use std::collections::{HashMap, HashSet};
 
 use rand::prelude::SliceRandom;
