@@ -528,21 +528,21 @@ impl TileMap {
 
     // function AssignStartingPlots:AssignLuxuryRoles
     /// Assigns luxury resources roles. Every luxury type has a role, the role should be one of the following:
-    /// 1. Special case. For example, Marble. We need to implement a dedicated placement function to handle it.
-    /// 1. Assigned to a region, each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
-    /// 2. Assigned to a city state. These types is limited to 3 in original CIV5.
-    /// 3. Not assigned to any region or city state, and not special case too. we will place it randomly.
-    /// 4. Disabled. We will not place it on the map.
+    /// * Special case. For example, Marble. We need to implement a dedicated placement function to handle it.
+    /// * Exclusively Assigned to a region. Each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
+    /// * Exclusively Assigned to a city state. These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
+    /// * Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
+    /// * Disabled. We will not place it on the map.
     ///
     /// Assigns a Luxury resource according the rules below:
-    /// 1. first, assign to regions
-    /// 2. then, assign to city states
-    /// 3. then, radomly assign
-    /// 4. then, disable
+    /// * first, assign to regions
+    /// * then, assign to city states
+    /// * then, radomly assign
+    /// * then, disable
     /// # Notice
     /// Luxury roles must be assigned before placing City States.
     /// This is because civs who are forced to share their luxury type with other
-    /// civs may get extra city states placed in their region to compensate. View [`TileMap::assign_city_states_to_regions_or_to_uninhabited`] for more information.
+    /// civs may get extra city states placed in their region to compensate. View [`TileMap::assign_city_states_to_regions_or_uninhabited_landmasses`] for more information.
     pub fn assign_luxury_roles(&mut self, map_parameters: &MapParameters) {
         // Sort the regions by their type, with `RegionType::Undefined` being sorted last.
         // Notice: In original code, the region which has the same type should be shuffled. But here we don't do that. We will implement it in the future.
@@ -649,11 +649,11 @@ impl TileMap {
         }
 
         self.luxury_resource_role = LuxuryResourceRole {
-            resource_assigned_to_regions,
-            resource_assigned_to_city_state,
-            resource_assigned_to_special_case,
-            resource_assigned_to_random,
-            resource_not_being_used,
+            luxury_assigned_to_regions: resource_assigned_to_regions,
+            luxury_assigned_to_city_state: resource_assigned_to_city_state,
+            luxury_assigned_to_special_case: resource_assigned_to_special_case,
+            luxury_assigned_to_random: resource_assigned_to_random,
+            luxury_not_being_used: resource_not_being_used,
         };
     }
 
@@ -857,7 +857,7 @@ impl TileMap {
                     && (num_assigned_luxury_types < NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
                         || self
                             .luxury_resource_role
-                            .resource_assigned_to_regions
+                            .luxury_assigned_to_regions
                             .contains(luxury_resource))
             };
 
@@ -865,12 +865,16 @@ impl TileMap {
         let mut resource_weight_list = Vec::new();
         for (luxury_resource, weight) in luxury_candidates.iter() {
             let luxury_resource = luxury_resource.name();
-            let luxury_assignment_count: u32 = *self
+            let luxury_assign_to_region_count: u32 = *self
                 .luxury_assign_to_region_count
                 .get(luxury_resource)
                 .unwrap_or(&0);
 
-            if is_eligible_luxury_resource(luxury_resource, luxury_assignment_count, split_cap) {
+            if is_eligible_luxury_resource(
+                luxury_resource,
+                luxury_assign_to_region_count,
+                split_cap,
+            ) {
                 // This type still eligible.
                 // Water-based resources need to run a series of permission checks: coastal start in region, not a disallowed regions type, enough water, etc.
                 if luxury_resource == "Whales"
@@ -896,13 +900,13 @@ impl TileMap {
                         // 1. This region's start is along an ocean,
                         // 2. This region has enough water to support water-based luxuries.
                         resource_list.push(luxury_resource);
-                        let adjusted_weight = weight / (1 + luxury_assignment_count);
+                        let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                         resource_weight_list.push(adjusted_weight);
                     }
                 } else {
                     // Land-based resources are automatically approved if they were in the region's option table.
                     resource_list.push(luxury_resource);
-                    let adjusted_weight = weight / (1 + luxury_assignment_count);
+                    let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                     resource_weight_list.push(adjusted_weight);
                 }
             }
@@ -914,13 +918,13 @@ impl TileMap {
         if resource_list.is_empty() && region_type != RegionType::Undefined && split_cap != 3 {
             for (luxury_resource, weight) in luxury_fallback_weights.iter() {
                 let luxury_resource = luxury_resource.name();
-                let luxury_assignment_count: u32 = *self
+                let luxury_assign_to_region_count: u32 = *self
                     .luxury_assign_to_region_count
                     .get(luxury_resource)
                     .unwrap_or(&0);
                 if is_eligible_luxury_resource(
                     luxury_resource,
-                    luxury_assignment_count,
+                    luxury_assign_to_region_count,
                     MAX_REGIONS_PER_LUXURY_TYPE,
                 ) {
                     // This type still eligible.
@@ -943,12 +947,12 @@ impl TileMap {
                             && region.terrain_statistic.terrain_type_sum[&TerrainType::Water] > 12
                         {
                             resource_list.push(luxury_resource);
-                            let adjusted_weight = weight / (1 + luxury_assignment_count);
+                            let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                             resource_weight_list.push(adjusted_weight);
                         }
                     } else {
                         resource_list.push(luxury_resource);
-                        let adjusted_weight = weight / (1 + luxury_assignment_count);
+                        let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                         resource_weight_list.push(adjusted_weight);
                     }
                 }
@@ -960,17 +964,17 @@ impl TileMap {
         if resource_list.is_empty() {
             for (luxury_resource, weight) in luxury_candidates.iter() {
                 let luxury_resource = luxury_resource.name();
-                let luxury_assignment_count: u32 = *self
+                let luxury_assign_to_region_count: u32 = *self
                     .luxury_assign_to_region_count
                     .get(luxury_resource)
                     .unwrap_or(&0);
                 if is_eligible_luxury_resource(
                     luxury_resource,
-                    luxury_assignment_count,
+                    luxury_assign_to_region_count,
                     MAX_REGIONS_PER_LUXURY_TYPE,
                 ) {
                     resource_list.push(luxury_resource);
-                    let adjusted_weight = weight / (1 + luxury_assignment_count);
+                    let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                     resource_weight_list.push(adjusted_weight);
                 }
             }
@@ -3832,22 +3836,22 @@ impl TileMap {
 }
 
 pub struct LuxuryResourceRole {
-    pub resource_assigned_to_regions: HashSet<String>,
-    pub resource_assigned_to_city_state: Vec<String>,
+    pub luxury_assigned_to_regions: HashSet<String>,
+    pub luxury_assigned_to_city_state: Vec<String>,
     /// For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
-    pub resource_assigned_to_special_case: Vec<String>,
-    pub resource_assigned_to_random: Vec<String>,
-    pub resource_not_being_used: Vec<String>,
+    pub luxury_assigned_to_special_case: Vec<String>,
+    pub luxury_assigned_to_random: Vec<String>,
+    pub luxury_not_being_used: Vec<String>,
 }
 
 impl Default for LuxuryResourceRole {
     fn default() -> Self {
         Self {
-            resource_assigned_to_regions: HashSet::new(),
-            resource_assigned_to_city_state: Vec::new(),
-            resource_assigned_to_special_case: Vec::new(),
-            resource_assigned_to_random: Vec::new(),
-            resource_not_being_used: Vec::new(),
+            luxury_assigned_to_regions: HashSet::new(),
+            luxury_assigned_to_city_state: Vec::new(),
+            luxury_assigned_to_special_case: Vec::new(),
+            luxury_assigned_to_random: Vec::new(),
+            luxury_not_being_used: Vec::new(),
         }
     }
 }

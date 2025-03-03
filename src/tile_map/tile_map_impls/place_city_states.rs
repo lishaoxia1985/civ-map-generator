@@ -452,10 +452,10 @@ impl TileMap {
             let mut num_regions_shared_luxury = 0;
             let mut shared_luxury = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
-            for (luxury_resource, &luxury_assignment_count) in
+            for (luxury_resource, &luxury_assign_to_region_count) in
                 self.luxury_assign_to_region_count.iter()
             {
-                if luxury_assignment_count == 3 {
+                if luxury_assign_to_region_count == 3 {
                     num_regions_shared_luxury += 3;
                     shared_luxury.push(luxury_resource);
                 }

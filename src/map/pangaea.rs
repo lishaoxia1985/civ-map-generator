@@ -2,7 +2,9 @@ use glam::{DVec2, IVec2};
 use rand::Rng;
 
 use crate::{
-    generate_common_methods, terrain_type::TerrainType, tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize}
+    generate_common_methods,
+    terrain_type::TerrainType,
+    tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize},
 };
 
 use super::Generator;

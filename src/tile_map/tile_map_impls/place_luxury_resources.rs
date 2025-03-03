@@ -1,6 +1,7 @@
-use std::{cmp::max, collections::BTreeMap};
-
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::max,
+    collections::{HashMap, HashSet},
+};
 
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
@@ -9,31 +10,41 @@ use crate::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
     ruleset::Ruleset,
-    tile_map::{tile::Tile, MapParameters, ResourceSetting, TileMap, WorldSize},
+    tile_map::{tile::Tile, Layer, MapParameters, ResourceSetting, TileMap, WorldSize},
 };
-
-use crate::tile_map::Layer;
 
 impl TileMap {
     // function AssignStartingPlots:PlaceLuxuries
+    /// Place Luxury Resources on the map.
+    /// Before running this function, [`TileMap::assign_luxury_roles`] function must be run.
     pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let world_size = map_parameters.map_size.world_size;
+        let resource_setting = map_parameters.resource_setting;
+
+        // Stores number of each luxury had extras handed out at civ starts because of low fertility.
+        // The key is the luxury type, and the value is the number of extras handed out.
         let mut luxury_low_fert_compensation = HashMap::new();
+        // Stores number of luxury compensation each region received because of low fertility.
+        // The index of the vector corresponds to the index of the region, and the value is the number of compensation.
         let mut region_low_fert_compensation = vec![0; map_parameters.civilization_num as usize];
 
-        // Place Luxuries at civ start locations.
+        /********** Process 1: Place Luxuries at civ start locations **********/
         for region_index in 0..self.region_list.len() {
             let region = &self.region_list[region_index];
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
             let starting_tile = self.region_list[region_index].starting_tile.clone();
             let luxury_resource = self.region_list[region_index].luxury_resource.to_owned();
             // Determine number to place at the start location
+            // num_to_place contains 2 partials:
+            // 1. The number of luxuries to place at the start location according to resource_setting.
+            // 2. The number of luxuries to place at the start location because of low fertility.
             let mut num_to_place =
                 if let ResourceSetting::LegendaryStart = map_parameters.resource_setting {
                     2
                 } else {
                     1
                 };
-            // Low fertility per region rectangle plot, add a lux.
+            // Low fertility per region rectangle plot, add a luxury.
             if region.average_fertility() < 2.5 {
                 num_to_place += 1;
                 *luxury_low_fert_compensation
@@ -45,6 +56,7 @@ impl TileMap {
             let region_land_num = terrain_statistic.terrain_type_sum[&TerrainType::Hill]
                 + terrain_statistic.terrain_type_sum[&TerrainType::Flatland];
 
+            // Low fertility per region land plot, add a luxury.
             if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {
                 num_to_place += 1;
                 *luxury_low_fert_compensation
@@ -115,19 +127,22 @@ impl TileMap {
             }
 
             if num_left_to_place > 0 {
+                // `num_left_to_place > 0` means that we have not been able to place all of the civ exclusive luxury resources at the civ start.
+                // Now we replce with `luxury_assigned_to_random` to fill the rest `num_left_to_place`.
+                //
+                // These `luxury_assigned_to_random` will affect Process 4. (Please view Process 4)
+                //
+                // About the remainder of the civ exclusive luxury resources, it will be placed in the same region somewhere.(Please view Process 3)
+                // So the remainder is subtracted from the region's compensation,
+                // ensuring that the regional process (Process 3) will later attempt to place this remainder somewhere within the same region.
                 *luxury_low_fert_compensation
                     .entry(luxury_resource.to_owned())
                     .or_insert(0) -= num_left_to_place as i32;
                 region_low_fert_compensation[region_index] -= num_left_to_place as i32;
-            }
 
-            if num_left_to_place > 0 {
-                // We'll attempt to place one source of a Luxury type assigned to random distribution.
                 let mut randoms_to_place = 1;
-                let resource_assigned_to_random = self
-                    .luxury_resource_role
-                    .resource_assigned_to_random
-                    .clone();
+                let resource_assigned_to_random =
+                    self.luxury_resource_role.luxury_assigned_to_random.clone();
                 for luxury_resource in resource_assigned_to_random.iter() {
                     let priority_list_indices_of_luxury =
                         self.get_indices_for_luxury_type(&luxury_resource);
@@ -154,64 +169,73 @@ impl TileMap {
                 }
             }
         }
+        /********** Process 1: Place Luxuries at civ start locations **********/
 
-        // Place Luxuries at City States.
+        /********** Process 2: Place Luxuries at City States **********/
+        // Candidate luxuries include luxuries exclusive to City States, the luxury assigned to this City State's region (if in a region), and the randoms.
         for i in 0..self.city_state_starting_tile_and_region_index.len() {
             let &(starting_tile, region_index) = &self.city_state_starting_tile_and_region_index[i];
 
             let allowed_luxuries =
                 self.get_list_of_allowable_luxuries_at_city_site(map_parameters, starting_tile, 2);
-            let mut lux_possible_for_cs = BTreeMap::new();
-            let mut cs_only_types = Vec::new();
-            for luxury in self
+            // Store the luxury types that can only be owned by city states and are allowed at this city state.
+            // It should meet the following criteria:
+            // 1. The luxury type is assigned to city states. (based on the luxury role)
+            // 2. The luxury type is allowed at this city state. (based on the allowed luxuries)
+            let city_state_luxury_types: Vec<_> = self
                 .luxury_resource_role
-                .resource_assigned_to_city_state
+                .luxury_assigned_to_city_state
                 .iter()
-            {
-                if allowed_luxuries.contains(luxury.as_str()) {
-                    cs_only_types.push(luxury);
-                }
-            }
+                .filter(|luxury| allowed_luxuries.contains(luxury.as_str()))
+                .collect();
 
-            cs_only_types.iter().for_each(|luxury| {
-                lux_possible_for_cs.insert(luxury.to_string(), 75. / cs_only_types.len() as f64);
+            // Store the luxury types the city state can own and the weight of each luxury type.
+            // The luxury types contains as follows:
+            // 1. The luxury type can only be owned by city states and is allowed at this city state.
+            // 2. The luxury type can only be owned by regions and is allowed at this city state. (if the region is not null)
+            // 3. The random luxury type is allowed at this city state.
+            let mut luxury_for_city_state_and_weight = Vec::new();
+
+            // Add the luxury types that can only be owned by city states and are allowed at this city state to the list.
+            city_state_luxury_types.iter().for_each(|luxury| {
+                luxury_for_city_state_and_weight.push((
+                    luxury.to_string(),
+                    75. / city_state_luxury_types.len() as f64,
+                ));
             });
 
-            if self.luxury_resource_role.resource_assigned_to_random.len() > 0
-                || region_index.is_some()
-            {
-                let mut random_types_allowed = Vec::new();
-                for luxury in self
-                    .luxury_resource_role
-                    .resource_assigned_to_city_state
-                    .iter()
-                {
-                    if allowed_luxuries.contains(luxury.as_str()) {
-                        random_types_allowed.push(luxury);
-                    }
-                }
+            let random_types_allowed: Vec<_> = self
+                .luxury_resource_role
+                .luxury_assigned_to_city_state
+                .iter()
+                .filter(|luxury| allowed_luxuries.contains(luxury.as_str()))
+                .collect();
 
-                if let Some(region_index) = region_index {
-                    // Adding the region type in to the mix with the random types.
-                    let num_allowed = random_types_allowed.len() + 1;
-                    let luxury = &self.region_list[region_index].luxury_resource;
-                    if allowed_luxuries.contains(luxury.as_str()) {
-                        lux_possible_for_cs.insert(luxury.to_string(), 25. / num_allowed as f64);
-                    }
-                }
+            let mut num_allowed = random_types_allowed.len();
 
-                random_types_allowed.iter().for_each(|luxury| {
-                    lux_possible_for_cs
-                        .insert(luxury.to_string(), 25. / random_types_allowed.len() as f64);
-                });
+            // Add the luxury types that can only be owned by regions and are allowed at this city state to the list.
+            if let Some(region_index) = region_index {
+                // Adding the region type in to the mix with the random types.
+                num_allowed += 1;
+                let luxury = &self.region_list[region_index].luxury_resource;
+                if allowed_luxuries.contains(luxury.as_str()) {
+                    luxury_for_city_state_and_weight
+                        .push((luxury.to_string(), 25. / num_allowed as f64));
+                }
             }
 
-            if lux_possible_for_cs.len() > 0 {
-                let lux_possible_for_cs: Vec<_> = lux_possible_for_cs.into_iter().collect();
+            // Add the random luxury types that are allowed at this city state to the list.
+            random_types_allowed.iter().for_each(|luxury| {
+                luxury_for_city_state_and_weight
+                    .push((luxury.to_string(), 25. / num_allowed as f64));
+            });
+
+            if luxury_for_city_state_and_weight.len() > 0 {
                 let dist =
-                    WeightedIndex::new(lux_possible_for_cs.iter().map(|item| item.1)).unwrap();
+                    WeightedIndex::new(luxury_for_city_state_and_weight.iter().map(|item| item.1))
+                        .unwrap();
                 // Choose luxury type.
-                let luxury_resource = lux_possible_for_cs
+                let luxury_resource = luxury_for_city_state_and_weight
                     [dist.sample(&mut self.random_number_generator)]
                 .0
                 .to_owned();
@@ -248,13 +272,14 @@ impl TileMap {
                 }
             }
         }
+        /********** Process 2: Place Luxuries at City States **********/
 
-        // Place Regional Luxuries
-        let world_size = map_parameters.map_size.world_size;
-        let resource_setting = map_parameters.resource_setting;
+        /********** Process 3: Place Regional Luxuries **********/
+        // In process 1, we have not been able to place all of the civ exclusive luxury resources at the civ start.
+        // Now we place the remainder in the same region during this process.
         for region_index in 0..self.region_list.len() {
             let luxury_resource = self.region_list[region_index].luxury_resource.clone();
-            let luxury_assignment_count: u32 =
+            let luxury_assign_to_region_count: u32 =
                 self.luxury_assign_to_region_count[&luxury_resource.to_string()];
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(&luxury_resource);
@@ -273,8 +298,9 @@ impl TileMap {
             let target_list = get_region_luxury_target_numbers(world_size);
             let mut target_num = ((target_list[map_parameters.civilization_num as usize] as f64
                 + 0.5 * current_luxury_low_fert_compensation as f64)
-                / luxury_assignment_count as f64) as i32;
+                / luxury_assign_to_region_count as f64) as i32;
 
+            // Subtract the number of luxuries that have already been placed in the region.
             target_num -= region_low_fert_compensation[region_index];
 
             match map_parameters.resource_setting {
@@ -283,8 +309,10 @@ impl TileMap {
                 _ => (),
             }
 
-            let num_this_luxury_to_place = max(1, target_num) as u32;
-            let mut num_left_to_place = num_this_luxury_to_place;
+            // Always place at least one luxury resource in current region.
+            let num_luxury_to_place = max(1, target_num) as u32;
+
+            let mut num_left_to_place = num_luxury_to_place;
 
             while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
                 let i = *priority_list_indices_iter.next().unwrap();
@@ -303,17 +331,14 @@ impl TileMap {
                 );
             }
         }
+        /********** Process 3: Place Regional Luxuries **********/
 
-        // Place Random Luxuries
-        let num_random_luxury_types = self.luxury_resource_role.resource_assigned_to_random.len();
+        /********** Process 4: Place Random Luxuries **********/
+        let num_random_luxury_types = self.luxury_resource_role.luxury_assigned_to_random.len();
         if num_random_luxury_types > 0 {
-            // This table defines the target total number of luxuries placed in the world,
-            // excluding "extra types" of luxuries placed at start locations. These targets
-            // are approximate, and a random factor is added based on the number of civilizations.
-            //
-            // Any difference between the number of regional and city-state luxuries placed
-            // versus the target will be compensated by randomly distributed luxuries to meet
-            // the overall target.
+            // `num_random_luxury_target` is the number of random luxuries to place in the world during this process.
+            // - It shouldn't contain `luxury_assigned_to_random` that have already been placed in the world.
+            // - It should be adjusted by the number of civilizations, and add a random number of luxuries according to the number of civilizations.
             let [target_luxury, loop_target] =
                 get_world_luxury_target_numbers(world_size, resource_setting);
             let extra_luxury = self
@@ -338,7 +363,7 @@ impl TileMap {
 
             for i in 0..num_random_luxury_types {
                 let luxury_resource =
-                    self.luxury_resource_role.resource_assigned_to_random[i].clone();
+                    self.luxury_resource_role.luxury_assigned_to_random[i].clone();
 
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(&luxury_resource);
@@ -383,13 +408,15 @@ impl TileMap {
                 }
             }
         }
+        /********** Process 4: Place Random Luxuries **********/
 
+        /********** Process 5: Place Second Luxury Type at civ start locations **********/
         // For resource settings other than "Sparse", add a second luxury type at starting locations.
         // This second luxury type will be selected in the following order:
         //   1. Random types, if available.
-        //   2. CS types, if necessary.
-        //   3. Types from other regions, as a final fallback.
-        // Marble is included in the list of possible types to be placed.
+        //   2. Special Case types, if resource setting is not "Strategic Balance".
+        //   3. CS types, if no random or Special Case types are available.
+        //   4. Types from other regions, if no random, Special Case, or CS types are available.
         if map_parameters.resource_setting != ResourceSetting::Sparse {
             for region_index in 0..self.region_list.len() {
                 let starting_tile = self.region_list[region_index].starting_tile;
@@ -402,7 +429,7 @@ impl TileMap {
                 let mut candidate_luxury_types = Vec::new();
 
                 // See if any Random types are eligible.
-                for luxury in self.luxury_resource_role.resource_assigned_to_random.iter() {
+                for luxury in self.luxury_resource_role.luxury_assigned_to_random.iter() {
                     if allowed_luxuries.contains(luxury) {
                         candidate_luxury_types.push(luxury.to_string());
                     }
@@ -412,7 +439,7 @@ impl TileMap {
                 if map_parameters.resource_setting != ResourceSetting::StrategicBalance {
                     for luxury in self
                         .luxury_resource_role
-                        .resource_assigned_to_special_case
+                        .luxury_assigned_to_special_case
                         .iter()
                     {
                         if allowed_luxuries.contains(luxury) {
@@ -430,7 +457,7 @@ impl TileMap {
                     // No Random or Special Case luxuries available. See if any City State types are eligible.
                     for luxury in self
                         .luxury_resource_role
-                        .resource_assigned_to_city_state
+                        .luxury_assigned_to_city_state
                         .iter()
                     {
                         if allowed_luxuries.contains(luxury) {
@@ -444,11 +471,7 @@ impl TileMap {
                     } else {
                         // No City State luxuries available. Use a type from another region.
                         let region_luxury = &self.region_list[region_index].luxury_resource;
-                        for luxury in self
-                            .luxury_resource_role
-                            .resource_assigned_to_regions
-                            .iter()
-                        {
+                        for luxury in self.luxury_resource_role.luxury_assigned_to_regions.iter() {
                             if allowed_luxuries.contains(luxury) && luxury != region_luxury {
                                 candidate_luxury_types.push(luxury.to_string());
                             }
@@ -493,26 +516,31 @@ impl TileMap {
                 }
             }
         }
+        /********** Process 5: Place Second Luxury Type at civ start locations **********/
 
+        /********** Process 6: Place Special Case Luxury Resources **********/
         if self
             .luxury_resource_role
-            .resource_assigned_to_special_case
+            .luxury_assigned_to_special_case
             .len()
             > 0
         {
             let luxury_list = self
                 .luxury_resource_role
-                .resource_assigned_to_special_case
+                .luxury_assigned_to_special_case
                 .clone();
             for luxury in luxury_list {
                 match luxury.as_str() {
                     "Marble" => {
                         self.place_marble(map_parameters);
                     }
-                    _ => {}
+                    _ => {
+                        panic!("{} is Special Case Luxury, you need to implement a custom placement method for it!", luxury);
+                    }
                 }
             }
         }
+        /********** Process 6: Place Special Case Luxury Resources **********/
     }
 
     fn place_marble(&mut self, map_parameters: &MapParameters) {
@@ -1200,6 +1228,7 @@ fn get_region_luxury_target_numbers(world_size: WorldSize) -> Vec<u32> {
 ///
 /// The first number represents the target for the total number of luxuries in the world.
 /// This does **not** include the "second type" of luxuries added at each civilization's start location.
+/// The "second type" of luxuries is the luxuries which is placed during in Process 5 of [`TileMap::place_luxury_resources`] function.
 ///
 /// The second number influences the minimum number of random luxuries that should be placed.
 /// It is important to note that it is just one factor in the formula for placing luxuries,

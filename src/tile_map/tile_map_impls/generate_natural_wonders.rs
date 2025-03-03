@@ -226,23 +226,19 @@ impl TileMap {
                                         .neighbor_tile(neighbor_tile_direction, map_parameters)
                                         .expect("Neighbor tile does not exist");
 
-                                    // Get the indices of the neighbor tiles of the max score tile
-                                    let max_score_tile_neighbor_indices: Vec<_> =
+                                    // Get the neighbor tiles of the max score tile
+                                    let max_score_tile_neighbor_tiles: Vec<_> =
                                         tile.neighbor_tiles(map_parameters);
 
-                                    // Get the indices of the neighbor tiles of 'the neighbor tile of the max score tile'
-                                    let neighbor_tile_neighbor_indices: Vec<_> =
+                                    // Get the neighbor tiles of 'the neighbor tile of the max score tile'
+                                    let neighbor_tile_neighbor_tiles: Vec<_> =
                                         neighbor_tile.neighbor_tiles(map_parameters);
 
-                                    max_score_tile_neighbor_indices
-                                        .into_iter()
-                                        .for_each(|tile| {
-                                            self.terrain_type_query[tile.index()] =
-                                                TerrainType::Water;
-                                            self.base_terrain_query[tile.index()] =
-                                                BaseTerrain::Coast;
-                                        });
-                                    neighbor_tile_neighbor_indices.into_iter().for_each(|tile| {
+                                    max_score_tile_neighbor_tiles.into_iter().for_each(|tile| {
+                                        self.terrain_type_query[tile.index()] = TerrainType::Water;
+                                        self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
+                                    });
+                                    neighbor_tile_neighbor_tiles.into_iter().for_each(|tile| {
                                         self.terrain_type_query[tile.index()] = TerrainType::Water;
                                         self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
                                     });
@@ -258,10 +254,10 @@ impl TileMap {
                                     placed_natural_wonder_tiles.push(neighbor_tile);
                                 }
                                 "Rock of Gibraltar" => {
-                                    let neighbor_indices: Vec<_> =
+                                    let neighbor_tiles: Vec<_> =
                                         tile.neighbor_tiles(map_parameters);
 
-                                    neighbor_indices.into_iter().for_each(|neighbor_tile| {
+                                    neighbor_tiles.into_iter().for_each(|neighbor_tile| {
                                         if neighbor_tile.terrain_type(self) == TerrainType::Water {
                                             self.base_terrain_query[neighbor_tile.index()] =
                                                 BaseTerrain::Coast;
@@ -599,21 +595,19 @@ impl TileMap {
                                     .neighbor_tile(neighbor_tile_direction, map_parameters)
                                     .expect("Neighbor tile does not exist");
 
-                                // Get the indices of the neighbor tiles of the max score tile
-                                let max_score_tile_neighbor_indices: Vec<_> =
+                                // Get the neighbor tiles of the max score tile
+                                let max_score_tile_neighbor_tiles: Vec<_> =
                                     max_score_tile.neighbor_tiles(map_parameters);
 
-                                // Get the indices of the neighbor tiles of 'the neighbor tile of the max score tile'
-                                let neighbor_tile_neighbor_indices: Vec<_> =
+                                // Get the neighbor tiles of 'the neighbor tile of the max score tile'
+                                let neighbor_tile_neighbor_tiles: Vec<_> =
                                     neighbor_tile.neighbor_tiles(map_parameters);
 
-                                max_score_tile_neighbor_indices
-                                    .into_iter()
-                                    .for_each(|tile| {
-                                        self.terrain_type_query[tile.index()] = TerrainType::Water;
-                                        self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
-                                    });
-                                neighbor_tile_neighbor_indices.into_iter().for_each(|tile| {
+                                max_score_tile_neighbor_tiles.into_iter().for_each(|tile| {
+                                    self.terrain_type_query[tile.index()] = TerrainType::Water;
+                                    self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
+                                });
+                                neighbor_tile_neighbor_tiles.into_iter().for_each(|tile| {
                                     self.terrain_type_query[tile.index()] = TerrainType::Water;
                                     self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
                                 });
@@ -627,10 +621,10 @@ impl TileMap {
                                 placed_natural_wonder_tiles.push(neighbor_tile);
                             }
                             "Rock of Gibraltar" => {
-                                let neighbor_indices: Vec<_> =
+                                let neighbor_tiles: Vec<_> =
                                     max_score_tile.neighbor_tiles(map_parameters);
 
-                                neighbor_indices.into_iter().for_each(|neighbor_tile| {
+                                neighbor_tiles.into_iter().for_each(|neighbor_tile| {
                                     if neighbor_tile.terrain_type(self) == TerrainType::Water {
                                         self.base_terrain_query[neighbor_tile.index()] =
                                             BaseTerrain::Coast;

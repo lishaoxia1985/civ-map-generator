@@ -1,4 +1,7 @@
-use crate::{generate_common_methods, tile_map::{MapParameters, TileMap}};
+use crate::{
+    generate_common_methods,
+    tile_map::{MapParameters, TileMap},
+};
 
 use super::Generator;
 

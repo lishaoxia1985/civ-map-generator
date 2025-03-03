@@ -79,7 +79,7 @@ pub trait Generator {
 }
 
 /// Generates common methods for a struct.
-/// 
+///
 /// This macro generates the following methods:
 /// - `new`: Creates a new instance of the struct with the given `MapParameters`.
 /// - `into_inner`: Consumes the struct and returns the inner `TileMap`.

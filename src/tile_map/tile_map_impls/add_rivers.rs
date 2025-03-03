@@ -639,7 +639,7 @@ impl TileMap {
                     {
                         river_tile
                             .neighbor_tile(direction, map_parameters)
-                            .map(|neighbor_index| (flow_direction, neighbor_index))
+                            .map(|neighbor_tile| (flow_direction, neighbor_tile))
                     } else {
                         None
                     }
@@ -717,8 +717,8 @@ impl TileMap {
             map_parameters.edge_direction_array()[0..3]
                 .iter()
                 .all(|&direction| {
-                    let neighbor_index = tile.neighbor_tile(direction, map_parameters);
-                    if let Some(neighbor_tile) = neighbor_index {
+                    let neighbor_tile = tile.neighbor_tile(direction, map_parameters);
+                    if let Some(neighbor_tile) = neighbor_tile {
                         neighbor_tile.terrain_type(self) != TerrainType::Water
                     } else {
                         false
