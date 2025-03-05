@@ -138,7 +138,7 @@ impl TileMap {
         self.city_state_and_starting_tile
             .insert(city_state.to_string(), tile);
         // Removes Feature Ice from coasts adjacent to the city state's new location
-        self.generate_luxury_plot_lists_at_city_site(map_parameters, tile, 1, true);
+        self.clear_ice_near_city_site(map_parameters, tile, 1);
 
         self.place_resource_impact(map_parameters, tile, Layer::CityState, 4);
         self.place_resource_impact(map_parameters, tile, Layer::Luxury, 3);

@@ -67,12 +67,8 @@ impl TileMap {
 
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(&luxury_resource);
-            let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
-                map_parameters,
-                starting_tile,
-                2,
-                false,
-            );
+            let mut luxury_plot_lists =
+                self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
 
             let mut priority_list_indices_iter = priority_list_indices_of_luxury.iter().peekable();
 
@@ -97,12 +93,8 @@ impl TileMap {
             }
 
             if num_left_to_place > 0 {
-                let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
-                    map_parameters,
-                    starting_tile,
-                    3,
-                    false,
-                );
+                let mut luxury_plot_lists =
+                    self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 3);
 
                 let mut priority_list_indices_iter =
                     priority_list_indices_of_luxury.iter().peekable();
@@ -242,12 +234,8 @@ impl TileMap {
                 // Place luxury.
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(&luxury_resource);
-                let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
-                    map_parameters,
-                    starting_tile,
-                    2,
-                    false,
-                );
+                let mut luxury_plot_lists =
+                    self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
 
                 let mut priority_list_indices_iter =
                     priority_list_indices_of_luxury.iter().peekable();
@@ -490,7 +478,6 @@ impl TileMap {
                         map_parameters,
                         starting_tile,
                         2,
-                        false,
                     );
 
                     let mut priority_list_indices_iter =
@@ -760,15 +747,17 @@ impl TileMap {
     }
 
     // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
-    /// Removes the feature ice from the tile and returns the region info for luxury.
-    /// TODO: `Remove the feature ice` should be implemented as a separate method, rather than being included in the current method.
+    /// Generate luxury plot lists at city site.
+    /// # Notice
+    /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
+    /// We have extracted the `clear ice near city site` into a separate method.
+    /// If you want to clear ice near city site, you should use [`TileMap::clear_ice_near_city_site`].\
     /// TODO: Sometimes this function is used for strategic resources, so the name should be changed.
     pub fn generate_luxury_plot_lists_at_city_site(
-        &mut self,
+        &self,
         map_parameters: &MapParameters,
-        tile: Tile,
+        city_site: Tile,
         radius: u32,
-        remove_feature_ice: bool,
     ) -> [Vec<Tile>; 15] {
         let mut region_coast_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
@@ -790,17 +779,14 @@ impl TileMap {
         // So we only consider the tiles within the radius of 5 from the city site.
         if radius > 0 && radius < 6 {
             for ripple_radius in 1..=radius {
-                tile
-                .tiles_at_distance(ripple_radius, map_parameters)
-                .into_iter()
-                .for_each(|tile_at_distance| {
-                    let terrain_type = tile_at_distance.terrain_type(self);
-                    let base_terrain = tile_at_distance.base_terrain(self);
-                    let feature = tile_at_distance.feature(self);
-                    // If Ice removal is enabled, then remove ice from this tile.
-                    if remove_feature_ice && feature == Some(Feature::Ice) {
-                        self.feature_query[tile_at_distance.index()] = None;
-                    } else {
+                city_site
+                    .tiles_at_distance(ripple_radius, map_parameters)
+                    .into_iter()
+                    .for_each(|tile_at_distance| {
+                        let terrain_type = tile_at_distance.terrain_type(self);
+                        let base_terrain = tile_at_distance.base_terrain(self);
+                        let feature = tile_at_distance.feature(self);
+
                         match terrain_type {
                             TerrainType::Water => {
                                 if base_terrain == BaseTerrain::Coast
@@ -816,40 +802,48 @@ impl TileMap {
                                         Feature::Forest => {
                                             region_forest_flat_tile_list.push(tile_at_distance);
                                             if base_terrain == BaseTerrain::Tundra {
-                                                region_tundra_flat_including_forest_tile_list.push(tile_at_distance);
+                                                region_tundra_flat_including_forest_tile_list
+                                                    .push(tile_at_distance);
                                             } else {
-                                                region_forest_flat_but_not_tundra_tile_list.push(tile_at_distance);
+                                                region_forest_flat_but_not_tundra_tile_list
+                                                    .push(tile_at_distance);
                                             }
-                                        },
+                                        }
                                         Feature::Jungle => {
                                             region_jungle_flat_tile_list.push(tile_at_distance);
-                                        },
+                                        }
                                         Feature::Marsh => {
                                             region_marsh_tile_list.push(tile_at_distance);
-                                        },
+                                        }
                                         Feature::Floodplain => {
                                             region_flood_plain_tile_list.push(tile_at_distance);
-                                        },
+                                        }
                                         _ => {}
                                     }
                                 } else {
                                     match base_terrain {
                                         BaseTerrain::Grassland => {
-                                            if tile_at_distance.is_freshwater(self, map_parameters){
-                                                region_fresh_water_grass_flat_no_feature_tile_list.push(tile_at_distance);
+                                            if tile_at_distance.is_freshwater(self, map_parameters)
+                                            {
+                                                region_fresh_water_grass_flat_no_feature_tile_list
+                                                    .push(tile_at_distance);
                                             } else {
-                                                region_dry_grass_flat_no_feature_tile_list.push(tile_at_distance);
+                                                region_dry_grass_flat_no_feature_tile_list
+                                                    .push(tile_at_distance);
                                             }
-                                        },
+                                        }
                                         BaseTerrain::Desert => {
-                                            region_desert_flat_no_feature_tile_list.push(tile_at_distance);
-                                        },
+                                            region_desert_flat_no_feature_tile_list
+                                                .push(tile_at_distance);
+                                        }
                                         BaseTerrain::Plain => {
-                                            region_plain_flat_no_feature_tile_list.push(tile_at_distance);
-                                        },
+                                            region_plain_flat_no_feature_tile_list
+                                                .push(tile_at_distance);
+                                        }
                                         BaseTerrain::Tundra => {
-                                            region_tundra_flat_including_forest_tile_list.push(tile_at_distance);
-                                        },
+                                            region_tundra_flat_including_forest_tile_list
+                                                .push(tile_at_distance);
+                                        }
                                         _ => {}
                                     }
                                 }
@@ -860,21 +854,16 @@ impl TileMap {
                                     if feature == None {
                                         region_hill_open_tile_list.push(tile_at_distance);
                                     } else if feature == Some(Feature::Forest) {
-                                        region_hill_forest_tile_list
-                                            .push(tile_at_distance);
-                                        region_hill_covered_tile_list
-                                            .push(tile_at_distance);
+                                        region_hill_forest_tile_list.push(tile_at_distance);
+                                        region_hill_covered_tile_list.push(tile_at_distance);
                                     } else if feature == Some(Feature::Jungle) {
-                                        region_hill_jungle_tile_list
-                                            .push(tile_at_distance);
-                                        region_hill_covered_tile_list
-                                            .push(tile_at_distance);
+                                        region_hill_jungle_tile_list.push(tile_at_distance);
+                                        region_hill_covered_tile_list.push(tile_at_distance);
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
             }
         }
 
@@ -895,6 +884,31 @@ impl TileMap {
             region_tundra_flat_including_forest_tile_list,
             region_forest_flat_but_not_tundra_tile_list,
         ]
+    }
+
+    // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
+    /// Clear [`Feature::Ice`] from the map within a given radius of the city site.
+    /// # Notice
+    /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
+    /// We have extracted the `generate luxury plot lists at city site` into a separate method.
+    /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_plot_lists_at_city_site`].
+    pub fn clear_ice_near_city_site(
+        &mut self,
+        map_parameters: &MapParameters,
+        city_site: Tile,
+        radius: u32,
+    ) {
+        for ripple_radius in 1..=radius {
+            city_site
+                .tiles_at_distance(ripple_radius, map_parameters)
+                .into_iter()
+                .for_each(|tile_at_distance| {
+                    let feature = tile_at_distance.feature(self);
+                    if feature == Some(Feature::Ice) {
+                        self.feature_query[tile_at_distance.index()] = None;
+                    }
+                })
+        }
     }
 
     // function AssignStartingPlots:GenerateLuxuryPlotListsInRegion

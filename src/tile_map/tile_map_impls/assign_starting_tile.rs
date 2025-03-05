@@ -1594,9 +1594,8 @@ impl TileMap {
         let mut num_native_two_food_first_ring = 0;
         let mut num_native_two_food_second_ring = 0;
 
-        // Remove any feature Ice from the first ring.
-        // TODO: This should be reimplemented to remove feature ice from the first ring.
-        self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 1, true);
+        // Remove any feature Ice from the first ring of the starting tile.
+        self.clear_ice_near_city_site(map_parameters, starting_tile, 1);
 
         let mut along_ocean = false;
         let mut next_to_lake = false;

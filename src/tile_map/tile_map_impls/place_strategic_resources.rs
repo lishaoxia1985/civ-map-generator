@@ -689,7 +689,6 @@ impl TileMap {
                     map_parameters,
                     city_state_starting_tile,
                     3,
-                    false,
                 );
 
                 let mut priority_list_indices_iter =

@@ -38,7 +38,7 @@ pub struct TileMap {
     pub city_state_and_starting_tile: BTreeMap<String, Tile>,
     /// The area id and the size of the area
     pub area_id_and_size: BTreeMap<i32, u32>,
-    pub region_list: Vec<Region>,
+    region_list: Vec<Region>,
     /// Stores "impact and ripple" data in the layer.
     /// Layer contains the following:
     /// - `0`: Strategic
@@ -48,7 +48,7 @@ pub struct TileMap {
     /// - `4`: CityState
     /// - `5`: NaturalWonder
     /// - `6`: Marble
-    pub layer_data: HashMap<Layer, Vec<u32>>,
+    layer_data: HashMap<Layer, Vec<u32>>,
     /// Stores "impact and ripple" data of start points as each is placed, The value is in the range `[0, 99]`.
     /// The value is only related to the starting tile of civilization.
     /// Value of 0 in a tile means no influence from existing Impacts in that tile.
