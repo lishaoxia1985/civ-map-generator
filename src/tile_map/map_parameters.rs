@@ -32,8 +32,6 @@ pub struct MapParameters {
     pub world_age: WorldAge,
     pub temperature: Temperature,
     pub rainfall: Rainfall,
-    /// TODO: In fact, it is related to map size, we don't need to set singlely.
-    pub natural_wonder_num: u32,
     /// The number of civilizations, excluding city states.
     pub civilization_num: u32,
     /// The number of city states.
@@ -236,7 +234,6 @@ impl Default for MapParameters {
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,
             rainfall: Rainfall::Normal,
-            natural_wonder_num: 6,
             civilization_num: 4,
             city_state_num: 8,
             region_divide_method: RegionDivideMethod::Continent,

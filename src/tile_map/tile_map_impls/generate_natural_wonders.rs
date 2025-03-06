@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
+use crate::tile_map::WorldSize;
 use crate::{
     component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
@@ -24,6 +25,10 @@ impl TileMap {
     /// - In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let world_size = map_parameters.map_size.world_size;
+        // Get the number of natural wonders to place based on the world size
+        let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
+
         let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
 
         // Replace HashMap with BTreeMap to ensure consistent order
@@ -213,7 +218,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder_name| {
-                if j <= map_parameters.natural_wonder_num {
+                if j < natural_wonder_target_number {
                     let tiles = natural_wonder_and_tile
                         .get_mut(natural_wonder_name)
                         .unwrap();
@@ -374,6 +379,10 @@ impl TileMap {
     /// -In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let world_size = map_parameters.map_size.world_size;
+        // Get the number of natural wonders to place based on the world size
+        let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
+
         let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
 
         // Replace HashMap with BTreeMap to ensure consistent order
@@ -562,7 +571,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder_name| {
-                if j <= map_parameters.natural_wonder_num {
+                if j < natural_wonder_target_number {
                     // For every natural wonder, give a score to the position where the natural wonder can place.
                     // The score is related to the min value of the distance from the position to all the placed natural wonders
                     // If no natural wonder has placed, we choose the random place where the current natural wonder can place for the current natural wonder
@@ -735,5 +744,17 @@ impl TileMap {
                     || feature.map_or(false, |f| f.name() == filter)
             }
         }
+    }
+}
+
+/// Get how many natural wonders should be placed on the map based on the world size.
+fn get_world_natural_wonder_target_number(world_size: WorldSize) -> u32 {
+    match world_size {
+        WorldSize::Duel => 2,
+        WorldSize::Tiny => 3,
+        WorldSize::Small => 4,
+        WorldSize::Standard => 5,
+        WorldSize::Large => 6,
+        WorldSize::Huge => 7,
     }
 }
