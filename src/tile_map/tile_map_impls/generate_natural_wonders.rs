@@ -1,6 +1,6 @@
 use std::cmp::Reverse;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -16,13 +16,18 @@ use crate::{
 };
 
 impl TileMap {
-    /// Generate natural wonders on the map
+    /// Generate natural wonders on the map.
     ///
     /// This function is like to Civ6's natural wonder generation. We edit it to fit our game which is like Civ5.
+    /// # Notice
+    /// - In CIV 6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
+    /// - In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
+    /// so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
 
-        let mut natural_wonder_and_tile = HashMap::new();
+        // Replace HashMap with BTreeMap to ensure consistent order
+        let mut natural_wonder_and_tile = BTreeMap::new();
 
         let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
 
@@ -81,6 +86,8 @@ impl TileMap {
                             all_neigbor_tiles.extend(tile.neighbor_tiles(map_parameters));
                             all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(map_parameters));
 
+                            // We only check neighbors of the current tile and the neighbor tile.
+                            // So we remove them from the set of all neighbor tiles.
                             all_neigbor_tiles.remove(&tile);
                             all_neigbor_tiles.remove(&neighbor_tile);
 
@@ -188,13 +195,14 @@ impl TileMap {
         }
 
         // Get the natural wonders that can be placed
+        // NOTICE: Because `natural_wonder_and_tile` is BTreeMap, so the order of the keys is sorted.
         let mut selected_natural_wonder_list: Vec<_> =
             natural_wonder_and_tile.keys().cloned().collect();
-        /* The order of selected_natural_wonder_list is random, so we should arrange this list in order
-        to ensure that the obtained Vec is the same every time. */
-        selected_natural_wonder_list.sort_unstable();
-        // Shuffle the list that we can choose natural wonder randomly
-        selected_natural_wonder_list.shuffle(&mut self.random_number_generator);
+
+        // Sort the natural wonders by the number of tiles they can be placed
+        // In CIV 5, the natural wonders with lesser number of tiles will be placed first.
+        selected_natural_wonder_list
+            .sort_by_key(|natural_wonder| natural_wonder_and_tile[natural_wonder].len());
 
         // Store current how many natural wonders have been placed
         let mut j = 0;
@@ -226,19 +234,17 @@ impl TileMap {
                                         .neighbor_tile(neighbor_tile_direction, map_parameters)
                                         .expect("Neighbor tile does not exist");
 
-                                    // Get the neighbor tiles of the max score tile
-                                    let max_score_tile_neighbor_tiles: Vec<_> =
-                                        tile.neighbor_tiles(map_parameters);
+                                    // All related tiles should contain:
+                                    // 1. Current tile
+                                    // 2. Neighbor tile according to neighbor_tile_direction
+                                    // 3. All neighbor tiles of current tile and neighbor tile
+                                    let mut all_related_tiles = HashSet::new();
 
-                                    // Get the neighbor tiles of 'the neighbor tile of the max score tile'
-                                    let neighbor_tile_neighbor_tiles: Vec<_> =
-                                        neighbor_tile.neighbor_tiles(map_parameters);
+                                    all_related_tiles.extend(tile.neighbor_tiles(map_parameters));
+                                    all_related_tiles
+                                        .extend(neighbor_tile.neighbor_tiles(map_parameters));
 
-                                    max_score_tile_neighbor_tiles.into_iter().for_each(|tile| {
-                                        self.terrain_type_query[tile.index()] = TerrainType::Water;
-                                        self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
-                                    });
-                                    neighbor_tile_neighbor_tiles.into_iter().for_each(|tile| {
+                                    all_related_tiles.into_iter().for_each(|tile| {
                                         self.terrain_type_query[tile.index()] = TerrainType::Water;
                                         self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
                                     });
@@ -359,13 +365,19 @@ impl TileMap {
         });
     }
 
-    /// Generate natural wonders on the map
+    /// Generate natural wonders on the map.
     ///
     /// This function is likely to Civ6's natural wonder generation. SO we don't use this function for the current game which is more like Civ5.
+    /// # Notice
+    /// - In CIV 6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
+    /// so we don't need to check if the tile is occupied by a civilization start location.
+    /// -In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
+    /// so we should check if the tile is occupied by a civilization start location.
     pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
 
-        let mut natural_wonder_and_tile_and_score = HashMap::new();
+        // Replace HashMap with BTreeMap to ensure consistent order
+        let mut natural_wonder_and_tile_and_score = BTreeMap::new();
 
         let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
 
@@ -424,6 +436,8 @@ impl TileMap {
                             all_neigbor_tiles.extend(tile.neighbor_tiles(map_parameters));
                             all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(map_parameters));
 
+                            // We only check neighbors of the current tile and the neighbor tile.
+                            // So we remove them from the set of all neighbor tiles.
                             all_neigbor_tiles.remove(&tile);
                             all_neigbor_tiles.remove(&neighbor_tile);
 
@@ -531,12 +545,12 @@ impl TileMap {
         }
 
         // Get the natural wonders that can be placed
+        // NOTICE: Because `natural_wonder_and_tile_and_score` is BTreeMap, so the order of the keys is sorted.
         let mut selected_natural_wonder_list: Vec<_> =
             natural_wonder_and_tile_and_score.keys().cloned().collect();
-        /* The order of selected_natural_wonder_list is random, so we should arrange this list in order
-        to ensure that the obtained Vec is the same every time. */
-        selected_natural_wonder_list.sort_unstable();
+
         // Shuffle the list that we can choose natural wonder randomly
+        // NOTICE: It is different from CIV 5.
         selected_natural_wonder_list.shuffle(&mut self.random_number_generator);
 
         // Store current how many natural wonders have been placed
@@ -595,22 +609,22 @@ impl TileMap {
                                     .neighbor_tile(neighbor_tile_direction, map_parameters)
                                     .expect("Neighbor tile does not exist");
 
-                                // Get the neighbor tiles of the max score tile
-                                let max_score_tile_neighbor_tiles: Vec<_> =
-                                    max_score_tile.neighbor_tiles(map_parameters);
+                                // All related tiles should contain:
+                                // 1. Current tile (`max_score_tile``)
+                                // 2. Neighbor tile according to `neighbor_tile_direction`
+                                // 3. All neighbor tiles of current tile and neighbor tile
+                                let mut all_related_tiles = HashSet::new();
 
-                                // Get the neighbor tiles of 'the neighbor tile of the max score tile'
-                                let neighbor_tile_neighbor_tiles: Vec<_> =
-                                    neighbor_tile.neighbor_tiles(map_parameters);
+                                all_related_tiles
+                                    .extend(max_score_tile.neighbor_tiles(map_parameters));
+                                all_related_tiles
+                                    .extend(neighbor_tile.neighbor_tiles(map_parameters));
 
-                                max_score_tile_neighbor_tiles.into_iter().for_each(|tile| {
+                                all_related_tiles.into_iter().for_each(|tile| {
                                     self.terrain_type_query[tile.index()] = TerrainType::Water;
                                     self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
                                 });
-                                neighbor_tile_neighbor_tiles.into_iter().for_each(|tile| {
-                                    self.terrain_type_query[tile.index()] = TerrainType::Water;
-                                    self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
-                                });
+
                                 // place the natural wonder on the candidate position and its adjacent tile
                                 self.natural_wonder_query[max_score_tile.index()] =
                                     Some(NaturalWonder::NaturalWonder(natural_wonder_name.clone()));
