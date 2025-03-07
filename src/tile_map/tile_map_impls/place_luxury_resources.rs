@@ -29,21 +29,24 @@ impl TileMap {
         let mut region_low_fert_compensation = vec![0; map_parameters.civilization_num as usize];
 
         /********** Process 1: Place Luxuries at civ start locations **********/
+        // Determine basic number of luxuries to place at the start location according to resource_setting.
+        let basic_num_to_place =
+            if let ResourceSetting::LegendaryStart = map_parameters.resource_setting {
+                2
+            } else {
+                1
+            };
+
         for region_index in 0..self.region_list.len() {
             let region = &self.region_list[region_index];
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
-            let starting_tile = self.region_list[region_index].starting_tile.clone();
+            let starting_tile = self.region_list[region_index].starting_tile;
             let luxury_resource = self.region_list[region_index].luxury_resource.to_owned();
             // Determine number to place at the start location
-            // num_to_place contains 2 partials:
-            // 1. The number of luxuries to place at the start location according to resource_setting.
-            // 2. The number of luxuries to place at the start location because of low fertility.
-            let mut num_to_place =
-                if let ResourceSetting::LegendaryStart = map_parameters.resource_setting {
-                    2
-                } else {
-                    1
-                };
+            // `num_to_place` contains 2 parts:
+            // Part 1. The basic number of luxuries to place at the start location according to resource_setting.
+            // Part 2. The number of luxuries to place at the start location because of low fertility.
+            let mut num_to_place = basic_num_to_place;
             // Low fertility per region rectangle plot, add a luxury.
             if region.average_fertility() < 2.5 {
                 num_to_place += 1;
@@ -125,11 +128,15 @@ impl TileMap {
                 // These `luxury_assigned_to_random` will affect Process 4. (Please view Process 4)
                 //
                 // About the remainder of the civ exclusive luxury resources, it will be placed in the same region somewhere.(Please view Process 3)
-                // So the remainder is subtracted from the region's compensation,
-                // ensuring that the regional process (Process 3) will later attempt to place this remainder somewhere within the same region.
                 *luxury_low_fert_compensation
                     .entry(luxury_resource.to_owned())
                     .or_insert(0) -= num_left_to_place as i32;
+                // Calculates the number of `num_to_place` (Part 2) resources placed at the civilization's start.
+                // NOTICE: Assumes that `num_to_place` (Part 1) resources have been fully placed at the civilization's start.
+                // We should subtract that in Process 3.
+                // If that is negative, it indicates that even `num_to_place` (Part 1) resources
+                // have not been fully placed at the civilization's start. In such a case, during Process 3,
+                // we should adjust by "subtracting" this negative value, which effectively means adding extra luxury resources.
                 region_low_fert_compensation[region_index] -= num_left_to_place as i32;
 
                 let mut randoms_to_place = 1;
@@ -288,7 +295,13 @@ impl TileMap {
                 + 0.5 * current_luxury_low_fert_compensation as f64)
                 / luxury_assign_to_region_count as f64) as i32;
 
-            // Subtract the number of luxuries that have already been placed in the region.
+            // Current `region_low_fert_compensation[region_index]` is the number of `num_to_place` (Part 2) resources placed at the civilization's start.
+            // NOTICE: Assumes that `num_to_place` (Part 1) resources have been fully placed at the civilization's start.
+            // We should subtract that in this process.
+            // If that is negative, it indicates that even `num_to_place` (Part 1) resources
+            // have not been fully placed at the civilization's start. In such a case, during Process 3,
+            // we should adjust by "subtracting" this negative value, which effectively means adding extra luxury resources.
+            // View Process 1 for more details.
             target_num -= region_low_fert_compensation[region_index];
 
             match map_parameters.resource_setting {
