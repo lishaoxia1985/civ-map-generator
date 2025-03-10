@@ -54,10 +54,6 @@ impl Hex {
         self.0
     }
 
-    pub const fn to_array(self) -> [i32; 2] {
-        [self.0.x, self.0.y]
-    }
-
     pub fn to_offset_coordinate(
         self,
         offset: Offset,
@@ -87,13 +83,14 @@ impl Hex {
     /// Get the hex at the given `direction` from `self`, according to the given `orientation` is `HexOrientation::Pointy` or `HexOrientation::Flat`.
     pub fn neighbor(self, orientation: HexOrientation, direction: Direction) -> Hex {
         let edge_index = orientation.edge_index(direction);
-        Self(self.0 + Self::HEX_DIRECTIONS[edge_index].0)
+        self + Self::HEX_DIRECTIONS[edge_index]
     }
 
     pub fn hex_diagonal_neighbor(self, direction: i32) -> Hex {
-        Self(self.0 + Self::HEX_DIAGONALS[direction as usize].0)
+        self + Self::HEX_DIAGONALS[direction as usize]
     }
 
+    #[inline]
     /// Computes coordinates length as a signed integer.
     /// The length of a [`Hex`] coordinate is equal to its distance from the origin.
     pub const fn length(self) -> i32 {
@@ -110,21 +107,28 @@ impl Hex {
         (self.0.x.abs() + self.0.y.abs() + self.z().abs()) / 2
     }
 
-    pub fn hex_distance(a: Self, b: Self) -> i32 {
-        Self(a.0 - b.0).length()
+    #[inline]
+    /// Computes the distance from `self` to `rhs` in hexagonal space as a signed integer.
+    pub fn distance_to(self, rhs: Self) -> i32 {
+        (self - rhs).length()
     }
 
-    /// Return a `Vec<Hex>` containing all [`Hex`] which are exactly at a given `distance` from `self`.
-    /// If `distance` = 0 the `Vec<Hex>` will be empty. \
+    /// Return a [`Vec<Hex>`] containing all [`Hex`] which are exactly at a given `distance` from `self`.
+    /// If `distance` = 0 the [`Vec<Hex>`] will be empty. \
     /// The number of returned hexes is equal to `6 * distance`.
     pub fn hexes_at_distance(self, distance: u32) -> Vec<Hex> {
+        // If distance is 0, return an empty vector
+        if distance == 0 {
+            return Vec::new();
+        }
+
         let mut hex_list = Vec::with_capacity((6 * distance) as usize);
         let radius = distance as i32;
 
         /* for q in -radius..=radius {
             for r in max(-radius, -q - radius)..=min(radius, -q + radius) {
                 let offset_hex = Hex::from([q, r]);
-                if Self::hex_distance(offset_hex, Hex::from([0, 0])) == radius {
+                if offset_hex.distance_to(Hex::from([0, 0])) == radius {
                     let hex = self + offset_hex;
                     hex_list.push(hex);
                 }
@@ -143,14 +147,14 @@ impl Hex {
         hex_list
     }
 
-    /// Return a `Vec<Hex>` containing all [`Hex`] around `self` in a given `distance`, including `self`. \
+    /// Return a [`Vec<Hex>`] containing all [`Hex`] around `self` in a given `distance`, including `self`. \
     /// The number of returned hexes is equal to `3 * distance * (distance + 1) + 1`.
     pub fn hexes_in_distance(self, distance: u32) -> Vec<Hex> {
         let mut hex_list = Vec::with_capacity((3 * distance * (distance + 1) + 1) as usize);
         let radius = distance as i32;
         for q in -radius..=radius {
             for r in max(-radius, -q - radius)..=min(radius, -q + radius) {
-                let hex = Hex(self.0 + IVec2::new(q, r));
+                let hex = self + Hex::new(q, r);
                 hex_list.push(hex);
             }
         }
@@ -272,7 +276,7 @@ impl HexLayout {
 }
 
 pub fn hex_linedraw(a: Hex, b: Hex) -> Vec<Hex> {
-    let n: i32 = Hex::hex_distance(a, b);
+    let n: i32 = a.distance_to(b);
     let a_nudge = a.0.as_dvec2() + DVec2::new(1e-06, 1e-06);
     let b_nudge = b.0.as_dvec2() + DVec2::new(1e-06, 1e-06);
     let step: f64 = 1.0 / max(n, 1) as f64;
@@ -355,7 +359,7 @@ impl HexOrientation {
     ];
 
     /// Pointy hex corner direction, the directions of the corners of a `Hex` relative to its center
-    /// > See [`POINTY_EDGE`] for more information
+    /// > See [`HexOrientation::POINTY_EDGE`] for more information
     pub const POINTY_CORNER: [Direction; 6] = [
         Direction::NorthEast,
         Direction::SouthEast,
@@ -395,48 +399,51 @@ impl HexOrientation {
     pub const FLAT_EDGE: [Direction; 6] = Self::POINTY_CORNER;
 
     /// Flat hex corner direction, the directions of the corners of a `Hex` relative to its center
-    /// > See [`FLAT_EDGE`] for more information
+    /// > See [`HexOrientation::FLAT_EDGE`] for more information
     pub const FLAT_CORNER: [Direction; 6] = Self::POINTY_EDGE;
 
     #[inline]
-    /// Get the index of the direction of the `Hex` corner in the array of all the corner direction
-    pub const fn corner_index(self, direction: Direction) -> usize {
-        /* self.corner_direction().iter().position(|&x| x == direction).unwrap() */
-        match self {
-            HexOrientation::Pointy => direction as usize % 10,
-            HexOrientation::Flat => direction as usize / 10,
-        }
+    /// Get the index of the direction of the [`Hex`] corner in the array of all the corner direction
+    /// # Panics
+    /// Panics if the direction is not a valid corner direction for the hexagon orientation
+    pub fn corner_index(self, direction: Direction) -> usize {
+        self.corner_direction()
+            .iter()
+            .position(|&x| x == direction)
+            .expect("The direction is not a valid corner direction for the hexagon orientation")
     }
 
     #[inline]
     /// Get the index of the direction of the `Hex` edge in the array of all the edge direction
-    pub const fn edge_index(self, direction: Direction) -> usize {
-        match self {
-            HexOrientation::Pointy => direction as usize / 10,
-            HexOrientation::Flat => direction as usize % 10,
-        }
+    /// # Panics
+    /// Panics if the direction is not a valid edge direction for the hexagon orientation
+    pub fn edge_index(self, direction: Direction) -> usize {
+        self.edge_direction()
+            .iter()
+            .position(|&x| x == direction)
+            .expect("The direction is not a valid edge direction for the hexagon orientation")
     }
 
     /// Returns the next corner direction in clockwise order
-    pub const fn corner_clockwise(self, corner_direction: Direction) -> Direction {
+    pub fn corner_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 1) % 6]
     }
 
     /// Returns the next edge direction in clockwise order
-    pub const fn edge_clockwise(self, edge_direction: Direction) -> Direction {
+    pub fn edge_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 1) % 6]
     }
 
     /// Returns the next corner direction in counter clockwise order
-    pub const fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
+    pub fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 5) % 6]
     }
 
     /// Returns the next edge direction in counter clockwise order
-    pub const fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
+    pub fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 5) % 6]
     }
@@ -566,7 +573,7 @@ mod tests {
     pub fn test_hex_distance() {
         assert_eq!(
             7,
-            Hex::hex_distance(Hex::new(3, -7), Hex(IVec2::ZERO)),
+            Hex::new(3, -7).distance_to(Hex(IVec2::ZERO)),
             "FAIL hex_distance"
         );
     }

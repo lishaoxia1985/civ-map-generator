@@ -556,8 +556,9 @@ impl CvFractal {
             // Check if the new random seed is too close to an existing seed
             // If it is, generate a new random seed until it is not too close
             while voronoi_seeds.iter().any(|existing_seed| {
-                let distance_between_voronoi_seeds =
-                    Hex::hex_distance(voronoi_seed.hex_coordinate, existing_seed.hex_coordinate);
+                let distance_between_voronoi_seeds = voronoi_seed
+                    .hex_coordinate
+                    .distance_to(existing_seed.hex_coordinate);
                 distance_between_voronoi_seeds < 7
             }) {
                 let offset_coordinate = OffsetCoordinate::new(
@@ -584,7 +585,7 @@ impl CvFractal {
                 let mut next_closest_seed_distance = i32::MAX;
                 for current_voronoi_seed in &voronoi_seeds {
                     let mut modified_hex_distance =
-                        Hex::hex_distance(current_hex, current_voronoi_seed.hex_coordinate);
+                        current_hex.distance_to(current_voronoi_seed.hex_coordinate);
                     // Checking if all values of ridge_flags are false by comparing it to the default value of Flags.
                     if ridge_flags != &Flags::default() {
                         // make the influence of the seed on its surrounding area more random

@@ -586,7 +586,7 @@ impl TileMap {
                             .map(|tile_y_index| {
                                 let position_x_hex = tile_x_index.to_hex_coordinate(map_parameters);
                                 let position_y_hex = tile_y_index.to_hex_coordinate(map_parameters);
-                                Hex::hex_distance(position_x_hex, position_y_hex)
+                                position_x_hex.distance_to(position_y_hex)
                             })
                             .min()
                             .unwrap_or(1000000);
