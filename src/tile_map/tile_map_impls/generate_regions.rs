@@ -2,6 +2,7 @@ use std::cmp::min;
 
 use std::collections::{HashMap, HashSet};
 
+use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -706,63 +707,45 @@ impl Rectangle {
     }
 }
 
+/// The terrain statistic of the region.
+/// Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
 #[derive(Debug)]
 pub struct TerrainStatistic {
-    pub terrain_type_sum: HashMap<TerrainType, u32>,
-    pub base_terrain_sum: HashMap<BaseTerrain, u32>,
-    pub feature_sum: HashMap<Feature, u32>,
-    pub river_sum: u32,
-    pub coastal_land_sum: u32,
-    pub next_to_coastal_land_sum: u32,
+    /// Each terrain type's number in the region.
+    pub terrain_type_num: EnumMap<TerrainType, u32>,
+    /// Each base terrain's number in the region.
+    pub base_terrain_num: EnumMap<BaseTerrain, u32>,
+    /// Each feature's number in the region.
+    pub feature_num: EnumMap<Feature, u32>,
+    /// The number of tiles with rivers in the region.
+    pub river_num: u32,
+    /// The number of tiles which are coastal land in the region.
+    pub coastal_land_num: u32,
+    /// The number of tiles which are land, not coastal land, but are next to coastal land in the region.
+    pub next_to_coastal_land_num: u32,
 }
 
 impl Default for TerrainStatistic {
     fn default() -> Self {
-        let terrain_type_sum = [
-            TerrainType::Water,
-            TerrainType::Flatland,
-            TerrainType::Hill,
-            TerrainType::Mountain,
-        ]
-        .into_iter()
-        .map(|terrain_type| (terrain_type, 0))
-        .collect();
+        let terrain_type_num = enum_map! {
+            _ => 0,
+        };
 
-        let base_terrain_sum = [
-            BaseTerrain::Ocean,
-            BaseTerrain::Lake,
-            BaseTerrain::Coast,
-            BaseTerrain::Grassland,
-            BaseTerrain::Desert,
-            BaseTerrain::Plain,
-            BaseTerrain::Tundra,
-            BaseTerrain::Snow,
-        ]
-        .into_iter()
-        .map(|base_terrain| (base_terrain, 0))
-        .collect();
+        let base_terrain_num = enum_map! {
+            _ => 0,
+        };
 
-        let feature_sum = [
-            Feature::Forest,
-            Feature::Jungle,
-            Feature::Marsh,
-            Feature::Floodplain,
-            Feature::Oasis,
-            Feature::Ice,
-            Feature::Atoll,
-            Feature::Fallout, // Not used in the map generator.
-        ]
-        .into_iter()
-        .map(|feature| (feature, 0))
-        .collect();
+        let feature_num = enum_map! {
+            _ => 0,
+        };
 
         TerrainStatistic {
-            terrain_type_sum,
-            base_terrain_sum,
-            feature_sum,
-            river_sum: 0,
-            coastal_land_sum: 0,
-            next_to_coastal_land_sum: 0,
+            terrain_type_num,
+            base_terrain_num,
+            feature_num,
+            river_num: 0,
+            coastal_land_num: 0,
+            next_to_coastal_land_num: 0,
         }
     }
 }
@@ -807,7 +790,7 @@ impl Region {
             tile_count,
             terrain_statistic: TerrainStatistic::default(),
             region_type: RegionType::Undefined,
-            starting_tile: Tile::new(0),
+            starting_tile: Tile::new(usize::MAX),
             start_location_condition: StartLocationCondition::default(),
             luxury_resource: String::new(),
         }
@@ -1155,7 +1138,7 @@ impl Region {
 
     /// Measures the terrain in the region, and sets the [`Region::terrain_statistic`] field.
     ///
-    /// Terrain statistics include the sum of flatland and hill tiles, the sum of fertility, and the sum of coastal land tiles, .., etc.
+    /// Terrain statistics include the num of flatland and hill tiles, the sum of fertility, and the sum of coastal land tiles, .., etc.
     /// When `landmass_id` is `None`, it will ignore the landmass id and measure all the land and water terrain in the region.
     /// Otherwise, it will only measure the terrain which is Water/Mountain or whose `area_id` equal to the region's `landmass_id`.
     pub fn measure_terrain(&mut self, tile_map: &TileMap, map_parameters: &MapParameters) {
@@ -1170,50 +1153,38 @@ impl Region {
 
             match terrain_type {
                 TerrainType::Mountain => {
-                    *terrain_statistic
-                        .terrain_type_sum
-                        .get_mut(&terrain_type)
-                        .unwrap() += 1;
+                    terrain_statistic.terrain_type_num[terrain_type] += 1;
                 }
                 TerrainType::Water => {
-                    *terrain_statistic
-                        .terrain_type_sum
-                        .get_mut(&terrain_type)
-                        .unwrap() += 1;
+                    terrain_statistic.terrain_type_num[terrain_type] += 1;
 
-                    *terrain_statistic
-                        .base_terrain_sum
-                        .get_mut(&base_terrain)
-                        .unwrap() += 1;
+                    terrain_statistic.base_terrain_num[base_terrain] += 1;
 
                     if let Some(feature) = feature {
-                        *terrain_statistic.feature_sum.get_mut(&feature).unwrap() += 1;
+                        terrain_statistic.feature_num[feature] += 1;
                     }
                 }
                 TerrainType::Hill => {
                     if Some(area_id) == self.landmass_id || self.landmass_id.is_none() {
-                        *terrain_statistic
-                            .terrain_type_sum
-                            .get_mut(&terrain_type)
-                            .unwrap() += 1;
+                        terrain_statistic.terrain_type_num[terrain_type] += 1;
                         // We don't need to count the base terrain of hill tiles, because its base terrain bonus is invalid when it is a hill.
                         // For exmple in the original game, if a tile is a hill:
                         // 1. If feature is None:
                         //      (1) When base terrain is not Snow, the tile always produces 2 production.
                         //      (2) When base terrain is Snow, the tile has no output.
                         // 2. If feature is Some, its outpuput is determined by the feature.
-                        /* *terrain_statistic.base_terrain_sum.get_mut(&base_terrain).unwrap() += 1; */
+                        /* terrain_statistic.base_terrain_num[base_terrain] += 1; */
 
                         if let Some(feature) = feature {
-                            *terrain_statistic.feature_sum.get_mut(&feature).unwrap() += 1;
+                            terrain_statistic.feature_num[feature] += 1;
                         }
 
                         if tile.has_river(tile_map, map_parameters) {
-                            terrain_statistic.river_sum += 1;
+                            terrain_statistic.river_num += 1;
                         }
 
                         if tile.is_coastal_land(tile_map, map_parameters) {
-                            terrain_statistic.coastal_land_sum += 1;
+                            terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
@@ -1225,32 +1196,26 @@ impl Region {
                                     neighbor_tile.is_coastal_land(tile_map, map_parameters)
                                 })
                         {
-                            terrain_statistic.next_to_coastal_land_sum += 1;
+                            terrain_statistic.next_to_coastal_land_num += 1;
                         }
                     }
                 }
                 TerrainType::Flatland => {
                     if Some(area_id) == self.landmass_id || self.landmass_id.is_none() {
-                        *terrain_statistic
-                            .terrain_type_sum
-                            .get_mut(&terrain_type)
-                            .unwrap() += 1;
+                        terrain_statistic.terrain_type_num[terrain_type] += 1;
 
-                        *terrain_statistic
-                            .base_terrain_sum
-                            .get_mut(&base_terrain)
-                            .unwrap() += 1;
+                        terrain_statistic.base_terrain_num[base_terrain] += 1;
 
                         if let Some(feature) = feature {
-                            *terrain_statistic.feature_sum.get_mut(&feature).unwrap() += 1;
+                            terrain_statistic.feature_num[feature] += 1;
                         }
 
                         if tile.has_river(tile_map, map_parameters) {
-                            terrain_statistic.river_sum += 1;
+                            terrain_statistic.river_num += 1;
                         }
 
                         if tile.is_coastal_land(tile_map, map_parameters) {
-                            terrain_statistic.coastal_land_sum += 1;
+                            terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
@@ -1262,7 +1227,7 @@ impl Region {
                                     neighbor_tile.is_coastal_land(tile_map, map_parameters)
                                 })
                         {
-                            terrain_statistic.next_to_coastal_land_sum += 1;
+                            terrain_statistic.next_to_coastal_land_num += 1;
                         }
                     }
                 }
@@ -1275,58 +1240,54 @@ impl Region {
     /// Determines region type based on [Region::terrain_statistic] and sets [Region::region_type] field.
     pub fn determine_region_type(&mut self) {
         let terrain_statistic = &self.terrain_statistic;
-        let terrain_type_sum_list = &terrain_statistic.terrain_type_sum;
-        let base_terrain_sum_list = &terrain_statistic.base_terrain_sum;
-        let feature_sum_list = &terrain_statistic.feature_sum;
-        // let river_sum = terrain_statistic.river_sum;
-        // let coastal_land_sum = terrain_statistic.coastal_land_sum;
-        // let next_to_coastal_land_sum = terrain_statistic.next_to_coastal_land_sum;
+        let terrain_type_num = &terrain_statistic.terrain_type_num;
+        let base_terrain_num = &terrain_statistic.base_terrain_num;
+        let feature_num = &terrain_statistic.feature_num;
 
         // Flatland and hill are the terrain type that cities, mens, and improvements can be built on
-        let flatland_and_hill_sum = terrain_type_sum_list[&TerrainType::Flatland]
-            + terrain_statistic.terrain_type_sum[&TerrainType::Hill];
+        let flatland_and_hill_num = terrain_type_num[TerrainType::Flatland]
+            + terrain_statistic.terrain_type_num[TerrainType::Hill];
 
-        if (base_terrain_sum_list[&BaseTerrain::Tundra] + base_terrain_sum_list[&BaseTerrain::Snow])
-            >= flatland_and_hill_sum * 30 / 100
+        if (base_terrain_num[BaseTerrain::Tundra] + base_terrain_num[BaseTerrain::Snow])
+            >= flatland_and_hill_num * 30 / 100
         {
             self.region_type = RegionType::Tundra;
-        } else if feature_sum_list[&Feature::Jungle] >= flatland_and_hill_sum * 30 / 100 {
+        } else if feature_num[Feature::Jungle] >= flatland_and_hill_num * 30 / 100 {
             self.region_type = RegionType::Jungle;
-        } else if (feature_sum_list[&Feature::Jungle] >= flatland_and_hill_sum * 20 / 100)
-            && (feature_sum_list[&Feature::Jungle] + feature_sum_list[&Feature::Forest]
-                >= flatland_and_hill_sum * 35 / 100)
+        } else if (feature_num[Feature::Jungle] >= flatland_and_hill_num * 20 / 100)
+            && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
+                >= flatland_and_hill_num * 35 / 100)
         {
             self.region_type = RegionType::Jungle;
-        } else if feature_sum_list[&Feature::Forest] >= flatland_and_hill_sum * 30 / 100 {
+        } else if feature_num[Feature::Forest] >= flatland_and_hill_num * 30 / 100 {
             self.region_type = RegionType::Forest;
-        } else if (feature_sum_list[&Feature::Forest] >= flatland_and_hill_sum * 20 / 100)
-            && (feature_sum_list[&Feature::Jungle] + feature_sum_list[&Feature::Forest]
-                >= flatland_and_hill_sum * 35 / 100)
+        } else if (feature_num[Feature::Forest] >= flatland_and_hill_num * 20 / 100)
+            && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
+                >= flatland_and_hill_num * 35 / 100)
         {
             self.region_type = RegionType::Forest;
-        } else if base_terrain_sum_list[&BaseTerrain::Desert] >= flatland_and_hill_sum * 25 / 100 {
+        } else if base_terrain_num[BaseTerrain::Desert] >= flatland_and_hill_num * 25 / 100 {
             self.region_type = RegionType::Desert;
-        } else if terrain_type_sum_list[&TerrainType::Hill] >= flatland_and_hill_sum * 415 / 1000 {
+        } else if terrain_type_num[TerrainType::Hill] >= flatland_and_hill_num * 415 / 1000 {
             self.region_type = RegionType::Hill;
-        } else if (base_terrain_sum_list[&BaseTerrain::Plain] >= flatland_and_hill_sum * 30 / 100)
-            && (base_terrain_sum_list[&BaseTerrain::Plain] * 70 / 100
-                > base_terrain_sum_list[&BaseTerrain::Grassland])
+        } else if (base_terrain_num[BaseTerrain::Plain] >= flatland_and_hill_num * 30 / 100)
+            && (base_terrain_num[BaseTerrain::Plain] * 70 / 100
+                > base_terrain_num[BaseTerrain::Grassland])
         {
             self.region_type = RegionType::Plain;
-        } else if (base_terrain_sum_list[&BaseTerrain::Grassland]
-            >= flatland_and_hill_sum * 30 / 100)
-            && (base_terrain_sum_list[&BaseTerrain::Grassland] * 70 / 100
-                > base_terrain_sum_list[&BaseTerrain::Plain])
+        } else if (base_terrain_num[BaseTerrain::Grassland] >= flatland_and_hill_num * 30 / 100)
+            && (base_terrain_num[BaseTerrain::Grassland] * 70 / 100
+                > base_terrain_num[BaseTerrain::Plain])
         {
             self.region_type = RegionType::Grassland;
-        } else if (base_terrain_sum_list[&BaseTerrain::Grassland]
-            + base_terrain_sum_list[&BaseTerrain::Plain]
-            + base_terrain_sum_list[&BaseTerrain::Desert]
-            + base_terrain_sum_list[&BaseTerrain::Tundra]
-            + base_terrain_sum_list[&BaseTerrain::Snow]
-            + terrain_type_sum_list[&TerrainType::Hill]
-            + terrain_type_sum_list[&TerrainType::Mountain])
-            > flatland_and_hill_sum * 80 / 100
+        } else if (base_terrain_num[BaseTerrain::Grassland]
+            + base_terrain_num[BaseTerrain::Plain]
+            + base_terrain_num[BaseTerrain::Desert]
+            + base_terrain_num[BaseTerrain::Tundra]
+            + base_terrain_num[BaseTerrain::Snow]
+            + terrain_type_num[TerrainType::Hill]
+            + terrain_type_num[TerrainType::Mountain])
+            > flatland_and_hill_num * 80 / 100
         {
             self.region_type = RegionType::Hybrid;
         } else {
@@ -1337,7 +1298,7 @@ impl Region {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 /// Region type.
-/// Fields are defined in order of priority, except for 'undefined'.
+/// Fields are defined in order of priority, except for [`RegionType::Undefined`].
 /// The priority is typically used to sort the regions.
 pub enum RegionType {
     Undefined, //-- 0.
@@ -1351,21 +1312,39 @@ pub enum RegionType {
     Hybrid,    //-- 8.
 }
 
+#[derive(Enum)]
 pub enum TileType {
+    /// Tile yield food, or tile will be placed bonus resource to yield food according to region type in the future.
     Food,
+    /// Tile yield production.
     Production,
+    /// "Good" tiles act as a hedge, helping differentiate candidate sites.
+    /// Among similar terrain tiles, they ensure the best one is selected.
+    /// For example, when using [`TileMap::evaluate_candidate_tile`],
+    /// the candidate tile with the most "Good" tiles within a 3-tile radius will get a higher score.
     Good,
+    /// Tile yield nothing.
     Junk,
 }
 
 #[derive(Debug)]
 pub struct StartLocationCondition {
+    /// Whether the start location is coastal land.
     pub along_ocean: bool,
+    /// Whether there is a lake in 2-tile radius of the start location.
     pub next_to_lake: bool,
+    /// Whether the start location has a river.
     pub is_river: bool,
+    /// Whether there is a river in 2-tile radius of the start location.
+    /// Notice: This is only check whether there is a river in 2-tile radius of the start location, not contain the start location itself.
     pub near_river: bool,
+    /// Whether there is a mountain in 2-tile radius of the start location.
     pub near_mountain: bool,
+    /// The number of forest tiles in 2-tile radius of the start location.
+    /// Notice: This is only check the number of forest tiles in 2-tile radius of the start location, not contain the start location itself.
     pub forest_count: i32,
+    /// The number of jungle tiles in 2-tile radius of the start location.
+    /// Notice: This is only check the number of jungle tiles in 2-tile radius of the start location, not contain the start location itself.
     pub jungle_count: i32,
 }
 

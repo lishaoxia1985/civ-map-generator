@@ -5,6 +5,7 @@ use std::{
 
 use std::collections::{HashMap, HashSet};
 
+use enum_map::EnumMap;
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
@@ -481,7 +482,7 @@ impl TileMap {
                 .gen_range(min_radius..=max_radius);
             // First pass: Seek the first eligible 0 value on impact matrix
             while let Some(&tile) = plot_list_iter.next() {
-                if self.layer_data[&layer][tile.index()] == 0 && tile.resource(self).is_none() {
+                if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
                     self.resource_query[tile.index()] =
                         Some((Resource::Resource(resource.to_string()), quantity));
                     self.place_resource_impact(map_parameters, tile, layer, radius);
@@ -495,9 +496,9 @@ impl TileMap {
                 let best_plot = plot_list
                     .iter()
                     .filter(|&&tile| {
-                        self.layer_data[&layer][tile.index()] < 98 && tile.resource(self).is_none()
+                        self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
                     })
-                    .min_by_key(|&&tile| self.layer_data[&layer][tile.index()])
+                    .min_by_key(|&&tile| self.layer_data[layer][tile.index()])
                     .cloned();
                 if let Some(tile) = best_plot {
                     self.resource_query[tile.index()] =
@@ -894,7 +895,7 @@ impl TileMap {
                         continue;
                     } else */
                     if region.start_location_condition.along_ocean
-                        && region.terrain_statistic.terrain_type_sum[&TerrainType::Water] > 12
+                        && region.terrain_statistic.terrain_type_num[TerrainType::Water] > 12
                     {
                         // Water-based luxuries are allowed if both of the following are true:
                         // 1. This region's start is along an ocean,
@@ -944,7 +945,7 @@ impl TileMap {
                             // NOTE: In the original code, this check is not present. I think it is a bug.
                             continue;
                         } else if region.start_location_condition.along_ocean
-                            && region.terrain_statistic.terrain_type_sum[&TerrainType::Water] > 12
+                            && region.terrain_statistic.terrain_type_num[TerrainType::Water] > 12
                         {
                             resource_list.push(luxury_resource);
                             let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
@@ -1464,18 +1465,18 @@ impl TileMap {
         for &region_index in region_index_list.iter() {
             let region = &self.region_list[region_index];
             let terrain_statistic = &region.terrain_statistic;
-            let hills_count = terrain_statistic.terrain_type_sum[&TerrainType::Hill];
-            let peaks_count = terrain_statistic.terrain_type_sum[&TerrainType::Mountain];
-            let grass_count = terrain_statistic.base_terrain_sum[&BaseTerrain::Grassland];
-            let plains_count = terrain_statistic.base_terrain_sum[&BaseTerrain::Plain];
-            let desert_count = terrain_statistic.base_terrain_sum[&BaseTerrain::Desert];
-            let tundra_count = terrain_statistic.base_terrain_sum[&BaseTerrain::Tundra];
-            let snow_count = terrain_statistic.base_terrain_sum[&BaseTerrain::Snow];
-            let forest_count = terrain_statistic.feature_sum[&Feature::Forest];
-            let jungle_count = terrain_statistic.feature_sum[&Feature::Jungle];
-            let marsh_count = terrain_statistic.feature_sum[&Feature::Marsh];
-            let floodplain_count = terrain_statistic.feature_sum[&Feature::Floodplain];
-            let oasis_count = terrain_statistic.feature_sum[&Feature::Oasis];
+            let hills_count = terrain_statistic.terrain_type_num[TerrainType::Hill];
+            let peaks_count = terrain_statistic.terrain_type_num[TerrainType::Mountain];
+            let grass_count = terrain_statistic.base_terrain_num[BaseTerrain::Grassland];
+            let plains_count = terrain_statistic.base_terrain_num[BaseTerrain::Plain];
+            let desert_count = terrain_statistic.base_terrain_num[BaseTerrain::Desert];
+            let tundra_count = terrain_statistic.base_terrain_num[BaseTerrain::Tundra];
+            let snow_count = terrain_statistic.base_terrain_num[BaseTerrain::Snow];
+            let forest_count = terrain_statistic.feature_num[Feature::Forest];
+            let jungle_count = terrain_statistic.feature_num[Feature::Jungle];
+            let marsh_count = terrain_statistic.feature_num[Feature::Marsh];
+            let floodplain_count = terrain_statistic.feature_num[Feature::Floodplain];
+            let oasis_count = terrain_statistic.feature_num[Feature::Oasis];
 
             match region_type {
                 RegionType::Undefined => unreachable!(),
@@ -2558,7 +2559,7 @@ impl TileMap {
             Some(Layer::Strategic)
             | Some(Layer::Luxury)
             | Some(Layer::Bonus)
-            | Some(Layer::Fish) => &self.layer_data[layer.as_ref().unwrap()],
+            | Some(Layer::Fish) => &self.layer_data[layer.unwrap()],
             _ => &Vec::new(),
         };
 
@@ -2727,7 +2728,7 @@ impl TileMap {
 
         let coastal_land_sum = (&self.region_list[region_index])
             .terrain_statistic
-            .coastal_land_sum;
+            .coastal_land_num;
 
         let mut success_flag = false; // Returns true when a start is placed, false when process fails.
         let mut forced_placement_flag = false; // Returns true if this region had no eligible starts and one was forced to occur.
@@ -3414,13 +3415,19 @@ impl TileMap {
         junk_total += 6 - neighbor_tiles.len() as i32;
 
         neighbor_tiles.into_iter().for_each(|neighbor_tile| {
-            let tile_type = self.measure_single_tile(neighbor_tile, region);
-            tile_type.into_iter().for_each(|tile_type| match tile_type {
-                TileType::Food => food_total += 1,
-                TileType::Production => production_total += 1,
-                TileType::Good => good_total += 1,
-                TileType::Junk => junk_total += 1,
-            });
+            let measure_tile_type = self.measure_single_tile(neighbor_tile, region);
+            measure_tile_type
+                .into_iter()
+                .for_each(|(tile_type, measure)| {
+                    if measure {
+                        match tile_type {
+                            TileType::Food => food_total += 1,
+                            TileType::Production => production_total += 1,
+                            TileType::Good => good_total += 1,
+                            TileType::Junk => junk_total += 1,
+                        }
+                    }
+                });
             if neighbor_tile.has_river(self, map_parameters) {
                 river_total += 1;
             }
@@ -3451,13 +3458,19 @@ impl TileMap {
         tiles_at_distance_two
             .into_iter()
             .for_each(|tile_at_distance_two| {
-                let tile_type = self.measure_single_tile(tile_at_distance_two, region);
-                tile_type.into_iter().for_each(|tile_type| match tile_type {
-                    TileType::Food => food_total += 1,
-                    TileType::Production => production_total += 1,
-                    TileType::Good => good_total += 1,
-                    TileType::Junk => junk_total += 1,
-                });
+                let measure_tile_type = self.measure_single_tile(tile_at_distance_two, region);
+                measure_tile_type
+                    .into_iter()
+                    .for_each(|(tile_type, measure)| {
+                        if measure {
+                            match tile_type {
+                                TileType::Food => food_total += 1,
+                                TileType::Production => production_total += 1,
+                                TileType::Good => good_total += 1,
+                                TileType::Junk => junk_total += 1,
+                            }
+                        }
+                    });
                 if tile_at_distance_two.has_river(self, map_parameters) {
                     river_total += 1;
                 }
@@ -3504,13 +3517,19 @@ impl TileMap {
         tiles_at_distance_three
             .into_iter()
             .for_each(|tile_at_distance_three| {
-                let tile_type = self.measure_single_tile(tile_at_distance_three, region);
-                tile_type.into_iter().for_each(|tile_type| match tile_type {
-                    TileType::Food => food_total += 1,
-                    TileType::Production => production_total += 1,
-                    TileType::Good => good_total += 1,
-                    TileType::Junk => junk_total += 1,
-                });
+                let measure_tile_type = self.measure_single_tile(tile_at_distance_three, region);
+                measure_tile_type
+                    .into_iter()
+                    .for_each(|(tile_type, measure)| {
+                        if measure {
+                            match tile_type {
+                                TileType::Food => food_total += 1,
+                                TileType::Production => production_total += 1,
+                                TileType::Good => good_total += 1,
+                                TileType::Junk => junk_total += 1,
+                            }
+                        }
+                    });
                 if tile_at_distance_three.has_river(self, map_parameters) {
                     river_total += 1;
                 }
@@ -3534,6 +3553,7 @@ impl TileMap {
             // This candidate is near an already placed start. This invalidates its
             // eligibility for first-pass placement; but it may still qualify as a
             // fallback site, so we will reduce its Score according to the bias factor.
+            // Closer to existing start points, lower the score becomes.
             meets_minimum_requirements = false;
             final_score = (final_score as f64 * (100 - self.distance_data[tile.index()]) as f64
                 / 100.0) as i32;
@@ -3560,7 +3580,7 @@ impl TileMap {
 
         self.player_collision_data[tile.index()] = true;
 
-        self.layer_data.get_mut(&Layer::CityState).unwrap()[tile.index()] = 1;
+        self.layer_data[Layer::CityState][tile.index()] = 1;
 
         for (index, ripple_value) in ripple_values.into_iter().enumerate() {
             let distance = index as u32 + 1;
@@ -3580,8 +3600,7 @@ impl TileMap {
                     }
 
                     if distance <= 6 {
-                        self.layer_data.get_mut(&Layer::CityState).unwrap()
-                            [tile_at_distance.index()] = 1;
+                        self.layer_data[Layer::CityState][tile_at_distance.index()] = 1;
                     }
                 })
         }
@@ -3601,7 +3620,7 @@ impl TileMap {
             99
         };
 
-        self.layer_data.get_mut(&layer).unwrap()[tile.index()] = impact_value;
+        self.layer_data[layer][tile.index()] = impact_value;
 
         if radius == 0 {
             return;
@@ -3616,92 +3635,85 @@ impl TileMap {
                         let ripple_value = radius - distance + 1;
                         match layer {
                             Layer::Strategic => {
-                                if self.layer_data[&layer][tile_at_distance.index()] != 0 {
+                                if self.layer_data[layer][tile_at_distance.index()] != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(
-                                        self.layer_data[&layer][tile_at_distance.index()],
+                                        self.layer_data[layer][tile_at_distance.index()],
                                         ripple_value,
                                     );
                                     // Now increase it by 2 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(50, stronger_value + 2);
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = overlap_value;
+                                    self.layer_data[layer][tile_at_distance.index()] =
+                                        overlap_value;
                                 } else {
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = ripple_value;
+                                    self.layer_data[layer][tile_at_distance.index()] = ripple_value;
                                 }
                             }
                             Layer::Luxury => {
-                                if self.layer_data[&layer][tile_at_distance.index()] != 0 {
+                                if self.layer_data[layer][tile_at_distance.index()] != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(
-                                        self.layer_data[&layer][tile_at_distance.index()],
+                                        self.layer_data[layer][tile_at_distance.index()],
                                         ripple_value,
                                     );
                                     // Now increase it by 2 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(50, stronger_value + 2);
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = overlap_value;
+                                    self.layer_data[layer][tile_at_distance.index()] =
+                                        overlap_value;
                                 } else {
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = ripple_value;
+                                    self.layer_data[layer][tile_at_distance.index()] = ripple_value;
                                 }
                             }
                             Layer::Bonus => {
-                                if self.layer_data[&layer][tile_at_distance.index()] != 0 {
+                                if self.layer_data[layer][tile_at_distance.index()] != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(
-                                        self.layer_data[&layer][tile_at_distance.index()],
+                                        self.layer_data[layer][tile_at_distance.index()],
                                         ripple_value,
                                     );
                                     // Now increase it by 2 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(50, stronger_value + 2);
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = overlap_value;
+                                    self.layer_data[layer][tile_at_distance.index()] =
+                                        overlap_value;
                                 } else {
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = ripple_value;
+                                    self.layer_data[layer][tile_at_distance.index()] = ripple_value;
                                 }
                             }
                             Layer::Fish => {
-                                if self.layer_data[&layer][tile_at_distance.index()] != 0 {
+                                if self.layer_data[layer][tile_at_distance.index()] != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(
-                                        self.layer_data[&layer][tile_at_distance.index()],
+                                        self.layer_data[layer][tile_at_distance.index()],
                                         ripple_value,
                                     );
                                     // Now increase it by 1 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(10, stronger_value + 1);
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = overlap_value;
+                                    self.layer_data[layer][tile_at_distance.index()] =
+                                        overlap_value;
                                 } else {
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = ripple_value;
+                                    self.layer_data[layer][tile_at_distance.index()] = ripple_value;
                                 }
                             }
                             Layer::CityState => {
-                                self.layer_data.get_mut(&layer).unwrap()
-                                    [tile_at_distance.index()] = 1;
+                                self.layer_data[layer][tile_at_distance.index()] = 1;
                             }
                             Layer::NaturalWonder => {
-                                if self.layer_data[&layer][tile_at_distance.index()] != 0 {
+                                if self.layer_data[layer][tile_at_distance.index()] != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(
-                                        self.layer_data[&layer][tile_at_distance.index()],
+                                        self.layer_data[layer][tile_at_distance.index()],
                                         ripple_value,
                                     );
                                     // Now increase it by 2 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(50, stronger_value + 2);
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = overlap_value;
+                                    self.layer_data[layer][tile_at_distance.index()] =
+                                        overlap_value;
                                 } else {
-                                    self.layer_data.get_mut(&layer).unwrap()
-                                        [tile_at_distance.index()] = ripple_value;
+                                    self.layer_data[layer][tile_at_distance.index()] = ripple_value;
                                 }
                             }
                             Layer::Marble => {
-                                self.layer_data.get_mut(&layer).unwrap()
-                                    [tile_at_distance.index()] = 1;
+                                self.layer_data[layer][tile_at_distance.index()] = 1;
                             }
                         }
                     })
@@ -3710,36 +3722,45 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:MeasureSinglePlot
-    fn measure_single_tile(&self, tile: Tile, region: &Region) -> Vec<TileType> {
+    /// Measures single tile's type.
+    ///
+    /// Measures a single tile's type whether it is Food, Production, Good, Junk, or a combination of (Food, Production, Good).
+    /// - [`TileType::Food`] may be misleading, as this is the primary mechanism for biasing starting terrain.
+    /// It is not strictly equivalent to tile yield. That's because regions with different [`RegionType`] obtain food in various ways.
+    // Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support to compensate for food shortages.
+    /// For instance, in tundra regions I have tundra tiles set as Food, but grass are not.
+    /// A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
+    /// - [`TileType::Good`] act as a hedge, and are the main way of differentiating one candidate site from another,
+    /// so that among a group of plots of similar terrain, the best tends to get picked.
+    /// - [`TileType::Production`] is used to identify tiles that yield production.
+    /// - [`TileType::Junk`] is used to identify tiles that yield nothing.
+    fn measure_single_tile(&self, tile: Tile, region: &Region) -> EnumMap<TileType, bool> {
         let region_type = region.region_type;
-        /*  -- Note that "Food" is not strictly about tile yield.
-        -- Different regions get their food in different ways.
-        -- Tundra, Jungle, Forest, Desert, Plains regions will
-        -- get Bonus resource support to cover food shortages.
-        --
-        -- Data table entries hold results; all begin as false:
-        -- [1] "Food"
-        -- [2] "Prod"
-        -- [3] "Good"
-        -- [4] "Junk" */
-        let mut data = Vec::new();
+        // Notice: "Food" is not strictly equivalent to tile yield.
+        //
+        // Different regions obtain food in various ways.
+        // Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support
+        // to compensate for food shortages.
+        //
+        // `data` hold the results, all starting as `false`。
+        let mut data = EnumMap::default();
 
         match tile.terrain_type(self) {
             TerrainType::Water => {
                 if tile.feature(self) == Some(Feature::Ice) {
-                    data.push(TileType::Junk);
+                    data[TileType::Junk] = true;
                 } else if tile.base_terrain(self) == BaseTerrain::Lake {
-                    data.push(TileType::Food);
-                    data.push(TileType::Good);
+                    data[TileType::Food] = true;
+                    data[TileType::Good] = true;
                 } else if region.landmass_id.is_none()
                     && tile.base_terrain(self) == BaseTerrain::Coast
                 {
-                    data.push(TileType::Good);
+                    data[TileType::Good] = true;
                 }
                 return data;
             }
             TerrainType::Mountain => {
-                data.push(TileType::Junk);
+                data[TileType::Junk] = true;
                 return data;
             }
             TerrainType::Flatland | TerrainType::Hill => (),
@@ -3749,19 +3770,19 @@ impl TileMap {
         if let Some(feature) = tile.feature(self) {
             match feature {
                 Feature::Forest => {
-                    data.push(TileType::Production);
-                    data.push(TileType::Good);
+                    data[TileType::Production] = true;
+                    data[TileType::Good] = true;
                     if region_type == RegionType::Forest || region_type == RegionType::Tundra {
-                        data.push(TileType::Food);
+                        data[TileType::Food] = true;
                     }
                     return data;
                 }
                 Feature::Jungle => {
                     if region_type != RegionType::Grassland {
-                        data.push(TileType::Food);
-                        data.push(TileType::Good);
+                        data[TileType::Food] = true;
+                        data[TileType::Good] = true;
                     } else if tile.terrain_type(self) == TerrainType::Hill {
-                        data.push(TileType::Production);
+                        data[TileType::Production] = true;
                     }
                     return data;
                 }
@@ -3769,8 +3790,8 @@ impl TileMap {
                     return data;
                 }
                 Feature::Oasis | Feature::Floodplain => {
-                    data.push(TileType::Food);
-                    data.push(TileType::Good);
+                    data[TileType::Food] = true;
+                    data[TileType::Good] = true;
                     return data;
                 }
                 _ => (),
@@ -3779,52 +3800,52 @@ impl TileMap {
 
         // Tackle with the tile's terrain type is hill and has no feature.
         if tile.terrain_type(self) == TerrainType::Hill {
-            data.push(TileType::Production);
-            data.push(TileType::Good);
+            data[TileType::Production] = true;
+            data[TileType::Good] = true;
             return data;
         }
 
         // Tackle with tile's terrain type is flatland and has no feature.
         match tile.base_terrain(self) {
             BaseTerrain::Grassland => {
-                data.push(TileType::Good);
+                data[TileType::Good] = true;
                 if region_type == RegionType::Jungle
                     || region_type == RegionType::Forest
                     || region_type == RegionType::Hill
                     || region_type == RegionType::Grassland
                     || region_type == RegionType::Hybrid
                 {
-                    data.push(TileType::Food);
+                    data[TileType::Food] = true;
                 }
                 return data;
             }
             BaseTerrain::Desert => {
                 if region_type != RegionType::Desert {
-                    data.push(TileType::Junk);
+                    data[TileType::Junk] = true;
                 }
                 return data;
             }
             BaseTerrain::Plain => {
-                data.push(TileType::Good);
+                data[TileType::Good] = true;
                 if region_type == RegionType::Tundra
                     || region_type == RegionType::Desert
                     || region_type == RegionType::Hill
                     || region_type == RegionType::Plain
                     || region_type == RegionType::Hybrid
                 {
-                    data.push(TileType::Food);
+                    data[TileType::Food] = true;
                 }
                 return data;
             }
             BaseTerrain::Tundra => {
                 if region_type == RegionType::Tundra {
-                    data.push(TileType::Food);
-                    data.push(TileType::Good);
+                    data[TileType::Food] = true;
+                    data[TileType::Good] = true;
                 }
                 return data;
             }
             BaseTerrain::Snow => {
-                data.push(TileType::Junk);
+                data[TileType::Junk] = true;
                 return data;
             }
             _ => (),
@@ -3834,12 +3855,17 @@ impl TileMap {
     }
 }
 
+/// The role of luxury resources. View [`TileMap::assign_luxury_roles`] for more information.
 pub struct LuxuryResourceRole {
+    /// Exclusively Assigned to a region. Each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
     pub luxury_assigned_to_regions: HashSet<String>,
+    /// Exclusively Assigned to a city state. These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
     pub luxury_assigned_to_city_state: Vec<String>,
-    /// For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
+    /// Special case. For example, `Marble`. For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
     pub luxury_assigned_to_special_case: Vec<String>,
+    /// Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
     pub luxury_assigned_to_random: Vec<String>,
+    /// Disabled. We will not place it on the map.
     pub luxury_not_being_used: Vec<String>,
 }
 

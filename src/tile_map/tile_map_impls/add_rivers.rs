@@ -108,11 +108,11 @@ impl TileMap {
     /// This function is called to create a river.
     ///
     /// # Notice
-    /// In original Civ V, the end of the river is water or the edge of the map.
+    /// In original CIV5, the end of the river is water or the edge of the map.
     /// In this function, we have not implemented that the river flows the edge of the map yet.
     /// That because when we implement it, we should concern the map parameters.
     /// For example, hex is Flat or Pointy, map is wrapx or not, map is wrapy or not, etc.
-    /// In original Civ V, we only need to consider the case where the map is WrapX and the hex is pointy.
+    /// In original CIV5, we only need to consider the case where the map is WrapX and the hex is pointy.
     fn do_river(
         &mut self,
         start_tile: Tile,
@@ -750,7 +750,7 @@ impl TileMap {
 /// An array containing two `Direction` values:
 /// - The first element represents the flow direction after a clockwise turn.
 /// - The second element represents the flow direction after a counterclockwise turn.
-const fn next_flow_directions(
+fn next_flow_directions(
     flow_direction: Direction,
     map_parameters: &MapParameters,
 ) -> [Direction; 2] {

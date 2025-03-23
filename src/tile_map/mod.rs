@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use std::collections::HashMap;
 
+use enum_map::EnumMap;
+use enum_map::{enum_map, Enum};
 use rand::{rngs::StdRng, SeedableRng};
 use tile::Tile;
 use tile_map_impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
@@ -19,7 +21,6 @@ use crate::{
         resource::Resource, terrain_type::TerrainType,
     },
     grid::Direction,
-    ruleset::Ruleset,
 };
 pub use map_parameters::*;
 
@@ -39,7 +40,7 @@ pub struct TileMap {
     /// The area id and the size of the area
     pub area_id_and_size: BTreeMap<i32, u32>,
     region_list: Vec<Region>,
-    /// Stores "impact and ripple" data in the layer.
+    /// Stores "impact and ripple" data in the layer. like [`TileMap::distance_data`].
     /// Layer contains the following:
     /// - `0`: Strategic
     /// - `1`: Luxury
@@ -48,12 +49,14 @@ pub struct TileMap {
     /// - `4`: CityState
     /// - `5`: NaturalWonder
     /// - `6`: Marble
-    layer_data: HashMap<Layer, Vec<u32>>,
-    /// Stores "impact and ripple" data of start points as each is placed, The value is in the range `[0, 99]`.
+    layer_data: EnumMap<Layer, Vec<u32>>,
+    /// Stores "impact and ripple" data of start points as each is placed. like [`TileMap::layer_data`].
+    /// The value is in the range `[0, 99]`.
     /// The value is only related to the starting tile of civilization.
-    /// Value of 0 in a tile means no influence from existing Impacts in that tile.
-    /// Value of 99 means an Impact occurred in that tile and it is a starting tile.
-    /// Values > 0 and < 99 are "ripples", meaning that tile is near a starting tile.
+    /// - Value of 0 in a tile means no influence from existing Impacts in that tile.
+    /// - Value of 99 means an Impact occurred in that tile and it is a starting tile.
+    /// - Values > 0 and < 99 are "ripples", meaning that tile is near a starting tile.
+    /// Higher values, closer to a starting tile.
     distance_data: Vec<u8>,
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
@@ -75,7 +78,7 @@ pub struct TileMap {
     luxury_resource_role: LuxuryResourceRole,
     /// The count of luxury resource types assigned to regions.
     ///
-    /// In Civ5, the maximum number of luxury resource types that can be assigned to regions is 8.
+    /// In CIV5, the maximum number of luxury resource types that can be assigned to regions is 8.
     /// This value has a maximum length of 8. See [`TileMap::assign_luxury_to_region`] for more information.
     ///
     /// If a luxury resource type has been assigned to a region, it will be added to this count.
@@ -98,18 +101,9 @@ impl TileMap {
 
         let size = (height * width) as usize;
 
-        let layer_data = [
-            Layer::Strategic,
-            Layer::Luxury,
-            Layer::Bonus,
-            Layer::Fish,
-            Layer::CityState,
-            Layer::NaturalWonder,
-            Layer::Marble,
-        ]
-        .into_iter()
-        .map(|layer| (layer, vec![0; size]))
-        .collect();
+        let layer_data = enum_map! {
+            _ => vec![0; size],
+        };
 
         let region_list = Vec::with_capacity(map_parameters.civilization_num as usize);
 
@@ -141,31 +135,13 @@ impl TileMap {
         }
     }
 
-    /// Generates the tile map according to the given parameters and ruleset.
-    pub fn generate(map_parameters: &MapParameters, ruleset: &Ruleset) -> Self {
-        let mut tile_map = TileMap::new(&map_parameters);
-        tile_map.generate_terrain_types(&map_parameters);
-        tile_map.generate_coasts(&map_parameters);
-        tile_map.recalculate_areas(&map_parameters);
-        tile_map.generate_lakes(&map_parameters);
-        tile_map.generate_terrain(&map_parameters);
-        tile_map.add_rivers(&map_parameters);
-        tile_map.add_lakes(&map_parameters);
-        tile_map.recalculate_areas(&map_parameters);
-        tile_map.add_features(&map_parameters, &ruleset);
-        tile_map.recalculate_areas(&map_parameters);
-        tile_map.generate_regions(&map_parameters);
-        tile_map.start_plot_system(&map_parameters, &ruleset);
-        tile_map
-    }
-
     /// Returns an iterator over all tiles in the map.
     pub fn iter_tiles(&self) -> impl Iterator<Item = Tile> {
         (0..((self.map_size.width * self.map_size.height) as usize)).map(Tile::new)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Enum, Clone, Copy, PartialEq, Eq)]
 pub enum Layer {
     /// 1
     Strategic,

@@ -353,7 +353,7 @@ impl Tile {
     ///
     /// # Notice
     /// The tile with nature wonder can not be a starting tile of civilization.
-    /// Doesn't like Civ6, in original Civ5, we generate the nature wonder after generating the civilization starting tile, so in this function, we don't check the nature wonder.
+    /// Doesn't like CIV6, in original CIV5, we generate the nature wonder after generating the civilization starting tile, so in this function, we don't check the nature wonder.
     /// City state starting tile is the same as well.
     pub fn can_be_civilization_starting_tile(
         &self,
@@ -404,7 +404,7 @@ impl Tile {
         ) && region.map_or(true, |region| {
             Some(self.area_id(tile_map)) == region.landmass_id
         }) && self.base_terrain(tile_map) != BaseTerrain::Snow
-            && (tile_map.layer_data[&Layer::CityState][self.index()] == 0 || force_it)
+            && (tile_map.layer_data[Layer::CityState][self.index()] == 0 || force_it)
             && (tile_map.player_collision_data[self.index()] == false || ignore_collisions)
     }
 }

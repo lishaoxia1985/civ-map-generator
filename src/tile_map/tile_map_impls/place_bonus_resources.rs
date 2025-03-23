@@ -244,29 +244,29 @@ impl TileMap {
         for region_index in hills_region_indices {
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
 
-            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_sum[&TerrainType::Hill]
-                + terrain_statistic.terrain_type_sum[&TerrainType::Flatland];
+            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_num[TerrainType::Hill]
+                + terrain_statistic.terrain_type_num[TerrainType::Flatland];
             // Evaluate the level of infertility in the region by comparing the rugged terrain of hills and mountains to the flat farmlands.
-            let mut hills_ratio = (terrain_statistic.terrain_type_sum[&TerrainType::Hill]
-                + terrain_statistic.terrain_type_sum[&TerrainType::Mountain])
+            let mut hills_ratio = (terrain_statistic.terrain_type_num[TerrainType::Hill]
+                + terrain_statistic.terrain_type_num[TerrainType::Mountain])
                 as f64
                 / hill_and_flatland_tile_num as f64;
-            let mut farm_ratio = (terrain_statistic.base_terrain_sum[&BaseTerrain::Grassland]
-                + terrain_statistic.base_terrain_sum[&BaseTerrain::Plain])
+            let mut farm_ratio = (terrain_statistic.base_terrain_num[BaseTerrain::Grassland]
+                + terrain_statistic.base_terrain_num[BaseTerrain::Plain])
                 as f64
                 / hill_and_flatland_tile_num as f64;
             if let RegionDivideMethod::WholeMapRectangle = map_parameters.region_divide_method {
-                hills_ratio = (terrain_statistic.terrain_type_sum[&TerrainType::Hill]
-                    + terrain_statistic.terrain_type_sum[&TerrainType::Mountain])
+                hills_ratio = (terrain_statistic.terrain_type_num[TerrainType::Hill]
+                    + terrain_statistic.terrain_type_num[TerrainType::Mountain])
                     as f64
                     / (hill_and_flatland_tile_num
-                        + terrain_statistic.terrain_type_sum[&TerrainType::Mountain])
+                        + terrain_statistic.terrain_type_num[TerrainType::Mountain])
                         as f64;
-                farm_ratio = (terrain_statistic.base_terrain_sum[&BaseTerrain::Grassland]
-                    + terrain_statistic.base_terrain_sum[&BaseTerrain::Plain])
+                farm_ratio = (terrain_statistic.base_terrain_num[BaseTerrain::Grassland]
+                    + terrain_statistic.base_terrain_num[BaseTerrain::Plain])
                     as f64
                     / (hill_and_flatland_tile_num
-                        + terrain_statistic.terrain_type_sum[&TerrainType::Mountain])
+                        + terrain_statistic.terrain_type_num[TerrainType::Mountain])
                         as f64;
             }
             // If the infertility quotient is greater than 1, it will increase the number of Bonuses placed, up to a maximum of twice the normal ratio.
@@ -445,10 +445,11 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceSexyBonusAtCivStarts
-    // This function places a bonus resource in the third ring around a Civ's capital.
-    // The added bonus is intended to make the starting location more appealing.
-    // Third-ring resources take longer to develop but provide significant benefits in the late game.
-    // Alternatively, if another city is settled nearby and takes control of this tile, the resource may benefit that city instead.
+    /// Places a bonus resource in the *third* ring around a Civ's capital.
+    ///
+    /// The added bonus is intended to make the starting location more appealing.
+    /// Third-ring resources take longer to develop but provide significant benefits in the late game.
+    /// Alternatively, if another city is settled nearby and takes control of this tile, the resource may benefit that city instead.
     fn place_sexy_bonus_at_civ_starts(&mut self, map_parameters: &MapParameters) {
         let bonus_type_associated_with_region_type = [
             (RegionType::Tundra, "Deer"),
@@ -597,7 +598,7 @@ impl TileMap {
 
         while num_left_to_place > 0 && coast_list_iter.peek().is_some() {
             let tile = *coast_list_iter.next().unwrap();
-            if self.layer_data[&Layer::Fish][tile.index()] == 0 && tile.resource(self).is_none() {
+            if self.layer_data[Layer::Fish][tile.index()] == 0 && tile.resource(self).is_none() {
                 // Probability distribution for the possible values of fish_radius: 0, 1, 2, 3, 4, 5
                 //
                 // The probability for 0, 1, and 2 is 1/7 each

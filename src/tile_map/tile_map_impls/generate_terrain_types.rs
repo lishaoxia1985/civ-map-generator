@@ -18,6 +18,7 @@ impl TileMap {
 
         let extra_mountains = 0;
 
+        // TODO: `tectonic_islands` should be configurable by the user in the future.
         let tectonic_islands = false;
 
         let adjustment = match map_parameters.world_age {

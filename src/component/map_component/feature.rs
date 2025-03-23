@@ -1,8 +1,9 @@
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
 use crate::ruleset::Ruleset;
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize, Debug)]
+#[derive(Enum, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Debug)]
 pub enum Feature {
     Forest,
     Jungle,

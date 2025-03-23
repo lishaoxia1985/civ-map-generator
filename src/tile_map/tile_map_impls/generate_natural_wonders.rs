@@ -21,8 +21,8 @@ impl TileMap {
     ///
     /// This function is like to Civ6's natural wonder generation. We edit it to fit our game which is like Civ5.
     /// # Notice
-    /// - In CIV 6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
-    /// - In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
+    /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
+    /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let world_size = map_parameters.map_size.world_size;
@@ -205,7 +205,7 @@ impl TileMap {
             natural_wonder_and_tile.keys().cloned().collect();
 
         // Sort the natural wonders by the number of tiles they can be placed
-        // In CIV 5, the natural wonders with lesser number of tiles will be placed first.
+        // In CIV5, the natural wonders with lesser number of tiles will be placed first.
         selected_natural_wonder_list
             .sort_by_key(|natural_wonder| natural_wonder_and_tile[natural_wonder].len());
 
@@ -226,7 +226,7 @@ impl TileMap {
                     tiles.shuffle(&mut self.random_number_generator);
 
                     for &tile in tiles.iter() {
-                        if self.layer_data[&Layer::NaturalWonder][tile.index()] == 0 {
+                        if self.layer_data[Layer::NaturalWonder][tile.index()] == 0 {
                             let natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
 
                             // At first, we should remove feature from the tile
@@ -374,9 +374,9 @@ impl TileMap {
     ///
     /// This function is likely to Civ6's natural wonder generation. SO we don't use this function for the current game which is more like Civ5.
     /// # Notice
-    /// - In CIV 6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
+    /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
     /// so we don't need to check if the tile is occupied by a civilization start location.
-    /// -In CIV 5, generating natural wonders is after generating civilization start locations and before generating city states,
+    /// -In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let world_size = map_parameters.map_size.world_size;
@@ -559,7 +559,7 @@ impl TileMap {
             natural_wonder_and_tile_and_score.keys().cloned().collect();
 
         // Shuffle the list that we can choose natural wonder randomly
-        // NOTICE: It is different from CIV 5.
+        // NOTICE: It is different from CIV5.
         selected_natural_wonder_list.shuffle(&mut self.random_number_generator);
 
         // Store current how many natural wonders have been placed

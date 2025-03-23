@@ -481,8 +481,7 @@ impl TileMap {
             let mut selected_resource = None;
             let mut selected_quantity = 2;
 
-            if self.layer_data[&Layer::Strategic][tile.index()] == 0
-                && tile.resource(self).is_none()
+            if self.layer_data[Layer::Strategic][tile.index()] == 0 && tile.resource(self).is_none()
             {
                 // Placing a small strategic resource here. Need to determine what type to place.
                 if let Some(feature) = feature {

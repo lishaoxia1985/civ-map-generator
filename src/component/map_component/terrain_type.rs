@@ -1,6 +1,7 @@
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize, Debug)]
+#[derive(Enum, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize, Debug)]
 pub enum TerrainType {
     Water,
     Flatland,

@@ -56,8 +56,8 @@ impl TileMap {
                 region_low_fert_compensation[region_index] += 1;
             }
 
-            let region_land_num = terrain_statistic.terrain_type_sum[&TerrainType::Hill]
-                + terrain_statistic.terrain_type_sum[&TerrainType::Flatland];
+            let region_land_num = terrain_statistic.terrain_type_num[TerrainType::Hill]
+                + terrain_statistic.terrain_type_num[TerrainType::Flatland];
 
             // Low fertility per region land plot, add a luxury.
             if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {
@@ -613,8 +613,8 @@ impl TileMap {
         while num_left_to_place > 0 && marble_tile_list_iter.peek().is_some() {
             let tile = *marble_tile_list_iter.next().unwrap();
             if self.resource_query[tile.index()] == None
-                && self.layer_data[&Layer::Marble][tile.index()] == 0
-                && self.layer_data[&Layer::Luxury][tile.index()] == 0
+                && self.layer_data[Layer::Marble][tile.index()] == 0
+                && self.layer_data[Layer::Luxury][tile.index()] == 0
             {
                 // Placing this resource in this plot.
                 self.resource_query[tile.index()] =
