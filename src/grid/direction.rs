@@ -8,7 +8,6 @@ pub enum Direction {
     SouthWest,
     West,
     NorthWest,
-    None,
 }
 
 impl Direction {
@@ -27,7 +26,6 @@ impl Direction {
             Direction::SouthWest => Direction::NorthEast,
             Direction::West => Direction::East,
             Direction::NorthWest => Direction::SouthEast,
-            Direction::None => panic!("This direction has no opposite direction."),
         }
     }
 }

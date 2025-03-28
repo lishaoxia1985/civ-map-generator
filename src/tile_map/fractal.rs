@@ -598,10 +598,10 @@ impl CvFractal {
                         );
 
                         // make the influence of the seed more directional
-                        if relative_direction == current_voronoi_seed.bias_direction {
+                        if relative_direction == Some(current_voronoi_seed.bias_direction) {
                             modified_hex_distance -= current_voronoi_seed.directional_bias_strength;
                         } else if relative_direction
-                            == current_voronoi_seed.bias_direction.opposite_direction()
+                            == Some(current_voronoi_seed.bias_direction.opposite_direction())
                         {
                             modified_hex_distance += current_voronoi_seed.directional_bias_strength;
                         }
@@ -630,11 +630,17 @@ impl CvFractal {
 
     /// Determine the direction of dest relative to start.
     ///
-    /// If dest is located to the north of start, the function returns [Direction::North].
-    fn estimate_direction(&self, start: Hex, dest: Hex, orientation: HexOrientation) -> Direction {
-        // If the start and dest are the same, return Direction::None
+    /// For example, If dest is located to the north of start, the function returns `Some(Direction::North)`.
+    /// If dest is equal to start, the function returns [`None`].
+    fn estimate_direction(
+        &self,
+        start: Hex,
+        dest: Hex,
+        orientation: HexOrientation,
+    ) -> Option<Direction> {
+        // If the start and dest are the same, return `None`.
         if start == dest {
-            return Direction::None;
+            return None;
         }
 
         // Define hex_layout and set the size to 1/sqrt(3) to make sure we can get the unit vectors
@@ -683,7 +689,7 @@ impl CvFractal {
             .map(|(index, _)| index)
             .unwrap();
 
-        orientation.edge_direction()[max_index]
+        Some(orientation.edge_direction()[max_index])
     }
 
     /// Get the noise map of the 2d Array which is used in the civ map. The map is saved as a gray image.
