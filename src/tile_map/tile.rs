@@ -295,12 +295,12 @@ impl Tile {
         } else {
             // Otherwise, check the neighboring tile and the opposite direction.
             match self.neighbor_tile(direction, map_parameters) {
-                Some(neighbor_tile) => (neighbor_tile, direction.opposite_direction()),
+                Some(neighbor_tile) => (neighbor_tile, direction.opposite()),
                 None => return false,
             }
         };
 
-        tile_map.river_list.values().flatten().any(
+        tile_map.river_list.iter().flatten().any(
             |&(tile, flow_direction)| {
                 tile == check_tile // 1. Check whether there is a river in the current tile.
                     && check_edge_direction == edge_direction_for_flow_direction(flow_direction, map_parameters) // 2. Check whether the river edge in the direction of the current tile.

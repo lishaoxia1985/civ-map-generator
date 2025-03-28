@@ -1,4 +1,4 @@
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Direction {
     North,
     NorthEast,
@@ -11,12 +11,8 @@ pub enum Direction {
 }
 
 impl Direction {
-    /// Returns the opposite direction of the current direction
-    ///
-    /// # Panics
-    ///
-    /// Panics if the current direction is `Direction::None`
-    pub const fn opposite_direction(self) -> Self {
+    /// Returns the opposite direction of the current direction.
+    pub const fn opposite(self) -> Self {
         match self {
             Direction::North => Direction::South,
             Direction::NorthEast => Direction::SouthWest,

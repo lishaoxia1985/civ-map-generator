@@ -601,7 +601,7 @@ impl CvFractal {
                         if relative_direction == Some(current_voronoi_seed.bias_direction) {
                             modified_hex_distance -= current_voronoi_seed.directional_bias_strength;
                         } else if relative_direction
-                            == Some(current_voronoi_seed.bias_direction.opposite_direction())
+                            == Some(current_voronoi_seed.bias_direction.opposite())
                         {
                             modified_hex_distance += current_voronoi_seed.directional_bias_strength;
                         }
