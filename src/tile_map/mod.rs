@@ -27,7 +27,7 @@ pub use map_parameters::*;
 pub struct TileMap {
     pub random_number_generator: StdRng,
     pub map_size: MapSize,
-    pub river_list: HashMap<i32, Vec<(Tile, Direction)>>,
+    pub river_list: Vec<Vec<(Tile, Direction)>>,
     // queries
     pub terrain_type_query: Vec<TerrainType>,
     pub base_terrain_query: Vec<BaseTerrain>,
@@ -112,7 +112,7 @@ impl TileMap {
         Self {
             random_number_generator,
             map_size: map_parameters.map_size,
-            river_list: HashMap::new(),
+            river_list: Vec::new(),
             terrain_type_query: vec![TerrainType::Water; size],
             base_terrain_query: vec![BaseTerrain::Ocean; size],
             feature_query: vec![None; size],
