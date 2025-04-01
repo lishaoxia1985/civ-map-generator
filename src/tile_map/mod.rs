@@ -62,7 +62,7 @@ pub struct TileMap {
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
     player_collision_data: Vec<bool>,
     // These tile will be as candidates for starting tile for city states
-    uninhabited_areas_coastal_tiles: Vec<Tile>,
+    uninhabited_areas_coastal_land_tiles: Vec<Tile>,
     // These tile will be as candidates for starting tile for city states
     uninhabited_areas_inland_tiles: Vec<Tile>,
     /// Store region index which city_state is assigned to,
@@ -126,7 +126,7 @@ impl TileMap {
             player_collision_data: vec![false; size],
             civilization_and_starting_tile: BTreeMap::new(),
             city_state_and_starting_tile: BTreeMap::new(),
-            uninhabited_areas_coastal_tiles: Vec::new(),
+            uninhabited_areas_coastal_land_tiles: Vec::new(),
             uninhabited_areas_inland_tiles: Vec::new(),
             city_state_region_assignments,
             city_state_starting_tile_and_region_index: Vec::new(),

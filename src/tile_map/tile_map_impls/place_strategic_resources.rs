@@ -7,13 +7,13 @@ use crate::{
     tile_map::{tile::Tile, Layer, MapParameters, ResourceSetting, TileMap},
 };
 
-use super::assign_starting_tile::ResourceToPlace;
+use super::assign_starting_tile::{get_major_strategic_resource_quantity_values, ResourceToPlace};
 
 impl TileMap {
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
         // Adjust amounts, if applicable, based on Resource Setting.
         let (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt) =
-            Self::get_major_strategic_resource_quantity_values(map_parameters.resource_setting);
+            get_major_strategic_resource_quantity_values(map_parameters.resource_setting);
 
         // Adjust appearance rate per Resource Setting chosen by user.
         let bonus_multiplier = match map_parameters.resource_setting {

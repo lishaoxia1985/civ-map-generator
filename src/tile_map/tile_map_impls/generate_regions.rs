@@ -1312,21 +1312,6 @@ pub enum RegionType {
     Hybrid,    //-- 8.
 }
 
-#[derive(Enum)]
-pub enum TileType {
-    /// Tile yield food, or tile will be placed bonus resource to yield food according to region type in the future.
-    Food,
-    /// Tile yield production.
-    Production,
-    /// "Good" tiles act as a hedge, helping differentiate candidate sites.
-    /// Among similar terrain tiles, they ensure the best one is selected.
-    /// For example, when using [`TileMap::evaluate_candidate_tile`],
-    /// the candidate tile with the most "Good" tiles within a 3-tile radius will get a higher score.
-    Good,
-    /// Tile yield nothing.
-    Junk,
-}
-
 #[derive(Debug)]
 pub struct StartLocationCondition {
     /// Whether the start location is coastal land.
