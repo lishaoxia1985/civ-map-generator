@@ -7,13 +7,13 @@ use crate::{
     tile_map::{tile::Tile, Layer, MapParameters, ResourceSetting, TileMap},
 };
 
-use super::assign_starting_tile::ResourceToPlace;
+use super::assign_starting_tile::{get_major_strategic_resource_quantity_values, ResourceToPlace};
 
 impl TileMap {
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
         // Adjust amounts, if applicable, based on Resource Setting.
         let (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt) =
-            Self::get_major_strategic_resource_quantity_values(map_parameters.resource_setting);
+            get_major_strategic_resource_quantity_values(map_parameters.resource_setting);
 
         // Adjust appearance rate per Resource Setting chosen by user.
         let bonus_multiplier = match map_parameters.resource_setting {
@@ -422,8 +422,9 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceOilInTheSea
-    /// Places oil sources in coastal waters, with the amount being half of what is on land.
+    /// Places oil sources in [`BaseTerrain::Coast`], with the amount being half of what is on land.
     /// If the map has too little ocean, it will place as much as can fit.
+    /// Before calling this function, make sure `coast_list` is shuffled.
     ///
     /// # Warning
     /// This operation will invalidate the Strategic Resource Impact Table for future operations,

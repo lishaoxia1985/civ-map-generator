@@ -152,7 +152,7 @@ impl TileMap {
                     while randoms_to_place > 0 && priority_list_indices_iter.peek().is_some() {
                         let i = *priority_list_indices_iter.next().unwrap();
 
-                        luxury_plot_lists[i as usize].shuffle(&mut self.random_number_generator);
+                        luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
                             map_parameters,
                             Resource::Resource(luxury_resource.to_owned()),

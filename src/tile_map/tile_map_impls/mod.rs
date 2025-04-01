@@ -1,7 +1,9 @@
 mod add_features;
 mod add_rivers;
 pub mod assign_starting_tile;
-mod generate_area_id;
+mod balance_and_assign_civilization_starting_tiles;
+mod choose_civilization_starting_tiles;
+mod generate_area_ids;
 mod generate_base_terrains;
 mod generate_lakes;
 mod generate_natural_wonders;
