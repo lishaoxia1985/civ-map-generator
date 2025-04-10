@@ -622,12 +622,12 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AttemptToPlaceHillsAtPlot
-    /// This function attempts to place a Hill at the currently chosen tile.
+    /// Attempts to place a Hill at the currently chosen tile.
     /// If successful, it returns `true`, otherwise it returns `false`.
     pub fn attempt_to_place_hill_at_tile(
         &mut self,
         map_parameters: &MapParameters,
-        tile: &Tile,
+        tile: Tile,
     ) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) != TerrainType::Water
@@ -644,9 +644,9 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AttemptToPlaceSmallStrategicAtPlot
-    /// This function attempts to place a Small `Horses` or `Iron` Resource at the currently chosen tile.
+    /// Attempts to place a Small `Horses` or `Iron` Resource at the currently chosen tile.
     /// If successful, it returns `true`, otherwise it returns `false`.
-    pub fn attempt_to_place_small_strategic_at_plot(&mut self, tile: &Tile) -> bool {
+    pub fn attempt_to_place_small_strategic_at_plot(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) == TerrainType::Flatland
             && tile.feature(self).is_none()
@@ -672,12 +672,16 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AttemptToPlaceBonusResourceAtPlot
-    /// This function attempts to place a Bonus Resource at the currently chosen tile.
-    /// Returns two booleans. First is true if something was placed. Second true if Oasis placed.
+    /// Attempts to place a Bonus Resource at the currently chosen tile.
+    ///
+    /// # Returns
+    /// Returns a tuple of two booleans:
+    /// * The first boolean is `true` if something was placed.
+    /// * The second boolean is `true` as well if [`Feature::Oasis`] was placed.
     pub fn attempt_to_place_bonus_resource_at_plot(
         &mut self,
         map_parameters: &MapParameters,
-        tile: &Tile,
+        tile: Tile,
         allow_oasis: bool,
     ) -> (bool, bool) {
         let terrain_type = tile.terrain_type(self);
@@ -761,9 +765,9 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AttemptToPlaceStoneAtGrassPlot
-    /// This function attempts to place a stone at a grass plot.
+    /// Attempts to place a stone at a grass plot.
     /// Returns `true` if Stone is placed. Otherwise returns `false`.
-    pub fn attempt_to_place_stone_at_grass_plot(&mut self, tile: &Tile) -> bool {
+    pub fn attempt_to_place_stone_at_grass_plot(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) == TerrainType::Flatland
             && tile.base_terrain(self) == BaseTerrain::Grassland

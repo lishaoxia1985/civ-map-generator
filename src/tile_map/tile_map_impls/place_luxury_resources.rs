@@ -73,14 +73,13 @@ impl TileMap {
             let mut luxury_plot_lists =
                 self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
 
-            let mut priority_list_indices_iter = priority_list_indices_of_luxury.iter().peekable();
-
             let mut num_left_to_place = num_to_place;
 
             // First pass, checking only first two rings with a 50% ratio.
-            while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                let i = *priority_list_indices_iter.next().unwrap();
-
+            for &i in priority_list_indices_of_luxury.iter() {
+                if num_left_to_place == 0 {
+                    break;
+                }
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
                     map_parameters,
@@ -99,13 +98,11 @@ impl TileMap {
                 let mut luxury_plot_lists =
                     self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 3);
 
-                let mut priority_list_indices_iter =
-                    priority_list_indices_of_luxury.iter().peekable();
-
                 // Second pass, checking three rings with a 100% ratio.
-                while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                    let i = *priority_list_indices_iter.next().unwrap();
-
+                for &i in priority_list_indices_of_luxury.iter() {
+                    if num_left_to_place == 0 {
+                        break;
+                    }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         map_parameters,
@@ -146,12 +143,10 @@ impl TileMap {
                     let priority_list_indices_of_luxury =
                         self.get_indices_for_luxury_type(&luxury_resource);
 
-                    let mut priority_list_indices_iter =
-                        priority_list_indices_of_luxury.iter().peekable();
-
-                    while randoms_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                        let i = *priority_list_indices_iter.next().unwrap();
-
+                    for &i in priority_list_indices_of_luxury.iter() {
+                        if randoms_to_place == 0 {
+                            break;
+                        }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
                             map_parameters,
@@ -244,14 +239,12 @@ impl TileMap {
                 let mut luxury_plot_lists =
                     self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
 
-                let mut priority_list_indices_iter =
-                    priority_list_indices_of_luxury.iter().peekable();
-
                 let mut num_left_to_place = 1;
 
-                while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                    let i = *priority_list_indices_iter.next().unwrap();
-
+                for &i in priority_list_indices_of_luxury.iter() {
+                    if num_left_to_place == 0 {
+                        break;
+                    }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         map_parameters,
@@ -286,8 +279,6 @@ impl TileMap {
                 .entry(luxury_resource.to_string())
                 .or_insert(0);
 
-            let mut priority_list_indices_iter = priority_list_indices_of_luxury.iter().peekable();
-
             // Calibrate the number of luxuries per region based on the world size and the number of civilizations.
             // The number of luxuries per region should be highest when the number of civilizations is closest to the "default" value for that map size.
             let target_list = get_region_luxury_target_numbers(world_size);
@@ -315,9 +306,10 @@ impl TileMap {
 
             let mut num_left_to_place = num_luxury_to_place;
 
-            while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                let i = *priority_list_indices_iter.next().unwrap();
-
+            for &i in priority_list_indices_of_luxury.iter() {
+                if num_left_to_place == 0 {
+                    break;
+                }
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
                     map_parameters,
@@ -384,16 +376,14 @@ impl TileMap {
                     num_this_luxury_to_place = max(luxury_minimum, luxury_share_of_remaining);
                 }
 
-                let mut priority_list_indices_iter =
-                    priority_list_indices_of_luxury.iter().peekable();
-
                 let mut current_list = self.generate_global_resource_plot_lists(map_parameters);
                 // Place this luxury type.
                 let mut num_left_to_place = num_this_luxury_to_place;
 
-                while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                    let i = *priority_list_indices_iter.next().unwrap();
-
+                for &i in priority_list_indices_of_luxury.iter() {
+                    if num_left_to_place == 0 {
+                        break;
+                    }
                     current_list[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         map_parameters,
@@ -493,13 +483,12 @@ impl TileMap {
                         2,
                     );
 
-                    let mut priority_list_indices_iter =
-                        priority_list_indices_of_luxury.iter().peekable();
-
                     let mut num_left_to_place = 1;
-                    while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                        let i = *priority_list_indices_iter.next().unwrap();
 
+                    for &i in priority_list_indices_of_luxury.iter() {
+                        if num_left_to_place == 0 {
+                            break;
+                        }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         num_left_to_place = self.place_specific_number_of_resources(
                             map_parameters,
@@ -607,11 +596,11 @@ impl TileMap {
 
         marble_tile_list.shuffle(&mut self.random_number_generator);
 
-        let mut marble_tile_list_iter = marble_tile_list.iter().peekable();
-
         // Place the marble.
-        while num_left_to_place > 0 && marble_tile_list_iter.peek().is_some() {
-            let tile = *marble_tile_list_iter.next().unwrap();
+        for &tile in marble_tile_list.iter() {
+            if num_left_to_place == 0 {
+                break;
+            }
             if self.resource_query[tile.index()] == None
                 && self.layer_data[Layer::Marble][tile.index()] == 0
                 && self.layer_data[Layer::Luxury][tile.index()] == 0
@@ -627,7 +616,7 @@ impl TileMap {
         }
 
         if num_left_to_place > 0 {
-            println!("Failed to place {} units of Marble.", num_left_to_place);
+            eprintln!("Failed to place {} units of Marble.", num_left_to_place);
         }
     }
 
