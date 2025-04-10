@@ -378,18 +378,20 @@ impl Tile {
     ///
     /// A tile is initially considered a starting tile if it is either `Flatland` or `Hill`, and then it must meet all of the following conditions:
     /// 1. The tile is not `Snow`.
-    /// 2. - If `force_it` is `true`, ignores whether the tile is in the influence of other city states.
-    ///    - If `false`, the tile must not be in the influence of other city states.
-    /// 3. - If `ignore_collisions` is `true`, ignores whether the tile has been placed a city state, a civilization, or a natural wonder.
-    ///    - If `false`, the tile must not have been placed a city state, civilization, or natural wonder.
+    /// 2. `force_it`:
+    /// - `true`, ignores whether the tile is in the influence of other city states.
+    /// - `false`, the tile must not be in the influence of other city states.
+    /// 3. `ignore_collisions`:
+    /// - `true`, ignores whether the tile has been placed a city state, a civilization, or a natural wonder.
+    /// - `false`, the tile must not have been placed a city state, civilization, or natural wonder.
     /// # Parameters
     /// - `tile_map`: A reference to `TileMap`, which contains the tile data.
     /// - `region`: An optional reference to `Region`, which represents the region where the city state is located.\
     /// If `None`, the function considers the tile as a candidate regardless of its region.
     /// That usually happens when we place a city state in a unhabitated area.
-    /// - `force_it`: A boolean flag indicating whether to force the tile to be a candidate regardless of whether it is in the influence of another city state.
+    /// - `force_it`: A boolean flag indicating whether to force the tile to be a candidate regardless of whether it is in the influence of another city state.\
     /// If `true`, the function ignores whether the tile is in the influence of other city states.
-    /// - `ignore_collisions`: A boolean flag indicating whether to ignore the tile has been placed a city state, a civilization, or a natural wonder.
+    /// - `ignore_collisions`: A boolean flag indicating whether to ignore the tile has been placed a city state, a civilization, or a natural wonder.\
     /// If `true`, the function ignores the tile has been placed a city state, civilization, or natural wonder.
     pub fn can_be_city_state_starting_tile(
         &self,

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use enum_map::EnumMap;
 use enum_map::{enum_map, Enum};
 use rand::{rngs::StdRng, SeedableRng};
-use tile::Tile;
+pub use tile::Tile;
 use tile_map_impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 
 mod fractal;

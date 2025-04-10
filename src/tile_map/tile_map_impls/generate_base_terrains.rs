@@ -87,15 +87,9 @@ impl TileMap {
         );
 
         let [desert_top, plains_top] =
-            deserts_fractal.get_height_from_percents(&[desert_top_percent, plains_top_percent])[..]
-        else {
-            panic!("Vec length does not match the pattern")
-        };
-        let [desert_bottom, plains_bottom] = plains_fractal
-            .get_height_from_percents(&[desert_bottom_percent, plains_bottom_percent])[..]
-        else {
-            panic!("Vec length does not match the pattern")
-        };
+            deserts_fractal.get_height_from_percents([desert_top_percent, plains_top_percent]);
+        let [desert_bottom, plains_bottom] =
+            plains_fractal.get_height_from_percents([desert_bottom_percent, plains_bottom_percent]);
 
         self.iter_tiles().for_each(|tile| {
             let terrain_type = tile.terrain_type(self);

@@ -15,7 +15,7 @@ pub struct MapParameters {
     pub map_type: MapType,
     pub hex_layout: HexLayout,
     pub map_wrapping: MapWrapping,
-    /// the map use which type of offset coordinate
+    /// The map use which type of offset coordinate
     pub offset: Offset,
     pub no_ruins: bool,
     pub seed: u64,
@@ -182,7 +182,7 @@ pub enum RegionDivideMethod {
     Continent,
     /// This method is primarily used for Archipelago or other maps with many small islands.
     /// The entire map is treated as one large rectangular region.
-    /// The `WholeMapRectangle` method is equivalent to `CustomRectangle(Rectangle)` when the `Rectangle` encompasses the entire map area.
+    /// [`RegionDivideMethod::WholeMapRectangle`] is equivalent to [`RegionDivideMethod::CustomRectangle()`] when [`Rectangle`] encompasses the entire map area.
     /// We will ignore the landmass id when method is set to WholeMapRectangle.
     WholeMapRectangle,
     /// Civs start within a custom-defined rectangle.
@@ -206,7 +206,7 @@ pub enum ResourceSetting {
 
 impl Default for MapParameters {
     fn default() -> Self {
-        let mut map_parameters = Self {
+        Self {
             name: "perlin map".to_owned(),
             map_size: MapSize::from_world_size(WorldSize::Standard),
             map_type: MapType::Fractal,
@@ -239,14 +239,16 @@ impl Default for MapParameters {
             region_divide_method: RegionDivideMethod::Continent,
             civilization_starting_tile_must_be_coastal_land: false,
             resource_setting: ResourceSetting::Standard,
-        };
-        map_parameters.update_origin();
-        map_parameters
+        }
     }
 }
 
 impl MapParameters {
-    pub fn update_origin(&mut self) {
+    /// Get the center of the map in pixel coordinates.
+    ///
+    /// # Notice
+    /// When we show the map, we need to set camera to the center of the map.
+    pub fn map_center(&self) -> DVec2 {
         let width = self.map_size.width;
         let height = self.map_size.height;
 
@@ -273,8 +275,10 @@ impl MapParameters {
             (max_offset_x.max(offset_x), max_offset_y.max(offset_y))
         });
 
-        self.hex_layout.origin =
-            -(DVec2::new(min_offset_x, min_offset_y) + DVec2::new(max_offset_x, max_offset_y)) / 2.;
+        DVec2::new(
+            (min_offset_x + max_offset_x) / 2.,
+            (min_offset_y + max_offset_y) / 2.,
+        )
     }
 
     pub const fn edge_direction_array(&self) -> [Direction; 6] {

@@ -126,25 +126,19 @@ impl Generator for Pangaea {
             offset,
         );
 
-        let [water_threshold] = continents_fractal.get_height_from_percents(&[water_percent])[..]
-        else {
-            panic!("Vec length does not match the pattern")
-        };
+        let [water_threshold] = continents_fractal.get_height_from_percents([water_percent]);
 
         let [pass_threshold, hills_bottom1, hills_top1, hills_bottom2, hills_top2] = hills_fractal
-            .get_height_from_percents(&[
+            .get_height_from_percents([
                 hills_near_mountains,
                 hills_bottom1,
                 hills_top1,
                 hills_bottom2,
                 hills_top2,
-            ])[..]
-        else {
-            panic!("Vec length does not match the pattern")
-        };
+            ]);
 
-        let [mountain_threshold, hills_near_mountains, hills_clumps, mountain_100, mountain_99, mountain_98, mountain_97, mountain_95] =
-            mountains_fractal.get_height_from_percents(&[
+        let [mountain_threshold, hills_near_mountains, _hills_clumps, mountain_100, mountain_99, _mountain_988, mountain_97, mountain_95] =
+            mountains_fractal.get_height_from_percents([
                 mountains,
                 hills_near_mountains,
                 hills_clumps,
@@ -153,10 +147,7 @@ impl Generator for Pangaea {
                 98,
                 97,
                 95,
-            ])[..]
-        else {
-            panic!("Vec length does not match the pattern")
-        };
+            ]);
 
         let width = map_parameters.map_size.width;
         let height = map_parameters.map_size.height;

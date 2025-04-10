@@ -104,17 +104,17 @@ impl TileMap {
 
         // Last chance method to place city states that didn't fit where they were supposed to go.
         if num_city_states_discarded > 0 {
-            let mut cs_last_chance_plot_list = self
+            let mut city_state_last_chance_tile_list = self
                 .iter_tiles()
                 .filter(|tile| tile.can_be_city_state_starting_tile(self, None, false, false))
                 .collect::<Vec<Tile>>();
 
-            if cs_last_chance_plot_list.len() > 0 {
-                cs_last_chance_plot_list.shuffle(&mut self.random_number_generator);
+            if city_state_last_chance_tile_list.len() > 0 {
+                city_state_last_chance_tile_list.shuffle(&mut self.random_number_generator);
 
                 for city_state in start_city_state_list.iter() {
                     let tile = self.get_city_state_start_tile(
-                        &cs_last_chance_plot_list,
+                        &city_state_last_chance_tile_list,
                         &vec![],
                         true,
                         true,
@@ -315,7 +315,7 @@ impl TileMap {
     ///    This parameter is defined by the const `MAX_REGIONS_PER_LUXURY_TYPE` variable in [`TileMap::assign_luxury_to_region`].
     ///    View [`TileMap::assign_luxury_to_region`] for more information.
     /// 4. Assign city states to low fertility regions.
-    pub fn assign_city_states_to_regions_or_uninhabited_landmasses(
+    fn assign_city_states_to_regions_or_uninhabited_landmasses(
         &mut self,
         map_parameters: &MapParameters,
     ) {
@@ -794,7 +794,7 @@ impl TileMap {
         let mut hammer_score = (4 * inner_hills) + (2 * inner_forest) + inner_one_hammer;
         if hammer_score < 4 {
             neighbor_tiles.shuffle(&mut self.random_number_generator);
-            for tile in neighbor_tiles.iter() {
+            for &tile in neighbor_tiles.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
                 let placed_hill = self.attempt_to_place_hill_at_tile(map_parameters, tile);
                 if placed_hill {
@@ -815,9 +815,14 @@ impl TileMap {
         }
 
         if num_food_bonus_needed > 0 {
-            let max_bonuses_possible = inner_can_have_bonus + outer_can_have_bonus;
+            let _max_bonuses_possible = inner_can_have_bonus + outer_can_have_bonus;
+            // The num of food bonus we have placed in the first ring.
             let mut inner_placed = 0;
+            // The num of food bonus we have placed in the second ring.
             let mut outer_placed = 0;
+            // Permanent flag. (We don't want to place more than one Oasis per location).
+            // This is set to false after the first Oasis is placed.
+            let mut allow_oasis = true;
 
             // We shuffle the `neighbor_tiles` that was used earlier, instead of recreating a new one.
             neighbor_tiles.shuffle(&mut self.random_number_generator);
@@ -828,7 +833,6 @@ impl TileMap {
             let mut first_ring_iter = neighbor_tiles.iter().peekable();
             let mut second_ring_iter = tiles_at_distance_two.iter().peekable();
 
-            let mut allow_oasis = true; // Permanent flag. (We don't want to place more than one Oasis per location).
             while num_food_bonus_needed > 0 {
                 if inner_placed < 2 && inner_can_have_bonus > 0 && first_ring_iter.peek().is_some()
                 {
@@ -837,7 +841,7 @@ impl TileMap {
                         let (placed_bonus, placed_oasis) = self
                             .attempt_to_place_bonus_resource_at_plot(
                                 map_parameters,
-                                &tile,
+                                tile,
                                 allow_oasis,
                             );
                         if placed_bonus {
@@ -855,11 +859,11 @@ impl TileMap {
                     && second_ring_iter.peek().is_some()
                 {
                     // Add bonus to second ring.
-                    while let Some(tile) = second_ring_iter.next() {
+                    while let Some(&tile) = second_ring_iter.next() {
                         let (placed_bonus, placed_oasis) = self
                             .attempt_to_place_bonus_resource_at_plot(
                                 map_parameters,
-                                &tile,
+                                tile,
                                 allow_oasis,
                             );
                         if placed_bonus {

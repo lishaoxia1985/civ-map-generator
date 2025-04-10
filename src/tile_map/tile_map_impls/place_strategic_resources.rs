@@ -454,6 +454,7 @@ impl TileMap {
 
     // function AssignStartingPlots:PlaceSmallQuantitiesOfStrategics
     /// Distributes small quantities of strategic resources.
+    /// Before calling this function, make sure `plot_list` is shuffled.
     fn place_small_quantities_of_strategics(
         &mut self,
         map_parameters: &MapParameters,
@@ -469,12 +470,12 @@ impl TileMap {
 
         let num_to_place = (plot_list.len() as f64 / frequency).ceil() as u32;
 
-        let mut plot_list_iter = plot_list.iter().peekable();
-
         let mut num_left_to_place = num_to_place;
 
-        while num_left_to_place > 0 && plot_list_iter.peek().is_some() {
-            let tile = *plot_list_iter.next().unwrap();
+        for &tile in plot_list.iter() {
+            if num_left_to_place == 0 {
+                break;
+            }
             let terrain_type = tile.terrain_type(self);
             let base_terrain = tile.base_terrain(self);
             let feature = tile.feature(self);
@@ -667,38 +668,39 @@ impl TileMap {
     /// This function places small quantities of modern strategic resources (Oil, Aluminum, Coal) in city states.
     /// Mordern strategics contain Oil, Aluminum, Coal.
     fn add_modern_minor_strategics_to_city_states(&mut self, map_parameters: &MapParameters) {
-        let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] =
+        let [_uran_amt, _horse_amt, oil_amt, _iron_amt, coal_amt, alum_amt] =
             get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
+        let candidate_resources_amount = [coal_amt, oil_amt, alum_amt];
+
+        const CANDIDATE_STRATEGIC_RESOURCES: [&str; 3] = ["Coal", "Oil", "Aluminum"];
+        const PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES: [[usize; 6]; 3] = [
+            [3, 4, 13, 11, 10, 9],
+            [9, 1, 13, 14, 11, 10],
+            [3, 4, 13, 9, 10, 11],
+        ];
+
         for _ in 0..map_parameters.city_state_num {
             let city_state_starting_tile = self.city_state_starting_tile_and_region_index[1].0;
-            let candidate_strategic_resources = ["Coal", "Oil", "Aluminum"];
-            let candidate_resources_amount = [coal_amt, oil_amt, alum_amt];
-            let priority_list_indices_of_strategic_resources = [
-                [3, 4, 13, 11, 10, 9],
-                [9, 1, 13, 14, 11, 10],
-                [3, 4, 13, 9, 10, 11],
-            ];
 
-            let choosen_resource_index = self.random_number_generator.gen_range(0..4);
-            if choosen_resource_index < 3 {
-                let strategic_resource = candidate_strategic_resources[choosen_resource_index];
-                let resource_amount = candidate_resources_amount[choosen_resource_index];
+            let chosen_resource_index = self.random_number_generator.gen_range(0..4);
+            if chosen_resource_index < 3 {
+                let strategic_resource = CANDIDATE_STRATEGIC_RESOURCES[chosen_resource_index];
+                let resource_amount = candidate_resources_amount[chosen_resource_index];
                 let priority_list_indices_of_chosen_resource =
-                    priority_list_indices_of_strategic_resources[choosen_resource_index];
+                    PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
+
                 let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
                     map_parameters,
                     city_state_starting_tile,
                     3,
                 );
 
-                let mut priority_list_indices_iter =
-                    priority_list_indices_of_chosen_resource.iter().peekable();
-
                 let mut num_left_to_place = resource_amount;
 
-                while num_left_to_place > 0 && priority_list_indices_iter.peek().is_some() {
-                    let i = *priority_list_indices_iter.next().unwrap();
-
+                for &i in priority_list_indices_of_chosen_resource.iter() {
+                    if num_left_to_place == 0 {
+                        break;
+                    }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         map_parameters,

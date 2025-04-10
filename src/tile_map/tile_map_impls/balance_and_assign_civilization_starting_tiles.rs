@@ -968,7 +968,7 @@ impl TileMap {
         // If drastic shortage, attempt to add a hill to first ring.
         if (outer_hammer_score < 8 && inner_hammer_score < 2) || inner_hammer_score == 0 {
             neighbor_tiles.shuffle(&mut self.random_number_generator);
-            for tile in neighbor_tiles.iter() {
+            for &tile in neighbor_tiles.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
                 let placed_hill = self.attempt_to_place_hill_at_tile(map_parameters, tile);
                 if placed_hill {
@@ -985,7 +985,7 @@ impl TileMap {
         // If early hammers will be too short, attempt to add a small Horse or Iron to second ring.
         if inner_hammer_score < 3 && early_hammer_score < 6 {
             tiles_at_distance_two.shuffle(&mut self.random_number_generator);
-            for tile in tiles_at_distance_two.iter() {
+            for &tile in tiles_at_distance_two.iter() {
                 let placed_strategic = self.attempt_to_place_small_strategic_at_plot(tile);
                 if placed_strategic {
                     break;
@@ -1078,7 +1078,7 @@ impl TileMap {
                         let (placed_bonus, placed_oasis) = self
                             .attempt_to_place_bonus_resource_at_plot(
                                 map_parameters,
-                                &tile,
+                                tile,
                                 allow_oasis,
                             );
                         if placed_bonus {
@@ -1099,11 +1099,11 @@ impl TileMap {
                     && second_ring_iter.peek().is_some()
                 {
                     // Add bonus to second ring.
-                    while let Some(tile) = second_ring_iter.next() {
+                    while let Some(&tile) = second_ring_iter.next() {
                         let (placed_bonus, placed_oasis) = self
                             .attempt_to_place_bonus_resource_at_plot(
                                 map_parameters,
-                                &tile,
+                                tile,
                                 allow_oasis,
                             );
                         if placed_bonus {
@@ -1119,11 +1119,11 @@ impl TileMap {
                     }
                 } else if third_ring_iter.peek().is_some() {
                     // Add bonus to third ring.
-                    while let Some(tile) = third_ring_iter.next() {
+                    while let Some(&tile) = third_ring_iter.next() {
                         let (placed_bonus, placed_oasis) = self
                             .attempt_to_place_bonus_resource_at_plot(
                                 map_parameters,
-                                &tile,
+                                tile,
                                 allow_oasis,
                             );
                         if placed_bonus {
@@ -1167,7 +1167,7 @@ impl TileMap {
                 if !inner_placed && first_ring_iter.peek().is_some() {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(&tile);
+                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(tile);
                         if placed_bonus {
                             inner_placed = true;
                             num_stone_needed -= 1;
@@ -1176,8 +1176,8 @@ impl TileMap {
                     }
                 } else if second_ring_iter.peek().is_some() {
                     // Add bonus to second ring.
-                    while let Some(tile) = second_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(&tile);
+                    while let Some(&tile) = second_ring_iter.next() {
+                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(tile);
                         if placed_bonus {
                             num_stone_needed -= 1;
                             break;

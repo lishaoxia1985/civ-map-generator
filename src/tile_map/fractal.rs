@@ -457,12 +457,10 @@ impl CvFractal {
     /// The function then extracts all values from the fractal array except its last row and last column,
     /// flattens the array, sorts it in an unstable manner, and calculates target values based on the input percentages.
     ///
-    /// The final output is a vector containing the calculated height values corresponding to the input percentages.
-    pub fn get_height_from_percents(&self, percents: &[i32]) -> Vec<i32> {
-        let percents: Vec<i32> = percents
-            .iter()
-            .map(|&percent| percent.clamp(0, 100))
-            .collect();
+    /// The final output is an array containing the calculated height values corresponding to the input percentages.
+    pub fn get_height_from_percents<const N: usize>(&self, percents: [i32; N]) -> [i32; N] {
+        let percents = percents.map(|p| p.clamp(0, 100));
+
         // Get all value from the fractal array except its last row and last column
         let mut flatten: Vec<&i32> = self
             .fractal_array
@@ -473,15 +471,11 @@ impl CvFractal {
         flatten.sort_unstable();
 
         let len = flatten.len();
-        percents
-            .iter()
-            .map(|&percent| {
-                let target_index = ((len - 1) * percent as usize) / 100;
-                let target_value = flatten[target_index];
-
-                *target_value
-            })
-            .collect()
+        percents.map(|percent| {
+            let target_index = ((len - 1) * percent as usize) / 100;
+            let target_value = flatten[target_index];
+            *target_value
+        })
     }
 
     fn tectonic_action(&mut self, rifts: &CvFractal) {
