@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::tile_map::RegionType;
+use crate::tile_map::impls::generate_regions::RegionType;
 
 use super::Name;
 

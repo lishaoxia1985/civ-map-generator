@@ -1,32 +1,30 @@
 use std::collections::HashMap;
 
 use serde::de::DeserializeOwned;
-use std::fs;
-use terrain::base_terrain_info::BaseTerrainInfo;
-use terrain::feature_info::FeatureInfo;
-use terrain::natural_wonder_info::NaturalWonderInfo;
-use terrain::terrain_type_info::TerrainTypeInfo;
 
-mod belief;
-mod building;
-mod difficulty;
-mod era;
-mod global_unique;
-mod nation;
-mod policy;
-mod quest;
-mod ruin;
-mod specialist;
-mod tech;
-mod terrain;
-mod tile_improvement;
-mod tile_resource;
-mod unique;
-mod unit;
-mod unit_promotion;
-mod unit_type;
+use terrain::{
+    base_terrain_info::BaseTerrainInfo, feature_info::FeatureInfo,
+    natural_wonder_info::NaturalWonderInfo, terrain_type_info::TerrainTypeInfo,
+};
 
-pub use unique::Unique;
+pub mod belief;
+pub mod building;
+pub mod difficulty;
+pub mod era;
+pub mod global_unique;
+pub mod nation;
+pub mod policy;
+pub mod quest;
+pub mod ruin;
+pub mod specialist;
+pub mod tech;
+pub mod terrain;
+pub mod tile_improvement;
+pub mod tile_resource;
+pub mod unique;
+pub mod unit;
+pub mod unit_promotion;
+pub mod unit_type;
 
 use crate::ruleset::{
     belief::Belief, building::Building, difficulty::Difficulty, era::Era,
@@ -35,7 +33,7 @@ use crate::ruleset::{
     tile_resource::TileResource, unit::Unit, unit_promotion::UnitPromotion, unit_type::UnitType,
 };
 
-use self::{policy::Policy, tech::Technology};
+use self::tech::Technology;
 pub trait Name {
     fn name(&self) -> String;
 }

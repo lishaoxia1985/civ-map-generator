@@ -1,18 +1,19 @@
 use glam::DVec2;
 
 use crate::{
-    component::{
+    component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         resource::Resource, terrain_type::TerrainType,
     },
     grid::{
-        hex::{Hex, HexOrientation},
-        Direction, OffsetCoordinate,
+        direction::Direction,
+        hex_grid::hex::{Hex, HexOrientation},
+        offset_coordinate::OffsetCoordinate,
     },
+    map_parameters::{MapParameters, WrapType},
     ruleset::Ruleset,
+    tile_map::{impls::generate_regions::Region, Layer, TileMap},
 };
-
-use super::{tile_map_impls::generate_regions::Region, Layer, MapParameters, TileMap, WrapType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 /// `Tile` represents a tile on the map, where the `usize` is the index of the current tile.

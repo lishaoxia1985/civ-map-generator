@@ -5,7 +5,7 @@ use std::{
 
 use glam::{DMat2, DVec2, IVec2};
 
-use crate::grid::{Direction, OffsetCoordinate};
+use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Square(IVec2);

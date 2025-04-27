@@ -25,7 +25,7 @@ impl Generator for InlandSea {
     // ...
 }
 ```
-4. Add the new map type to the `MapType` enum in the `src/tile_map/map_parameters.rs` file. For example:
+4. Add the new map type to the `MapType` enum in the `src/map_parameters.rs` file. For example:
 ```rust
 pub enum MapType {
     Fractal,

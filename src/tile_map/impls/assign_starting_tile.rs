@@ -5,11 +5,13 @@ use std::collections::HashSet;
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
-    component::{
+    component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
+    map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
-    tile_map::{tile::Tile, Layer, MapParameters, ResourceSetting, TileMap},
+    tile::Tile,
+    tile_map::{Layer, TileMap},
 };
 
 use super::generate_regions::RegionType;

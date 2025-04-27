@@ -2,9 +2,11 @@ use glam::{DVec2, IVec2};
 use rand::Rng;
 
 use crate::{
+    component::map_component::terrain_type::TerrainType,
+    fractal::{CvFractal, Flags},
     generate_common_methods,
-    terrain_type::TerrainType,
-    tile_map::{CvFractal, Flags, MapParameters, SeaLevel, TileMap, WorldAge, WorldSize},
+    map_parameters::{MapParameters, SeaLevel, WorldAge, WorldSize},
+    tile_map::TileMap,
 };
 
 use super::Generator;

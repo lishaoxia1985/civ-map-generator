@@ -2,10 +2,9 @@ use std::collections::{BTreeSet, VecDeque};
 
 use std::collections::HashSet;
 
-use crate::{
-    component::terrain_type::TerrainType,
-    tile_map::{tile::Tile, MapParameters, TileMap},
-};
+use crate::component::map_component::terrain_type::TerrainType;
+use crate::tile::Tile;
+use crate::tile_map::{MapParameters, TileMap};
 
 impl TileMap {
     fn bfs(&mut self, map_parameters: &MapParameters, mut area_tiles: HashSet<Tile>) {

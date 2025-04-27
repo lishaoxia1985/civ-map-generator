@@ -2,17 +2,19 @@ use std::cmp::min;
 
 use std::collections::{HashMap, HashSet};
 
-use rand::seq::index::sample;
-use rand::{seq::SliceRandom, Rng};
+use rand::{
+    seq::{index::sample, SliceRandom},
+    Rng,
+};
 
-use crate::feature::Feature;
 use crate::{
-    component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
-    ruleset::Ruleset,
-    tile_map::{
-        tile::Tile, tile_map_impls::generate_regions::Rectangle, Layer, MapParameters,
-        RegionDivideMethod, TileMap,
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
     },
+    map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
+    ruleset::Ruleset,
+    tile::Tile,
+    tile_map::{Layer, TileMap},
 };
 
 impl TileMap {

@@ -8,12 +8,14 @@ use glam::DVec2;
 use image::{imageops::resize, GrayImage, ImageBuffer};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 
-use crate::grid::{
-    hex::{Hex, HexLayout, HexOrientation, Offset, SQRT_3},
-    Direction, OffsetCoordinate,
+use crate::{
+    grid::{
+        direction::Direction,
+        hex_grid::hex::{Hex, HexLayout, HexOrientation, Offset, SQRT_3},
+        offset_coordinate::OffsetCoordinate,
+    },
+    map_parameters::{MapWrapping, WrapType},
 };
-
-use super::{MapWrapping, WrapType};
 
 struct VoronoiSeed {
     /// The hex coordinate of the seed
@@ -738,9 +740,9 @@ mod tests {
 
     use rand::{rngs::StdRng, SeedableRng};
 
-    use crate::tile_map::{fractal::Flags, MapWrapping, WrapType};
+    use crate::map_parameters::{MapWrapping, WrapType};
 
-    use super::CvFractal;
+    use super::{CvFractal, Flags};
 
     #[test]
     fn create_fractal_image() {

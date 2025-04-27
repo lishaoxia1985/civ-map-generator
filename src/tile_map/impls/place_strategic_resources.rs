@@ -1,10 +1,12 @@
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    component::{
+    component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
-    tile_map::{tile::Tile, Layer, MapParameters, ResourceSetting, TileMap},
+    map_parameters::{MapParameters, ResourceSetting},
+    tile::Tile,
+    tile_map::{Layer, TileMap},
 };
 
 use super::assign_starting_tile::{get_major_strategic_resource_quantity_values, ResourceToPlace};

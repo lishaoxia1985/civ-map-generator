@@ -1,9 +1,10 @@
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
-    grid::{hex::HexOrientation, Direction},
-    tile_map::{tile::Tile, MapParameters, TileMap},
+    component::map_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
+    grid::{direction::Direction, hex_grid::hex::HexOrientation},
+    tile::Tile,
+    tile_map::{MapParameters, TileMap},
 };
 
 impl TileMap {

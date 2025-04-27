@@ -5,16 +5,15 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
-use crate::tile_map::WorldSize;
-use crate::{
-    component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        terrain_type::TerrainType,
-    },
-    grid::hex::Hex,
-    ruleset::{Ruleset, Unique},
-    tile_map::{tile::Tile, Layer, MapParameters, TileMap},
-};
+use crate::component::map_component::base_terrain::BaseTerrain;
+use crate::component::map_component::feature::Feature;
+use crate::component::map_component::natural_wonder::NaturalWonder;
+use crate::component::map_component::terrain_type::TerrainType;
+use crate::map_parameters::{MapParameters, WorldSize};
+use crate::ruleset::unique::Unique;
+use crate::ruleset::Ruleset;
+use crate::tile::Tile;
+use crate::tile_map::{Layer, TileMap};
 
 impl TileMap {
     /// Generate natural wonders on the map.

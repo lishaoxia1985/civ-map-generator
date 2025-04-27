@@ -1,14 +1,16 @@
 pub mod component;
+mod fractal;
 pub mod grid;
-mod map;
+mod map_generator;
+pub mod map_parameters;
 pub mod ruleset;
+pub mod tile;
 pub mod tile_map;
 
-pub use component::*;
-pub use grid::*;
-use map::{fractal::Fractal, pangaea::Pangaea, Generator};
+use map_generator::{fractal::Fractal, pangaea::Pangaea, Generator};
+use map_parameters::{MapParameters, MapType};
 use ruleset::Ruleset;
-use tile_map::{MapParameters, MapType, TileMap};
+use tile_map::TileMap;
 
 pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMap {
     match map_parameters.map_type {

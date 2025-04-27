@@ -1,10 +1,7 @@
+use crate::{map_parameters::MapParameters, ruleset::Ruleset, tile_map::TileMap};
+
 pub mod fractal;
 pub mod pangaea;
-
-use crate::{
-    ruleset::Ruleset,
-    tile_map::{MapParameters, TileMap},
-};
 
 /// A trait that allows for the generation of a tile map.
 ///

@@ -3,17 +3,17 @@ use std::{cmp::max, collections::BTreeSet};
 use rand::seq::{index::sample, SliceRandom};
 
 use crate::{
-    base_terrain::BaseTerrain,
-    feature::Feature,
-    resource::Resource,
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    },
+    map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
-    terrain_type::TerrainType,
-    tile_map::{Layer, MapParameters, RegionType, ResourceSetting, TileMap},
+    tile_map::{Layer, TileMap},
 };
 
 use super::{
     assign_starting_tile::get_major_strategic_resource_quantity_values,
-    generate_regions::StartLocationCondition,
+    generate_regions::{RegionType, StartLocationCondition},
 };
 
 impl TileMap {

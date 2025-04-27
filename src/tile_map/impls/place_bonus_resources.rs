@@ -1,15 +1,15 @@
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    component::{
+    component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
-    tile_map::{
-        tile::Tile, Layer, MapParameters, RegionDivideMethod, RegionType, ResourceSetting, TileMap,
-    },
+    map_parameters::{MapParameters, RegionDivideMethod, ResourceSetting},
+    tile::Tile,
+    tile_map::{Layer, TileMap},
 };
 
-use super::assign_starting_tile::ResourceToPlace;
+use super::{assign_starting_tile::ResourceToPlace, generate_regions::RegionType};
 
 impl TileMap {
     pub fn place_bonus_resources(&mut self, map_parameters: &MapParameters) {

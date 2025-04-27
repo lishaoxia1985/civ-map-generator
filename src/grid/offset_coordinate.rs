@@ -1,7 +1,7 @@
 use glam::IVec2;
 
 use super::{
-    hex::{Hex, HexOrientation, Offset},
+    hex_grid::hex::{Hex, HexOrientation, Offset},
     square_grid::square::Square,
 };
 

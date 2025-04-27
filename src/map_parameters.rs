@@ -2,12 +2,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use glam::DVec2;
 
-use crate::grid::{
-    hex::{HexLayout, HexOrientation, Offset},
-    Direction,
+use crate::{
+    grid::{
+        direction::Direction,
+        hex_grid::hex::{HexLayout, HexOrientation, Offset},
+        offset_coordinate::OffsetCoordinate,
+    },
+    tile::Tile,
 };
-
-use super::{tile::Tile, tile_map_impls::generate_regions::Rectangle};
 
 pub struct MapParameters {
     pub name: String,
@@ -287,5 +289,55 @@ impl MapParameters {
 
     pub const fn corner_direction_array(&self) -> [Direction; 6] {
         self.hex_layout.orientation.corner_direction()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+/// This struct is used to describe a rectangular region of the map.
+/// We can use it to get all tiles in this region.
+pub struct Rectangle {
+    /// `west_x` should in the range `[0, map_width - 1]`. We will write these check in the future.
+    pub west_x: i32,
+    /// `south_y` should in the range `[0, map_height - 1]`. We will write these check in the future.
+    pub south_y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Rectangle {
+    /// Returns an iterator over all tiles in current rectangle region of the map.
+    pub fn iter_tiles<'a>(
+        &'a self,
+        map_parameters: &'a MapParameters,
+    ) -> impl Iterator<Item = Tile> + 'a {
+        (self.south_y..self.south_y + self.height).flat_map(move |y| {
+            (self.west_x..self.west_x + self.width).map(move |x| {
+                let offset_coordinate = OffsetCoordinate::new(x, y);
+                Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    .expect("Offset coordinate is outside the map!")
+            })
+        })
+    }
+
+    /// Checks if the given tile is inside the current rectangle.
+    ///
+    /// Returns `true` if the given tile is inside the current rectangle.
+    pub fn contains(&self, map_parameters: &MapParameters, tile: Tile) -> bool {
+        let [mut x, mut y] = tile.to_offset_coordinate(map_parameters).to_array();
+
+        // We should consider the map is wrapped around horizontally.
+        if x < self.west_x {
+            x += map_parameters.map_size.width;
+        }
+
+        // We should consider the map is wrapped around vertically.
+        if y < self.south_y {
+            y += map_parameters.map_size.height;
+        }
+
+        x >= self.west_x
+            && x < self.west_x + self.width
+            && y >= self.south_y
+            && y < self.south_y + self.height
     }
 }

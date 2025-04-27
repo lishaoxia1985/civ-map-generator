@@ -6,18 +6,19 @@ use std::{
 use enum_map::{Enum, EnumMap};
 
 use crate::{
-    base_terrain::BaseTerrain,
-    feature::Feature,
-    hex::{HexOrientation, Offset},
-    terrain_type::TerrainType,
-    tile_map::{
-        tile::Tile, tile_map_impls::generate_regions::Rectangle, Layer, MapParameters, RegionType,
-        TileMap,
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
     },
-    OffsetCoordinate,
+    grid::{
+        hex_grid::hex::{HexOrientation, Offset},
+        offset_coordinate::OffsetCoordinate,
+    },
+    map_parameters::{MapParameters, Rectangle},
+    tile::Tile,
+    tile_map::{Layer, TileMap},
 };
 
-use super::generate_regions::Region;
+use super::generate_regions::{Region, RegionType};
 
 impl TileMap {
     // function AssignStartingPlots:ChooseLocations

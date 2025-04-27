@@ -1,9 +1,12 @@
 use rand::Rng;
 
 use crate::{
-    component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
+    },
+    map_parameters::Rainfall,
     ruleset::Ruleset,
-    tile_map::{MapParameters, Rainfall, TileMap},
+    tile_map::{MapParameters, TileMap},
 };
 
 impl TileMap {

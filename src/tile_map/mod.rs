@@ -2,27 +2,21 @@ use std::collections::BTreeMap;
 
 use std::collections::HashMap;
 
-use enum_map::EnumMap;
-use enum_map::{enum_map, Enum};
+pub(crate) mod impls;
+
+use enum_map::{enum_map, Enum, EnumMap};
+use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 use rand::{rngs::StdRng, SeedableRng};
-pub use tile::Tile;
-use tile_map_impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 
-mod fractal;
-mod map_parameters;
-mod tile;
-mod tile_map_impls;
-
-pub use self::fractal::{CvFractal, Flags};
-pub use crate::tile_map::tile_map_impls::generate_regions::RegionType;
 use crate::{
-    component::{
+    component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         resource::Resource, terrain_type::TerrainType,
     },
-    grid::Direction,
+    grid::direction::Direction,
+    map_parameters::{MapParameters, MapSize},
+    tile::Tile,
 };
-pub use map_parameters::*;
 
 pub struct TileMap {
     pub random_number_generator: StdRng,
@@ -49,7 +43,7 @@ pub struct TileMap {
     /// - `4`: CityState
     /// - `5`: NaturalWonder
     /// - `6`: Marble
-    layer_data: EnumMap<Layer, Vec<u32>>,
+    pub layer_data: EnumMap<Layer, Vec<u32>>,
     /// Stores "impact and ripple" data of start points as each is placed. like [`TileMap::layer_data`].
     /// The value is in the range `[0, 99]`.
     /// The value is only related to the starting tile of civilization.
@@ -60,7 +54,7 @@ pub struct TileMap {
     distance_data: Vec<u8>,
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
-    player_collision_data: Vec<bool>,
+    pub player_collision_data: Vec<bool>,
     // These tile will be as candidates for starting tile for city states
     uninhabited_areas_coastal_land_tiles: Vec<Tile>,
     // These tile will be as candidates for starting tile for city states
