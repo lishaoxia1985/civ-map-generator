@@ -989,13 +989,14 @@ impl TileMap {
             inner_ring_score + middle_ring_score + outer_ring_score + coastal_land_score;
 
         // Check Impact and Ripple data to see if candidate is near an already-placed start point.
-        if self.distance_data[tile.index()] != 0 {
+        if self.layer_data[Layer::Civilization][tile.index()] != 0 {
             // This candidate is near an already placed start. This invalidates its
             // eligibility for first-pass placement; but it may still qualify as a
             // fallback site, so we will reduce its Score according to the bias factor.
             // Closer to existing start points, lower the score becomes.
             meets_minimum_requirements = false;
-            final_score = (final_score as f64 * (100 - self.distance_data[tile.index()]) as f64
+            final_score = (final_score as f64
+                * (100 - self.layer_data[Layer::Civilization][tile.index()]) as f64
                 / 100.0) as i32;
         }
         (final_score, meets_minimum_requirements)
@@ -1003,6 +1004,8 @@ impl TileMap {
 
     // function AssignStartingPlots:PlaceImpactAndRipples
     /// Places the impact and ripple values for a starting tile of civilization.
+    ///
+    /// We will place the impact on the tile and then ripple outwards to the surrounding tiles.
     ///
     /// When you add a starting tile of civilization, you should run this function to place the impact and ripple values for the tile.
     fn place_impact_and_ripples(&mut self, map_parameters: &MapParameters, tile: Tile) {
@@ -1016,7 +1019,7 @@ impl TileMap {
         self.place_resource_impact(map_parameters, tile, Layer::Fish, 3); // Fish layer
         self.place_resource_impact(map_parameters, tile, Layer::NaturalWonder, 4); // Natural Wonders layer
 
-        self.distance_data[tile.index()] = impact_value;
+        self.layer_data[Layer::Civilization][tile.index()] = impact_value;
 
         self.player_collision_data[tile.index()] = true;
 
@@ -1028,15 +1031,19 @@ impl TileMap {
             tile.tiles_at_distance(distance, map_parameters)
                 .into_iter()
                 .for_each(|tile_at_distance| {
-                    if self.distance_data[tile_at_distance.index()] != 0 {
+                    if self.layer_data[Layer::Civilization][tile_at_distance.index()] != 0 {
                         // First choose the greater of the two, existing value or current ripple.
-                        let stronger_value =
-                            max(self.distance_data[tile_at_distance.index()], ripple_value);
+                        let stronger_value = max(
+                            self.layer_data[Layer::Civilization][tile_at_distance.index()],
+                            ripple_value,
+                        );
                         // Now increase it by 1.2x to reflect that multiple civs are in range of this plot.
-                        let overlap_value = min(97, (stronger_value as f64 * 1.2) as u8);
-                        self.distance_data[tile_at_distance.index()] = overlap_value;
+                        let overlap_value = min(97, (stronger_value as f64 * 1.2) as u32);
+                        self.layer_data[Layer::Civilization][tile_at_distance.index()] =
+                            overlap_value;
                     } else {
-                        self.distance_data[tile_at_distance.index()] = ripple_value;
+                        self.layer_data[Layer::Civilization][tile_at_distance.index()] =
+                            ripple_value;
                     }
 
                     if distance <= 6 {

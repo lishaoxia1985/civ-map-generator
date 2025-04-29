@@ -30,7 +30,7 @@ impl Tile {
     /// Get the index of the tile。
     ///
     /// The index indicates the tile's position on the map, typically used to access or reference specific tiles.
-    #[inline]
+    #[inline(always)]
     pub const fn index(&self) -> usize {
         self.0
     }

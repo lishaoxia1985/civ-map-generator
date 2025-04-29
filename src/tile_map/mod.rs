@@ -34,7 +34,7 @@ pub struct TileMap {
     /// The area id and the size of the area
     pub area_id_and_size: BTreeMap<i32, u32>,
     region_list: Vec<Region>,
-    /// Stores "impact and ripple" data in the layer. like [`TileMap::distance_data`].
+    /// Stores "impact and ripple" data in the layer. The value is in the range `[0, 99]`.
     /// Layer contains the following:
     /// - `0`: Strategic
     /// - `1`: Luxury
@@ -43,15 +43,13 @@ pub struct TileMap {
     /// - `4`: CityState
     /// - `5`: NaturalWonder
     /// - `6`: Marble
-    pub layer_data: EnumMap<Layer, Vec<u32>>,
-    /// Stores "impact and ripple" data of start points as each is placed. like [`TileMap::layer_data`].
-    /// The value is in the range `[0, 99]`.
+    /// - `7`: Civilization. Stores "impact and ripple" data of start points as each is placed.
     /// The value is only related to the starting tile of civilization.
-    /// - Value of 0 in a tile means no influence from existing Impacts in that tile.
-    /// - Value of 99 means an Impact occurred in that tile and it is a starting tile.
-    /// - Values > 0 and < 99 are "ripples", meaning that tile is near a starting tile.
+    ///     - Value of 0 in a tile means no influence from existing Impacts in that tile.
+    ///     - Value of 99 means an Impact occurred in that tile and it is a starting tile.
+    ///     - Values > 0 and < 99 are "ripples", meaning that tile is near a starting tile.
     /// Higher values, closer to a starting tile.
-    distance_data: Vec<u8>,
+    pub layer_data: EnumMap<Layer, Vec<u32>>,
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
     pub player_collision_data: Vec<bool>,
@@ -116,7 +114,6 @@ impl TileMap {
             area_id_and_size: BTreeMap::new(),
             region_list,
             layer_data,
-            distance_data: vec![0; size],
             player_collision_data: vec![false; size],
             civilization_and_starting_tile: BTreeMap::new(),
             city_state_and_starting_tile: BTreeMap::new(),
@@ -135,20 +132,14 @@ impl TileMap {
     }
 }
 
-#[derive(Enum, Clone, Copy, PartialEq, Eq)]
+#[derive(Enum, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Layer {
-    /// 1
     Strategic,
-    /// 2
     Luxury,
-    /// 3
     Bonus,
-    /// 4
     Fish,
-    /// 5
     CityState,
-    /// 6
     NaturalWonder,
-    /// 7
     Marble,
+    Civilization,
 }

@@ -883,6 +883,17 @@ impl TileMap {
     }
 
     // AssignStartingPlots:PlaceResourceImpact
+    /// Place resource impact and ripple on the map.
+    ///
+    /// We will place the resource impact on the tile and then place a ripple on all tiles within the radius.
+    ///
+    /// # Parameters
+    /// - `map_parameters` is the map parameters.
+    /// - `tile` is the tile to place the resource impact on.
+    /// - `layer` is the layer to place the resource impact and ripple on. `layer` should not be [`Layer::Civilization`]. Otherwise, the function will panic.
+    /// - `radius` is the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    /// # Panics
+    /// Panics if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples`].
     pub fn place_resource_impact(
         &mut self,
         map_parameters: &MapParameters,
@@ -890,6 +901,12 @@ impl TileMap {
         layer: Layer,
         radius: u32,
     ) {
+        assert_ne!(
+            layer,
+            Layer::Civilization,
+            "Cannot place resource impact on civilization layer!"
+        );
+
         let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
             1
         } else {
@@ -974,6 +991,9 @@ impl TileMap {
                             }
                             Layer::Marble => {
                                 current_value = 1;
+                            }
+                            Layer::Civilization => {
+                                unreachable!("Civilization layer should not be used in place_resource_impact function.");
                             }
                         }
                         // Update the layer data with the new value.
