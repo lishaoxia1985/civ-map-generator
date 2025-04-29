@@ -30,7 +30,7 @@ impl Tile {
     /// Get the index of the tile。
     ///
     /// The index indicates the tile's position on the map, typically used to access or reference specific tiles.
-    #[inline]
+    #[inline(always)]
     pub const fn index(&self) -> usize {
         self.0
     }
@@ -166,7 +166,7 @@ impl Tile {
         tile_map.resource_query[self.0].clone()
     }
 
-    /// Returns the area id of the tile at the given index.
+    /// Returns the area ID of the tile at the given index.
     #[inline]
     pub fn area_id(&self, tile_map: &TileMap) -> i32 {
         tile_map.area_id_query[self.0]

@@ -657,7 +657,12 @@ impl TileMap {
                         Resource::Resource(selected_resource.to_string()),
                         selected_quantity,
                     ));
-                    self.place_resource_impact(map_parameters, tile, Layer::Strategic, radius);
+                    self.place_impact_and_ripples(
+                        map_parameters,
+                        tile,
+                        Layer::Strategic,
+                        Some(radius),
+                    );
                     num_left_to_place -= 1;
                 }
             }

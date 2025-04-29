@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::min;
 
 use std::collections::HashSet;
 
@@ -135,7 +135,7 @@ impl TileMap {
                 if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
                     self.resource_query[tile.index()] =
                         Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_resource_impact(map_parameters, tile, layer, radius);
+                    self.place_impact_and_ripples(map_parameters, tile, layer, Some(radius));
                     break;
                 }
             }
@@ -152,7 +152,7 @@ impl TileMap {
                 if let Some(&tile) = best_plot {
                     self.resource_query[tile.index()] =
                         Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_resource_impact(map_parameters, tile, layer, radius);
+                    self.place_impact_and_ripples(map_parameters, tile, layer, Some(radius));
                 }
             }
         }
@@ -875,112 +875,13 @@ impl TileMap {
             }
         }
 
-        tile_and_impact_radius.into_iter().for_each(|(tile, rad)| {
-            self.place_resource_impact(map_parameters, tile, layer.unwrap(), rad)
-        });
+        tile_and_impact_radius
+            .into_iter()
+            .for_each(|(tile, radius)| {
+                self.place_impact_and_ripples(map_parameters, tile, layer.unwrap(), Some(radius))
+            });
 
         num_left_to_place
-    }
-
-    // AssignStartingPlots:PlaceResourceImpact
-    pub fn place_resource_impact(
-        &mut self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-        layer: Layer,
-        radius: u32,
-    ) {
-        let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
-            1
-        } else {
-            99
-        };
-
-        self.layer_data[layer][tile.index()] = impact_value;
-
-        if radius == 0 {
-            return;
-        }
-
-        if radius > 0 && radius < (self.map_size.height as u32 / 2) {
-            for distance in 1..=radius {
-                // Iterate over all tiles at this distance.
-                tile.tiles_at_distance(distance, map_parameters)
-                    .into_iter()
-                    .for_each(|tile_at_distance| {
-                        // `ripple_value` is the distance from the center tile to the current tile.
-                        // The larger the distance, the smaller the ripple value.
-                        let ripple_value = radius - distance + 1;
-                        // The current tile's ripple value.
-                        let mut current_value = self.layer_data[layer][tile_at_distance.index()];
-                        match layer {
-                            Layer::Strategic => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 2 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(50, stronger_value + 2);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::Luxury => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 2 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(50, stronger_value + 2);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::Bonus => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 2 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(50, stronger_value + 2);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::Fish => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 1 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(10, stronger_value + 1);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::CityState => {
-                                current_value = 1;
-                            }
-                            Layer::NaturalWonder => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 2 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(50, stronger_value + 2);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::Marble => {
-                                current_value = 1;
-                            }
-                        }
-                        // Update the layer data with the new value.
-                        self.layer_data[layer][tile_at_distance.index()] = current_value;
-                    })
-            }
-        }
     }
 }
 

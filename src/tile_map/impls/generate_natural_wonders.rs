@@ -47,7 +47,7 @@ impl TileMap {
         let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
         let only_mountain_terrain_type: HashSet<TerrainType> =
             HashSet::from([TerrainType::Mountain]);
-        // Get all landmass ids
+        // Get all landmass IDs
         // - landmasses are areas that don't have only water or only mountain tiles
         // - Filter out the areas that are only water or only mountains
         let mut landmass_id_and_size: Vec<_> = area_id_and_terrain_type
@@ -311,17 +311,12 @@ impl TileMap {
                                 }
                             }
 
-                            self.place_resource_impact(
+                            self.place_impact_and_ripples(
                                 map_parameters,
                                 tile,
                                 Layer::NaturalWonder,
-                                map_parameters.map_size.height as u32 / 5,
+                                None,
                             );
-                            self.place_resource_impact(map_parameters, tile, Layer::Strategic, 1);
-                            self.place_resource_impact(map_parameters, tile, Layer::Luxury, 1);
-                            self.place_resource_impact(map_parameters, tile, Layer::Bonus, 1);
-                            self.place_resource_impact(map_parameters, tile, Layer::CityState, 1);
-                            self.place_resource_impact(map_parameters, tile, Layer::Marble, 1);
 
                             self.player_collision_data[tile.index()] = true;
 
@@ -401,7 +396,7 @@ impl TileMap {
         let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
         let only_mountain_terrain_type: HashSet<TerrainType> =
             HashSet::from([TerrainType::Mountain]);
-        // Get all landmass ids
+        // Get all landmass IDs
         // - landmasses are areas that don't have only water or only mountain tiles
         // - Filter out the areas that are only water or only mountains
         let mut landmass_id_and_size: Vec<_> = area_id_and_terrain_type

@@ -612,8 +612,7 @@ impl TileMap {
                     Some((Resource::Resource(luxury_resource.to_string()), 1));
                 num_left_to_place -= 1;
                 // println!("Still need to place {} more units of Marble.", num_left_to_place);
-                self.place_resource_impact(map_parameters, tile, Layer::Luxury, 1);
-                self.place_resource_impact(map_parameters, tile, Layer::Marble, 6);
+                self.place_impact_and_ripples(map_parameters, tile, Layer::Marble, None);
             }
         }
 

@@ -1,3 +1,5 @@
+use std::cmp::max;
+use std::cmp::min;
 use std::collections::BTreeMap;
 
 use std::collections::HashMap;
@@ -31,27 +33,27 @@ pub struct TileMap {
     pub area_id_query: Vec<i32>,
     pub civilization_and_starting_tile: BTreeMap<String, Tile>,
     pub city_state_and_starting_tile: BTreeMap<String, Tile>,
-    /// The area id and the size of the area
+    /// The area ID and the size of the area
     pub area_id_and_size: BTreeMap<i32, u32>,
     region_list: Vec<Region>,
-    /// Stores "impact and ripple" data in the layer. like [`TileMap::distance_data`].
-    /// Layer contains the following:
-    /// - `0`: Strategic
-    /// - `1`: Luxury
-    /// - `2`: Bonus
-    /// - `3`: Fish
-    /// - `4`: CityState
-    /// - `5`: NaturalWonder
-    /// - `6`: Marble
+    /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,
+    /// associated with a variant of the `Layer`, is added to the map.
+    ///
+    /// It is typically used to ensure that no other elements appear within a defined radius of the placed element,
+    /// or that other elements are not too close to the placed element.
+    ///
+    /// The element may be a starting tile of civilization, a city-state, a natural wonder, a marble, a resource, ...\
+    /// The impact and ripple values represent the influence of distance from the added element.
+    /// The value is within the range `[0, 99]`.
+    ///
+    /// # Examples about impact and ripple values
+    /// For example, When the `layer` is [`Layer::Civilization`], `layer_data[Layer::Civilization]` stores the "impact and ripple" data
+    /// of the starting tile of civilization. About the values of tiles in `layer_data[Layer::Civilization]`:
+    /// - `value = 0` means no influence from existing impacts in current tile.
+    /// - `value = 99` means an "impact" occurred in current tile, and current tile is a starting tile.
+    /// - Values in (0, 99) represent "ripples", indicating that current tile is near a starting tile.
+    /// The larger values, the closer the tile is to the starting tile.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
-    /// Stores "impact and ripple" data of start points as each is placed. like [`TileMap::layer_data`].
-    /// The value is in the range `[0, 99]`.
-    /// The value is only related to the starting tile of civilization.
-    /// - Value of 0 in a tile means no influence from existing Impacts in that tile.
-    /// - Value of 99 means an Impact occurred in that tile and it is a starting tile.
-    /// - Values > 0 and < 99 are "ripples", meaning that tile is near a starting tile.
-    /// Higher values, closer to a starting tile.
-    distance_data: Vec<u8>,
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
     pub player_collision_data: Vec<bool>,
@@ -116,7 +118,6 @@ impl TileMap {
             area_id_and_size: BTreeMap::new(),
             region_list,
             layer_data,
-            distance_data: vec![0; size],
             player_collision_data: vec![false; size],
             civilization_and_starting_tile: BTreeMap::new(),
             city_state_and_starting_tile: BTreeMap::new(),
@@ -133,22 +134,273 @@ impl TileMap {
     pub fn iter_tiles(&self) -> impl Iterator<Item = Tile> {
         (0..((self.map_size.width * self.map_size.height) as usize)).map(Tile::new)
     }
+
+    /// Place impact and ripples for a given tile and layer.
+    ///
+    /// When you add an element (such as a starting tile of civilization, a city state, a natural wonder, a marble, or a resource...) to the map,
+    /// if you want to ensure no other elements appear around the element being added, you can use this function.
+    pub fn place_impact_and_ripples(
+        &mut self,
+        map_parameters: &MapParameters,
+        tile: Tile,
+        layer: Layer,
+        radius: Option<u32>,
+    ) {
+        match layer {
+            Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish => {
+                let radius = radius.expect("Radius required for this layer");
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, layer, radius)
+            }
+            Layer::CityState => {
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::CityState,
+                    4,
+                );
+
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 3);
+                // Strategic layer, should be at start point only.
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::Strategic,
+                    0,
+                );
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 3);
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Fish, 3);
+                // Natural Wonders layer, set a minimum distance of 5 tiles (4 ripples) away.
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::NaturalWonder,
+                    4,
+                );
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 3);
+            }
+            Layer::NaturalWonder => {
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::NaturalWonder,
+                    map_parameters.map_size.height as u32 / 5,
+                );
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::Strategic,
+                    1,
+                );
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 1);
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 1);
+                self.place_impact_and_ripples_for_resource(
+                    map_parameters,
+                    tile,
+                    Layer::CityState,
+                    1,
+                );
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 1);
+            }
+            Layer::Marble => {
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 1);
+                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 6);
+            }
+            Layer::Civilization => {
+                self.place_impact_and_ripples_for_civilization(map_parameters, tile)
+            }
+        }
+    }
+
+    // function AssignStartingPlots:PlaceImpactAndRipples
+    /// Places the impact and ripple values for a starting tile of civilization.
+    ///
+    /// We will place the impact on the tile and then ripple outwards to the surrounding tiles.
+    fn place_impact_and_ripples_for_civilization(
+        &mut self,
+        map_parameters: &MapParameters,
+        tile: Tile,
+    ) {
+        let impact_value = 99;
+        let ripple_values = [97, 95, 92, 89, 69, 57, 24, 15];
+
+        // Start points need to impact the resource layers.
+        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 3);
+        // Strategic layer, should be at start point only.
+        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Strategic, 0);
+        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 3);
+        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Fish, 3);
+        // Natural Wonders layer, set a minimum distance of 5 tiles (4 ripples) away.
+        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::NaturalWonder, 4);
+
+        self.layer_data[Layer::Civilization][tile.index()] = impact_value;
+
+        self.player_collision_data[tile.index()] = true;
+
+        self.layer_data[Layer::CityState][tile.index()] = 1;
+
+        for (index, ripple_value) in ripple_values.into_iter().enumerate() {
+            let distance = index as u32 + 1;
+
+            tile.tiles_at_distance(distance, map_parameters)
+                .into_iter()
+                .for_each(|tile_at_distance| {
+                    let mut current_value =
+                        self.layer_data[Layer::Civilization][tile_at_distance.index()];
+                    if current_value != 0 {
+                        // First choose the greater of the two, existing value or current ripple.
+                        let stronger_value = max(current_value, ripple_value);
+                        // Now increase it by 1.2x to reflect that multiple civs are in range of this plot.
+                        let overlap_value = min(97, (stronger_value as f64 * 1.2) as u32);
+                        current_value = overlap_value;
+                    } else {
+                        current_value = ripple_value;
+                    }
+                    // Update the layer data with the new value.
+                    self.layer_data[Layer::Civilization][tile_at_distance.index()] = current_value;
+
+                    if distance <= 6 {
+                        self.layer_data[Layer::CityState][tile_at_distance.index()] = 1;
+                    }
+                })
+        }
+    }
+
+    // AssignStartingPlots:PlaceResourceImpact
+    /// Place impact and ripple for resource on the map.
+    ///
+    /// We will place the resource impact on the tile and then place a ripple on all tiles within the radius.
+    ///
+    /// # Parameters
+    /// - `map_parameters` is the map parameters.
+    /// - `tile` is the tile to place the resource impact on.
+    /// - `layer` is the layer to place the resource impact and ripple on. `layer` should not be [`Layer::Civilization`]. Otherwise, the function will panic.
+    /// - `radius` is the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    /// # Panics
+    /// Panics if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
+    fn place_impact_and_ripples_for_resource(
+        &mut self,
+        map_parameters: &MapParameters,
+        tile: Tile,
+        layer: Layer,
+        radius: u32,
+    ) {
+        assert_ne!(
+            layer,
+            Layer::Civilization,
+            "Cannot place resource impact on civilization layer!"
+        );
+
+        let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
+            1
+        } else {
+            99
+        };
+
+        self.layer_data[layer][tile.index()] = impact_value;
+
+        if radius == 0 {
+            return;
+        }
+
+        if radius > 0 && radius < (self.map_size.height as u32 / 2) {
+            for distance in 1..=radius {
+                // `distance` is the distance from the center tile to the current tile.
+                // The larger the distance, the smaller the ripple value.
+                let ripple_value = radius - distance + 1;
+                // Iterate over all tiles at this distance.
+                tile.tiles_at_distance(distance, map_parameters)
+                    .into_iter()
+                    .for_each(|tile_at_distance| {
+                        // The current tile's ripple value.
+                        let mut current_value = self.layer_data[layer][tile_at_distance.index()];
+                        match layer {
+                            Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::NaturalWonder => {
+                                if current_value != 0 {
+                                    // First choose the greater of the two, existing value or current ripple.
+                                    let stronger_value = max(current_value, ripple_value);
+                                    // Now increase it by 2 to reflect that multiple civs are in range of this plot.
+                                    let overlap_value = min(50, stronger_value + 2);
+                                    current_value = overlap_value;
+                                } else {
+                                    current_value = ripple_value;
+                                }
+                            }
+                            Layer::Fish => {
+                                if current_value != 0 {
+                                    // First choose the greater of the two, existing value or current ripple.
+                                    let stronger_value = max(current_value, ripple_value);
+                                    // Now increase it by 1 to reflect that multiple civs are in range of this plot.
+                                    let overlap_value = min(10, stronger_value + 1);
+                                    current_value = overlap_value;
+                                } else {
+                                    current_value = ripple_value;
+                                }
+                            }
+                            Layer::CityState | Layer::Marble => {
+                                current_value = 1;
+                            }
+                            Layer::Civilization => {
+                                unreachable!("Civilization layer should not be used in place_resource_impact function.");
+                            }
+                        }
+                        // Update the layer data with the new value.
+                        self.layer_data[layer][tile_at_distance.index()] = current_value;
+                    })
+            }
+        }
+    }
 }
 
-#[derive(Enum, Clone, Copy, PartialEq, Eq)]
+/// The `Layer` enum represents a layer associated with an element added to the map.
+/// Each element is linked to a specific variant of the `Layer`.
+///
+/// The element can be a starting tile for a civilization, a city-state, a natural wonder, a marble, a resource, and more.
+///
+/// The `Layer` enum is used in [`TileMap::layer_data`]. For more information, see [`TileMap::layer_data`].
+///
+/// # How to add a new layer
+/// For example, when you add an element `Stone` to the map, you want to ensure that no other elements appear around the element being added.
+/// To do this, you need to add a new layer to the `Layer` enum. you need to:
+/// 1. Add a new variant to the `Layer` enum. for example:
+/// ```rust
+/// # #[cfg(never)]
+/// pub enum Layer {
+///    Strategic,
+///    Luxury,
+///    // ... other existing variants
+///    Stone,  // New variant added
+/// }
+/// ```
+///
+/// 2. Add a new case to [`TileMap::place_impact_and_ripples`] in the `TileMap` struct. This function is responsible for placing the impact of the element on the map and creating ripples if necessary.
+/// ```rust
+/// # #[cfg(never)]
+/// pub fn place_impact_and_ripples(
+///     &mut self,
+///     map_parameters: &MapParameters,
+///     tile: Tile,
+///     layer: Layer,
+///     radius: Option<u32>,
+/// ) {
+///     match layer {
+///         // ... other existing cases
+///         Layer::Stone => {
+///             // ... implementation for the new layer
+///         }
+///     }
+/// }
+/// ```
+///
+/// 3. When you add a `Stone` to the map, you need to call [`TileMap::place_impact_and_ripples`] with the new layer.
+///
+#[derive(Enum, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Layer {
-    /// 1
     Strategic,
-    /// 2
     Luxury,
-    /// 3
     Bonus,
-    /// 4
     Fish,
-    /// 5
     CityState,
-    /// 6
     NaturalWonder,
-    /// 7
     Marble,
+    Civilization,
 }

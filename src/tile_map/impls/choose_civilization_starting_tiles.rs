@@ -1,7 +1,4 @@
-use std::{
-    cmp::{max, min},
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
 use enum_map::{Enum, EnumMap};
 
@@ -104,7 +101,7 @@ impl TileMap {
 
             if let Some(election1_tile) = eletion1_tile {
                 self.region_list[region_index].starting_tile = election1_tile;
-                self.place_impact_and_ripples(map_parameters, election1_tile);
+                self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
                 return (true, false);
             }
 
@@ -120,7 +117,7 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
             return (true, false);
         } else {
             let x = region.rectangle.west_x;
@@ -133,7 +130,7 @@ impl TileMap {
             self.feature_query[tile.index()] = None;
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
-            self.place_impact_and_ripples(map_parameters, tile);
+            self.place_impact_and_ripples_for_civilization(map_parameters, tile);
             return (false, true);
         }
     }
@@ -182,7 +179,7 @@ impl TileMap {
                 self.feature_query[tile.index()] = None;
                 self.natural_wonder_query[tile.index()] = None;
                 self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples(map_parameters, tile);
+                self.place_impact_and_ripples_for_civilization(map_parameters, tile);
             }
 
             return (success_flag, forced_placement_flag);
@@ -295,7 +292,7 @@ impl TileMap {
 
                 if let Some(election1_tile) = eletion1_tile {
                     self.region_list[region_index].starting_tile = election1_tile;
-                    self.place_impact_and_ripples(map_parameters, election1_tile);
+                    self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
                     return (true, false);
                 }
                 if let Some(election_2_tile) = election2_tile {
@@ -431,7 +428,7 @@ impl TileMap {
 
                     // Assign this tile as the start for this region.
                     self.region_list[region_index].starting_tile = closest_tile;
-                    self.place_impact_and_ripples(map_parameters, closest_tile);
+                    self.place_impact_and_ripples_for_civilization(map_parameters, closest_tile);
                     return (true, false);
                 }
             }
@@ -451,7 +448,7 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
             return (true, false);
         } else {
             (success_flag, forced_placement_flag) = self.find_start(map_parameters, region_index);
@@ -470,7 +467,7 @@ impl TileMap {
                 self.feature_query[tile.index()] = None;
                 self.natural_wonder_query[tile.index()] = None;
                 self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples(map_parameters, tile);
+                self.place_impact_and_ripples_for_civilization(map_parameters, tile);
             }
 
             return (success_flag, forced_placement_flag);
@@ -598,7 +595,7 @@ impl TileMap {
 
                 if let Some(election1_tile) = eletion1_tile {
                     self.region_list[region_index].starting_tile = election1_tile;
-                    self.place_impact_and_ripples(map_parameters, election1_tile);
+                    self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
                     return (true, false);
                 }
                 if let Some(election_2_tile) = election2_tile {
@@ -734,7 +731,7 @@ impl TileMap {
 
                     // Assign this plot as the start for this region.
                     self.region_list[region_index].starting_tile = closest_plot;
-                    self.place_impact_and_ripples(map_parameters, closest_plot);
+                    self.place_impact_and_ripples_for_civilization(map_parameters, closest_plot);
                     return (true, false);
                 }
             }
@@ -754,7 +751,7 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
             return (true, false);
         } else {
             let x = region.rectangle.west_x;
@@ -767,7 +764,7 @@ impl TileMap {
             self.feature_query[tile.index()] = None;
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
-            self.place_impact_and_ripples(map_parameters, tile);
+            self.place_impact_and_ripples_for_civilization(map_parameters, tile);
             return (false, true);
         }
     }
@@ -989,61 +986,17 @@ impl TileMap {
             inner_ring_score + middle_ring_score + outer_ring_score + coastal_land_score;
 
         // Check Impact and Ripple data to see if candidate is near an already-placed start point.
-        if self.distance_data[tile.index()] != 0 {
+        if self.layer_data[Layer::Civilization][tile.index()] != 0 {
             // This candidate is near an already placed start. This invalidates its
             // eligibility for first-pass placement; but it may still qualify as a
             // fallback site, so we will reduce its Score according to the bias factor.
             // Closer to existing start points, lower the score becomes.
             meets_minimum_requirements = false;
-            final_score = (final_score as f64 * (100 - self.distance_data[tile.index()]) as f64
+            final_score = (final_score as f64
+                * (100 - self.layer_data[Layer::Civilization][tile.index()]) as f64
                 / 100.0) as i32;
         }
         (final_score, meets_minimum_requirements)
-    }
-
-    // function AssignStartingPlots:PlaceImpactAndRipples
-    /// Places the impact and ripple values for a starting tile of civilization.
-    ///
-    /// When you add a starting tile of civilization, you should run this function to place the impact and ripple values for the tile.
-    fn place_impact_and_ripples(&mut self, map_parameters: &MapParameters, tile: Tile) {
-        let impact_value = 99;
-        let ripple_values = [97, 95, 92, 89, 69, 57, 24, 15];
-
-        // Start points need to impact the resource layers.
-        self.place_resource_impact(map_parameters, tile, Layer::Strategic, 0); // Strategic layer, at impact site only.
-        self.place_resource_impact(map_parameters, tile, Layer::Luxury, 3); // Luxury layer
-        self.place_resource_impact(map_parameters, tile, Layer::Bonus, 3); // Bonus layer
-        self.place_resource_impact(map_parameters, tile, Layer::Fish, 3); // Fish layer
-        self.place_resource_impact(map_parameters, tile, Layer::NaturalWonder, 4); // Natural Wonders layer
-
-        self.distance_data[tile.index()] = impact_value;
-
-        self.player_collision_data[tile.index()] = true;
-
-        self.layer_data[Layer::CityState][tile.index()] = 1;
-
-        for (index, ripple_value) in ripple_values.into_iter().enumerate() {
-            let distance = index as u32 + 1;
-
-            tile.tiles_at_distance(distance, map_parameters)
-                .into_iter()
-                .for_each(|tile_at_distance| {
-                    if self.distance_data[tile_at_distance.index()] != 0 {
-                        // First choose the greater of the two, existing value or current ripple.
-                        let stronger_value =
-                            max(self.distance_data[tile_at_distance.index()], ripple_value);
-                        // Now increase it by 1.2x to reflect that multiple civs are in range of this plot.
-                        let overlap_value = min(97, (stronger_value as f64 * 1.2) as u8);
-                        self.distance_data[tile_at_distance.index()] = overlap_value;
-                    } else {
-                        self.distance_data[tile_at_distance.index()] = ripple_value;
-                    }
-
-                    if distance <= 6 {
-                        self.layer_data[Layer::CityState][tile_at_distance.index()] = 1;
-                    }
-                })
-        }
     }
 
     // function AssignStartingPlots:MeasureSinglePlot

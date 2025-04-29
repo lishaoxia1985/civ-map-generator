@@ -7,6 +7,7 @@ use crate::tile::Tile;
 use crate::tile_map::{MapParameters, TileMap};
 
 impl TileMap {
+    /// Uses BFS to assign area IDs to tiles within the same area.
     fn bfs(&mut self, map_parameters: &MapParameters, mut area_tiles: HashSet<Tile>) {
         let mut current_area_id = self.area_id_query.iter().max().unwrap() + 1;
 
@@ -41,6 +42,7 @@ impl TileMap {
         }
     }
 
+    /// Uses DFS to assign area IDs to tiles within the same area.
     fn dfs(&mut self, map_parameters: &MapParameters, mut area_tiles: HashSet<Tile>) {
         let mut current_area_id = self.area_id_query.iter().max().unwrap() + 1;
 
@@ -75,6 +77,9 @@ impl TileMap {
         }
     }
 
+    /// Recalculates the area IDs and sizes of the tiles in the map.
+    ///
+    /// This function is called when the map is generated or when the [`TerrainType`] of certain tiles changes.
     pub fn recalculate_areas(&mut self, map_parameters: &MapParameters) {
         self.area_id_and_size.clear();
 
@@ -104,6 +109,7 @@ impl TileMap {
         self.reassign_area_id(map_parameters);
     }
 
+    /// Reassigns the area IDs of small areas to the largest surrounding area.
     fn reassign_area_id(&mut self, map_parameters: &MapParameters) {
         const MIN_AREA_SIZE: u32 = 7;
 
@@ -150,7 +156,7 @@ impl TileMap {
                 });
             });
 
-            // Get area id and size of the surround area
+            // Get area ID and size of the surround area
             // Notice: `surround_area_size_and_id` may have the same element
             let surround_area_size_and_id: Vec<(i32, u32)> = border_tiles
                 .iter()
@@ -161,7 +167,7 @@ impl TileMap {
                 })
                 .collect();
 
-            // Get the area id and size of the largest surround area
+            // Get the area ID and size of the largest surround area
             // Notice: `surround_area_size_and_id` may be empty when the current area is water but all surrounding tiles are land, or the current area is land but all surrounding tiles are water.
             if let Some(&(surround_area_id, surround_area_size)) = surround_area_size_and_id
                 .iter()

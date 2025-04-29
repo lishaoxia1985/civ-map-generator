@@ -142,7 +142,7 @@ impl TileMap {
                 hills_top2,
             ]);
 
-        let [mountain_threshold, hills_near_mountains, _hills_clumps, mountain_100, mountain_99, _mountain_988, mountain_97, mountain_95] =
+        let [mountain_threshold, hills_near_mountains, _hills_clumps, mountain_100, mountain_99, _mountain_98, mountain_97, mountain_95] =
             mountains_fractal.get_height_from_percents([
                 mountains,
                 hills_near_mountains,
@@ -163,8 +163,11 @@ impl TileMap {
 
             if height <= water_threshold {
                 self.terrain_type_query[tile.index()] = TerrainType::Water;
+                // No hills or mountains here, but check for tectonic islands if that setting is active.
                 if tectonic_islands {
+                    // Build islands in oceans along tectonic ridge lines
                     if mountain_height == mountain_100 {
+                        // Isolated peak in the ocean
                         self.terrain_type_query[tile.index()] = TerrainType::Mountain;
                     } else if mountain_height == mountain_99 {
                         self.terrain_type_query[tile.index()] = TerrainType::Hill;

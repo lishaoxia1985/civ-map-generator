@@ -1042,7 +1042,12 @@ impl TileMap {
             } else {
                 let conversion_tile = *tile_list.choose(&mut self.random_number_generator).unwrap();
                 self.base_terrain_query[conversion_tile.index()] = BaseTerrain::Grassland;
-                self.place_resource_impact(map_parameters, conversion_tile, Layer::Strategic, 0);
+                self.place_impact_and_ripples(
+                    map_parameters,
+                    conversion_tile,
+                    Layer::Strategic,
+                    Some(0),
+                );
             }
         }
 

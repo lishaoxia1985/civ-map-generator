@@ -48,7 +48,7 @@ impl TileMap {
                     HashSet::from([TerrainType::Water]);
                 let only_mountain_terrain_type: HashSet<TerrainType> =
                     HashSet::from([TerrainType::Mountain]);
-                // Get all landmass ids
+                // Get all landmass IDs
                 // - landmasses are areas that don't have only water or only mountain tiles
                 // - Filter out the areas that are only water or only mountains
                 let mut landmass_ids: Vec<_> = area_id_and_terrain_type
@@ -624,7 +624,7 @@ impl TileMap {
         }
     }
 
-    /// Get the biggest landmass id.
+    /// Get the biggest landmass ID.
     fn get_biggest_landmass_id(&self) -> i32 {
         let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
 
@@ -640,7 +640,7 @@ impl TileMap {
         let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
         let only_mountain_terrain_type: HashSet<TerrainType> =
             HashSet::from([TerrainType::Mountain]);
-        // Get all landmass ids
+        // Get all landmass IDs
         // - landmasses are areas that don't have only water or only mountain tiles
         // - Filter out the areas that are only water or only mountains
         let landmass_id_and_size: Vec<_> = area_id_and_terrain_type
@@ -652,7 +652,7 @@ impl TileMap {
             .map(|(&area_id, _)| (area_id, self.area_id_and_size[&area_id]))
             .collect();
 
-        // Find the biggest landmass id
+        // Find the biggest landmass ID
         landmass_id_and_size
             .iter()
             .max_by_key(|&(_, size)| size)
@@ -1093,7 +1093,7 @@ impl Region {
     /// Measures the terrain in the region, and sets the [`Region::terrain_statistic`] field.
     ///
     /// Terrain statistics include the num of flatland and hill tiles, the sum of fertility, and the sum of coastal land tiles, .., etc.
-    /// When `landmass_id` is `None`, it will ignore the landmass id and measure all the land and water terrain in the region.
+    /// When `landmass_id` is `None`, it will ignore the landmass ID and measure all the land and water terrain in the region.
     /// Otherwise, it will only measure the terrain which is Water/Mountain or whose `area_id` equal to the region's `landmass_id`.
     pub fn measure_terrain(&mut self, tile_map: &TileMap, map_parameters: &MapParameters) {
         let mut terrain_statistic = TerrainStatistic::default();

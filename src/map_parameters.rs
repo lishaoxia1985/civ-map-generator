@@ -185,10 +185,10 @@ pub enum RegionDivideMethod {
     /// This method is primarily used for Archipelago or other maps with many small islands.
     /// The entire map is treated as one large rectangular region.
     /// [`RegionDivideMethod::WholeMapRectangle`] is equivalent to [`RegionDivideMethod::CustomRectangle()`] when [`Rectangle`] encompasses the entire map area.
-    /// We will ignore the landmass id when method is set to WholeMapRectangle.
+    /// We will ignore the landmass ID when method is set to WholeMapRectangle.
     WholeMapRectangle,
     /// Civs start within a custom-defined rectangle.
-    /// We will ignore the landmass id when method is set to CustomRectangle.
+    /// We will ignore the landmass ID when method is set to CustomRectangle.
     CustomRectangle(Rectangle),
 }
 

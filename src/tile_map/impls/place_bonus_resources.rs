@@ -610,7 +610,7 @@ impl TileMap {
                 }
                 self.resource_query[tile.index()] =
                     Some((Resource::Resource("Fish".to_string()), 1));
-                self.place_resource_impact(map_parameters, tile, Layer::Fish, fish_radius);
+                self.place_impact_and_ripples(map_parameters, tile, Layer::Fish, Some(fish_radius));
                 num_left_to_place -= 1;
             }
         }

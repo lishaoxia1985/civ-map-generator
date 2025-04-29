@@ -54,18 +54,18 @@ impl TileMap {
         let uninhabited_areas_coastal_tile_list = self.uninhabited_areas_coastal_land_tiles.clone();
         let uninhabited_areas_inland_tile_list = self.uninhabited_areas_inland_tiles.clone();
 
+        let candidate_tile_list = [
+            uninhabited_areas_coastal_tile_list,
+            uninhabited_areas_inland_tile_list,
+        ];
+
         let mut num_city_states_discarded = 0;
 
         for index in 0..self.city_state_region_assignments.len() {
             let region_index = self.city_state_region_assignments[index];
             if region_index.is_none() && num_uninhabited_candidate_tiles > 0 {
                 num_uninhabited_candidate_tiles -= 1;
-                let tile = self.get_city_state_start_tile(
-                    &uninhabited_areas_coastal_tile_list,
-                    &uninhabited_areas_inland_tile_list,
-                    true,
-                    true,
-                );
+                let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
                 // Place city state on uninhabited land
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
@@ -105,30 +105,36 @@ impl TileMap {
         }
 
         // Last chance method to place city states that didn't fit where they were supposed to go.
+        // Notice: These codes below are different from the original code.
+        //  - The original code chooses a random tile from the list of candidate tiles directly.
+        //  - In our version we divide the candidate tiles into two lists, one for coastal and one for inland.
+        //      We choose the tile from the list of coastal tiles first.
+        //      If there are no coastal tiles, we choose from the list of inland tiles.
         if num_city_states_discarded > 0 {
-            let mut city_state_last_chance_tile_list = self
-                .iter_tiles()
-                .filter(|tile| tile.can_be_city_state_starting_tile(self, None, false, false))
-                .collect::<Vec<Tile>>();
+            let mut coastal_tile_list = Vec::new();
+            let mut inland_tile_list = Vec::new();
 
-            if city_state_last_chance_tile_list.len() > 0 {
-                city_state_last_chance_tile_list.shuffle(&mut self.random_number_generator);
-
-                for city_state in start_city_state_list.iter() {
-                    let tile = self.get_city_state_start_tile(
-                        &city_state_last_chance_tile_list,
-                        &vec![],
-                        true,
-                        true,
-                    );
-                    if let Some(tile) = tile {
-                        self.place_city_state(map_parameters, city_state, tile);
-                        self.city_state_starting_tile_and_region_index
-                            .push((tile, None));
-                        num_city_states_discarded -= 1;
+            self.iter_tiles().for_each(|tile| {
+                if tile.can_be_city_state_starting_tile(self, None, false, false) {
+                    if tile.is_coastal_land(self, map_parameters) {
+                        coastal_tile_list.push(tile);
                     } else {
-                        break;
+                        inland_tile_list.push(tile);
                     }
+                }
+            });
+
+            let candidate_tile_list = [coastal_tile_list, inland_tile_list];
+
+            for city_state in start_city_state_list.iter() {
+                let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
+                if let Some(tile) = tile {
+                    self.place_city_state(map_parameters, city_state, tile);
+                    self.city_state_starting_tile_and_region_index
+                        .push((tile, None));
+                    num_city_states_discarded -= 1;
+                } else {
+                    break;
                 }
             }
         }
@@ -141,49 +147,67 @@ impl TileMap {
         }
     }
 
+    /// Places a city state on the map.
+    ///
+    /// This function will do as follows:
+    /// 1. Add the city state tile to the `city_state_and_starting_tile` map.
+    /// 2. Clear the ice feature from the coast tiles adjacent to the city state.
+    /// 3. Place resource impacts and ripple on the city state tile and its around tiles.
     fn place_city_state(&mut self, map_parameters: &MapParameters, city_state: &str, tile: Tile) {
         self.city_state_and_starting_tile
             .insert(city_state.to_string(), tile);
         // Removes Feature Ice from coasts adjacent to the city state's new location
         self.clear_ice_near_city_site(map_parameters, tile, 1);
 
-        self.place_resource_impact(map_parameters, tile, Layer::CityState, 4);
-        self.place_resource_impact(map_parameters, tile, Layer::Luxury, 3);
-        // Strategic layer, should be at start point only.
-        self.place_resource_impact(map_parameters, tile, Layer::Strategic, 0);
-        self.place_resource_impact(map_parameters, tile, Layer::Bonus, 3);
-        self.place_resource_impact(map_parameters, tile, Layer::Fish, 3);
-        self.place_resource_impact(map_parameters, tile, Layer::Marble, 3);
+        self.place_impact_and_ripples(map_parameters, tile, Layer::CityState, None);
+
         self.player_collision_data[tile.index()] = true;
     }
 
     // function AssignStartingPlots:PlaceCityStateInRegion(city_state_number, region_number)
+    /// Get the starting tile for a city state in a region.
     fn get_city_state_start_tile_in_region(
         &mut self,
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> Option<Tile> {
-        let (eligible_coastal, eligible_inland) =
-            self.obtain_next_section_in_region(map_parameters, region_index, false, false);
+        let candidate_tile_list = self.get_candidate_city_state_tiles_in_region(
+            map_parameters,
+            region_index,
+            false,
+            false,
+        );
 
-        let tile =
-            self.get_city_state_start_tile(&eligible_coastal, &eligible_inland, false, false);
+        let tile = self.get_city_state_start_tile(&candidate_tile_list, false, false);
 
         tile
     }
 
     // function AssignStartingPlots:ObtainNextSectionInRegion
-    pub fn obtain_next_section_in_region(
+    /// Get all the candidate tiles can be used for placing a city state in a region.
+    ///
+    /// We get all the candidate tiles in the region follow the following steps:
+    /// 1. Divide the region into 3 parts: one center part and two edge parts.
+    /// 2. Check if the center part is enough small:
+    ///     - If it is, we will process all the tiles in the region to get the candidate tiles.
+    ///     - If it is not, we will process the edge parts to get the candidate tiles. That is because we often use the center rectangle to place civilizations.
+    ///
+    /// # Returns
+    ///
+    /// Returns an array of two vectors of tiles.
+    /// The first vector is the coastal tiles, and the second vector is the inland tiles.
+    pub fn get_candidate_city_state_tiles_in_region(
         &self,
         map_parameters: &MapParameters,
         region_index: usize,
         force_it: bool,
         ignore_collisions: bool,
-    ) -> (Vec<Tile>, Vec<Tile>) {
+    ) -> [Vec<Tile>; 2] {
         let region = &self.region_list[region_index];
         let rectangle = &region.rectangle;
 
-        let reached_middle = rectangle.width < 4 || rectangle.height < 4;
+        // Check if the rectangle is small enough to process all the tiles. If it is, we will process all the tiles.
+        let should_process_all_tiles = rectangle.width < 4 || rectangle.height < 4;
         let taller = rectangle.height > rectangle.width;
 
         // Divide the rectangle into 3 parts according to whether it is taller or not.
@@ -219,11 +243,12 @@ impl TileMap {
             height: center_height,
         };
 
-        let mut coastal_plot_list = Vec::new();
-        let mut inland_plot_list = Vec::new();
+        let mut coastal_tile_list = Vec::new();
+        let mut inland_tile_list = Vec::new();
 
         for tile in rectangle.iter_tiles(map_parameters) {
-            if reached_middle {
+            if should_process_all_tiles {
+                // When the rectangle is small enough, we will process all the tiles.
                 if tile.can_be_city_state_starting_tile(
                     self,
                     Some(region),
@@ -231,14 +256,15 @@ impl TileMap {
                     ignore_collisions,
                 ) {
                     if tile.is_coastal_land(self, map_parameters) {
-                        coastal_plot_list.push(tile);
+                        coastal_tile_list.push(tile);
                     } else {
-                        inland_plot_list.push(tile);
+                        inland_tile_list.push(tile);
                     }
                 }
             } else {
-                // Process only plots near enough to the region edge.
-                // That means plots that are not in the center rectangle.
+                // Process only tiles near enough to the region edge.
+                // That means tiles that are not in the center rectangle.
+                // That is because we often use the center rectangle to place civilizations.
                 if !center_rectangle.contains(map_parameters, tile) {
                     if tile.can_be_city_state_starting_tile(
                         self,
@@ -247,37 +273,44 @@ impl TileMap {
                         ignore_collisions,
                     ) {
                         if tile.is_coastal_land(self, map_parameters) {
-                            coastal_plot_list.push(tile);
+                            coastal_tile_list.push(tile);
                         } else {
-                            inland_plot_list.push(tile);
+                            inland_tile_list.push(tile);
                         }
                     }
                 }
             }
         }
 
-        (coastal_plot_list, inland_plot_list)
+        [coastal_tile_list, inland_tile_list]
     }
 
     // function AssignStartingPlots:PlaceCityState
-    /// Get a tile for a city state from a list of candidate tiles.
+    /// Randomly selects a tile to place a city-state from a list of candidate tiles.
     ///
-    /// Coastal plots are prioritized, but if there are no coastal plots, then inland plots are used.
-    /// The tile is chosen randomly from the list.
-    /// If `check_proximity` is true, then the tile is chosen from the list of tiles that are
-    /// not too close to other city states.
-    /// If `check_collision` is true, then the tile is chosen from the list of tiles that are
-    /// not occupied by other city states.
+    /// Coastal tiles are prioritized; if no coastal tiles are available, inland tiles are considered.
+    ///
+    /// # Arguments
+    ///
+    /// * `candidate_tile_list` - A list of candidate tiles.  
+    ///   Typically, this is an array of two `Vec`s. The first `Vec` contains coastal tiles, and the second contains inland tiles.  
+    ///   The selection is made first from the coastal tiles (`Vec`), and if unsuccessful, the selection proceeds with the inland tiles (`Vec`).
+    /// * `check_proximity` - A flag indicating whether to check the proximity to other city-states.  
+    ///   If `check_proximity` is `true`, the tile is chosen from those that are not too close to other city-states.
+    /// * `check_collision` - A flag indicating whether to check for collision with other city-states.  
+    ///   If `check_collision` is `true`, the tile is chosen from those that are not occupied by other city-states.
+    ///
+    /// # Returns
+    ///
+    /// If a suitable tile is found, the function returns the tile. Otherwise, it returns `None`.
     fn get_city_state_start_tile(
         &mut self,
-        coastal_plot_list: &[Tile],
-        inland_plot_list: &[Tile],
+        candidate_tile_list: &[Vec<Tile>],
         check_proximity: bool,
         check_collision: bool,
     ) -> Option<Tile> {
         let mut chosen_tile = None;
-        // `coastal_plot_list` is prioritized, but if it is empty, then use `inland_plot_list`
-        let candidate_tile_list = vec![coastal_plot_list, inland_plot_list];
+        // We choose tile according in the order of the candidate tile list.
         for candidate_list in candidate_tile_list {
             if candidate_list.len() > 0 {
                 let mut candidate_list = candidate_list.to_vec();
@@ -399,7 +432,7 @@ impl TileMap {
                 map_parameters.region_divide_method,
                 RegionDivideMethod::Pangaea | RegionDivideMethod::Continent
             ) {
-                // Generate list of inhabited area id.
+                // Generate list of inhabited area ID.
                 let areas_inhabited_by_civs: HashSet<_> = self
                     .region_list
                     .iter()
