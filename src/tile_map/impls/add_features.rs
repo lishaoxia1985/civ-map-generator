@@ -15,6 +15,7 @@ impl TileMap {
     /// # Notice
     /// We have not implemented the feature `Atoll` generation yet.
     pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let grid = map_parameters.grid;
         let rainfall = match map_parameters.rainfall {
             Rainfall::Arid => -4,
             Rainfall::Normal => 0,
@@ -49,9 +50,9 @@ impl TileMap {
         let jungle_top = equator + (jungle_percent as f64 * 0.5).ceil() as i32;
 
         for tile in self.iter_tiles() {
-            let latitude = tile.latitude(map_parameters);
+            let latitude = tile.latitude(grid);
 
-            let neighbor_tiles = tile.neighbor_tiles(map_parameters);
+            let neighbor_tiles = tile.neighbor_tiles(grid);
 
             /* **********start to add ice********** */
             if tile.is_impassable(self, &ruleset) {

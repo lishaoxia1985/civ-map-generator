@@ -607,6 +607,8 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> StartLocationCondition {
+        let grid = map_parameters.grid;
+
         let starting_tile = self.region_list[region_index].starting_tile;
 
         let mut inner_four_food = 0;
@@ -657,7 +659,7 @@ impl TileMap {
             is_river = true;
         }
 
-        let mut neighbor_tiles = starting_tile.neighbor_tiles(map_parameters);
+        let mut neighbor_tiles = starting_tile.neighbor_tiles(grid);
 
         neighbor_tiles.iter().for_each(|neighbor_tile| {
             let terrain_type = neighbor_tile.terrain_type(self);
@@ -804,7 +806,7 @@ impl TileMap {
             }
         });
 
-        let mut tiles_at_distance_two = starting_tile.tiles_at_distance(2, map_parameters);
+        let mut tiles_at_distance_two = starting_tile.tiles_at_distance(2, grid);
 
         tiles_at_distance_two
             .iter()
@@ -1063,7 +1065,7 @@ impl TileMap {
             tiles_at_distance_two.shuffle(&mut self.random_number_generator);
 
             // Create a new vector to store the tiles at distance 3, and shuffle it.
-            let mut tiles_at_distance_three = starting_tile.tiles_at_distance(3, map_parameters);
+            let mut tiles_at_distance_three = starting_tile.tiles_at_distance(3, grid);
             tiles_at_distance_three.shuffle(&mut self.random_number_generator);
 
             let mut first_ring_iter = neighbor_tiles.iter().peekable();
@@ -1212,6 +1214,8 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) {
+        let grid = map_parameters.grid;
+
         let starting_tile = self.region_list[region_index].starting_tile;
 
         let mut iron_list = Vec::new();
@@ -1226,7 +1230,7 @@ impl TileMap {
 
         for ripple_radius in 1..=RADIUS {
             starting_tile
-                .tiles_at_distance(ripple_radius, map_parameters)
+                .tiles_at_distance(ripple_radius, grid)
                 .into_iter()
                 .for_each(|tile_at_distance| {
                     let terrain_type = tile_at_distance.terrain_type(self);

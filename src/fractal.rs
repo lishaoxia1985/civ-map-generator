@@ -11,10 +11,10 @@ use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 use crate::{
     grid::{
         direction::Direction,
-        hex_grid::hex::{Hex, HexLayout, HexOrientation, Offset, SQRT_3},
+        hex_grid::hex::{Hex, HexLayout, HexOrientation, SQRT_3},
         offset_coordinate::OffsetCoordinate,
     },
-    map_parameters::{MapWrapping, WrapType},
+    map_parameters::{HexGrid, MapWrapping, WrapType},
 };
 
 struct VoronoiSeed {
@@ -34,18 +34,17 @@ impl VoronoiSeed {
         random: &mut StdRng,
         fractal_width: i32,
         fractal_height: i32,
-        offset: Offset,
-        orientation: HexOrientation,
+        grid: HexGrid,
     ) -> Self {
         let offset_coordinate = OffsetCoordinate::new(
             random.gen_range(0..fractal_width),
             random.gen_range(0..fractal_height),
         );
-        let hex_coordinate = offset_coordinate.to_hex(offset, orientation);
+        let hex_coordinate = offset_coordinate.to_hex(grid.offset, grid.hex_layout.orientation);
 
         let weakness = random.gen_range(0..6);
 
-        let hex_edge_direction = orientation.edge_direction();
+        let hex_edge_direction = grid.hex_layout.orientation.edge_direction();
         let bias_direction = *hex_edge_direction.choose(random).unwrap();
 
         let directional_bias_strength = random.gen_range(0..4);
@@ -531,8 +530,7 @@ impl CvFractal {
         ridge_flags: &Flags,
         blend_ridge: i32,
         blend_fract: i32,
-        orientation: HexOrientation,
-        offset: Offset,
+        grid: HexGrid,
     ) {
         // this will use a modified Voronoi system to give the appearance of mountain ranges
 
@@ -541,13 +539,8 @@ impl CvFractal {
         let mut voronoi_seeds: Vec<VoronoiSeed> = Vec::with_capacity(num_voronoi_seeds as usize);
 
         for _ in 0..num_voronoi_seeds {
-            let mut voronoi_seed = VoronoiSeed::gen_random_seed(
-                random,
-                self.fractal_width,
-                self.fractal_height,
-                offset,
-                orientation,
-            );
+            let mut voronoi_seed =
+                VoronoiSeed::gen_random_seed(random, self.fractal_width, self.fractal_height, grid);
 
             // Check if the new random seed is too close to an existing seed
             // If it is, generate a new random seed until it is not too close
@@ -561,7 +554,8 @@ impl CvFractal {
                     random.gen_range(0..self.fractal_width),
                     random.gen_range(0..self.fractal_height),
                 );
-                let hex_coordinate = offset_coordinate.to_hex(offset, orientation);
+                let hex_coordinate =
+                    offset_coordinate.to_hex(grid.offset, grid.hex_layout.orientation);
                 voronoi_seed.hex_coordinate = hex_coordinate;
             }
 
@@ -572,7 +566,8 @@ impl CvFractal {
             for y in 0..self.fractal_height {
                 // get the hex coordinate for this position
                 let offset_coordinate = OffsetCoordinate::new(x, y);
-                let current_hex = offset_coordinate.to_hex(offset, orientation);
+                let current_hex =
+                    offset_coordinate.to_hex(grid.offset, grid.hex_layout.orientation);
 
                 // find the distance to each of the seeds (with modifiers for strength of the seed, directional bias, and random factors)
                 // closest seed distance is the distance to the seed with the lowest distance
@@ -590,7 +585,7 @@ impl CvFractal {
                         let relative_direction = self.estimate_direction(
                             current_hex,
                             current_voronoi_seed.hex_coordinate,
-                            orientation,
+                            grid.hex_layout.orientation,
                         );
 
                         // make the influence of the seed more directional

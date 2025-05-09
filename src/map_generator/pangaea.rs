@@ -72,8 +72,8 @@ impl Generator for Pangaea {
             WorldSize::Huge => 30,
         };
 
-        let orientation = map_parameters.hex_layout.orientation;
-        let offset = map_parameters.offset;
+        let grid = map_parameters.grid;
+
         let width = map_parameters.map_size.width;
         let height = map_parameters.map_size.height;
 
@@ -101,8 +101,7 @@ impl Generator for Pangaea {
             },
             6,
             1,
-            orientation,
-            offset,
+            grid,
         );
 
         let mut hills_fractal = CvFractal::create(
@@ -127,8 +126,7 @@ impl Generator for Pangaea {
             },
             1,
             2,
-            orientation,
-            offset,
+            grid,
         );
 
         let [water_threshold] = continents_fractal.get_height_from_percents([water_percent]);
@@ -161,7 +159,7 @@ impl Generator for Pangaea {
         let axis = center_position * 3. / 5.;
 
         tile_map.iter_tiles().for_each(|tile| {
-            let [x, y] = tile.to_offset_coordinate(map_parameters).to_array();
+            let [x, y] = tile.to_offset_coordinate(grid).to_array();
             let height = continents_fractal.get_height(x, y);
 
             let mountain_height = mountains_fractal.get_height(x, y);

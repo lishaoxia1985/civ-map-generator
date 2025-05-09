@@ -7,6 +7,8 @@ use std::collections::HashMap;
 pub(crate) mod impls;
 
 use enum_map::{enum_map, Enum, EnumMap};
+use impls::generate_area_ids::Area;
+use impls::generate_area_ids::Landmass;
 use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 use rand::{rngs::StdRng, SeedableRng};
 
@@ -30,11 +32,14 @@ pub struct TileMap {
     pub feature_query: Vec<Option<Feature>>,
     pub natural_wonder_query: Vec<Option<NaturalWonder>>,
     pub resource_query: Vec<Option<(Resource, u32)>>,
-    pub area_id_query: Vec<i32>,
+    pub area_id_query: Vec<usize>,
+    pub landmass_id_query: Vec<usize>,
     pub civilization_and_starting_tile: BTreeMap<String, Tile>,
     pub city_state_and_starting_tile: BTreeMap<String, Tile>,
-    /// The area ID and the size of the area
-    pub area_id_and_size: BTreeMap<i32, u32>,
+    /// List of areas in the map. The index is equal to the area id.
+    pub area_list: Vec<Area>,
+    /// List of landmasses in the map. The index is equal to the landmass id.
+    pub landmass_list: Vec<Landmass>,
     region_list: Vec<Region>,
     /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,
     /// associated with a variant of the `Layer`, is added to the map.
@@ -114,8 +119,10 @@ impl TileMap {
             feature_query: vec![None; size],
             natural_wonder_query: vec![None; size],
             resource_query: vec![None; size],
-            area_id_query: vec![-1; size],
-            area_id_and_size: BTreeMap::new(),
+            area_id_query: Vec::with_capacity(size),
+            landmass_id_query: Vec::with_capacity(size),
+            area_list: Vec::new(),
+            landmass_list: Vec::new(),
             region_list,
             layer_data,
             player_collision_data: vec![false; size],
@@ -220,6 +227,8 @@ impl TileMap {
         map_parameters: &MapParameters,
         tile: Tile,
     ) {
+        let grid = map_parameters.grid;
+
         let impact_value = 99;
         let ripple_values = [97, 95, 92, 89, 69, 57, 24, 15];
 
@@ -241,7 +250,7 @@ impl TileMap {
         for (index, ripple_value) in ripple_values.into_iter().enumerate() {
             let distance = index as u32 + 1;
 
-            tile.tiles_at_distance(distance, map_parameters)
+            tile.tiles_at_distance(distance, grid)
                 .into_iter()
                 .for_each(|tile_at_distance| {
                     let mut current_value =
@@ -290,6 +299,8 @@ impl TileMap {
             "Cannot place resource impact on civilization layer!"
         );
 
+        let grid = map_parameters.grid;
+
         let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
             1
         } else {
@@ -308,7 +319,7 @@ impl TileMap {
                 // The larger the distance, the smaller the ripple value.
                 let ripple_value = radius - distance + 1;
                 // Iterate over all tiles at this distance.
-                tile.tiles_at_distance(distance, map_parameters)
+                tile.tiles_at_distance(distance, grid)
                     .into_iter()
                     .for_each(|tile_at_distance| {
                         // The current tile's ripple value.

@@ -273,7 +273,7 @@ impl TileMap {
             let infertility_quotient = 1.0 + f64::max(hills_ratio - farm_ratio, 0.0);
 
             let rectangle = self.region_list[region_index].rectangle;
-            let landmass_id = self.region_list[region_index].landmass_id;
+            let landmass_id = self.region_list[region_index].area_id;
 
             let mut forests = Vec::new();
             let mut jungles = Vec::new();
@@ -451,6 +451,8 @@ impl TileMap {
     /// Third-ring resources take longer to develop but provide significant benefits in the late game.
     /// Alternatively, if another city is settled nearby and takes control of this tile, the resource may benefit that city instead.
     fn place_sexy_bonus_at_civ_starts(&mut self, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
+
         let bonus_type_associated_with_region_type = [
             (RegionType::Tundra, "Deer"),
             (RegionType::Jungle, "Bananas"),
@@ -474,7 +476,7 @@ impl TileMap {
                 .unwrap()
                 .1;
             starting_tile
-                .tiles_at_distance(3, map_parameters)
+                .tiles_at_distance(3, grid)
                 .iter()
                 .for_each(|&tile| {
                     let terrain_type = tile.terrain_type(self);

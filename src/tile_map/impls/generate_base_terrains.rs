@@ -15,6 +15,8 @@ impl TileMap {
     /// # Notice
     /// We don't generate [`BaseTerrain::Lake`] here, because the lake is a special base terrain that is generated in the [`TileMap::generate_lakes`] and [`TileMap::add_lakes`] method.
     pub fn generate_base_terrains(&mut self, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
+
         let grain_amount = 3;
 
         let temperature_shift = 0.1;
@@ -102,7 +104,7 @@ impl TileMap {
                     // The tiles that can be coast should meet all the conditions as follows:
                     // 1. They are ocean, that means they are water, not lake and not already coast.
                     // 2. They have at least one neighbor that is not water.
-                    let neighbor_tiles = tile.neighbor_tiles(map_parameters);
+                    let neighbor_tiles = tile.neighbor_tiles(grid);
                     if tile.base_terrain(self) == BaseTerrain::Ocean
                         && neighbor_tiles.iter().any(|&neighbor_tile| {
                             neighbor_tile.terrain_type(self) != TerrainType::Water
@@ -113,7 +115,7 @@ impl TileMap {
                 }
                 TerrainType::Flatland | TerrainType::Hill | TerrainType::Mountain => {
                     // Generate base terrain for land tiles.
-                    let [x, y] = tile.to_offset_coordinate(map_parameters).to_array();
+                    let [x, y] = tile.to_offset_coordinate(grid).to_array();
 
                     // Set default base terrain of all land tiles to `BaseTerrain::Grassland` because the default base terrain is `BaseTerrain::Ocean` in the tile map.
                     self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
@@ -121,7 +123,7 @@ impl TileMap {
                     let deserts_height = deserts_fractal.get_height(x, y);
                     let plains_height = plains_fractal.get_height(x, y);
 
-                    let mut latitude = tile.latitude(map_parameters);
+                    let mut latitude = tile.latitude(grid);
                     latitude += (128 - variation_fractal.get_height(x, y)) as f64 / (255.0 * 5.0);
                     latitude = latitude.clamp(0., 1.);
 
@@ -154,6 +156,7 @@ impl TileMap {
     /// # Notice
     /// This method is called after the [`TileMap::generate_base_terrains`] method.
     pub fn expand_coasts(&mut self, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
         map_parameters
             .coast_expand_chance
             .iter()
@@ -168,12 +171,9 @@ impl TileMap {
                     //      1. They are ocean, that means they are water, not lake and not already coast.
                     //      2. They have at least one neighbor that is coast.
                     if tile.base_terrain(self) == BaseTerrain::Ocean
-                        && tile
-                            .neighbor_tiles(map_parameters)
-                            .iter()
-                            .any(|neighbor_tile| {
-                                neighbor_tile.base_terrain(self) == BaseTerrain::Coast
-                            })
+                        && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
+                            neighbor_tile.base_terrain(self) == BaseTerrain::Coast
+                        })
                         && self.random_number_generator.gen_bool(chance)
                     {
                         expansion_tile.push(tile);

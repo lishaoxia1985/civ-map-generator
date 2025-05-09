@@ -26,7 +26,7 @@ impl TileMap {
             .sort_by(|a, b| a.average_fertility().total_cmp(&b.average_fertility()));
 
         // When map_parameters.region_divide_method is `RegionDivideMethod::WholeMapRectangle` or `RegionDivideMethod::CustomRectangle`, all region's landmass_id is always `None`.
-        let ignore_landmass_id = self.region_list[0].landmass_id.is_none();
+        let ignore_landmass_id = self.region_list[0].area_id.is_none();
 
         (0..self.region_list.len())
             .into_iter()
@@ -54,6 +54,8 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> (bool, bool) {
+        let grid = map_parameters.grid;
+
         let region = &self.region_list[region_index];
 
         let success_flag = false; // Returns true when a start is placed, false when process fails.
@@ -67,7 +69,7 @@ impl TileMap {
         // At first, the candidate starting tile is flatland or hill, and then it should meet one of the following conditions:
         // 1. It is a coastal land tile
         // 2. It is not a coastal land tile, and it does not have any coastal land tiles as neighbors
-        let mut area_id_and_candidate_tiles: HashMap<i32, Vec<Tile>> = HashMap::new();
+        let mut area_id_and_candidate_tiles: HashMap<usize, Vec<Tile>> = HashMap::new();
 
         for (i, tile) in region.rectangle.iter_tiles(map_parameters).enumerate() {
             if matches!(
@@ -123,7 +125,7 @@ impl TileMap {
             let x = region.rectangle.west_x;
             let y = region.rectangle.south_y;
 
-            let tile = Tile::from_offset_coordinate(map_parameters, OffsetCoordinate::new(x, y))
+            let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
                 .expect("Offset coordinate is outside the map!");
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
@@ -151,6 +153,8 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> (bool, bool) {
+        let grid = map_parameters.grid;
+
         let mut fallback_tile_and_score = Vec::new();
 
         let coastal_land_sum = (&self.region_list[region_index])
@@ -171,9 +175,8 @@ impl TileMap {
                 let x = (&self.region_list[region_index]).rectangle.west_x;
                 let y = (&self.region_list[region_index]).rectangle.south_y;
 
-                let tile =
-                    Tile::from_offset_coordinate(map_parameters, OffsetCoordinate::new(x, y))
-                        .expect("Offset coordinate is outside the map!");
+                let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+                    .expect("Offset coordinate is outside the map!");
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
                 self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
                 self.feature_query[tile.index()] = None;
@@ -245,7 +248,7 @@ impl TileMap {
         for tile in rectangle.iter_tiles(map_parameters) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
-                let landmass_id = self.region_list[region_index].landmass_id;
+                let landmass_id = self.region_list[region_index].area_id;
                 if landmass_id == Some(area_id) {
                     if center_rectangle.contains(map_parameters, tile) {
                         // Center Bias
@@ -338,7 +341,7 @@ impl TileMap {
                 // Because south_y >= 0, bullseye_y will always be >= 0.
                 let mut bullseye_y = rectangle.south_y as f64 + (rectangle.height as f64 / 2.0);
 
-                match (map_parameters.hex_layout.orientation, map_parameters.offset) {
+                match (grid.hex_layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
                         if bullseye_y / 2.0 != (bullseye_y / 2.0).floor() {
                             // Y coord is odd, add .5 to X coord for hex-shift.
@@ -368,14 +371,14 @@ impl TileMap {
                 }
 
                 for tile in outer_eligible_list.into_iter() {
-                    let offset_coordinate = tile.to_offset_coordinate(map_parameters);
+                    let offset_coordinate = tile.to_offset_coordinate(grid);
 
                     let [x, y] = offset_coordinate.to_array();
 
                     let mut adjusted_x = x as f64;
                     let mut adjusted_y = y as f64;
 
-                    match (map_parameters.hex_layout.orientation, map_parameters.offset) {
+                    match (grid.hex_layout.orientation, grid.offset) {
                         (HexOrientation::Pointy, Offset::Odd) => {
                             if y % 2 != 0 {
                                 // Y coord is odd, add .5 to X coord for hex-shift.
@@ -459,9 +462,8 @@ impl TileMap {
                 let x = rectangle.west_x;
                 let y = rectangle.south_y;
 
-                let tile =
-                    Tile::from_offset_coordinate(map_parameters, OffsetCoordinate::new(x, y))
-                        .expect("Offset coordinate is outside the map!");
+                let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+                    .expect("Offset coordinate is outside the map!");
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
                 self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
                 self.feature_query[tile.index()] = None;
@@ -483,6 +485,8 @@ impl TileMap {
     /// - second element. If the region had no eligible starting tiles and a starting tile was forced to be placed,
     /// and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
     fn find_start(&mut self, map_parameters: &MapParameters, region_index: usize) -> (bool, bool) {
+        let grid = map_parameters.grid;
+
         let mut fallback_tile_and_score = Vec::new();
 
         let region = &self.region_list[region_index];
@@ -547,7 +551,7 @@ impl TileMap {
         for tile in region.rectangle.iter_tiles(map_parameters) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
-                if region.landmass_id == Some(area_id) {
+                if region.area_id == Some(area_id) {
                     if center_rectangle.contains(map_parameters, tile) {
                         // Center Bias
                         center_candidates.push(tile);
@@ -641,7 +645,7 @@ impl TileMap {
                 // Because south_y >= 0, bullseye_y will always be >= 0.
                 let mut bullseye_y = rectangle.south_y as f64 + (rectangle.height as f64 / 2.0);
 
-                match (map_parameters.hex_layout.orientation, map_parameters.offset) {
+                match (grid.hex_layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
                         if bullseye_y / 2.0 != (bullseye_y / 2.0).floor() {
                             // Y coord is odd, add .5 to X coord for hex-shift.
@@ -671,14 +675,14 @@ impl TileMap {
                 }
 
                 for tile in outer_eligible_list.into_iter() {
-                    let offset_coordinate = tile.to_offset_coordinate(map_parameters);
+                    let offset_coordinate = tile.to_offset_coordinate(grid);
 
                     let [x, y] = offset_coordinate.to_array();
 
                     let mut adjusted_x = x as f64;
                     let mut adjusted_y = y as f64;
 
-                    match (map_parameters.hex_layout.orientation, map_parameters.offset) {
+                    match (grid.hex_layout.orientation, grid.offset) {
                         (HexOrientation::Pointy, Offset::Odd) => {
                             if y % 2 != 0 {
                                 // Y coord is odd, add .5 to X coord for hex-shift.
@@ -757,7 +761,7 @@ impl TileMap {
             let x = region.rectangle.west_x;
             let y = region.rectangle.south_y;
 
-            let tile = Tile::from_offset_coordinate(map_parameters, OffsetCoordinate::new(x, y))
+            let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
                 .expect("Offset coordinate is outside the map!");
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
@@ -824,6 +828,8 @@ impl TileMap {
         tile: Tile,
         region: &Region,
     ) -> (i32, bool) {
+        let grid = map_parameters.grid;
+
         let mut meets_minimum_requirements = true;
         let min_food_inner = 1;
         let min_production_inner = 0;
@@ -847,7 +853,7 @@ impl TileMap {
             coastal_land_score = 40;
         }
 
-        let neighbor_tiles = tile.neighbor_tiles(map_parameters);
+        let neighbor_tiles = tile.neighbor_tiles(grid);
 
         junk_total += 6 - neighbor_tiles.len() as i32;
 
@@ -888,7 +894,7 @@ impl TileMap {
             food_result_inner + production_result_inner + good_result_inner + river_total
                 - (junk_total * 3);
 
-        let tiles_at_distance_two = tile.tiles_at_distance(2, map_parameters);
+        let tiles_at_distance_two = tile.tiles_at_distance(2, grid);
 
         junk_total += 6 * 2 - tiles_at_distance_two.len() as i32;
 
@@ -947,7 +953,7 @@ impl TileMap {
             food_result_middle + production_result_middle + good_result_middle + river_total
                 - (junk_total * 3);
 
-        let tiles_at_distance_three = tile.tiles_at_distance(3, map_parameters);
+        let tiles_at_distance_three = tile.tiles_at_distance(3, grid);
 
         junk_total += 6 * 3 - tiles_at_distance_three.len() as i32;
 
@@ -1030,8 +1036,7 @@ impl TileMap {
                 } else if tile.base_terrain(self) == BaseTerrain::Lake {
                     data[TileType::Food] = true;
                     data[TileType::Good] = true;
-                } else if region.landmass_id.is_none()
-                    && tile.base_terrain(self) == BaseTerrain::Coast
+                } else if region.area_id.is_none() && tile.base_terrain(self) == BaseTerrain::Coast
                 {
                     data[TileType::Good] = true;
                 }

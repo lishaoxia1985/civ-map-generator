@@ -6,16 +6,26 @@ use crate::{
     tile_map::{MapParameters, TileMap},
 };
 
+use super::generate_area_ids::LandmassType;
+
 impl TileMap {
     /// Generate [`BaseTerrain::Lake`] on the map.
     ///
     /// This function is used because when we create the map by [`TileMap::generate_terrain_types`], some water areas will be created surrounded by land.
     /// If these water areas are small enough, they will be considered as lakes and will be replaced by [`BaseTerrain::Lake`].
     pub fn generate_lakes(&mut self, map_parameters: &MapParameters) {
+        let candidate_lake_area_ids: Vec<_> = self
+            .landmass_list
+            .iter()
+            .filter(|landmass| {
+                landmass.landmass_type == LandmassType::Water
+                    && landmass.size <= map_parameters.lake_max_area_size
+            })
+            .map(|landmass| landmass.id)
+            .collect();
+
         self.iter_tiles().for_each(|tile| {
-            if tile.terrain_type(self) == TerrainType::Water
-                && self.area_id_and_size[&tile.area_id(self)] <= map_parameters.lake_max_area_size
-            {
+            if candidate_lake_area_ids.contains(&tile.landmass_id(self)) {
                 self.base_terrain_query[tile.index()] = BaseTerrain::Lake;
             }
         });
@@ -53,6 +63,8 @@ impl TileMap {
     /// # Notice
     /// This function is only used in CIV6.
     fn add_more_lake(&mut self, tile: Tile, map_parameters: &MapParameters) -> bool {
+        let grid = map_parameters.grid;
+
         let mut large_lake = 0;
 
         let mut lake_tiles = Vec::new();
@@ -60,7 +72,7 @@ impl TileMap {
         // Get the candidate tiles for the lake.
         // Notice: Don't transform the candidate tiles into lakes in this loop,
         // because if we do so, the result will not be as expected.
-        tile.neighbor_tiles(map_parameters)
+        tile.neighbor_tiles(grid)
             .into_iter()
             .for_each(|neighbor_tile| {
                 // 1. Check if the tile can have a lake.
@@ -98,6 +110,7 @@ impl TileMap {
     /// # Returns
     /// - `true` if the tile can have a lake, otherwise `false`.
     fn can_add_lake(&self, tile: Tile, map_parameters: &MapParameters) -> bool {
+        let grid = map_parameters.grid;
         // Check if the current tile is suitable for a lake
         if tile.terrain_type(self) == TerrainType::Water
             || tile.natural_wonder(self).is_some()
@@ -106,7 +119,7 @@ impl TileMap {
             return false;
         }
 
-        let neighbor_tiles = tile.neighbor_tiles(map_parameters);
+        let neighbor_tiles = tile.neighbor_tiles(grid);
 
         // Check if all neighbor tiles are also suitable
         neighbor_tiles.iter().all(|neighbor_tile| {

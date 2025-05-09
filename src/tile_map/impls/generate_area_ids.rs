@@ -1,193 +1,284 @@
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeSet, HashSet, VecDeque};
 
-use std::collections::HashSet;
+use crate::{
+    component::map_component::terrain_type::TerrainType,
+    ruleset::Ruleset,
+    tile::Tile,
+    tile_map::{MapParameters, TileMap},
+};
 
-use crate::component::map_component::terrain_type::TerrainType;
-use crate::tile::Tile;
-use crate::tile_map::{MapParameters, TileMap};
+pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
+pub const UNINITIALIZED_LANDMASS_ID: usize = usize::MAX;
 
 impl TileMap {
-    /// Uses BFS to assign area IDs to tiles within the same area.
-    fn bfs(&mut self, map_parameters: &MapParameters, mut area_tiles: HashSet<Tile>) {
-        let mut current_area_id = self.area_id_query.iter().max().unwrap() + 1;
-
-        while let Some(&area_tile) = area_tiles.iter().next() {
-            self.area_id_query[area_tile.index()] = current_area_id;
-            area_tiles.remove(&area_tile);
-
-            // Store all the entities in the current area.
-            let mut tiles_in_current_area = HashSet::new();
-            tiles_in_current_area.insert(area_tile);
-
-            // Store all the entities that need to check whether their neighbors are in the current area within the following 'while {..}' loop.
-            let mut tiles_to_check = VecDeque::new();
-            tiles_to_check.push_back(area_tile);
-
-            while let Some(tile_we_are_checking) = tiles_to_check.pop_front() {
-                tile_we_are_checking
-                    .neighbor_tiles(map_parameters)
-                    .iter()
-                    .for_each(|&tile| {
-                        if !tiles_in_current_area.contains(&tile) && area_tiles.contains(&tile) {
-                            tiles_in_current_area.insert(tile);
-                            self.area_id_query[tile.index()] = current_area_id;
-                            tiles_to_check.push_back(tile);
-                            area_tiles.remove(&tile);
-                        }
-                    });
-            }
-            self.area_id_and_size
-                .insert(current_area_id, tiles_in_current_area.len() as u32);
-            current_area_id += 1;
-        }
-    }
-
-    /// Uses DFS to assign area IDs to tiles within the same area.
-    fn dfs(&mut self, map_parameters: &MapParameters, mut area_tiles: HashSet<Tile>) {
-        let mut current_area_id = self.area_id_query.iter().max().unwrap() + 1;
-
-        while let Some(&area_tile) = area_tiles.iter().next() {
-            self.area_id_query[area_tile.index()] = current_area_id;
-            area_tiles.remove(&area_tile);
-
-            // Store all the entities in the current area.
-            let mut tiles_in_current_area = HashSet::new();
-            tiles_in_current_area.insert(area_tile);
-
-            // Store all the entities that need to check whether their neighbors are in the current area within the following 'while {..}' loop.
-            let mut tiles_to_check = Vec::new();
-            tiles_to_check.push(area_tile);
-
-            while let Some(tile_we_are_checking) = tiles_to_check.pop() {
-                tile_we_are_checking
-                    .neighbor_tiles(map_parameters)
-                    .iter()
-                    .for_each(|&tile| {
-                        if !tiles_in_current_area.contains(&tile) && area_tiles.contains(&tile) {
-                            tiles_in_current_area.insert(tile);
-                            self.area_id_query[tile.index()] = current_area_id;
-                            tiles_to_check.push(tile);
-                            area_tiles.remove(&tile);
-                        }
-                    });
-            }
-            self.area_id_and_size
-                .insert(current_area_id, tiles_in_current_area.len() as u32);
-            current_area_id += 1;
-        }
-    }
-
-    /// Recalculates the area IDs and sizes of the tiles in the map.
+    /// Recalculates Area and Landmass in the map.
     ///
     /// This function is called when the map is generated or when the [`TerrainType`] of certain tiles changes.
-    pub fn recalculate_areas(&mut self, map_parameters: &MapParameters) {
-        self.area_id_and_size.clear();
+    pub fn recalculate_areas(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        self.calculate_areas(map_parameters, ruleset);
+        self.calculate_landmasses(map_parameters);
+    }
+
+    fn calculate_areas(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        const MIN_AREA_SIZE: u32 = 7;
+
+        self.area_list.clear();
+
+        let height = map_parameters.map_size.height;
+        let width = map_parameters.map_size.width;
+        let grid = map_parameters.grid;
+
+        let size = (height * width) as usize;
+
+        // Initialize the area_id_query with `UNINITIALIZED_AREA_ID`.
+        // `UNINITIALIZED_AREA_ID` means that the tile is not part of any area.
+        self.area_id_query = vec![UNINITIALIZED_AREA_ID; size];
+
+        // Precompute tile properties to avoid borrowing `self` in the closure
+        // `tile_impassable` is used to check if the tile is impassable or not.
+        // `tile_water` is used to check if the tile is water or not.
+        let (tile_impassable, tile_water): (Vec<bool>, Vec<bool>) = self
+            .iter_tiles()
+            .map(|tile| (tile.is_impassable(self, ruleset), tile.is_water(self)))
+            .unzip();
+
+        let check_tile = |tile: Tile, before_tile: Tile| {
+            let tile_idx = tile.index();
+            let before_idx = before_tile.index();
+
+            // Check if both tiles have the same terrain properties
+            if tile_impassable[tile_idx] != tile_impassable[before_idx]
+                || tile_water[tile_idx] != tile_water[before_idx]
+            {
+                return false;
+            }
+
+            // Get the neighbors of the two tiles
+            let tile_neighbors = tile.neighbor_tiles(grid);
+            let before_neighbors = before_tile.neighbor_tiles(grid);
+
+            // Get the common neighbors of the two tiles
+            let common_neighbors: Vec<_> = tile_neighbors
+                .iter()
+                .filter(|t| before_neighbors.contains(t))
+                .cloned()
+                .collect();
+
+            // Verify all common neighbors maintain the same properties
+            common_neighbors.iter().all(|&neighbor| {
+                let n_idx = neighbor.index();
+                tile_impassable[n_idx] == tile_impassable[before_idx]
+                    && tile_water[n_idx] == tile_water[before_idx]
+            })
+        };
+
+        // First iterate, wide area
+        for tile in self.iter_tiles() {
+            // If the tile is already part of an area, skip it.
+            if tile.area_id(self) != UNINITIALIZED_AREA_ID {
+                continue;
+            }
+
+            let tiles_in_area =
+                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+
+            let current_area_id = self.area_list.len();
+
+            let area = Area {
+                is_water: tile.is_water(self),
+                is_mountain: tile.terrain_type(self) == TerrainType::Mountain,
+                id: current_area_id,
+                size: tiles_in_area.len() as u32,
+            };
+
+            self.area_list.push(area);
+
+            if tiles_in_area.len() >= MIN_AREA_SIZE as usize {
+                tiles_in_area.iter().for_each(|&tile| {
+                    self.area_id_query[tile.index()] = current_area_id;
+                });
+            }
+        }
+
+        let check_tile = |tile: Tile, before_tile: Tile| {
+            let tile_idx = tile.index();
+            let before_idx = before_tile.index();
+
+            // Check if both tiles have the same terrain properties
+            tile_impassable[tile_idx] == tile_impassable[before_idx]
+                && tile_water[tile_idx] == tile_water[before_idx]
+        };
+
+        // Second iterate, all the rest, small and thin area
+        for tile in self.iter_tiles() {
+            // If the tile is already part of an area, skip it.
+            if tile.area_id(self) != UNINITIALIZED_AREA_ID {
+                continue;
+            }
+
+            let tiles_in_area =
+                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+
+            //merge single-plot mountains / ice with the surrounding area
+            if tiles_in_area.len() < MIN_AREA_SIZE as usize {
+                let neighbor_area_ids: BTreeSet<_> = tiles_in_area
+                    .iter()
+                    .flat_map(|&tile| {
+                        tile.neighbor_tiles(grid)
+                            .iter()
+                            .filter(|&neighbor| {
+                                neighbor.area_id(self) != UNINITIALIZED_AREA_ID
+                                    && tile_water[neighbor.index()] == tile_water[tile.index()]
+                            })
+                            .map(|&neighbor| neighbor.area_id(self))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect();
+
+                let largest_neighbor_area_id = neighbor_area_ids
+                    .into_iter()
+                    .max_by_key(|&area_id| self.area_list[area_id as usize].size);
+
+                if let Some(largest_neighbor_area_id) = largest_neighbor_area_id {
+                    // Merge the current small area with the largest neighbor area
+                    // and update the area ID of the tiles in the current area.
+                    self.area_list[largest_neighbor_area_id as usize].size +=
+                        tiles_in_area.len() as u32;
+
+                    for tile in tiles_in_area {
+                        self.area_id_query[tile.index()] = largest_neighbor_area_id;
+                    }
+                } else {
+                    // If no neighbor area is found, assign a new area ID
+                    let current_area_id = self.area_list.len();
+
+                    let area = Area {
+                        is_water: tile.is_water(self),
+                        is_mountain: tile.terrain_type(self) == TerrainType::Mountain,
+                        id: current_area_id,
+                        size: tiles_in_area.len() as u32,
+                    };
+
+                    self.area_list.push(area);
+
+                    for tile in tiles_in_area {
+                        self.area_id_query[tile.index()] = current_area_id;
+                    }
+                }
+            }
+        }
+    }
+
+    fn calculate_landmasses(&mut self, map_parameters: &MapParameters) {
+        self.landmass_list.clear();
 
         let height = map_parameters.map_size.height;
         let width = map_parameters.map_size.width;
 
         let size = (height * width) as usize;
 
-        self.area_id_query = vec![-1; size];
+        // Initialize the landmass_id_query with `UNINITIALIZED_LANDMASS_ID`.
+        // `UNINITIALIZED_LANDMASS_ID` means that the tile is not part of any landmass.
+        self.landmass_id_query = vec![UNINITIALIZED_LANDMASS_ID; size];
 
-        let mut water_tiles = HashSet::new();
-        let mut hill_and_flatland_tiles = HashSet::new();
-        let mut mountain_tiles = HashSet::new();
+        // Precompute tile properties to avoid borrowing `self` in the closure
+        // `tile_water` is used to check if the tile is water or not.
+        let tile_water: Vec<_> = self.iter_tiles().map(|tile| tile.is_water(self)).collect();
 
-        self.iter_tiles().for_each(|tile| {
-            match tile.terrain_type(self) {
-                TerrainType::Water => water_tiles.insert(tile),
-                TerrainType::Flatland | TerrainType::Hill => hill_and_flatland_tiles.insert(tile),
-                TerrainType::Mountain => mountain_tiles.insert(tile),
-            };
-        });
+        let check_tile = |tile: Tile, before_tile: Tile| {
+            let tile_idx = tile.index();
+            let before_idx = before_tile.index();
+            tile_water[tile_idx] == tile_water[before_idx]
+        };
 
-        self.bfs(map_parameters, water_tiles);
-        self.bfs(map_parameters, hill_and_flatland_tiles);
-        self.bfs(map_parameters, mountain_tiles);
-
-        self.reassign_area_id(map_parameters);
-    }
-
-    /// Reassigns the area IDs of small areas to the largest surrounding area.
-    fn reassign_area_id(&mut self, map_parameters: &MapParameters) {
-        const MIN_AREA_SIZE: u32 = 7;
-
-        // Get the id of the smaller area whose size < MIN_AREA_SIZE
-        let small_area_id: Vec<_> = self
-            .area_id_and_size
-            .iter()
-            .filter_map(|(&id, &size)| (size < MIN_AREA_SIZE).then_some(id))
-            .collect();
-
-        small_area_id.into_iter().for_each(|current_area_id| {
-            let tiles_in_current_area = self
-                .iter_tiles()
-                .filter(|tile| tile.area_id(self) == current_area_id)
-                .collect::<Vec<_>>();
-
-            let first_tile = tiles_in_current_area[0];
-            // Check if the current area is water
-            let current_area_is_water = first_tile.terrain_type(self) == TerrainType::Water;
-
-            // Get the border tiles of the current area
-
-            // Border tiles are the tiles that are not part of the area, but are adjacent to it.
-            // That means these tiles don't belong to the area, but they surround the area.
-            // Using BTreeSet to store the border tiles will make sure the tiles are processed in the same order every time.
-            // That means that we can get the same 'surround_area_size_and_id' every time.
-            let mut border_tiles = BTreeSet::new();
-
-            tiles_in_current_area.iter().for_each(|&tile| {
-                // Get the neighbor tiles of the current tile
-                let neighbor_tiles = tile.neighbor_tiles(map_parameters);
-                // Get the neighbor tiles that don't belong to the current area and add them to the border tile list
-                neighbor_tiles.into_iter().for_each(|neighbor_tile| {
-                    let neighbor_tile_is_water =
-                        neighbor_tile.terrain_type(self) == TerrainType::Water;
-                    // The neigbor tile is border tile if it meets the following conditions:
-                    // 1. If the current area is water the neighbor tile is water, or if the current area is land the neighbor tile is land.
-                    // 2. The neighbor tile doesn't belong to the current area.
-                    if current_area_is_water == neighbor_tile_is_water
-                        && !tiles_in_current_area.contains(&neighbor_tile)
-                    {
-                        border_tiles.insert(neighbor_tile);
-                    }
-                });
-            });
-
-            // Get area ID and size of the surround area
-            // Notice: `surround_area_size_and_id` may have the same element
-            let surround_area_size_and_id: Vec<(i32, u32)> = border_tiles
-                .iter()
-                .map(|tile| {
-                    let area_id = tile.area_id(self);
-                    let area_size = self.area_id_and_size[&area_id];
-                    (area_id, area_size)
-                })
-                .collect();
-
-            // Get the area ID and size of the largest surround area
-            // Notice: `surround_area_size_and_id` may be empty when the current area is water but all surrounding tiles are land, or the current area is land but all surrounding tiles are water.
-            if let Some(&(surround_area_id, surround_area_size)) = surround_area_size_and_id
-                .iter()
-                .max_by_key(|&(_, area_size)| area_size)
-            {
-                // Merge the current small area with the largest surround area when (surround_area_size >= MIN_AREA_SIZE) and (water or land area) is the same as the current area.
-                if surround_area_size >= MIN_AREA_SIZE {
-                    let old_area_id = first_tile.area_id(self);
-
-                    self.area_id_and_size.remove(&old_area_id);
-
-                    self.area_id_and_size
-                        .entry(surround_area_id)
-                        .and_modify(|e| *e += tiles_in_current_area.len() as u32);
-
-                    tiles_in_current_area.iter().for_each(|&tile| {
-                        self.area_id_query[tile.index()] = surround_area_id;
-                    })
-                }
+        for tile in self.iter_tiles() {
+            // If the tile is already part of a landmass, skip it.
+            if tile.landmass_id(self) != UNINITIALIZED_LANDMASS_ID {
+                continue;
             }
-        });
+
+            let tiles_in_landmass =
+                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+
+            let landmass_type = if tile.is_water(self) {
+                LandmassType::Water
+            } else {
+                LandmassType::Land
+            };
+
+            let current_landmass_id = self.landmass_list.len();
+
+            let landmass = Landmass {
+                landmass_type,
+                id: current_landmass_id,
+                size: tiles_in_landmass.len() as u32,
+            };
+
+            self.landmass_list.push(landmass);
+
+            tiles_in_landmass.iter().for_each(|&tile| {
+                self.landmass_id_query[tile.index()] = current_landmass_id;
+            });
+        }
     }
+
+    fn generate_tile_in_area_or_landmass(
+        &self,
+        map_parameters: &MapParameters,
+        start_tile: Tile,
+        check_tile: impl Fn(Tile, Tile) -> bool,
+    ) -> HashSet<Tile> {
+        let grid = map_parameters.grid;
+
+        // This variable is equivalent to `UNINITIALIZED_AREA_ID` or `UNINITIALIZED_LANDMASS_ID`. It is used to check whether a tile is part of the current area or landmass.
+        const UNINITIALIZED_ID: usize = usize::MAX;
+
+        // Store all the tiles that are part of the current area or landmass.
+        let mut tiles_in_area_or_landmass = HashSet::new();
+        // Store all the tiles that need to check whether their neighbors are in the current area or landmass within the following 'while {..}' loop.
+        let mut queue = VecDeque::new();
+
+        tiles_in_area_or_landmass.insert(start_tile);
+        queue.push_back(start_tile);
+
+        while let Some(current_tile) = queue.pop_front() {
+            current_tile.neighbor_tiles(grid).iter().for_each(|&tile| {
+                if tiles_in_area_or_landmass.insert(tile)
+                    && tile.area_id(self) == UNINITIALIZED_ID
+                    && check_tile(tile, current_tile)
+                {
+                    queue.push_back(tile);
+                }
+            });
+        }
+
+        tiles_in_area_or_landmass
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Area {
+    pub is_water: bool,
+    pub is_mountain: bool,
+    /// Area ID. The ID is equal to the index of the area in the [`TileMap::area_list`].
+    pub id: usize,
+    /// Size of the area in tiles.
+    pub size: u32,
+}
+
+/// Represents a landmass in the map.
+/// A landmass is a contiguous area of land or water on the map.
+pub struct Landmass {
+    /// Landmass ID. The ID is equal to the index of the landmass in the [`TileMap::landmass_list`].
+    pub id: usize,
+    /// Size of the landmass in tiles.
+    pub size: u32,
+    pub landmass_type: LandmassType,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Represents the type of landmass.
+pub enum LandmassType {
+    Land,
+    Water,
 }

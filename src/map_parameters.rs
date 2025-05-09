@@ -15,10 +15,9 @@ pub struct MapParameters {
     pub name: String,
     pub map_size: MapSize,
     pub map_type: MapType,
-    pub hex_layout: HexLayout,
+    pub grid: HexGrid,
     pub map_wrapping: MapWrapping,
     /// The map use which type of offset coordinate
-    pub offset: Offset,
     pub no_ruins: bool,
     pub seed: u64,
     pub large_lake_num: u32,
@@ -42,6 +41,14 @@ pub struct MapParameters {
     /// If true, the civilization starting tile must be coastal land. Otherwise, it can be any hill/flatland tile.
     pub civilization_starting_tile_must_be_coastal_land: bool,
     pub resource_setting: ResourceSetting,
+}
+
+#[derive(Clone, Copy)]
+pub struct HexGrid {
+    pub size: MapSize,
+    pub hex_layout: HexLayout,
+    pub map_wrapping: MapWrapping,
+    pub offset: Offset,
 }
 
 #[derive(Clone, Copy)]
@@ -208,10 +215,10 @@ pub enum ResourceSetting {
 
 impl Default for MapParameters {
     fn default() -> Self {
-        Self {
-            name: "perlin map".to_owned(),
-            map_size: MapSize::from_world_size(WorldSize::Standard),
-            map_type: MapType::Fractal,
+        let map_size = MapSize::from_world_size(WorldSize::Standard);
+        let grid_size = map_size;
+        let grid = HexGrid {
+            size: grid_size,
             hex_layout: HexLayout {
                 orientation: HexOrientation::Flat,
                 size: DVec2::new(8., 8.),
@@ -222,6 +229,16 @@ impl Default for MapParameters {
                 y: WrapType::Polar,
             },
             offset: Offset::Odd,
+        };
+        Self {
+            name: "perlin map".to_owned(),
+            map_size: MapSize::from_world_size(WorldSize::Standard),
+            map_type: MapType::Fractal,
+            grid,
+            map_wrapping: MapWrapping {
+                x: WrapType::Wrap,
+                y: WrapType::Polar,
+            },
             no_ruins: false,
             seed: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -251,15 +268,16 @@ impl MapParameters {
     /// # Notice
     /// When we show the map, we need to set camera to the center of the map.
     pub fn map_center(&self) -> DVec2 {
+        let grid = self.grid;
         let width = self.map_size.width;
         let height = self.map_size.height;
 
         let (min_offset_x, min_offset_y) = [0, 1, width].into_iter().fold(
             (0.0_f64, 0.0_f64),
             |(min_offset_x, min_offset_y), index| {
-                let hex = Tile::new(index as usize).to_hex_coordinate(self);
+                let hex = Tile::new(index as usize).to_hex_coordinate(grid);
 
-                let [offset_x, offset_y] = self.hex_layout.hex_to_pixel(hex).to_array();
+                let [offset_x, offset_y] = self.grid.hex_layout.hex_to_pixel(hex).to_array();
                 (min_offset_x.min(offset_x), min_offset_y.min(offset_y))
             },
         );
@@ -271,9 +289,9 @@ impl MapParameters {
         ]
         .into_iter()
         .fold((0.0_f64, 0.0_f64), |(max_offset_x, max_offset_y), index| {
-            let hex = Tile::new(index as usize).to_hex_coordinate(self);
+            let hex = Tile::new(index as usize).to_hex_coordinate(grid);
 
-            let [offset_x, offset_y] = self.hex_layout.hex_to_pixel(hex).to_array();
+            let [offset_x, offset_y] = self.grid.hex_layout.hex_to_pixel(hex).to_array();
             (max_offset_x.max(offset_x), max_offset_y.max(offset_y))
         });
 
@@ -284,11 +302,11 @@ impl MapParameters {
     }
 
     pub const fn edge_direction_array(&self) -> [Direction; 6] {
-        self.hex_layout.orientation.edge_direction()
+        self.grid.hex_layout.orientation.edge_direction()
     }
 
     pub const fn corner_direction_array(&self) -> [Direction; 6] {
-        self.hex_layout.orientation.corner_direction()
+        self.grid.hex_layout.orientation.corner_direction()
     }
 }
 
@@ -310,10 +328,11 @@ impl Rectangle {
         &'a self,
         map_parameters: &'a MapParameters,
     ) -> impl Iterator<Item = Tile> + 'a {
+        let grid = map_parameters.grid;
         (self.south_y..self.south_y + self.height).flat_map(move |y| {
             (self.west_x..self.west_x + self.width).map(move |x| {
                 let offset_coordinate = OffsetCoordinate::new(x, y);
-                Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                Tile::from_offset_coordinate(grid, offset_coordinate)
                     .expect("Offset coordinate is outside the map!")
             })
         })
@@ -323,7 +342,8 @@ impl Rectangle {
     ///
     /// Returns `true` if the given tile is inside the current rectangle.
     pub fn contains(&self, map_parameters: &MapParameters, tile: Tile) -> bool {
-        let [mut x, mut y] = tile.to_offset_coordinate(map_parameters).to_array();
+        let grid = map_parameters.grid;
+        let [mut x, mut y] = tile.to_offset_coordinate(grid).to_array();
 
         // We should consider the map is wrapped around horizontally.
         if x < self.west_x {

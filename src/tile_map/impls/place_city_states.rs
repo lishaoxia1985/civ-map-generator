@@ -387,7 +387,7 @@ impl TileMap {
         // Number of City States to be placed on landmasses uninhabited by civs
         let num_city_states_uninhabited;
 
-        let mut land_area_id_and_tiles: HashMap<i32, Vec<_>> = HashMap::new();
+        let mut land_area_id_and_tiles: HashMap<usize, Vec<_>> = HashMap::new();
 
         let mut num_civ_landmass_tiles = 0;
         let mut num_uninhabited_landmass_tiles = 0;
@@ -436,7 +436,7 @@ impl TileMap {
                 let areas_inhabited_by_civs: HashSet<_> = self
                     .region_list
                     .iter()
-                    .filter_map(|region| region.landmass_id)
+                    .filter_map(|region| region.area_id)
                     .collect();
 
                 for (land_area_id, tiles) in land_area_id_and_tiles.iter() {
@@ -583,6 +583,8 @@ impl TileMap {
     /// 1. Add hills to city state location's 1 radius if it has not enough hammer.
     /// 2. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
     fn normalize_city_state(&mut self, map_parameters: &MapParameters, tile: Tile) {
+        let grid = map_parameters.grid;
+
         let mut inner_four_food = 0;
         let mut inner_three_food = 0;
         let mut inner_two_food = 0;
@@ -612,7 +614,7 @@ impl TileMap {
         // 1H: Plains, Jungle on Plains
 
         // Evaluate First Ring
-        let mut neighbor_tiles = tile.neighbor_tiles(map_parameters);
+        let mut neighbor_tiles = tile.neighbor_tiles(grid);
 
         neighbor_tiles.iter().for_each(|neighbor_tile| {
             let terrain_type = neighbor_tile.terrain_type(self);
@@ -729,7 +731,7 @@ impl TileMap {
         });
 
         // Evaluate Second Ring
-        let mut tiles_at_distance_two = tile.tiles_at_distance(2, map_parameters);
+        let mut tiles_at_distance_two = tile.tiles_at_distance(2, grid);
 
         tiles_at_distance_two
             .iter()

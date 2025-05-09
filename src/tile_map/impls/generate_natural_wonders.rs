@@ -1,19 +1,20 @@
 use std::cmp::Reverse;
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
-use crate::component::map_component::base_terrain::BaseTerrain;
-use crate::component::map_component::feature::Feature;
-use crate::component::map_component::natural_wonder::NaturalWonder;
-use crate::component::map_component::terrain_type::TerrainType;
-use crate::map_parameters::{MapParameters, WorldSize};
-use crate::ruleset::unique::Unique;
-use crate::ruleset::Ruleset;
-use crate::tile::Tile;
-use crate::tile_map::{Layer, TileMap};
+use crate::{
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
+        terrain_type::TerrainType,
+    },
+    map_parameters::{MapParameters, WorldSize},
+    ruleset::{unique::Unique, Ruleset},
+    tile::Tile,
+    tile_map::{Layer, TileMap},
+};
 
 impl TileMap {
     /// Generate natural wonders on the map.
@@ -24,6 +25,8 @@ impl TileMap {
     /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let grid = map_parameters.grid;
+
         let world_size = map_parameters.map_size.world_size;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
@@ -33,34 +36,14 @@ impl TileMap {
         // Replace HashMap with BTreeMap to ensure consistent order
         let mut natural_wonder_and_tile = BTreeMap::new();
 
-        let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
-
-        self.iter_tiles().for_each(|tile| {
-            let area_id = tile.area_id(self);
-            let terrain_type = tile.terrain_type(self);
-            area_id_and_terrain_type
-                .entry(area_id)
-                .or_default()
-                .insert(terrain_type);
-        });
-
-        let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
-        let only_mountain_terrain_type: HashSet<TerrainType> =
-            HashSet::from([TerrainType::Mountain]);
-        // Get all landmass IDs
-        // - landmasses are areas that don't have only water or only mountain tiles
-        // - Filter out the areas that are only water or only mountains
-        let mut landmass_id_and_size: Vec<_> = area_id_and_terrain_type
+        let mut landmass_id_and_size: Vec<_> = self
+            .area_list
             .iter()
-            .filter(|(_, terrain_types)| {
-                terrain_types != &&only_water_terrain_type
-                    && terrain_types != &&only_mountain_terrain_type
-            })
-            .map(|(&area_id, _)| (area_id, self.area_id_and_size[&area_id]))
+            .filter(|area| !area.is_water)
+            .map(|area| (area.id, area.size))
             .collect();
 
-        // First, sort by area_size in descending order using std::cmp::Reverse
-        // If area_size is the same, sort by land_id in ascending order
+        // Sort by `area_size` in descending order
         landmass_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
         // When a natural wonder requires occupying 2 adjacent tiles,
@@ -83,12 +66,12 @@ impl TileMap {
                 match natural_wonder_name.as_str() {
                     "Great Barrier Reef" => {
                         if let Some(neighbor_tile) =
-                            tile.neighbor_tile(neighbor_tile_direction, map_parameters)
+                            tile.neighbor_tile(neighbor_tile_direction, grid)
                         {
                             let mut all_neigbor_tiles = HashSet::new();
 
-                            all_neigbor_tiles.extend(tile.neighbor_tiles(map_parameters));
-                            all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(map_parameters));
+                            all_neigbor_tiles.extend(tile.neighbor_tiles(grid));
+                            all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(grid));
 
                             // We only check neighbors of the current tile and the neighbor tile.
                             // So we remove them from the set of all neighbor tiles.
@@ -141,7 +124,7 @@ impl TileMap {
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {
                                         let count = tile
-                                            .neighbor_tiles(map_parameters)
+                                            .neighbor_tiles(grid)
                                             .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
@@ -154,7 +137,7 @@ impl TileMap {
                                     }
                                     "Must be adjacent to [] to [] [] tiles" => {
                                         let count = tile
-                                            .neighbor_tiles(map_parameters)
+                                            .neighbor_tiles(grid)
                                             .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
@@ -235,7 +218,7 @@ impl TileMap {
                                 "Great Barrier Reef" => {
                                     // The neighbor tile absolutely exists because we have checked it before.
                                     let neighbor_tile = tile
-                                        .neighbor_tile(neighbor_tile_direction, map_parameters)
+                                        .neighbor_tile(neighbor_tile_direction, grid)
                                         .expect("Neighbor tile does not exist");
 
                                     // All related tiles should contain:
@@ -244,9 +227,8 @@ impl TileMap {
                                     // 3. All neighbor tiles of current tile and neighbor tile
                                     let mut all_related_tiles = HashSet::new();
 
-                                    all_related_tiles.extend(tile.neighbor_tiles(map_parameters));
-                                    all_related_tiles
-                                        .extend(neighbor_tile.neighbor_tiles(map_parameters));
+                                    all_related_tiles.extend(tile.neighbor_tiles(grid));
+                                    all_related_tiles.extend(neighbor_tile.neighbor_tiles(grid));
 
                                     all_related_tiles.into_iter().for_each(|tile| {
                                         self.terrain_type_query[tile.index()] = TerrainType::Water;
@@ -264,8 +246,7 @@ impl TileMap {
                                     placed_natural_wonder_tiles.push(neighbor_tile);
                                 }
                                 "Rock of Gibraltar" => {
-                                    let neighbor_tiles: Vec<_> =
-                                        tile.neighbor_tiles(map_parameters);
+                                    let neighbor_tiles: Vec<_> = tile.neighbor_tiles(grid);
 
                                     neighbor_tiles.into_iter().for_each(|neighbor_tile| {
                                         if neighbor_tile.terrain_type(self) == TerrainType::Water {
@@ -331,12 +312,12 @@ impl TileMap {
         placed_natural_wonder_tiles.iter().for_each(|&tile| {
             if tile.terrain_type(self) != TerrainType::Water
                 && tile
-                    .neighbor_tiles(map_parameters)
+                    .neighbor_tiles(grid)
                     .iter()
                     .any(|neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
             {
                 let water_neighbor_tiles: Vec<_> = tile
-                    .neighbor_tiles(map_parameters)
+                    .neighbor_tiles(grid)
                     .into_iter()
                     .filter(|&neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
                     .collect();
@@ -344,8 +325,7 @@ impl TileMap {
                 water_neighbor_tiles
                     .iter()
                     .for_each(|&water_neighbor_tile| {
-                        let neighbor_neighbor_tiles =
-                            water_neighbor_tile.neighbor_tiles(map_parameters);
+                        let neighbor_neighbor_tiles = water_neighbor_tile.neighbor_tiles(grid);
 
                         if neighbor_neighbor_tiles
                             .iter()
@@ -373,6 +353,8 @@ impl TileMap {
     /// -In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
     pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let grid = map_parameters.grid;
+
         let world_size = map_parameters.map_size.world_size;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
@@ -382,34 +364,14 @@ impl TileMap {
         // Replace HashMap with BTreeMap to ensure consistent order
         let mut natural_wonder_and_tile_and_score = BTreeMap::new();
 
-        let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
-
-        self.iter_tiles().for_each(|tile| {
-            let area_id = tile.area_id(self);
-            let terrain_type = tile.terrain_type(self);
-            area_id_and_terrain_type
-                .entry(area_id)
-                .or_default()
-                .insert(terrain_type);
-        });
-
-        let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
-        let only_mountain_terrain_type: HashSet<TerrainType> =
-            HashSet::from([TerrainType::Mountain]);
-        // Get all landmass IDs
-        // - landmasses are areas that don't have only water or only mountain tiles
-        // - Filter out the areas that are only water or only mountains
-        let mut landmass_id_and_size: Vec<_> = area_id_and_terrain_type
+        let mut landmass_id_and_size: Vec<_> = self
+            .area_list
             .iter()
-            .filter(|(_, terrain_types)| {
-                terrain_types != &&only_water_terrain_type
-                    && terrain_types != &&only_mountain_terrain_type
-            })
-            .map(|(&area_id, _)| (area_id, self.area_id_and_size[&area_id]))
+            .filter(|area| !area.is_water)
+            .map(|area| (area.id, area.size))
             .collect();
 
-        // First, sort by area_size in descending order using std::cmp::Reverse
-        // If area_size is the same, sort by land_id in ascending order
+        // Sort by `area_size` in descending order
         landmass_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
         // When a natural wonder requires occupying 2 adjacent tiles,
@@ -432,12 +394,12 @@ impl TileMap {
                 match natural_wonder_name.as_str() {
                     "Great Barrier Reef" => {
                         if let Some(neighbor_tile) =
-                            tile.neighbor_tile(neighbor_tile_direction, map_parameters)
+                            tile.neighbor_tile(neighbor_tile_direction, grid)
                         {
                             let mut all_neigbor_tiles = HashSet::new();
 
-                            all_neigbor_tiles.extend(tile.neighbor_tiles(map_parameters));
-                            all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(map_parameters));
+                            all_neigbor_tiles.extend(tile.neighbor_tiles(grid));
+                            all_neigbor_tiles.extend(neighbor_tile.neighbor_tiles(grid));
 
                             // We only check neighbors of the current tile and the neighbor tile.
                             // So we remove them from the set of all neighbor tiles.
@@ -490,7 +452,7 @@ impl TileMap {
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {
                                         let count = tile
-                                            .neighbor_tiles(map_parameters)
+                                            .neighbor_tiles(grid)
                                             .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
@@ -503,7 +465,7 @@ impl TileMap {
                                     }
                                     "Must be adjacent to [] to [] [] tiles" => {
                                         let count = tile
-                                            .neighbor_tiles(map_parameters)
+                                            .neighbor_tiles(grid)
                                             .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
@@ -578,8 +540,8 @@ impl TileMap {
                         let closest_natural_wonder_dist = placed_natural_wonder_tiles
                             .iter()
                             .map(|tile_y_index| {
-                                let position_x_hex = tile_x_index.to_hex_coordinate(map_parameters);
-                                let position_y_hex = tile_y_index.to_hex_coordinate(map_parameters);
+                                let position_x_hex = tile_x_index.to_hex_coordinate(grid);
+                                let position_y_hex = tile_y_index.to_hex_coordinate(grid);
                                 position_x_hex.distance_to(position_y_hex)
                             })
                             .min()
@@ -609,7 +571,7 @@ impl TileMap {
                             "Great Barrier Reef" => {
                                 // The neighbor tile absolutely exists because we have checked it before.
                                 let neighbor_tile = max_score_tile
-                                    .neighbor_tile(neighbor_tile_direction, map_parameters)
+                                    .neighbor_tile(neighbor_tile_direction, grid)
                                     .expect("Neighbor tile does not exist");
 
                                 // All related tiles should contain:
@@ -618,10 +580,8 @@ impl TileMap {
                                 // 3. All neighbor tiles of current tile and neighbor tile
                                 let mut all_related_tiles = HashSet::new();
 
-                                all_related_tiles
-                                    .extend(max_score_tile.neighbor_tiles(map_parameters));
-                                all_related_tiles
-                                    .extend(neighbor_tile.neighbor_tiles(map_parameters));
+                                all_related_tiles.extend(max_score_tile.neighbor_tiles(grid));
+                                all_related_tiles.extend(neighbor_tile.neighbor_tiles(grid));
 
                                 all_related_tiles.into_iter().for_each(|tile| {
                                     self.terrain_type_query[tile.index()] = TerrainType::Water;
@@ -638,8 +598,7 @@ impl TileMap {
                                 placed_natural_wonder_tiles.push(neighbor_tile);
                             }
                             "Rock of Gibraltar" => {
-                                let neighbor_tiles: Vec<_> =
-                                    max_score_tile.neighbor_tiles(map_parameters);
+                                let neighbor_tiles: Vec<_> = max_score_tile.neighbor_tiles(grid);
 
                                 neighbor_tiles.into_iter().for_each(|neighbor_tile| {
                                     if neighbor_tile.terrain_type(self) == TerrainType::Water {
@@ -691,12 +650,12 @@ impl TileMap {
         placed_natural_wonder_tiles.iter().for_each(|&tile| {
             if tile.terrain_type(self) != TerrainType::Water
                 && tile
-                    .neighbor_tiles(map_parameters)
+                    .neighbor_tiles(grid)
                     .iter()
                     .any(|neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
             {
                 let water_neighbor_tiles: Vec<_> = tile
-                    .neighbor_tiles(map_parameters)
+                    .neighbor_tiles(grid)
                     .into_iter()
                     .filter(|&neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
                     .collect();
@@ -704,8 +663,7 @@ impl TileMap {
                 water_neighbor_tiles
                     .iter()
                     .for_each(|&water_neighbor_tile| {
-                        let neighbor_neighbor_tiles =
-                            water_neighbor_tile.neighbor_tiles(map_parameters);
+                        let neighbor_neighbor_tiles = water_neighbor_tile.neighbor_tiles(grid);
 
                         if neighbor_neighbor_tiles
                             .iter()

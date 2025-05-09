@@ -50,7 +50,7 @@ impl TileMap {
 
         self.fix_sugar_jungles();
 
-        self.recalculate_areas(map_parameters);
+        self.recalculate_areas(map_parameters, ruleset);
     }
 
     /// Fix Sugar graphics. That because in origin CIV5, `Sugar` could not be made visible enough in jungle, so turn any sugar jungle to marsh.

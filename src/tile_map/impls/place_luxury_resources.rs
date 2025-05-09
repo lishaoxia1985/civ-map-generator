@@ -628,6 +628,8 @@ impl TileMap {
         &self,
         map_parameters: &MapParameters,
     ) -> [Vec<Tile>; 15] {
+        let grid = map_parameters.grid;
+
         let mut region_coast_next_to_land_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
         let mut region_hill_jungle_tile_list = Vec::new();
@@ -656,13 +658,9 @@ impl TileMap {
                             && feature != Some(Feature::Ice)
                             && feature != Some(Feature::Atoll)
                         {
-                            if tile
-                                .neighbor_tiles(map_parameters)
-                                .iter()
-                                .any(|neighbor_tile| {
-                                    neighbor_tile.terrain_type(self) != TerrainType::Water
-                                })
-                            {
+                            if tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
+                                neighbor_tile.terrain_type(self) != TerrainType::Water
+                            }) {
                                 region_coast_next_to_land_tile_list.push(tile);
                             }
                         }
@@ -762,6 +760,8 @@ impl TileMap {
         city_site: Tile,
         radius: u32,
     ) -> [Vec<Tile>; 15] {
+        let grid = map_parameters.grid;
+
         let mut region_coast_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
         let mut region_hill_jungle_tile_list = Vec::new();
@@ -783,7 +783,7 @@ impl TileMap {
         if radius > 0 && radius < 6 {
             for ripple_radius in 1..=radius {
                 city_site
-                    .tiles_at_distance(ripple_radius, map_parameters)
+                    .tiles_at_distance(ripple_radius, grid)
                     .into_iter()
                     .for_each(|tile_at_distance| {
                         let terrain_type = tile_at_distance.terrain_type(self);
@@ -901,9 +901,11 @@ impl TileMap {
         city_site: Tile,
         radius: u32,
     ) {
+        let grid = map_parameters.grid;
+
         for ripple_radius in 1..=radius {
             city_site
-                .tiles_at_distance(ripple_radius, map_parameters)
+                .tiles_at_distance(ripple_radius, grid)
                 .into_iter()
                 .for_each(|tile_at_distance| {
                     let feature = tile_at_distance.feature(self);
@@ -920,9 +922,11 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> [Vec<Tile>; 15] {
+        let grid = map_parameters.grid;
+
         let rectangle = self.region_list[region_index].rectangle;
 
-        let landmass_id = self.region_list[region_index].landmass_id;
+        let landmass_id = self.region_list[region_index].area_id;
 
         let mut region_coast_next_to_land_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
@@ -953,7 +957,7 @@ impl TileMap {
                     {
                         if let Some(landmass_id) = landmass_id {
                             if tile
-                                .neighbor_tiles(map_parameters)
+                                .neighbor_tiles(grid)
                                 .iter()
                                 .any(|neighbor_tile| neighbor_tile.area_id(self) == landmass_id)
                             {
@@ -1051,10 +1055,12 @@ impl TileMap {
         city_site: Tile,
         radius: u32,
     ) -> HashSet<String> {
+        let grid = map_parameters.grid;
+
         let mut allowed_luxuries = HashSet::new();
         for ripple_radius in 1..=radius {
             city_site
-                .tiles_at_distance(ripple_radius, map_parameters)
+                .tiles_at_distance(ripple_radius, grid)
                 .iter()
                 .for_each(|tile| {
                     let terrain_type = tile.terrain_type(self);

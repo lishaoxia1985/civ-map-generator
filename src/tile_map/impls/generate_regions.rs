@@ -1,7 +1,5 @@
 use std::cmp::min;
 
-use std::collections::{HashMap, HashSet};
-
 use enum_map::{enum_map, EnumMap};
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +23,7 @@ impl TileMap {
         match map_parameters.region_divide_method {
             RegionDivideMethod::Pangaea => {
                 // -- Identify the biggest landmass.
-                let biggest_landmass_id = self.get_biggest_landmass_id();
+                let biggest_landmass_id = self.get_biggest_area_id();
 
                 let landmass_region =
                     Region::landmass_region(self, map_parameters, biggest_landmass_id);
@@ -33,31 +31,11 @@ impl TileMap {
                 self.divide_into_regions(map_parameters, civilization_num, landmass_region);
             }
             RegionDivideMethod::Continent => {
-                let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
-
-                self.iter_tiles().for_each(|tile| {
-                    let area_id = tile.area_id(self);
-                    let terrain_type = tile.terrain_type(self);
-                    area_id_and_terrain_type
-                        .entry(area_id)
-                        .or_default()
-                        .insert(terrain_type);
-                });
-
-                let only_water_terrain_type: HashSet<TerrainType> =
-                    HashSet::from([TerrainType::Water]);
-                let only_mountain_terrain_type: HashSet<TerrainType> =
-                    HashSet::from([TerrainType::Mountain]);
-                // Get all landmass IDs
-                // - landmasses are areas that don't have only water or only mountain tiles
-                // - Filter out the areas that are only water or only mountains
-                let mut landmass_ids: Vec<_> = area_id_and_terrain_type
+                let mut landmass_ids: Vec<_> = self
+                    .area_list
                     .iter()
-                    .filter(|(_, terrain_types)| {
-                        terrain_types != &&only_water_terrain_type
-                            && terrain_types != &&only_mountain_terrain_type
-                    })
-                    .map(|(&area_id, _)| (area_id))
+                    .filter(|area| !area.is_water)
+                    .map(|area| area.id)
                     .collect();
 
                 landmass_ids.sort_unstable();
@@ -232,7 +210,7 @@ impl TileMap {
     fn measure_start_placement_fertility_of_landmass(
         &self,
         map_parameters: &MapParameters,
-        area_id: i32,
+        area_id: usize,
         landmass_rectangle: Rectangle,
     ) -> Vec<i32> {
         let tile_count = landmass_rectangle.width * landmass_rectangle.height;
@@ -351,10 +329,11 @@ impl TileMap {
     fn obtain_landmass_boundaries(
         &self,
         map_parameters: &MapParameters,
-        area_id: i32,
+        area_id: usize,
     ) -> Rectangle {
         let map_height = map_parameters.map_size.height as i32;
         let map_width = map_parameters.map_size.width as i32;
+        let grid = map_parameters.grid;
         // -- Set up variables that will be returned by this function.
         let mut wrap_x = false;
         let mut wrap_y = false;
@@ -372,7 +351,7 @@ impl TileMap {
                 if !found_first_column {
                     let first_offset_coordinate = OffsetCoordinate::new(0, y);
                     let tile_first_index =
-                        Tile::from_offset_coordinate(map_parameters, first_offset_coordinate)
+                        Tile::from_offset_coordinate(grid, first_offset_coordinate)
                             .expect("Offset coordinate is outside the map!");
                     if tile_first_index.area_id(self) == area_id {
                         // Found a tile belonging to current area in first column.
@@ -383,7 +362,7 @@ impl TileMap {
                 if !found_last_column {
                     let last_offset_coordinate = OffsetCoordinate::new(map_width - 1, y);
                     let tile_last_index =
-                        Tile::from_offset_coordinate(map_parameters, last_offset_coordinate)
+                        Tile::from_offset_coordinate(grid, last_offset_coordinate)
                             .expect("Offset coordinate is outside the map!");
                     if tile_last_index.area_id(self) == area_id {
                         // Found a tile belonging to current area in last column.
@@ -407,7 +386,7 @@ impl TileMap {
                 if !found_first_row {
                     let first_offset_coordinate = OffsetCoordinate::new(x, 0);
                     let tile_first_index =
-                        Tile::from_offset_coordinate(map_parameters, first_offset_coordinate)
+                        Tile::from_offset_coordinate(grid, first_offset_coordinate)
                             .expect("Offset coordinate is outside the map!");
                     if tile_first_index.area_id(self) == area_id {
                         // Found a tile belonging to current area in first row.
@@ -418,7 +397,7 @@ impl TileMap {
                 if !found_last_row {
                     let last_offset_coordinate = OffsetCoordinate::new(x, map_height - 1);
                     let tile_last_index =
-                        Tile::from_offset_coordinate(map_parameters, last_offset_coordinate)
+                        Tile::from_offset_coordinate(grid, last_offset_coordinate)
                             .expect("Offset coordinate is outside the map!");
                     if tile_last_index.area_id(self) == area_id {
                         // Found a tile belonging to current area in last row.
@@ -441,7 +420,7 @@ impl TileMap {
             for x in 0..map_width {
                 if (0..map_height).any(|y| {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     tile.area_id(self) == area_id
                 }) {
@@ -454,7 +433,7 @@ impl TileMap {
             for x in (0..map_width).rev() {
                 if (0..map_height).any(|y| {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     tile.area_id(self) == area_id
                 }) {
@@ -475,7 +454,7 @@ impl TileMap {
 
                 for y in 0..map_height {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     if tile.area_id(self) == area_id {
                         found_area_in_column = true;
@@ -496,7 +475,7 @@ impl TileMap {
 
                 for y in 0..map_height {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     if tile.area_id(self) == area_id {
                         found_area_in_column = true;
@@ -524,7 +503,7 @@ impl TileMap {
             for y in 0..map_height {
                 if (0..map_width).any(|x| {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     tile.area_id(self) == area_id
                 }) {
@@ -537,7 +516,7 @@ impl TileMap {
             for y in (0..map_height).rev() {
                 if (0..map_width).any(|x| {
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     tile.area_id(self) == area_id
                 }) {
@@ -557,7 +536,7 @@ impl TileMap {
                 for x in 0..map_width {
                     // Checking row.
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     if tile.area_id(self) == area_id {
                         // Found a plot belonging to i_area_id, will have to check the next row too.
@@ -580,7 +559,7 @@ impl TileMap {
                 for x in 0..map_width {
                     // Checking row.
                     let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(map_parameters, offset_coordinate)
+                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
                         .expect("Offset coordinate is outside the map!");
                     if tile.area_id(self) == area_id {
                         // Found a plot belonging to i_area_id, will have to check the next row too.
@@ -624,40 +603,14 @@ impl TileMap {
         }
     }
 
-    /// Get the biggest landmass ID.
-    fn get_biggest_landmass_id(&self) -> i32 {
-        let mut area_id_and_terrain_type: HashMap<i32, HashSet<_>> = HashMap::new();
-
-        self.iter_tiles().for_each(|tile| {
-            let area_id = tile.area_id(self);
-            let terrain_type = tile.terrain_type(self);
-            area_id_and_terrain_type
-                .entry(area_id)
-                .or_default()
-                .insert(terrain_type);
-        });
-
-        let only_water_terrain_type: HashSet<TerrainType> = HashSet::from([TerrainType::Water]);
-        let only_mountain_terrain_type: HashSet<TerrainType> =
-            HashSet::from([TerrainType::Mountain]);
-        // Get all landmass IDs
-        // - landmasses are areas that don't have only water or only mountain tiles
-        // - Filter out the areas that are only water or only mountains
-        let landmass_id_and_size: Vec<_> = area_id_and_terrain_type
+    /// Get the biggest AreaID.
+    fn get_biggest_area_id(&self) -> usize {
+        self.area_list
             .iter()
-            .filter(|(_, terrain_types)| {
-                terrain_types != &&only_water_terrain_type
-                    && terrain_types != &&only_mountain_terrain_type
-            })
-            .map(|(&area_id, _)| (area_id, self.area_id_and_size[&area_id]))
-            .collect();
-
-        // Find the biggest landmass ID
-        landmass_id_and_size
-            .iter()
-            .max_by_key(|&(_, size)| size)
-            .expect("`landmass_id_and_size` should not be empty!")
-            .0
+            .filter(|area| !area.is_water)
+            .max_by_key(|area| area.size)
+            .expect("No area found!") // Ensure that there's at least one area.
+            .id
     }
 }
 
@@ -710,9 +663,9 @@ impl Default for TerrainStatistic {
 pub struct Region {
     /// The rectangle that defines the region.
     pub rectangle: Rectangle,
-    /// The 'area_id' of the landmass this region belongs to.
+    /// The area ID of the landmass this region belongs to.
     /// When landmass_id is `None`, it means that we will consider all landmass in the region when we divide it into sub-regions or other operations.
-    pub landmass_id: Option<i32>,
+    pub area_id: Option<usize>,
     /// List of fertility values for each tile in the region.
     pub fertility_list: Vec<i32>,
     /// Total fertility value of all tiles in the region.
@@ -732,13 +685,13 @@ pub struct Region {
 }
 
 impl Region {
-    fn new(rectangle: Rectangle, landmass_id: Option<i32>, fertility_list: Vec<i32>) -> Self {
+    fn new(rectangle: Rectangle, landmass_id: Option<usize>, fertility_list: Vec<i32>) -> Self {
         let fertility_sum = fertility_list.iter().sum();
         let tile_count = fertility_list.len() as i32;
 
         Region {
             rectangle,
-            landmass_id,
+            area_id: landmass_id,
             fertility_list,
             fertility_sum,
             tile_count,
@@ -762,7 +715,7 @@ impl Region {
     fn landmass_region(
         tile_map: &TileMap,
         map_parameters: &MapParameters,
-        landmass_id: i32,
+        landmass_id: usize,
     ) -> Self {
         let rectangle = tile_map.obtain_landmass_boundaries(map_parameters, landmass_id);
 
@@ -946,13 +899,13 @@ impl Region {
 
         let mut first_region = Region::new(
             first_region_rectangle,
-            self.landmass_id,
+            self.area_id,
             first_region_fertility_list,
         );
 
         let mut second_region = Region::new(
             second_region_rectangle,
-            self.landmass_id,
+            self.area_id,
             second_region_fertility_list,
         );
 
@@ -1096,6 +1049,8 @@ impl Region {
     /// When `landmass_id` is `None`, it will ignore the landmass ID and measure all the land and water terrain in the region.
     /// Otherwise, it will only measure the terrain which is Water/Mountain or whose `area_id` equal to the region's `landmass_id`.
     pub fn measure_terrain(&mut self, tile_map: &TileMap, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
+
         let mut terrain_statistic = TerrainStatistic::default();
 
         for tile in self.rectangle.iter_tiles(map_parameters) {
@@ -1119,7 +1074,7 @@ impl Region {
                     }
                 }
                 TerrainType::Hill => {
-                    if Some(area_id) == self.landmass_id || self.landmass_id.is_none() {
+                    if Some(area_id) == self.area_id || self.area_id.is_none() {
                         terrain_statistic.terrain_type_num[terrain_type] += 1;
                         // We don't need to count the base terrain of hill tiles, because its base terrain bonus is invalid when it is a hill.
                         // For exmple in the original game, if a tile is a hill:
@@ -1143,19 +1098,16 @@ impl Region {
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
                         if !tile.is_coastal_land(tile_map, map_parameters)
-                            && tile
-                                .neighbor_tiles(map_parameters)
-                                .iter()
-                                .any(|neighbor_tile| {
-                                    neighbor_tile.is_coastal_land(tile_map, map_parameters)
-                                })
+                            && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
+                                neighbor_tile.is_coastal_land(tile_map, map_parameters)
+                            })
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
                         }
                     }
                 }
                 TerrainType::Flatland => {
-                    if Some(area_id) == self.landmass_id || self.landmass_id.is_none() {
+                    if Some(area_id) == self.area_id || self.area_id.is_none() {
                         terrain_statistic.terrain_type_num[terrain_type] += 1;
 
                         terrain_statistic.base_terrain_num[base_terrain] += 1;
@@ -1174,12 +1126,9 @@ impl Region {
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
                         if !tile.is_coastal_land(tile_map, map_parameters)
-                            && tile
-                                .neighbor_tiles(map_parameters)
-                                .iter()
-                                .any(|neighbor_tile| {
-                                    neighbor_tile.is_coastal_land(tile_map, map_parameters)
-                                })
+                            && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
+                                neighbor_tile.is_coastal_land(tile_map, map_parameters)
+                            })
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
                         }
