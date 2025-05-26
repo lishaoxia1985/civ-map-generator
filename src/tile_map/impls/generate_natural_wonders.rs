@@ -10,7 +10,7 @@ use crate::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         terrain_type::TerrainType,
     },
-    map_parameters::{MapParameters, WorldSize},
+    map_parameters::WorldSize,
     ruleset::{unique::Unique, Ruleset},
     tile::Tile,
     tile_map::{Layer, TileMap},
@@ -24,10 +24,10 @@ impl TileMap {
     /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
     /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
-    pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let grid = map_parameters.grid;
+    pub fn place_natural_wonders(&mut self, ruleset: &Ruleset) {
+        let grid = self.world_grid.grid;
 
-        let world_size = map_parameters.map_size.world_size;
+        let world_size = self.world_grid.world_size;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
@@ -102,8 +102,7 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self, grid) != possible_natural_wonder.is_fresh_water
-                        {
+                        if tile.is_freshwater(self) != possible_natural_wonder.is_fresh_water {
                             continue;
                         };
 
@@ -291,12 +290,7 @@ impl TileMap {
                                 }
                             }
 
-                            self.place_impact_and_ripples(
-                                map_parameters,
-                                tile,
-                                Layer::NaturalWonder,
-                                None,
-                            );
+                            self.place_impact_and_ripples(tile, Layer::NaturalWonder, None);
 
                             self.player_collision_data[tile.index()] = true;
 
@@ -351,10 +345,10 @@ impl TileMap {
     /// so we don't need to check if the tile is occupied by a civilization start location.
     /// -In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     /// so we should check if the tile is occupied by a civilization start location.
-    pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let grid = map_parameters.grid;
+    pub fn generate_natural_wonders(&mut self, ruleset: &Ruleset) {
+        let grid = self.world_grid.grid;
 
-        let world_size = map_parameters.map_size.world_size;
+        let world_size = self.world_grid.world_size;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
@@ -429,8 +423,7 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self, grid) != possible_natural_wonder.is_fresh_water
-                        {
+                        if tile.is_freshwater(self) != possible_natural_wonder.is_fresh_water {
                             continue;
                         };
 

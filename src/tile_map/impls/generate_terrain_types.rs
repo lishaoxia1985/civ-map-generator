@@ -52,7 +52,7 @@ impl TileMap {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
-        let grain = match map_parameters.map_size.world_size {
+        let grain = match self.world_grid.world_size {
             WorldSize::Duel => 3,
             WorldSize::Tiny => 3,
             WorldSize::Small => 4,
@@ -61,7 +61,7 @@ impl TileMap {
             WorldSize::Huge => 5,
         };
 
-        let mut num_plates = match map_parameters.map_size.world_size {
+        let mut num_plates = match self.world_grid.world_size {
             WorldSize::Duel => 6,
             WorldSize::Tiny => 9,
             WorldSize::Small => 12,
@@ -72,9 +72,9 @@ impl TileMap {
 
         num_plates = (num_plates as f64 * adjust_plates) as i32;
 
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
-        let continents_fractal = self.continents_fractal(map_parameters);
+        let continents_fractal = self.continents_fractal();
 
         let flags = FractalFlags::empty();
 
@@ -163,12 +163,12 @@ impl TileMap {
         });
     }
 
-    pub fn continents_fractal(&mut self, map_parameters: &MapParameters) -> CvFractal {
+    pub fn continents_fractal(&mut self) -> CvFractal {
         let continent_grain = 2;
         // Default no rifts. Set grain to between 1 and 3 to add rifts.
         let rift_grain = -1;
 
-        let num_plates_for_continents = match map_parameters.map_size.world_size {
+        let num_plates_for_continents = match self.world_grid.world_size {
             WorldSize::Duel => 4,
             WorldSize::Tiny => 8,
             WorldSize::Small => 16,
@@ -177,7 +177,7 @@ impl TileMap {
             WorldSize::Huge => 32,
         };
 
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let flags = FractalFlags::empty();
 

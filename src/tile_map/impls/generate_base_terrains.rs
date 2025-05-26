@@ -15,7 +15,7 @@ impl TileMap {
     /// # Notice
     /// We don't generate [`BaseTerrain::Lake`] here, because the lake is a special base terrain that is generated in the [`TileMap::generate_lakes`] and [`TileMap::add_lakes`] method.
     pub fn generate_base_terrains(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let grain_amount = 3;
 
@@ -146,7 +146,7 @@ impl TileMap {
     /// # Notice
     /// This method is called after the [`TileMap::generate_base_terrains`] method.
     pub fn expand_coasts(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
         map_parameters
             .coast_expand_chance
             .iter()

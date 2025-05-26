@@ -27,7 +27,7 @@ impl TileMap {
         };
 
         let [coast_list, flatland_list, jungle_flat_list, forest_flat_list, marsh_list, snow_flat_list, dry_grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, hills_list] =
-            self.generate_strategic_resource_plot_lists(map_parameters);
+            self.generate_strategic_resource_plot_lists();
 
         // Place Strategic resources.
         let resources_to_place = [
@@ -46,13 +46,7 @@ impl TileMap {
                 max_radius: 1,
             },
         ];
-        self.process_resource_list(
-            map_parameters,
-            9.,
-            Layer::Strategic,
-            &marsh_list,
-            &resources_to_place,
-        );
+        self.process_resource_list(9., Layer::Strategic, &marsh_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -78,7 +72,6 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            map_parameters,
             16.,
             Layer::Strategic,
             &tundra_flat_no_feature,
@@ -108,13 +101,7 @@ impl TileMap {
                 max_radius: 3,
             },
         ];
-        self.process_resource_list(
-            map_parameters,
-            17.,
-            Layer::Strategic,
-            &snow_flat_list,
-            &resources_to_place,
-        );
+        self.process_resource_list(17., Layer::Strategic, &snow_flat_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -133,7 +120,6 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            map_parameters,
             13.,
             Layer::Strategic,
             &desert_flat_no_feature,
@@ -163,13 +149,7 @@ impl TileMap {
                 max_radius: 3,
             },
         ];
-        self.process_resource_list(
-            map_parameters,
-            22.,
-            Layer::Strategic,
-            &hills_list,
-            &resources_to_place,
-        );
+        self.process_resource_list(22., Layer::Strategic, &hills_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -188,7 +168,6 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            map_parameters,
             33.,
             Layer::Strategic,
             &jungle_flat_list,
@@ -212,7 +191,6 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            map_parameters,
             39.,
             Layer::Strategic,
             &forest_flat_list,
@@ -227,7 +205,6 @@ impl TileMap {
             max_radius: 5,
         }];
         self.process_resource_list(
-            map_parameters,
             33.,
             Layer::Strategic,
             &dry_grass_flat_no_feature,
@@ -242,7 +219,6 @@ impl TileMap {
             max_radius: 4,
         }];
         self.process_resource_list(
-            map_parameters,
             33.,
             Layer::Strategic,
             &plains_flat_no_feature,
@@ -270,7 +246,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &hills_list,
@@ -288,7 +263,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &flatland_list,
@@ -306,7 +280,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &plains_flat_no_feature,
@@ -324,7 +297,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &dry_grass_flat_no_feature,
@@ -342,7 +314,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &hills_list,
@@ -360,7 +331,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &flatland_list,
@@ -378,7 +348,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &flatland_list,
@@ -396,7 +365,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &hills_list,
@@ -414,7 +382,6 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                map_parameters,
                 f64::MAX,
                 Layer::Strategic,
                 &flatland_list,
@@ -442,7 +409,6 @@ impl TileMap {
 
         let num_to_place = ((num_land_oil as f64 / 2.) / sea_oil_amt as f64) as u32;
         self.place_specific_number_of_resources(
-            map_parameters,
             Resource::Resource("Oil".to_string()),
             sea_oil_amt,
             num_to_place,
@@ -463,8 +429,6 @@ impl TileMap {
         frequency: f64,
         plot_list: &[Tile],
     ) {
-        let grid = map_parameters.grid;
-
         if plot_list.is_empty() {
             return;
         }
@@ -554,7 +518,7 @@ impl TileMap {
                     match terrain_type {
                         TerrainType::Flatland => match base_terrain {
                             BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self, grid) {
+                                if tile.is_freshwater(self) {
                                     selected_resource = Some("Horses");
                                     selected_quantity = horse_amt;
                                 } else {
@@ -659,12 +623,7 @@ impl TileMap {
                         Resource::Resource(selected_resource.to_string()),
                         selected_quantity,
                     ));
-                    self.place_impact_and_ripples(
-                        map_parameters,
-                        tile,
-                        Layer::Strategic,
-                        Some(radius),
-                    );
+                    self.place_impact_and_ripples(tile, Layer::Strategic, Some(radius));
                     num_left_to_place -= 1;
                 }
             }
@@ -698,11 +657,8 @@ impl TileMap {
                 let priority_list_indices_of_chosen_resource =
                     PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
 
-                let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
-                    map_parameters,
-                    city_state_starting_tile,
-                    3,
-                );
+                let mut luxury_plot_lists =
+                    self.generate_luxury_plot_lists_at_city_site(city_state_starting_tile, 3);
 
                 let mut num_left_to_place = resource_amount;
 
@@ -712,7 +668,6 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        map_parameters,
                         Resource::Resource(strategic_resource.to_owned()),
                         num_left_to_place,
                         1,
@@ -759,12 +714,7 @@ impl TileMap {
     /// A `Vec` of shuffled `Vec` of tiles, where each inner `Vec` represents a collection
     /// of tiles that can be used to place strategic resources.
     ///
-    fn generate_strategic_resource_plot_lists(
-        &mut self,
-        map_parameters: &MapParameters,
-    ) -> [Vec<Tile>; 11] {
-        let grid = map_parameters.grid;
-
+    fn generate_strategic_resource_plot_lists(&mut self) -> [Vec<Tile>; 11] {
         let mut coast_list = Vec::new();
         let mut flatland_list = Vec::new(); // very complex
         let mut jungle_flat_list = Vec::new();
@@ -830,7 +780,7 @@ impl TileMap {
                         } else {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
-                                    if tile.is_freshwater(self, grid) {
+                                    if tile.is_freshwater(self) {
                                         /* region_fresh_water_grass_flat_no_feature_tile_list
                                         .push(tile); */
                                     } else {

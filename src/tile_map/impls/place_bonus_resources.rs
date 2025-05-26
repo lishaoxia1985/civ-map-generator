@@ -23,10 +23,10 @@ impl TileMap {
         };
 
         let [extra_deer_list, desert_wheat_list, banana_list, coast_list, hills_open_list, dry_grass_flat_no_feature, grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, forest_flat_that_are_not_tundra] =
-            self.generate_bonus_resource_plot_lists(map_parameters);
+            self.generate_bonus_resource_plot_lists();
 
-        self.place_fish(map_parameters, 10. * bonus_multiplier, &coast_list);
-        self.place_sexy_bonus_at_civ_starts(map_parameters);
+        self.place_fish(10. * bonus_multiplier, &coast_list);
+        self.place_sexy_bonus_at_civ_starts();
         self.add_extra_bonuses_to_hills_regions(map_parameters);
 
         let resources_to_place = [ResourceToPlace {
@@ -37,7 +37,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             8. * bonus_multiplier,
             Layer::Bonus,
             &extra_deer_list,
@@ -52,7 +51,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             10.0 * bonus_multiplier,
             Layer::Bonus,
             &desert_wheat_list,
@@ -67,7 +65,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             12.0 * bonus_multiplier,
             Layer::Bonus,
             &tundra_flat_no_feature,
@@ -82,7 +79,6 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            map_parameters,
             14.0 * bonus_multiplier,
             Layer::Bonus,
             &banana_list,
@@ -97,7 +93,6 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            map_parameters,
             50.0 * bonus_multiplier,
             Layer::Bonus,
             &plains_flat_no_feature,
@@ -112,7 +107,6 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            map_parameters,
             60.0 * bonus_multiplier,
             Layer::Bonus,
             &plains_flat_no_feature,
@@ -127,7 +121,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             18.0 * bonus_multiplier,
             Layer::Bonus,
             &grass_flat_no_feature,
@@ -142,7 +135,6 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            map_parameters,
             30.0 * bonus_multiplier,
             Layer::Bonus,
             &dry_grass_flat_no_feature,
@@ -157,7 +149,6 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            map_parameters,
             50.0 * bonus_multiplier,
             Layer::Bonus,
             &dry_grass_flat_no_feature,
@@ -172,7 +163,6 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            map_parameters,
             13.0 * bonus_multiplier,
             Layer::Bonus,
             &hills_open_list,
@@ -187,7 +177,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             15.0 * bonus_multiplier,
             Layer::Bonus,
             &tundra_flat_no_feature,
@@ -202,7 +191,6 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            map_parameters,
             19.0 * bonus_multiplier,
             Layer::Bonus,
             &desert_flat_no_feature,
@@ -217,7 +205,6 @@ impl TileMap {
             max_radius: 4,
         }];
         self.process_resource_list(
-            map_parameters,
             25.0 * bonus_multiplier,
             Layer::Bonus,
             &forest_flat_that_are_not_tundra,
@@ -227,7 +214,6 @@ impl TileMap {
 
     // function AssignStartingPlots:AddExtraBonusesToHillsRegions
     fn add_extra_bonuses_to_hills_regions(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
         // Identify Hills Regions, if any.
         let mut hills_region_indices = Vec::new();
         for (region_index, region) in self.region_list.iter().enumerate() {
@@ -282,7 +268,7 @@ impl TileMap {
             let mut dry_hills = Vec::new();
             let mut flat_grass = Vec::new();
             let mut flat_tundra = Vec::new();
-            for tile in rectangle.iter_tiles(map_parameters) {
+            for tile in rectangle.iter_tiles(self.world_grid.grid) {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
                 let feature = tile.feature(self);
@@ -313,7 +299,7 @@ impl TileMap {
                                     BaseTerrain::Grassland
                                         | BaseTerrain::Plain
                                         | BaseTerrain::Tundra
-                                ) && !tile.is_freshwater(self, grid)
+                                ) && !tile.is_freshwater(self)
                                 {
                                     dry_hills.push(tile);
                                 }
@@ -323,7 +309,7 @@ impl TileMap {
                                         flat_grass.push(tile);
                                     }
                                     BaseTerrain::Desert => {
-                                        if tile.is_freshwater(self, grid) {
+                                        if tile.is_freshwater(self) {
                                             flat_plains.push(tile);
                                         }
                                     }
@@ -350,7 +336,6 @@ impl TileMap {
                     max_radius: 1,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     9. / infertility_quotient,
                     Layer::Bonus,
                     &dry_hills,
@@ -367,7 +352,6 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     14. / infertility_quotient,
                     Layer::Bonus,
                     &jungles,
@@ -384,7 +368,6 @@ impl TileMap {
                     max_radius: 1,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     14. / infertility_quotient,
                     Layer::Bonus,
                     &flat_tundra,
@@ -401,7 +384,6 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     18. / infertility_quotient,
                     Layer::Bonus,
                     &flat_plains,
@@ -418,7 +400,6 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     20. / infertility_quotient,
                     Layer::Bonus,
                     &flat_grass,
@@ -435,7 +416,6 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    map_parameters,
                     24. / infertility_quotient,
                     Layer::Bonus,
                     &forests,
@@ -451,8 +431,8 @@ impl TileMap {
     /// The added bonus is intended to make the starting location more appealing.
     /// Third-ring resources take longer to develop but provide significant benefits in the late game.
     /// Alternatively, if another city is settled nearby and takes control of this tile, the resource may benefit that city instead.
-    fn place_sexy_bonus_at_civ_starts(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
+    fn place_sexy_bonus_at_civ_starts(&mut self) {
+        let grid = self.world_grid.grid;
 
         let bonus_type_associated_with_region_type = [
             (RegionType::Tundra, "Deer"),
@@ -505,7 +485,7 @@ impl TileMap {
                                 } else if feature == Some(Feature::Floodplain) {
                                     plot_list.push(tile);
                                 } else if base_terrain == BaseTerrain::Desert
-                                    && tile.is_freshwater(self, grid)
+                                    && tile.is_freshwater(self)
                                 {
                                     plot_list.push(tile);
                                 }
@@ -547,7 +527,6 @@ impl TileMap {
             if plot_list.len() > 0 {
                 plot_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
-                    map_parameters,
                     Resource::Resource(chosen_bonus_resource.to_string()),
                     1,
                     1,
@@ -560,7 +539,6 @@ impl TileMap {
                 // Hills region, attempt to give them a second Sexy Sheep.
                 if plot_list.len() > 1 && chosen_bonus_resource == "Sheep" {
                     self.place_specific_number_of_resources(
-                        map_parameters,
                         Resource::Resource(chosen_bonus_resource.to_string()),
                         1,
                         1,
@@ -574,7 +552,6 @@ impl TileMap {
             } else if fish_list.len() > 0 {
                 fish_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
-                    map_parameters,
                     Resource::Resource("Fish".to_string()),
                     1,
                     1,
@@ -589,7 +566,7 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceFish
-    fn place_fish(&mut self, map_parameters: &MapParameters, frequency: f64, coast_list: &[Tile]) {
+    fn place_fish(&mut self, frequency: f64, coast_list: &[Tile]) {
         if coast_list.is_empty() {
             return;
         }
@@ -613,7 +590,7 @@ impl TileMap {
                 }
                 self.resource_query[tile.index()] =
                     Some((Resource::Resource("Fish".to_string()), 1));
-                self.place_impact_and_ripples(map_parameters, tile, Layer::Fish, Some(fish_radius));
+                self.place_impact_and_ripples(tile, Layer::Fish, Some(fish_radius));
                 num_left_to_place -= 1;
             }
         }
@@ -627,12 +604,7 @@ impl TileMap {
     /// A `Vec` of shuffled `Vec` of tiles, where each inner `Vec` represents a collection
     /// of tiles that can be used to place bonus resources.
     ///
-    fn generate_bonus_resource_plot_lists(
-        &mut self,
-        map_parameters: &MapParameters,
-    ) -> [Vec<Tile>; 11] {
-        let grid = map_parameters.grid;
-
+    fn generate_bonus_resource_plot_lists(&mut self) -> [Vec<Tile>; 11] {
         let mut extra_deer_list = Vec::new(); // forest, tundra, (hill or flat)
         let mut desert_wheat_list = Vec::new(); // flood_plain or flat desert with fresh water
         let mut banana_list = Vec::new(); // jungle, (hill or flat)
@@ -659,7 +631,7 @@ impl TileMap {
                     || (terrain_type == TerrainType::Flatland
                         && base_terrain == BaseTerrain::Desert
                         && feature == None
-                        && tile.is_freshwater(self, grid))
+                        && tile.is_freshwater(self))
                 {
                     desert_wheat_list.push(tile);
                 }
@@ -712,7 +684,7 @@ impl TileMap {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     grass_flat_no_feature.push(tile);
-                                    if tile.is_freshwater(self, grid) {
+                                    if tile.is_freshwater(self) {
                                         /* region_fresh_water_grass_flat_no_feature_tile_list
                                         .push(tile); */
                                     } else {

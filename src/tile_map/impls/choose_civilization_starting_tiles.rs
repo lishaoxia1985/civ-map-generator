@@ -54,7 +54,7 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> (bool, bool) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let region = &self.region_list[region_index];
 
@@ -71,7 +71,7 @@ impl TileMap {
         // 2. It is not a coastal land tile, and it does not have any coastal land tiles as neighbors
         let mut area_id_and_candidate_tiles: HashMap<usize, Vec<Tile>> = HashMap::new();
 
-        for (i, tile) in region.rectangle.iter_tiles(map_parameters).enumerate() {
+        for (i, tile) in region.rectangle.iter_tiles(grid).enumerate() {
             if matches!(
                 tile.terrain_type(self),
                 TerrainType::Flatland | TerrainType::Hill
@@ -99,11 +99,11 @@ impl TileMap {
         for &(area_id, _) in area_id_and_fertility.iter().rev() {
             let tile_list = &area_id_and_candidate_tiles[&area_id];
             let (eletion1_tile, election2_tile, _, election2_tile_score) =
-                self.iterate_through_candidate_tile_list(map_parameters, tile_list, region);
+                self.iterate_through_candidate_tile_list(tile_list, region);
 
             if let Some(election1_tile) = eletion1_tile {
                 self.region_list[region_index].starting_tile = election1_tile;
-                self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
+                self.place_impact_and_ripples_for_civilization(election1_tile);
                 return (true, false);
             }
 
@@ -119,20 +119,19 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(max_score_tile);
             return (true, false);
         } else {
-            let x = region.rectangle.west_x;
-            let y = region.rectangle.south_y;
+            let origin = region.rectangle.origin();
 
-            let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+            let tile = Tile::from_offset_coordinate(grid, origin)
                 .expect("Offset coordinate is outside the map!");
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
             self.feature_query[tile.index()] = None;
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
-            self.place_impact_and_ripples_for_civilization(map_parameters, tile);
+            self.place_impact_and_ripples_for_civilization(tile);
             return (false, true);
         }
     }
@@ -153,7 +152,7 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> (bool, bool) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let mut fallback_tile_and_score = Vec::new();
 
@@ -172,17 +171,16 @@ impl TileMap {
             if !success_flag {
                 forced_placement_flag = true;
 
-                let x = (&self.region_list[region_index]).rectangle.west_x;
-                let y = (&self.region_list[region_index]).rectangle.south_y;
+                let origin = self.region_list[region_index].rectangle.origin();
 
-                let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+                let tile = Tile::from_offset_coordinate(grid, origin)
                     .expect("Offset coordinate is outside the map!");
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
                 self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
                 self.feature_query[tile.index()] = None;
                 self.natural_wonder_query[tile.index()] = None;
                 self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples_for_civilization(map_parameters, tile);
+                self.place_impact_and_ripples_for_civilization(tile);
             }
 
             return (success_flag, forced_placement_flag);
@@ -194,44 +192,43 @@ impl TileMap {
         const CENTER_BIAS: f64 = 1. / 3.; // d% of radius from region center to examine first
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
-        let center_width = CENTER_BIAS * rectangle.width as f64;
-        let non_center_width = ((rectangle.width as f64 - center_width) / 2.0).floor() as i32;
-        let center_width = rectangle.width - (non_center_width * 2);
+        let center_width = CENTER_BIAS * rectangle.width() as f64;
+        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as i32;
+        let center_width = rectangle.width() - (non_center_width * 2);
 
-        let center_west_x = (rectangle.west_x + non_center_width) % map_parameters.map_size.width;
+        let center_west_x = rectangle.west_x() + non_center_width;
 
-        let center_height = CENTER_BIAS * rectangle.height as f64;
-        let non_center_height = ((rectangle.height as f64 - center_height) / 2.0).floor() as i32;
-        let center_height = rectangle.height - (non_center_height * 2);
+        let center_height = CENTER_BIAS * rectangle.height() as f64;
+        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as i32;
+        let center_height = rectangle.height() - (non_center_height * 2);
 
-        let center_south_y =
-            (rectangle.south_y + non_center_height) % map_parameters.map_size.height;
+        let center_south_y = rectangle.south_y() + non_center_height;
 
-        let center_rectangle = Rectangle {
-            west_x: center_west_x,
-            south_y: center_south_y,
-            width: center_width,
-            height: center_height,
-        };
+        let center_rectangle = Rectangle::new(
+            OffsetCoordinate::new(center_west_x, center_south_y),
+            center_width,
+            center_height,
+            grid,
+        );
 
-        let middle_width = MIDDLE_BIAS * rectangle.width as f64;
-        let outer_width = ((rectangle.width as f64 - middle_width) / 2.0).floor() as i32;
-        let middle_width = rectangle.width - (outer_width * 2);
+        let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
+        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as i32;
+        let middle_width = rectangle.width() - (outer_width * 2);
 
-        let middle_west_x = (rectangle.west_x + outer_width) % map_parameters.map_size.width;
+        let middle_west_x = rectangle.west_x() + outer_width;
 
-        let middle_height = MIDDLE_BIAS * rectangle.height as f64;
-        let outer_height = ((rectangle.height as f64 - middle_height) / 2.0).floor() as i32;
-        let middle_height = rectangle.height - (outer_height * 2);
+        let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
+        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as i32;
+        let middle_height = rectangle.height() - (outer_height * 2);
 
-        let middle_south_y = (rectangle.south_y + outer_height) % map_parameters.map_size.height;
+        let middle_south_y = rectangle.south_y() + outer_height;
 
-        let middle_rectangle = Rectangle {
-            west_x: middle_west_x,
-            south_y: middle_south_y,
-            width: middle_width,
-            height: middle_height,
-        };
+        let middle_rectangle = Rectangle::new(
+            OffsetCoordinate::new(middle_west_x, middle_south_y),
+            middle_width,
+            middle_height,
+            grid,
+        );
 
         let mut center_coastal_plots = Vec::new();
         let mut center_plots_on_river = Vec::new();
@@ -245,27 +242,27 @@ impl TileMap {
 
         let mut outer_coastal_plots = Vec::new();
 
-        for tile in rectangle.iter_tiles(map_parameters) {
+        for tile in rectangle.iter_tiles(grid) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 let landmass_id = self.region_list[region_index].area_id;
                 if landmass_id == Some(area_id) {
-                    if center_rectangle.contains(map_parameters, tile) {
+                    if center_rectangle.contains(grid, tile) {
                         // Center Bias
                         center_coastal_plots.push(tile);
-                        if tile.has_river(self, grid) {
+                        if tile.has_river(self) {
                             center_plots_on_river.push(tile);
-                        } else if tile.is_freshwater(self, grid) {
+                        } else if tile.is_freshwater(self) {
                             center_fresh_plots.push(tile);
                         } else {
                             center_dry_plots.push(tile);
                         }
-                    } else if middle_rectangle.contains(map_parameters, tile) {
+                    } else if middle_rectangle.contains(grid, tile) {
                         // Middle Bias
                         middle_coastal_plots.push(tile);
-                        if tile.has_river(self, grid) {
+                        if tile.has_river(self) {
                             middle_plots_on_river.push(tile);
-                        } else if tile.is_freshwater(self, grid) {
+                        } else if tile.is_freshwater(self) {
                             middle_fresh_plots.push(tile);
                         } else {
                             middle_dry_plots.push(tile);
@@ -291,11 +288,11 @@ impl TileMap {
 
             for tile_list in candidate_lists.iter() {
                 let (eletion1_tile, election2_tile, _, election2_tile_score) =
-                    self.iterate_through_candidate_tile_list(map_parameters, tile_list, region);
+                    self.iterate_through_candidate_tile_list(tile_list, region);
 
                 if let Some(election1_tile) = eletion1_tile {
                     self.region_list[region_index].starting_tile = election1_tile;
-                    self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
+                    self.place_impact_and_ripples_for_civilization(election1_tile);
                     return (true, false);
                 }
                 if let Some(election_2_tile) = election2_tile {
@@ -314,7 +311,7 @@ impl TileMap {
             // Process list of candidate plots.
             for tile in outer_coastal_plots.into_iter() {
                 let (score, meets_minimum_requirements) =
-                    self.evaluate_candidate_tile(map_parameters, tile, region);
+                    self.evaluate_candidate_tile(tile, region);
 
                 if meets_minimum_requirements {
                     found_eligible = true;
@@ -331,15 +328,13 @@ impl TileMap {
             if found_eligible {
                 // Iterate through eligible plots and choose the one closest to the center of the region.
                 let mut closest_tile = None;
-                let mut closest_distance = i32::max(
-                    map_parameters.map_size.width,
-                    map_parameters.map_size.height,
-                ) as f64;
+                let mut closest_distance =
+                    i32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
 
                 // Because west_x >= 0, bullseye_x will always be >= 0.
-                let mut bullseye_x = rectangle.west_x as f64 + (rectangle.width as f64 / 2.0);
+                let mut bullseye_x = rectangle.west_x() as f64 + (rectangle.width() as f64 / 2.0);
                 // Because south_y >= 0, bullseye_y will always be >= 0.
-                let mut bullseye_y = rectangle.south_y as f64 + (rectangle.height as f64 / 2.0);
+                let mut bullseye_y = rectangle.south_y() as f64 + (rectangle.height() as f64 / 2.0);
 
                 match (grid.hex_layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
@@ -405,13 +400,13 @@ impl TileMap {
                         }
                     }
 
-                    if x < rectangle.west_x {
+                    if x < rectangle.west_x() {
                         // wrapped around: un-wrap it for test purposes.
-                        adjusted_x += map_parameters.map_size.width as f64;
+                        adjusted_x += self.world_grid.size().width as f64;
                     }
-                    if y < rectangle.south_y {
+                    if y < rectangle.south_y() {
                         // wrapped around: un-wrap it for test purposes.
-                        adjusted_y += map_parameters.map_size.height as f64;
+                        adjusted_y += self.world_grid.size().height as f64;
                     }
 
                     let distance = ((adjusted_x - bullseye_x).powf(2.0)
@@ -427,11 +422,11 @@ impl TileMap {
                 if let Some(closest_tile) = closest_tile {
                     // Re-get plot score for inclusion in start plot data.
                     let (_score, _meets_minimum_requirements) =
-                        self.evaluate_candidate_tile(map_parameters, closest_tile, region);
+                        self.evaluate_candidate_tile(closest_tile, region);
 
                     // Assign this tile as the start for this region.
                     self.region_list[region_index].starting_tile = closest_tile;
-                    self.place_impact_and_ripples_for_civilization(map_parameters, closest_tile);
+                    self.place_impact_and_ripples_for_civilization(closest_tile);
                     return (true, false);
                 }
             }
@@ -451,7 +446,7 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(max_score_tile);
             return (true, false);
         } else {
             (success_flag, forced_placement_flag) = self.find_start(map_parameters, region_index);
@@ -459,17 +454,16 @@ impl TileMap {
             if !success_flag {
                 forced_placement_flag = true;
 
-                let x = rectangle.west_x;
-                let y = rectangle.south_y;
+                let origin = rectangle.origin();
 
-                let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+                let tile = Tile::from_offset_coordinate(grid, origin)
                     .expect("Offset coordinate is outside the map!");
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
                 self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
                 self.feature_query[tile.index()] = None;
                 self.natural_wonder_query[tile.index()] = None;
                 self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples_for_civilization(map_parameters, tile);
+                self.place_impact_and_ripples_for_civilization(tile);
             }
 
             return (success_flag, forced_placement_flag);
@@ -485,7 +479,7 @@ impl TileMap {
     /// - second element. If the region had no eligible starting tiles and a starting tile was forced to be placed,
     /// and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
     fn find_start(&mut self, map_parameters: &MapParameters, region_index: usize) -> (bool, bool) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let mut fallback_tile_and_score = Vec::new();
 
@@ -497,44 +491,43 @@ impl TileMap {
         const CENTER_BIAS: f64 = 1. / 3.; // d% of radius from region center to examine first
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
-        let center_width = CENTER_BIAS * rectangle.width as f64;
-        let non_center_width = ((rectangle.width as f64 - center_width) / 2.0).floor() as i32;
-        let center_width = rectangle.width - (non_center_width * 2);
+        let center_width = CENTER_BIAS * rectangle.width() as f64;
+        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as i32;
+        let center_width = rectangle.width() - (non_center_width * 2);
 
-        let center_west_x = (rectangle.west_x + non_center_width) % map_parameters.map_size.width;
+        let center_west_x = rectangle.west_x() + non_center_width;
 
-        let center_height = CENTER_BIAS * rectangle.height as f64;
-        let non_center_height = ((rectangle.height as f64 - center_height) / 2.0).floor() as i32;
-        let center_height = rectangle.height - (non_center_height * 2);
+        let center_height = CENTER_BIAS * rectangle.height() as f64;
+        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as i32;
+        let center_height = rectangle.height() - (non_center_height * 2);
 
-        let center_south_y =
-            (rectangle.south_y + non_center_height) % map_parameters.map_size.height;
+        let center_south_y = rectangle.south_y() + non_center_height;
 
-        let center_rectangle = Rectangle {
-            west_x: center_west_x,
-            south_y: center_south_y,
-            width: center_width,
-            height: center_height,
-        };
+        let center_rectangle = Rectangle::new(
+            OffsetCoordinate::new(center_west_x, center_south_y),
+            center_width,
+            center_height,
+            grid,
+        );
 
-        let middle_width = MIDDLE_BIAS * rectangle.width as f64;
-        let outer_width = ((rectangle.width as f64 - middle_width) / 2.0).floor() as i32;
-        let middle_width = rectangle.width - (outer_width * 2);
+        let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
+        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as i32;
+        let middle_width = rectangle.width() - (outer_width * 2);
 
-        let middle_west_x = (rectangle.west_x + outer_width) % map_parameters.map_size.width;
+        let middle_west_x = rectangle.west_x() + outer_width;
 
-        let middle_height = MIDDLE_BIAS * rectangle.height as f64;
-        let outer_height = ((rectangle.height as f64 - middle_height) / 2.0).floor() as i32;
-        let middle_height = rectangle.height - (outer_height * 2);
+        let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
+        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as i32;
+        let middle_height = rectangle.height() - (outer_height * 2);
 
-        let middle_south_y = (rectangle.south_y + outer_height) % map_parameters.map_size.height;
+        let middle_south_y = rectangle.south_y() + outer_height;
 
-        let middle_rectangle = Rectangle {
-            west_x: middle_west_x,
-            south_y: middle_south_y,
-            width: middle_width,
-            height: middle_height,
-        };
+        let middle_rectangle = Rectangle::new(
+            OffsetCoordinate::new(middle_west_x, middle_south_y),
+            middle_width,
+            middle_height,
+            grid,
+        );
 
         let mut center_candidates = Vec::new();
         let mut center_river = Vec::new();
@@ -548,30 +541,26 @@ impl TileMap {
 
         let mut outer_plots = Vec::new();
 
-        for tile in region.rectangle.iter_tiles(map_parameters) {
+        for tile in region.rectangle.iter_tiles(grid) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 if region.area_id == Some(area_id) {
-                    if center_rectangle.contains(map_parameters, tile) {
+                    if center_rectangle.contains(grid, tile) {
                         // Center Bias
                         center_candidates.push(tile);
-                        if tile.has_river(self, grid) {
+                        if tile.has_river(self) {
                             center_river.push(tile);
-                        } else if tile.is_freshwater(self, grid)
-                            || tile.is_coastal_land(self, grid)
-                        {
+                        } else if tile.is_freshwater(self) || tile.is_coastal_land(self) {
                             center_coastal_land_and_freshwater.push(tile);
                         } else {
                             center_inland_dry_land.push(tile);
                         }
-                    } else if middle_rectangle.contains(map_parameters, tile) {
+                    } else if middle_rectangle.contains(grid, tile) {
                         // Middle Bias
                         middle_candidates.push(tile);
-                        if tile.has_river(self, grid) {
+                        if tile.has_river(self) {
                             middle_river.push(tile);
-                        } else if tile.is_freshwater(self, grid)
-                            || tile.is_coastal_land(self, grid)
-                        {
+                        } else if tile.is_freshwater(self) || tile.is_coastal_land(self) {
                             middle_coastal_land_and_freshwater.push(tile);
                         } else {
                             middle_inland_dry_land.push(tile);
@@ -595,11 +584,11 @@ impl TileMap {
 
             for tile_list in candidate_lists.iter() {
                 let (eletion1_tile, election2_tile, _, election2_tile_score) =
-                    self.iterate_through_candidate_tile_list(map_parameters, tile_list, region);
+                    self.iterate_through_candidate_tile_list(tile_list, region);
 
                 if let Some(election1_tile) = eletion1_tile {
                     self.region_list[region_index].starting_tile = election1_tile;
-                    self.place_impact_and_ripples_for_civilization(map_parameters, election1_tile);
+                    self.place_impact_and_ripples_for_civilization(election1_tile);
                     return (true, false);
                 }
                 if let Some(election_2_tile) = election2_tile {
@@ -618,7 +607,7 @@ impl TileMap {
             // Process list of candidate plots.
             for tile in outer_plots.into_iter() {
                 let (score, meets_minimum_requirements) =
-                    self.evaluate_candidate_tile(map_parameters, tile, region);
+                    self.evaluate_candidate_tile(tile, region);
 
                 if meets_minimum_requirements {
                     found_eligible = true;
@@ -635,15 +624,13 @@ impl TileMap {
             if found_eligible {
                 // Iterate through eligible plots and choose the one closest to the center of the region.
                 let mut closest_plot = None;
-                let mut closest_distance = i32::max(
-                    map_parameters.map_size.width,
-                    map_parameters.map_size.height,
-                ) as f64;
+                let mut closest_distance =
+                    i32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
 
                 // Because west_x >= 0, bullseye_x will always be >= 0.
-                let mut bullseye_x = rectangle.west_x as f64 + (rectangle.width as f64 / 2.0);
+                let mut bullseye_x = rectangle.west_x() as f64 + (rectangle.width() as f64 / 2.0);
                 // Because south_y >= 0, bullseye_y will always be >= 0.
-                let mut bullseye_y = rectangle.south_y as f64 + (rectangle.height as f64 / 2.0);
+                let mut bullseye_y = rectangle.south_y() as f64 + (rectangle.height() as f64 / 2.0);
 
                 match (grid.hex_layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
@@ -709,13 +696,13 @@ impl TileMap {
                         }
                     }
 
-                    if x < region.rectangle.west_x {
+                    if x < region.rectangle.west_x() {
                         // wrapped around: un-wrap it for test purposes.
-                        adjusted_x += map_parameters.map_size.width as f64;
+                        adjusted_x += self.world_grid.size().width as f64;
                     }
-                    if y < region.rectangle.south_y {
+                    if y < region.rectangle.south_y() {
                         // wrapped around: un-wrap it for test purposes.
-                        adjusted_y += map_parameters.map_size.height as f64;
+                        adjusted_y += self.world_grid.size().height as f64;
                     }
 
                     let distance = ((adjusted_x - bullseye_x).powf(2.0)
@@ -731,11 +718,11 @@ impl TileMap {
                 if let Some(closest_plot) = closest_plot {
                     // Re-get plot score for inclusion in start plot data.
                     let (_score, _meets_minimum_requirements) =
-                        self.evaluate_candidate_tile(map_parameters, closest_plot, region);
+                        self.evaluate_candidate_tile(closest_plot, region);
 
                     // Assign this plot as the start for this region.
                     self.region_list[region_index].starting_tile = closest_plot;
-                    self.place_impact_and_ripples_for_civilization(map_parameters, closest_plot);
+                    self.place_impact_and_ripples_for_civilization(closest_plot);
                     return (true, false);
                 }
             }
@@ -755,20 +742,19 @@ impl TileMap {
 
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
-            self.place_impact_and_ripples_for_civilization(map_parameters, max_score_tile);
+            self.place_impact_and_ripples_for_civilization(max_score_tile);
             return (true, false);
         } else {
-            let x = region.rectangle.west_x;
-            let y = region.rectangle.south_y;
+            let origin = region.rectangle.origin();
 
-            let tile = Tile::from_offset_coordinate(grid, OffsetCoordinate::new(x, y))
+            let tile = Tile::from_offset_coordinate(grid, origin)
                 .expect("Offset coordinate is outside the map!");
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
             self.feature_query[tile.index()] = None;
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
-            self.place_impact_and_ripples_for_civilization(map_parameters, tile);
+            self.place_impact_and_ripples_for_civilization(tile);
             return (false, true);
         }
     }
@@ -780,7 +766,6 @@ impl TileMap {
     /// Any tiles not allowed to have a city should be weeded out when building the candidate list.
     fn iterate_through_candidate_tile_list(
         &self,
-        map_parameters: &MapParameters,
         candidate_tile_list: &[Tile],
         region: &Region,
     ) -> (Option<Tile>, Option<Tile>, i32, i32) {
@@ -790,8 +775,7 @@ impl TileMap {
         let mut best_fallback_tile = None;
 
         for &tile in candidate_tile_list {
-            let (score, meets_minimum_requirements) =
-                self.evaluate_candidate_tile(map_parameters, tile, region);
+            let (score, meets_minimum_requirements) = self.evaluate_candidate_tile(tile, region);
 
             if meets_minimum_requirements {
                 if score > best_tile_score {
@@ -822,13 +806,8 @@ impl TileMap {
     /// - first element. The score of the tile.
     /// - second element. A boolean indicating whether the tile meets the minimum requirements. If it does not meet the minimum requirements, it will be used as a fallback tile.
     /// If the tile meets the minimum requirements, it is `true`, otherwise `false`.
-    fn evaluate_candidate_tile(
-        &self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-        region: &Region,
-    ) -> (i32, bool) {
-        let grid = map_parameters.grid;
+    fn evaluate_candidate_tile(&self, tile: Tile, region: &Region) -> (i32, bool) {
+        let grid = self.world_grid.grid;
 
         let mut meets_minimum_requirements = true;
         let min_food_inner = 1;
@@ -849,7 +828,7 @@ impl TileMap {
         let mut river_total = 0;
         let mut coastal_land_score = 0;
 
-        if tile.is_coastal_land(self, grid) {
+        if tile.is_coastal_land(self) {
             coastal_land_score = 40;
         }
 
@@ -871,7 +850,7 @@ impl TileMap {
                         }
                     }
                 });
-            if neighbor_tile.has_river(self, grid) {
+            if neighbor_tile.has_river(self) {
                 river_total += 1;
             }
         });
@@ -914,7 +893,7 @@ impl TileMap {
                             }
                         }
                     });
-                if tile_at_distance_two.has_river(self, grid) {
+                if tile_at_distance_two.has_river(self) {
                     river_total += 1;
                 }
             });
@@ -973,7 +952,7 @@ impl TileMap {
                             }
                         }
                     });
-                if tile_at_distance_three.has_river(self, grid) {
+                if tile_at_distance_three.has_river(self) {
                     river_total += 1;
                 }
             });

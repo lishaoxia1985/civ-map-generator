@@ -17,9 +17,8 @@ pub trait Generator {
         self.tile_map_mut().generate_terrain_types(map_parameters);
     }
 
-    fn recalculate_areas(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.tile_map_mut()
-            .recalculate_areas(map_parameters, ruleset);
+    fn recalculate_areas(&mut self, ruleset: &Ruleset) {
+        self.tile_map_mut().recalculate_areas(ruleset);
     }
 
     fn generate_lakes(&mut self, map_parameters: &MapParameters) {
@@ -34,8 +33,8 @@ pub trait Generator {
         self.tile_map_mut().expand_coasts(map_parameters);
     }
 
-    fn add_rivers(&mut self, map_parameters: &MapParameters) {
-        self.tile_map_mut().add_rivers(map_parameters);
+    fn add_rivers(&mut self) {
+        self.tile_map_mut().add_rivers();
     }
 
     fn add_lakes(&mut self, map_parameters: &MapParameters) {
@@ -62,15 +61,15 @@ pub trait Generator {
         let mut map = Self::new(map_parameters);
         // The order of the following methods is important. Do not change it.
         map.generate_terrain_types(&map_parameters);
-        map.recalculate_areas(&map_parameters, &ruleset);
+        map.recalculate_areas(&ruleset);
         map.generate_lakes(&map_parameters);
         map.generate_base_terrains(&map_parameters);
         map.expand_coasts(&map_parameters);
-        map.add_rivers(&map_parameters);
+        map.add_rivers();
         map.add_lakes(&map_parameters);
-        map.recalculate_areas(&map_parameters, &ruleset);
+        map.recalculate_areas(&ruleset);
         map.add_features(&map_parameters, &ruleset);
-        map.recalculate_areas(&map_parameters, &ruleset);
+        map.recalculate_areas(&ruleset);
         map.generate_regions(&map_parameters);
         map.start_plot_system(&map_parameters, &ruleset);
         map.into_inner()

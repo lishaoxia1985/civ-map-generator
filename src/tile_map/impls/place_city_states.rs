@@ -7,6 +7,7 @@ use rand::{
     Rng,
 };
 
+use crate::grid::offset_coordinate::OffsetCoordinate;
 use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
@@ -25,8 +26,6 @@ impl TileMap {
     /// This is because some city state placements are made as compensation for situations where
     /// multiple regions are assigned the same luxury resource type.
     pub fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let grid = map_parameters.grid;
-
         self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
         let mut city_state_list = ruleset
@@ -71,7 +70,7 @@ impl TileMap {
                 // Place city state on uninhabited land
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
-                    self.place_city_state(map_parameters, city_state, tile);
+                    self.place_city_state(city_state, tile);
                     self.city_state_starting_tile_and_region_index
                         .push((tile, None));
                 } else {
@@ -82,10 +81,10 @@ impl TileMap {
                 let region_index = self
                     .random_number_generator
                     .gen_range(0..self.region_list.len());
-                let tile = self.get_city_state_start_tile_in_region(map_parameters, region_index);
+                let tile = self.get_city_state_start_tile_in_region(region_index);
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
-                    self.place_city_state(map_parameters, city_state, tile);
+                    self.place_city_state(city_state, tile);
                     self.city_state_starting_tile_and_region_index
                         .push((tile, Some(region_index)));
                 } else {
@@ -94,10 +93,10 @@ impl TileMap {
             } else {
                 // Assigned to a Region.
                 let region_index = region_index.unwrap();
-                let tile = self.get_city_state_start_tile_in_region(map_parameters, region_index);
+                let tile = self.get_city_state_start_tile_in_region(region_index);
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
-                    self.place_city_state(map_parameters, city_state, tile);
+                    self.place_city_state(city_state, tile);
                     self.city_state_starting_tile_and_region_index
                         .push((tile, Some(region_index)));
                 } else {
@@ -118,7 +117,7 @@ impl TileMap {
 
             self.iter_tiles().for_each(|tile| {
                 if tile.can_be_city_state_starting_tile(self, None, false, false) {
-                    if tile.is_coastal_land(self, grid) {
+                    if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
                     } else {
                         inland_tile_list.push(tile);
@@ -131,7 +130,7 @@ impl TileMap {
             for city_state in start_city_state_list.iter() {
                 let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
                 if let Some(tile) = tile {
-                    self.place_city_state(map_parameters, city_state, tile);
+                    self.place_city_state(city_state, tile);
                     self.city_state_starting_tile_and_region_index
                         .push((tile, None));
                     num_city_states_discarded -= 1;
@@ -155,30 +154,22 @@ impl TileMap {
     /// 1. Add the city state tile to the `city_state_and_starting_tile` map.
     /// 2. Clear the ice feature from the coast tiles adjacent to the city state.
     /// 3. Place resource impacts and ripple on the city state tile and its around tiles.
-    fn place_city_state(&mut self, map_parameters: &MapParameters, city_state: &str, tile: Tile) {
+    fn place_city_state(&mut self, city_state: &str, tile: Tile) {
         self.city_state_and_starting_tile
             .insert(city_state.to_string(), tile);
         // Removes Feature Ice from coasts adjacent to the city state's new location
-        self.clear_ice_near_city_site(map_parameters, tile, 1);
+        self.clear_ice_near_city_site(tile, 1);
 
-        self.place_impact_and_ripples(map_parameters, tile, Layer::CityState, None);
+        self.place_impact_and_ripples(tile, Layer::CityState, None);
 
         self.player_collision_data[tile.index()] = true;
     }
 
     // function AssignStartingPlots:PlaceCityStateInRegion(city_state_number, region_number)
     /// Get the starting tile for a city state in a region.
-    fn get_city_state_start_tile_in_region(
-        &mut self,
-        map_parameters: &MapParameters,
-        region_index: usize,
-    ) -> Option<Tile> {
-        let candidate_tile_list = self.get_candidate_city_state_tiles_in_region(
-            map_parameters,
-            region_index,
-            false,
-            false,
-        );
+    fn get_city_state_start_tile_in_region(&mut self, region_index: usize) -> Option<Tile> {
+        let candidate_tile_list =
+            self.get_candidate_city_state_tiles_in_region(region_index, false, false);
 
         let tile = self.get_city_state_start_tile(&candidate_tile_list, false, false);
 
@@ -200,19 +191,18 @@ impl TileMap {
     /// The first vector is the coastal tiles, and the second vector is the inland tiles.
     pub fn get_candidate_city_state_tiles_in_region(
         &self,
-        map_parameters: &MapParameters,
         region_index: usize,
         force_it: bool,
         ignore_collisions: bool,
     ) -> [Vec<Tile>; 2] {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let region = &self.region_list[region_index];
         let rectangle = &region.rectangle;
 
         // Check if the rectangle is small enough to process all the tiles. If it is, we will process all the tiles.
-        let should_process_all_tiles = rectangle.width < 4 || rectangle.height < 4;
-        let taller = rectangle.height > rectangle.width;
+        let should_process_all_tiles = rectangle.width() < 4 || rectangle.height() < 4;
+        let taller = rectangle.height() > rectangle.width();
 
         // Divide the rectangle into 3 parts according to whether it is taller or not.
         // If it is taller, we will divide it vertically, and if it is not, we will divide it horizontally.
@@ -223,34 +213,33 @@ impl TileMap {
 
         if taller {
             let non_center_height =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.height as f64).floor() as i32;
+                ((1. - CENTER_BIAS) / 2.0 * rectangle.height() as f64).floor() as i32;
 
-            center_west_x = rectangle.west_x;
-            center_south_y =
-                (rectangle.south_y + non_center_height) % map_parameters.map_size.height;
-            center_width = rectangle.width;
-            center_height = rectangle.height - (non_center_height * 2);
+            center_west_x = rectangle.west_x();
+            center_south_y = rectangle.south_y() + non_center_height;
+            center_width = rectangle.width();
+            center_height = rectangle.height() - (non_center_height * 2);
         } else {
             let non_center_width =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.width as f64).floor() as i32;
+                ((1. - CENTER_BIAS) / 2.0 * rectangle.width() as f64).floor() as i32;
 
-            center_west_x = (rectangle.west_x + non_center_width) % map_parameters.map_size.width;
-            center_south_y = rectangle.south_y;
-            center_width = rectangle.width - (non_center_width * 2);
-            center_height = rectangle.height;
+            center_west_x = rectangle.west_x() + non_center_width;
+            center_south_y = rectangle.south_y();
+            center_width = rectangle.width() - (non_center_width * 2);
+            center_height = rectangle.height();
         }
 
-        let center_rectangle = Rectangle {
-            west_x: center_west_x,
-            south_y: center_south_y,
-            width: center_width,
-            height: center_height,
-        };
+        let center_rectangle = Rectangle::new(
+            OffsetCoordinate::new(center_west_x, center_south_y),
+            center_width,
+            center_height,
+            grid,
+        );
 
         let mut coastal_tile_list = Vec::new();
         let mut inland_tile_list = Vec::new();
 
-        for tile in rectangle.iter_tiles(map_parameters) {
+        for tile in rectangle.iter_tiles(grid) {
             if should_process_all_tiles {
                 // When the rectangle is small enough, we will process all the tiles.
                 if tile.can_be_city_state_starting_tile(
@@ -259,7 +248,7 @@ impl TileMap {
                     force_it,
                     ignore_collisions,
                 ) {
-                    if tile.is_coastal_land(self, grid) {
+                    if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
                     } else {
                         inland_tile_list.push(tile);
@@ -269,14 +258,14 @@ impl TileMap {
                 // Process only tiles near enough to the region edge.
                 // That means tiles that are not in the center rectangle.
                 // That is because we often use the center rectangle to place civilizations.
-                if !center_rectangle.contains(map_parameters, tile) {
+                if !center_rectangle.contains(grid, tile) {
                     if tile.can_be_city_state_starting_tile(
                         self,
                         Some(region),
                         force_it,
                         ignore_collisions,
                     ) {
-                        if tile.is_coastal_land(self, grid) {
+                        if tile.is_coastal_land(self) {
                             coastal_tile_list.push(tile);
                         } else {
                             inland_tile_list.push(tile);
@@ -358,8 +347,6 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) {
-        let grid = map_parameters.grid;
-
         let mut num_city_states_unassigned = map_parameters.city_state_num;
 
         // Store region index which city state is assigned to
@@ -391,7 +378,7 @@ impl TileMap {
 
         /***** Assign city states to uninhabited landmasses ******/
         // Number of City States to be placed on landmasses uninhabited by civs
-        let num_city_states_uninhabited;
+        let _num_city_states_uninhabited;
 
         let mut land_area_id_and_tiles: HashMap<usize, Vec<_>> = HashMap::new();
 
@@ -401,7 +388,7 @@ impl TileMap {
         if let RegionDivideMethod::WholeMapRectangle = map_parameters.region_divide_method {
             // Rectangular regional division spanning the entire globe, ALL plots belong to inhabited regions,
             // so all city states must belong to a region!
-            num_city_states_uninhabited = 0;
+            _num_city_states_uninhabited = 0;
         } else {
             // Possibility of plots that do not belong to any civ's Region. Evaluate these plots and assign an appropriate number of City States to them.
             self.iter_tiles().for_each(|tile| {
@@ -413,11 +400,11 @@ impl TileMap {
                     if let RegionDivideMethod::CustomRectangle(rectangle) =
                         map_parameters.region_divide_method
                     {
-                        if rectangle.contains(map_parameters, tile) {
+                        if rectangle.contains(self.world_grid.grid, tile) {
                             num_civ_landmass_tiles += 1;
                         } else {
                             num_uninhabited_landmass_tiles += 1;
-                            if tile.is_coastal_land(self, grid) {
+                            if tile.is_coastal_land(self) {
                                 self.uninhabited_areas_coastal_land_tiles.push(tile)
                             } else {
                                 self.uninhabited_areas_inland_tiles.push(tile)
@@ -460,7 +447,7 @@ impl TileMap {
                                         TerrainType::Flatland | TerrainType::Hill
                                     ) && tile.base_terrain(self) != BaseTerrain::Snow
                                 ); */
-                                if tile.is_coastal_land(self, grid) {
+                                if tile.is_coastal_land(self) {
                                     self.uninhabited_areas_coastal_land_tiles.push(tile);
                                 } else {
                                     self.uninhabited_areas_inland_tiles.push(tile);
@@ -482,11 +469,11 @@ impl TileMap {
                     (map_parameters.city_state_num as f64 / 2.).ceil()
                 } as u32;
 
-            num_city_states_uninhabited =
+            _num_city_states_uninhabited =
                 min(num_city_states_unassigned, min(max_by_ratio, max_by_method));
 
-            city_state_region_assignments.extend(vec![None; num_city_states_uninhabited as usize]);
-            num_city_states_unassigned -= num_city_states_uninhabited;
+            city_state_region_assignments.extend(vec![None; _num_city_states_uninhabited as usize]);
+            num_city_states_unassigned -= _num_city_states_uninhabited;
         }
         /***** Assign city states to uninhabited landmasses ******/
 
@@ -571,14 +558,14 @@ impl TileMap {
     }
 
     /// Normalizes each city state locations.
-    pub fn normalize_city_state_locations(&mut self, map_parameters: &MapParameters) {
+    pub fn normalize_city_state_locations(&mut self) {
         let starting_tile_list: Vec<Tile> = self
             .city_state_and_starting_tile
             .values()
             .map(|&starting_tile| starting_tile)
             .collect();
         for starting_tile in starting_tile_list {
-            self.normalize_city_state(map_parameters, starting_tile);
+            self.normalize_city_state(starting_tile);
         }
     }
 
@@ -588,8 +575,8 @@ impl TileMap {
     /// This function will do as follows:
     /// 1. Add hills to city state location's 1 radius if it has not enough hammer.
     /// 2. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
-    fn normalize_city_state(&mut self, map_parameters: &MapParameters, tile: Tile) {
-        let grid = map_parameters.grid;
+    fn normalize_city_state(&mut self, tile: Tile) {
+        let grid = self.world_grid.grid;
 
         let mut inner_four_food = 0;
         let mut inner_three_food = 0;
@@ -649,7 +636,7 @@ impl TileMap {
                         } else if feature == Some(Feature::Forest) {
                             inner_can_have_bonus += 1;
                         }
-                    } else if tile.is_freshwater(self, grid) {
+                    } else if tile.is_freshwater(self) {
                         match base_terrain {
                             BaseTerrain::Grassland => {
                                 inner_four_food += 1;
@@ -767,7 +754,7 @@ impl TileMap {
                             } else if feature == Some(Feature::Forest) {
                                 outer_can_have_bonus += 1;
                             }
-                        } else if tile_at_distance_two.is_freshwater(self, grid) {
+                        } else if tile_at_distance_two.is_freshwater(self) {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     outer_four_food += 1;
@@ -834,14 +821,14 @@ impl TileMap {
             });
 
         // Adjust the hammer situation, if needed.
-        let mut hammer_score = (4 * inner_hills) + (2 * inner_forest) + inner_one_hammer;
-        if hammer_score < 4 {
+        let mut _hammer_score = (4 * inner_hills) + (2 * inner_forest) + inner_one_hammer;
+        if _hammer_score < 4 {
             neighbor_tiles.shuffle(&mut self.random_number_generator);
             for &tile in neighbor_tiles.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
-                let placed_hill = self.attempt_to_place_hill_at_tile(map_parameters, tile);
+                let placed_hill = self.attempt_to_place_hill_at_tile(tile);
                 if placed_hill {
-                    hammer_score += 4;
+                    _hammer_score += 4;
                     break;
                 }
             }
@@ -881,12 +868,8 @@ impl TileMap {
                 {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
-                        let (placed_bonus, placed_oasis) = self
-                            .attempt_to_place_bonus_resource_at_plot(
-                                map_parameters,
-                                tile,
-                                allow_oasis,
-                            );
+                        let (placed_bonus, placed_oasis) =
+                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -903,12 +886,8 @@ impl TileMap {
                 {
                     // Add bonus to second ring.
                     while let Some(&tile) = second_ring_iter.next() {
-                        let (placed_bonus, placed_oasis) = self
-                            .attempt_to_place_bonus_resource_at_plot(
-                                map_parameters,
-                                tile,
-                                allow_oasis,
-                            );
+                        let (placed_bonus, placed_oasis) =
+                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.

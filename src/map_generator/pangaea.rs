@@ -18,6 +18,8 @@ impl Generator for Pangaea {
 
     fn generate_terrain_types(&mut self, map_parameters: &MapParameters) {
         let tile_map = self.tile_map_mut();
+        let world_grid = tile_map.world_grid;
+        let grid = world_grid.grid;
 
         let sea_level_low = 71;
         let sea_level_normal = 78;
@@ -54,7 +56,7 @@ impl Generator for Pangaea {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
-        let grain = match map_parameters.map_size.world_size {
+        let grain = match world_grid.world_size {
             WorldSize::Duel => 3,
             WorldSize::Tiny => 3,
             WorldSize::Small => 4,
@@ -63,7 +65,7 @@ impl Generator for Pangaea {
             WorldSize::Huge => 5,
         };
 
-        let num_plates = match map_parameters.map_size.world_size {
+        let num_plates = match world_grid.world_size {
             WorldSize::Duel => 6,
             WorldSize::Tiny => 9,
             WorldSize::Small => 12,
@@ -72,9 +74,7 @@ impl Generator for Pangaea {
             WorldSize::Huge => 30,
         };
 
-        let grid = map_parameters.grid;
-
-        let continents_fractal = tile_map.continents_fractal(map_parameters);
+        let continents_fractal = tile_map.continents_fractal();
 
         let flags = FractalFlags::empty();
 
@@ -131,8 +131,8 @@ impl Generator for Pangaea {
                 95,
             ]);
 
-        let width = map_parameters.map_size.width;
-        let height = map_parameters.map_size.height;
+        let width = grid.size.width;
+        let height = grid.size.height;
         let center_position = DVec2::new(width as f64 / 2., height as f64 / 2.);
 
         let axis = center_position * 3. / 5.;

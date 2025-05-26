@@ -409,11 +409,14 @@ impl CvFractal {
     }
 
     pub fn get_height(&self, x: i32, y: i32) -> i32 {
-        let map_width = self.grid.size.width;
-        let map_height = self.grid.size.height;
-
-        assert!(0 <= x && x < map_width, "'x' is out of range");
-        assert!(0 <= y && y < map_height, "'y' is out of range");
+        debug_assert!(
+            0 <= x && x < self.grid.size.width,
+            "'x' is out of the range of the grid width"
+        );
+        debug_assert!(
+            0 <= y && y < self.grid.size.height,
+            "'y' is out of the range of the grid height"
+        );
 
         // Use bilinear interpolation to calculate the pixel value
         let src_x = (x as f64 + 0.5) * self.width_ratio - 0.5;
@@ -734,7 +737,7 @@ mod tests {
 
     use crate::{
         grid::hex_grid::hex::{HexLayout, HexOrientation, Offset},
-        map_parameters::{HexGrid, MapSize, MapWrapping, WrapType},
+        map_parameters::{HexGrid, MapWrapping, Size, WrapType},
     };
 
     use super::{CvFractal, FractalFlags};
@@ -747,7 +750,7 @@ mod tests {
 
         let mut random = StdRng::seed_from_u64(77777777);
 
-        let map_size = MapSize::new(1024, 512);
+        let map_size = Size::new(1024, 512);
         let grid_size = map_size;
 
         let grid = HexGrid {

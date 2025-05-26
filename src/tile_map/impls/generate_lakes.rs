@@ -42,11 +42,11 @@ impl TileMap {
         let mut num_large_lakes_added = 0;
 
         self.iter_tiles().for_each(|tile| {
-            if self.can_add_lake(tile, map_parameters)
+            if self.can_add_lake(tile)
                 && self.random_number_generator.gen_range(0..lake_plot_rand) == 0
             {
                 if num_large_lakes_added < large_lake_num {
-                    let add_more_lakes = self.add_more_lake(tile, map_parameters);
+                    let add_more_lakes = self.add_more_lake(tile);
 
                     if add_more_lakes {
                         num_large_lakes_added += 1;
@@ -62,8 +62,8 @@ impl TileMap {
     /// Transform the neighboring tiles of the given tile into lakes if possible.
     /// # Notice
     /// This function is only used in CIV6.
-    fn add_more_lake(&mut self, tile: Tile, map_parameters: &MapParameters) -> bool {
-        let grid = map_parameters.grid;
+    fn add_more_lake(&mut self, tile: Tile) -> bool {
+        let grid = self.world_grid.grid;
 
         let mut large_lake = 0;
 
@@ -77,7 +77,7 @@ impl TileMap {
             .for_each(|neighbor_tile| {
                 // 1. Check if the tile can have a lake.
                 // 2. Randomly decide whether to add a lake to the tile. Larger `large_lake`, less likely to add a lake.
-                if self.can_add_lake(neighbor_tile, map_parameters)
+                if self.can_add_lake(neighbor_tile)
                     && self.random_number_generator.gen_range(0..(large_lake + 4)) < 3
                 {
                     lake_tiles.push(neighbor_tile);
@@ -109,12 +109,12 @@ impl TileMap {
     ///
     /// # Returns
     /// - `true` if the tile can have a lake, otherwise `false`.
-    fn can_add_lake(&self, tile: Tile, map_parameters: &MapParameters) -> bool {
-        let grid = map_parameters.grid;
+    fn can_add_lake(&self, tile: Tile) -> bool {
+        let grid = self.world_grid.grid;
         // Check if the current tile is suitable for a lake
         if tile.terrain_type(self) == TerrainType::Water
             || tile.natural_wonder(self).is_some()
-            || tile.has_river(self, grid)
+            || tile.has_river(self)
         {
             return false;
         }

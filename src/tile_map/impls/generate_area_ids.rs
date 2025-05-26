@@ -1,10 +1,8 @@
 use std::collections::{BTreeSet, HashSet, VecDeque};
 
 use crate::{
-    component::map_component::terrain_type::TerrainType,
-    ruleset::Ruleset,
-    tile::Tile,
-    tile_map::{MapParameters, TileMap},
+    component::map_component::terrain_type::TerrainType, ruleset::Ruleset, tile::Tile,
+    tile_map::TileMap,
 };
 
 pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
@@ -14,19 +12,19 @@ impl TileMap {
     /// Recalculates Area and Landmass in the map.
     ///
     /// This function is called when the map is generated or when the [`TerrainType`] of certain tiles changes.
-    pub fn recalculate_areas(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.calculate_areas(map_parameters, ruleset);
-        self.calculate_landmasses(map_parameters);
+    pub fn recalculate_areas(&mut self, ruleset: &Ruleset) {
+        self.calculate_areas(ruleset);
+        self.calculate_landmasses();
     }
 
-    fn calculate_areas(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+    fn calculate_areas(&mut self, ruleset: &Ruleset) {
         const MIN_AREA_SIZE: u32 = 7;
 
         self.area_list.clear();
 
-        let height = map_parameters.map_size.height;
-        let width = map_parameters.map_size.width;
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
+        let height = grid.size.height;
+        let width = grid.size.width;
 
         let size = (height * width) as usize;
 
@@ -79,8 +77,7 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_area =
-                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+            let tiles_in_area = self.generate_tile_in_area_or_landmass(tile, check_tile);
 
             let current_area_id = self.area_list.len();
 
@@ -116,8 +113,7 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_area =
-                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+            let tiles_in_area = self.generate_tile_in_area_or_landmass(tile, check_tile);
 
             //merge single-plot mountains / ice with the surrounding area
             if tiles_in_area.len() < MIN_AREA_SIZE as usize {
@@ -169,11 +165,11 @@ impl TileMap {
         }
     }
 
-    fn calculate_landmasses(&mut self, map_parameters: &MapParameters) {
+    fn calculate_landmasses(&mut self) {
         self.landmass_list.clear();
 
-        let height = map_parameters.map_size.height;
-        let width = map_parameters.map_size.width;
+        let height = self.world_grid.size().height;
+        let width = self.world_grid.size().width;
 
         let size = (height * width) as usize;
 
@@ -197,8 +193,7 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_landmass =
-                self.generate_tile_in_area_or_landmass(map_parameters, tile, check_tile);
+            let tiles_in_landmass = self.generate_tile_in_area_or_landmass(tile, check_tile);
 
             let landmass_type = if tile.is_water(self) {
                 LandmassType::Water
@@ -224,11 +219,10 @@ impl TileMap {
 
     fn generate_tile_in_area_or_landmass(
         &self,
-        map_parameters: &MapParameters,
         start_tile: Tile,
         check_tile: impl Fn(Tile, Tile) -> bool,
     ) -> HashSet<Tile> {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         // This variable is equivalent to `UNINITIALIZED_AREA_ID` or `UNINITIALIZED_LANDMASS_ID`. It is used to check whether a tile is part of the current area or landmass.
         const UNINITIALIZED_ID: usize = usize::MAX;

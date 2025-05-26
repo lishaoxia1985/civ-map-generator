@@ -20,7 +20,7 @@ impl TileMap {
     /// Place Luxury Resources on the map.
     /// Before running this function, [`TileMap::assign_luxury_roles`] function must be run.
     pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let world_size = map_parameters.map_size.world_size;
+        let world_size = self.world_grid.world_size;
         let resource_setting = map_parameters.resource_setting;
 
         // Stores number of each luxury had extras handed out at civ starts because of low fertility.
@@ -73,7 +73,7 @@ impl TileMap {
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(&luxury_resource);
             let mut luxury_plot_lists =
-                self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
+                self.generate_luxury_plot_lists_at_city_site(starting_tile, 2);
 
             let mut num_left_to_place = num_to_place;
 
@@ -84,7 +84,6 @@ impl TileMap {
                 }
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
-                    map_parameters,
                     Resource::Resource(luxury_resource.to_owned()),
                     1,
                     num_left_to_place,
@@ -98,7 +97,7 @@ impl TileMap {
 
             if num_left_to_place > 0 {
                 let mut luxury_plot_lists =
-                    self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 3);
+                    self.generate_luxury_plot_lists_at_city_site(starting_tile, 3);
 
                 // Second pass, checking three rings with a 100% ratio.
                 for &i in priority_list_indices_of_luxury.iter() {
@@ -107,7 +106,6 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        map_parameters,
                         Resource::Resource(luxury_resource.to_owned()),
                         1,
                         num_left_to_place,
@@ -151,7 +149,6 @@ impl TileMap {
                         }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
-                            map_parameters,
                             Resource::Resource(luxury_resource.to_owned()),
                             1,
                             1,
@@ -173,7 +170,7 @@ impl TileMap {
             let &(starting_tile, region_index) = &self.city_state_starting_tile_and_region_index[i];
 
             let allowed_luxuries =
-                self.get_list_of_allowable_luxuries_at_city_site(map_parameters, starting_tile, 2);
+                self.get_list_of_allowable_luxuries_at_city_site(starting_tile, 2);
             // Store the luxury types that can only be owned by city states and are allowed at this city state.
             // It should meet the following criteria:
             // 1. The luxury type is assigned to city states. (based on the luxury role)
@@ -239,7 +236,7 @@ impl TileMap {
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(&luxury_resource);
                 let mut luxury_plot_lists =
-                    self.generate_luxury_plot_lists_at_city_site(map_parameters, starting_tile, 2);
+                    self.generate_luxury_plot_lists_at_city_site(starting_tile, 2);
 
                 let mut num_left_to_place = 1;
 
@@ -249,7 +246,6 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        map_parameters,
                         Resource::Resource(luxury_resource.to_owned()),
                         1,
                         num_left_to_place,
@@ -274,8 +270,7 @@ impl TileMap {
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(&luxury_resource);
 
-            let mut luxury_plot_lists =
-                self.generate_luxury_plot_lists_in_region(map_parameters, region_index);
+            let mut luxury_plot_lists = self.generate_luxury_plot_lists_in_region(region_index);
 
             let current_luxury_low_fert_compensation = *luxury_low_fert_compensation
                 .entry(luxury_resource.to_string())
@@ -314,7 +309,6 @@ impl TileMap {
                 }
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
-                    map_parameters,
                     Resource::Resource(luxury_resource.to_owned()),
                     1,
                     num_left_to_place,
@@ -378,7 +372,7 @@ impl TileMap {
                     num_this_luxury_to_place = max(luxury_minimum, luxury_share_of_remaining);
                 }
 
-                let mut current_list = self.generate_global_resource_plot_lists(map_parameters);
+                let mut current_list = self.generate_global_resource_plot_lists();
                 // Place this luxury type.
                 let mut num_left_to_place = num_this_luxury_to_place;
 
@@ -388,7 +382,6 @@ impl TileMap {
                     }
                     current_list[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        map_parameters,
                         Resource::Resource(luxury_resource.to_string()),
                         1,
                         num_left_to_place,
@@ -413,11 +406,8 @@ impl TileMap {
         if map_parameters.resource_setting != ResourceSetting::Sparse {
             for region_index in 0..self.region_list.len() {
                 let starting_tile = self.region_list[region_index].starting_tile;
-                let allowed_luxuries = self.get_list_of_allowable_luxuries_at_city_site(
-                    map_parameters,
-                    starting_tile,
-                    2,
-                );
+                let allowed_luxuries =
+                    self.get_list_of_allowable_luxuries_at_city_site(starting_tile, 2);
 
                 let mut candidate_luxury_types = Vec::new();
 
@@ -479,11 +469,8 @@ impl TileMap {
                 if let Some(luxury) = use_this_luxury {
                     let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(&luxury);
 
-                    let mut luxury_plot_lists = self.generate_luxury_plot_lists_at_city_site(
-                        map_parameters,
-                        starting_tile,
-                        2,
-                    );
+                    let mut luxury_plot_lists =
+                        self.generate_luxury_plot_lists_at_city_site(starting_tile, 2);
 
                     let mut num_left_to_place = 1;
 
@@ -493,7 +480,6 @@ impl TileMap {
                         }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         num_left_to_place = self.place_specific_number_of_resources(
-                            map_parameters,
                             Resource::Resource(luxury.to_string()),
                             1,
                             num_left_to_place,
@@ -535,8 +521,6 @@ impl TileMap {
     }
 
     fn place_marble(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
-
         let luxury_resource = "Marble".to_string();
         let marble_already_placed: u32 = self.placed_resource_count(&luxury_resource);
 
@@ -560,7 +544,7 @@ impl TileMap {
                     if feature == None {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                if !tile.is_freshwater(self, grid) {
+                                if !tile.is_freshwater(self) {
                                     marble_tile_list.push(tile);
                                 }
                             }
@@ -568,7 +552,7 @@ impl TileMap {
                                 marble_tile_list.push(tile);
                             }
                             BaseTerrain::Plain => {
-                                if !tile.is_freshwater(self, grid) {
+                                if !tile.is_freshwater(self) {
                                     marble_tile_list.push(tile);
                                 }
                             }
@@ -614,7 +598,7 @@ impl TileMap {
                     Some((Resource::Resource(luxury_resource.to_string()), 1));
                 num_left_to_place -= 1;
                 // println!("Still need to place {} more units of Marble.", num_left_to_place);
-                self.place_impact_and_ripples(map_parameters, tile, Layer::Marble, None);
+                self.place_impact_and_ripples(tile, Layer::Marble, None);
             }
         }
 
@@ -626,11 +610,8 @@ impl TileMap {
     // function AssignStartingPlots:GenerateGlobalResourcePlotLists
     // TODO: We will rename this function in the future because it is only used for luxury resources.
     // Whether we should shuffle every vec in the array before returning is a problem that needs to be considered.
-    fn generate_global_resource_plot_lists(
-        &self,
-        map_parameters: &MapParameters,
-    ) -> [Vec<Tile>; 15] {
-        let grid = map_parameters.grid;
+    fn generate_global_resource_plot_lists(&self) -> [Vec<Tile>; 15] {
+        let grid = self.world_grid.grid;
 
         let mut region_coast_next_to_land_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
@@ -692,7 +673,7 @@ impl TileMap {
                         } else {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
-                                    if tile.is_freshwater(self, grid) {
+                                    if tile.is_freshwater(self) {
                                         region_fresh_water_grass_flat_no_feature_tile_list
                                             .push(tile);
                                     } else {
@@ -758,11 +739,10 @@ impl TileMap {
     /// TODO: Sometimes this function is used for strategic resources, so the name should be changed.
     pub fn generate_luxury_plot_lists_at_city_site(
         &self,
-        map_parameters: &MapParameters,
         city_site: Tile,
         radius: u32,
     ) -> [Vec<Tile>; 15] {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let mut region_coast_tile_list = Vec::new();
         let mut region_hill_open_tile_list = Vec::new();
@@ -828,7 +808,7 @@ impl TileMap {
                                 } else {
                                     match base_terrain {
                                         BaseTerrain::Grassland => {
-                                            if tile_at_distance.is_freshwater(self, grid) {
+                                            if tile_at_distance.is_freshwater(self) {
                                                 region_fresh_water_grass_flat_no_feature_tile_list
                                                     .push(tile_at_distance);
                                             } else {
@@ -896,13 +876,8 @@ impl TileMap {
     /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
     /// We have extracted the `generate luxury plot lists at city site` into a separate method.
     /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_plot_lists_at_city_site`].
-    pub fn clear_ice_near_city_site(
-        &mut self,
-        map_parameters: &MapParameters,
-        city_site: Tile,
-        radius: u32,
-    ) {
-        let grid = map_parameters.grid;
+    pub fn clear_ice_near_city_site(&mut self, city_site: Tile, radius: u32) {
+        let grid = self.world_grid.grid;
 
         for ripple_radius in 1..=radius {
             city_site
@@ -918,12 +893,8 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:GenerateLuxuryPlotListsInRegion
-    fn generate_luxury_plot_lists_in_region(
-        &self,
-        map_parameters: &MapParameters,
-        region_index: usize,
-    ) -> [Vec<Tile>; 15] {
-        let grid = map_parameters.grid;
+    fn generate_luxury_plot_lists_in_region(&self, region_index: usize) -> [Vec<Tile>; 15] {
+        let grid = self.world_grid.grid;
 
         let rectangle = self.region_list[region_index].rectangle;
 
@@ -945,7 +916,7 @@ impl TileMap {
         let mut region_flood_plain_tile_list = Vec::new();
         let mut region_jungle_flat_tile_list = Vec::new();
 
-        rectangle.iter_tiles(map_parameters).for_each(|tile| {
+        rectangle.iter_tiles(grid).for_each(|tile| {
             let terrain_type = tile.terrain_type(self);
             let base_terrain = tile.base_terrain(self);
             let feature = tile.feature(self);
@@ -994,7 +965,7 @@ impl TileMap {
                     } else {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self, grid) {
+                                if tile.is_freshwater(self) {
                                     region_fresh_water_grass_flat_no_feature_tile_list.push(tile);
                                 } else {
                                     region_dry_grass_flat_no_feature_tile_list.push(tile);
@@ -1052,11 +1023,10 @@ impl TileMap {
     // function AssignStartingPlots:GetListOfAllowableLuxuriesAtCitySite
     fn get_list_of_allowable_luxuries_at_city_site(
         &self,
-        map_parameters: &MapParameters,
         city_site: Tile,
         radius: u32,
     ) -> HashSet<String> {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let mut allowed_luxuries = HashSet::new();
         for ripple_radius in 1..=radius {
@@ -1111,7 +1081,7 @@ impl TileMap {
                             } else {
                                 match base_terrain {
                                     BaseTerrain::Grassland => {
-                                        if tile.is_freshwater(self, grid) {
+                                        if tile.is_freshwater(self) {
                                             allowed_luxuries.insert("Sugar".to_string());
                                             allowed_luxuries.insert("Cotton".to_string());
                                             allowed_luxuries.insert("Wine".to_string());

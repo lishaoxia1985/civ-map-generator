@@ -65,8 +65,6 @@ impl TileMap {
             self.region_list[region_index].start_location_condition = start_location_condition;
         }
 
-        debug_assert!(self.region_list.len() == map_parameters.civilization_num as usize);
-
         let disable_start_bias = false;
         // If disbable_start_bias is true, then the starting tile will be chosen randomly.
         if disable_start_bias {
@@ -83,7 +81,7 @@ impl TileMap {
         let mut num_coastal_civs_remaining = 0;
         let mut civs_needing_coastal_start = Vec::new();
 
-        let mut num_river_civs_remaining = 0;
+        let mut _num_river_civs_remaining = 0;
         let mut civs_needing_river_start = Vec::new();
 
         let mut num_priority_civs_remaining = 0;
@@ -221,7 +219,7 @@ impl TileMap {
                 // that means there are not enough river and near river starting tiles,
                 // so `civs_needing_river_start.len() - (regions_with_river_start.len() + regions_with_near_river_start.len())`,
                 // if there are enough river and near river starting tiles, `num_river_civs_remaining = 0`.
-                num_river_civs_remaining = max(
+                _num_river_civs_remaining = max(
                     0,
                     civs_needing_river_start.len() as i32
                         - (regions_with_river_start.len() + regions_with_near_river_start.len())
@@ -229,7 +227,7 @@ impl TileMap {
                 ) as usize;
 
                 civs_needing_river_start
-                    .drain(..civs_needing_river_start.len() - num_river_civs_remaining)
+                    .drain(..civs_needing_river_start.len() - _num_river_civs_remaining)
                     .zip(
                         regions_with_river_start
                             .iter()
@@ -457,8 +455,6 @@ impl TileMap {
 
         start_civilization_list.shuffle(&mut self.random_number_generator);
 
-        debug_assert!(start_civilization_list.len() == region_index_list.len());
-
         start_civilization_list
             .iter()
             .zip(region_index_list.iter())
@@ -607,7 +603,7 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) -> StartLocationCondition {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let starting_tile = self.region_list[region_index].starting_tile;
 
@@ -637,7 +633,7 @@ impl TileMap {
         let mut num_native_two_food_second_ring = 0;
 
         // Remove any feature Ice from the first ring of the starting tile.
-        self.clear_ice_near_city_site(map_parameters, starting_tile, 1);
+        self.clear_ice_near_city_site(starting_tile, 1);
 
         let mut along_ocean = false;
         let mut next_to_lake = false;
@@ -651,11 +647,11 @@ impl TileMap {
         let mut num_grassland = 0;
         let mut num_plain = 0;
 
-        if starting_tile.is_coastal_land(self, grid) {
+        if starting_tile.is_coastal_land(self) {
             along_ocean = true;
         }
 
-        if starting_tile.has_river(self, grid) {
+        if starting_tile.has_river(self) {
             is_river = true;
         }
 
@@ -690,7 +686,7 @@ impl TileMap {
                         forest_count += 1;
                     }
 
-                    if neighbor_tile.has_river(self, grid) {
+                    if neighbor_tile.has_river(self) {
                         near_river = true;
                     }
 
@@ -709,7 +705,7 @@ impl TileMap {
                     } else if feature == Some(Feature::Oasis) {
                         inner_three_food += 1;
                         num_native_two_food_first_ring += 1;
-                    } else if neighbor_tile.is_freshwater(self, grid) {
+                    } else if neighbor_tile.is_freshwater(self) {
                         match base_terrain {
                             BaseTerrain::Grassland => {
                                 inner_four_food += 1;
@@ -845,7 +841,7 @@ impl TileMap {
                             forest_count += 1;
                         }
 
-                        if tile_at_distance_two.has_river(self, grid) {
+                        if tile_at_distance_two.has_river(self) {
                             near_river = true;
                         }
 
@@ -864,7 +860,7 @@ impl TileMap {
                         } else if feature == Some(Feature::Oasis) {
                             outer_three_food += 1;
                             num_native_two_food_second_ring += 1;
-                        } else if tile_at_distance_two.is_freshwater(self, grid) {
+                        } else if tile_at_distance_two.is_freshwater(self) {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     outer_four_food += 1;
@@ -972,7 +968,7 @@ impl TileMap {
             neighbor_tiles.shuffle(&mut self.random_number_generator);
             for &tile in neighbor_tiles.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
-                let placed_hill = self.attempt_to_place_hill_at_tile(map_parameters, tile);
+                let placed_hill = self.attempt_to_place_hill_at_tile(tile);
                 if placed_hill {
                     inner_hammer_score += 4;
                     break;
@@ -1044,12 +1040,7 @@ impl TileMap {
             } else {
                 let conversion_tile = *tile_list.choose(&mut self.random_number_generator).unwrap();
                 self.base_terrain_query[conversion_tile.index()] = BaseTerrain::Grassland;
-                self.place_impact_and_ripples(
-                    map_parameters,
-                    conversion_tile,
-                    Layer::Strategic,
-                    Some(0),
-                );
+                self.place_impact_and_ripples(conversion_tile, Layer::Strategic, Some(0));
             }
         }
 
@@ -1082,12 +1073,8 @@ impl TileMap {
                 {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
-                        let (placed_bonus, placed_oasis) = self
-                            .attempt_to_place_bonus_resource_at_plot(
-                                map_parameters,
-                                tile,
-                                allow_oasis,
-                            );
+                        let (placed_bonus, placed_oasis) =
+                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1107,12 +1094,8 @@ impl TileMap {
                 {
                     // Add bonus to second ring.
                     while let Some(&tile) = second_ring_iter.next() {
-                        let (placed_bonus, placed_oasis) = self
-                            .attempt_to_place_bonus_resource_at_plot(
-                                map_parameters,
-                                tile,
-                                allow_oasis,
-                            );
+                        let (placed_bonus, placed_oasis) =
+                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1127,12 +1110,8 @@ impl TileMap {
                 } else if third_ring_iter.peek().is_some() {
                     // Add bonus to third ring.
                     while let Some(&tile) = third_ring_iter.next() {
-                        let (placed_bonus, placed_oasis) = self
-                            .attempt_to_place_bonus_resource_at_plot(
-                                map_parameters,
-                                tile,
-                                allow_oasis,
-                            );
+                        let (placed_bonus, placed_oasis) =
+                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1214,7 +1193,7 @@ impl TileMap {
         map_parameters: &MapParameters,
         region_index: usize,
     ) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let starting_tile = self.region_list[region_index].starting_tile;
 
@@ -1312,7 +1291,6 @@ impl TileMap {
         if iron_list.len() > 0 {
             iron_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Iron".to_owned()),
                 iron_amt,
                 1,
@@ -1330,7 +1308,6 @@ impl TileMap {
         if horse_list.len() > 0 {
             horse_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Horses".to_owned()),
                 horse_amt,
                 1,
@@ -1348,7 +1325,6 @@ impl TileMap {
         if oil_list.len() > 0 {
             oil_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Oil".to_owned()),
                 oil_amt,
                 1,
@@ -1366,7 +1342,6 @@ impl TileMap {
         if !placed_iron && iron_fallback.len() > 0 {
             iron_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Iron".to_owned()),
                 iron_amt,
                 1,
@@ -1381,7 +1356,6 @@ impl TileMap {
         if !placed_horse && horse_fallback.len() > 0 {
             horse_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Horses".to_owned()),
                 horse_amt,
                 1,
@@ -1396,7 +1370,6 @@ impl TileMap {
         if !placed_oil && oil_fallback.len() > 0 {
             oil_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                map_parameters,
                 Resource::Resource("Oil".to_owned()),
                 oil_amt,
                 1,

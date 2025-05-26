@@ -15,7 +15,7 @@ impl TileMap {
     /// # Notice
     /// We have not implemented the feature `Atoll` generation yet.
     pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
         let rainfall = match map_parameters.rainfall {
             Rainfall::Arid => -4,
             Rainfall::Normal => 0,
@@ -58,7 +58,7 @@ impl TileMap {
             if tile.is_impassable(self, &ruleset) {
                 continue;
             } else if tile.terrain_type(self) == TerrainType::Water {
-                if !tile.has_river(self, grid)
+                if !tile.has_river(self)
                     && ruleset.features["Ice"]
                         .occurs_on_type
                         .contains(&tile.terrain_type(self))
@@ -90,7 +90,7 @@ impl TileMap {
             else {
                 /* **********start to add Floodplain********** */
                 num_land_plots += 1;
-                if tile.has_river(self, grid)
+                if tile.has_river(self)
                     && ruleset.features["Floodplain"]
                         .occurs_on_type
                         .contains(&tile.terrain_type(self))

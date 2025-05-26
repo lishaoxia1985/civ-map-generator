@@ -12,19 +12,20 @@ use impls::generate_area_ids::Landmass;
 use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 use rand::{rngs::StdRng, SeedableRng};
 
+use crate::map_parameters::WorldGrid;
 use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         resource::Resource, terrain_type::TerrainType,
     },
     grid::direction::Direction,
-    map_parameters::{MapParameters, MapSize},
+    map_parameters::MapParameters,
     tile::Tile,
 };
 
 pub struct TileMap {
     pub random_number_generator: StdRng,
-    pub map_size: MapSize,
+    pub world_grid: WorldGrid,
     pub river_list: Vec<Vec<(Tile, Direction)>>,
     // queries
     pub terrain_type_query: Vec<TerrainType>,
@@ -97,8 +98,9 @@ impl TileMap {
     pub fn new(map_parameters: &MapParameters) -> Self {
         let random_number_generator = StdRng::seed_from_u64(map_parameters.seed);
 
-        let height = map_parameters.map_size.height;
-        let width = map_parameters.map_size.width;
+        let world_grid = map_parameters.world_grid;
+        let height = world_grid.grid.size.height;
+        let width = world_grid.grid.size.width;
 
         let size = (height * width) as usize;
 
@@ -112,7 +114,7 @@ impl TileMap {
 
         Self {
             random_number_generator,
-            map_size: map_parameters.map_size,
+            world_grid,
             river_list: Vec::new(),
             terrain_type_query: vec![TerrainType::Water; size],
             base_terrain_query: vec![BaseTerrain::Ocean; size],
@@ -139,82 +141,49 @@ impl TileMap {
 
     /// Returns an iterator over all tiles in the map.
     pub fn iter_tiles(&self) -> impl Iterator<Item = Tile> {
-        (0..((self.map_size.width * self.map_size.height) as usize)).map(Tile::new)
+        let size = &self.world_grid.size();
+        (0..((size.width * size.height) as usize)).map(Tile::new)
     }
 
     /// Place impact and ripples for a given tile and layer.
     ///
     /// When you add an element (such as a starting tile of civilization, a city state, a natural wonder, a marble, or a resource...) to the map,
     /// if you want to ensure no other elements appear around the element being added, you can use this function.
-    pub fn place_impact_and_ripples(
-        &mut self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-        layer: Layer,
-        radius: Option<u32>,
-    ) {
+    pub fn place_impact_and_ripples(&mut self, tile: Tile, layer: Layer, radius: Option<u32>) {
         match layer {
             Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish => {
                 let radius = radius.expect("Radius required for this layer");
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, layer, radius)
+                self.place_impact_and_ripples_for_resource(tile, layer, radius)
             }
             Layer::CityState => {
-                self.place_impact_and_ripples_for_resource(
-                    map_parameters,
-                    tile,
-                    Layer::CityState,
-                    4,
-                );
+                self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 4);
 
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 3);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 3);
                 // Strategic layer, should be at start point only.
-                self.place_impact_and_ripples_for_resource(
-                    map_parameters,
-                    tile,
-                    Layer::Strategic,
-                    0,
-                );
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 3);
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Fish, 3);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 3);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Fish, 3);
                 // Natural Wonders layer, set a minimum distance of 5 tiles (4 ripples) away.
-                self.place_impact_and_ripples_for_resource(
-                    map_parameters,
-                    tile,
-                    Layer::NaturalWonder,
-                    4,
-                );
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 3);
+                self.place_impact_and_ripples_for_resource(tile, Layer::NaturalWonder, 4);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 3);
             }
             Layer::NaturalWonder => {
                 self.place_impact_and_ripples_for_resource(
-                    map_parameters,
                     tile,
                     Layer::NaturalWonder,
-                    map_parameters.map_size.height as u32 / 5,
+                    self.world_grid.size().height as u32 / 5,
                 );
-                self.place_impact_and_ripples_for_resource(
-                    map_parameters,
-                    tile,
-                    Layer::Strategic,
-                    1,
-                );
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 1);
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 1);
-                self.place_impact_and_ripples_for_resource(
-                    map_parameters,
-                    tile,
-                    Layer::CityState,
-                    1,
-                );
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
             }
             Layer::Marble => {
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 1);
-                self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Marble, 6);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
+                self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 6);
             }
-            Layer::Civilization => {
-                self.place_impact_and_ripples_for_civilization(map_parameters, tile)
-            }
+            Layer::Civilization => self.place_impact_and_ripples_for_civilization(tile),
         }
     }
 
@@ -222,24 +191,20 @@ impl TileMap {
     /// Places the impact and ripple values for a starting tile of civilization.
     ///
     /// We will place the impact on the tile and then ripple outwards to the surrounding tiles.
-    fn place_impact_and_ripples_for_civilization(
-        &mut self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-    ) {
-        let grid = map_parameters.grid;
+    fn place_impact_and_ripples_for_civilization(&mut self, tile: Tile) {
+        let grid = self.world_grid.grid;
 
         let impact_value = 99;
         let ripple_values = [97, 95, 92, 89, 69, 57, 24, 15];
 
         // Start points need to impact the resource layers.
-        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Luxury, 3);
+        self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 3);
         // Strategic layer, should be at start point only.
-        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Strategic, 0);
-        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Bonus, 3);
-        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::Fish, 3);
+        self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
+        self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 3);
+        self.place_impact_and_ripples_for_resource(tile, Layer::Fish, 3);
         // Natural Wonders layer, set a minimum distance of 5 tiles (4 ripples) away.
-        self.place_impact_and_ripples_for_resource(map_parameters, tile, Layer::NaturalWonder, 4);
+        self.place_impact_and_ripples_for_resource(tile, Layer::NaturalWonder, 4);
 
         self.layer_data[Layer::Civilization][tile.index()] = impact_value;
 
@@ -280,26 +245,19 @@ impl TileMap {
     /// We will place the resource impact on the tile and then place a ripple on all tiles within the radius.
     ///
     /// # Parameters
-    /// - `map_parameters` is the map parameters.
     /// - `tile` is the tile to place the resource impact on.
     /// - `layer` is the layer to place the resource impact and ripple on. `layer` should not be [`Layer::Civilization`]. Otherwise, the function will panic.
     /// - `radius` is the radius of the ripple. The ripple will be placed on all tiles within this radius.
     /// # Panics
     /// Panics if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
-    fn place_impact_and_ripples_for_resource(
-        &mut self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-        layer: Layer,
-        radius: u32,
-    ) {
-        assert_ne!(
+    fn place_impact_and_ripples_for_resource(&mut self, tile: Tile, layer: Layer, radius: u32) {
+        debug_assert_ne!(
             layer,
             Layer::Civilization,
-            "Cannot place resource impact on civilization layer!"
+            "`place_impact_and_ripples_for_resource` should not be used for `Layer::Civilization`, use `place_impact_and_ripples_for_civilization` instead."
         );
 
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
             1
@@ -313,7 +271,7 @@ impl TileMap {
             return;
         }
 
-        if radius > 0 && radius < (self.map_size.height as u32 / 2) {
+        if radius > 0 && radius < (grid.size.height as u32 / 2) {
             for distance in 1..=radius {
                 // `distance` is the distance from the center tile to the current tile.
                 // The larger the distance, the smaller the ripple value.

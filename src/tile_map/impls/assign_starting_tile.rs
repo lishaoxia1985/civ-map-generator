@@ -22,7 +22,7 @@ impl TileMap {
 
         self.balance_and_assign_civilization_starting_tiles(map_parameters, ruleset);
 
-        self.place_natural_wonders(map_parameters, ruleset);
+        self.place_natural_wonders(ruleset);
 
         self.place_resources_and_city_states(map_parameters, ruleset);
     }
@@ -46,11 +46,11 @@ impl TileMap {
 
         self.place_bonus_resources(map_parameters);
 
-        self.normalize_city_state_locations(map_parameters);
+        self.normalize_city_state_locations();
 
         self.fix_sugar_jungles();
 
-        self.recalculate_areas(map_parameters, ruleset);
+        self.recalculate_areas(ruleset);
     }
 
     /// Fix Sugar graphics. That because in origin CIV5, `Sugar` could not be made visible enough in jungle, so turn any sugar jungle to marsh.
@@ -83,7 +83,7 @@ impl TileMap {
     /// * `frequency` - The frequency of resource placement.\
     /// The num of tiles we will assign this resource is `(plot_list.len() as f64 / frequency).ceil() as u32`.
     /// * `layer` - The layer on which the resource will be placed.
-    /// * `plot_list` - A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
+    /// * `tile_list` - A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
     /// * `resource_list_to_place` - A vector of resource to place, which contains the resource type,
     /// quantity, minimum radius, and maximum radius for each resource.
     ///
@@ -97,17 +97,19 @@ impl TileMap {
     /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].
     pub fn process_resource_list(
         &mut self,
-        map_parameters: &MapParameters,
         frequency: f64,
         layer: Layer,
-        plot_list: &[Tile],
+        tile_list: &[Tile],
         resource_list_to_place: &[ResourceToPlace],
     ) {
-        if plot_list.is_empty() {
+        debug_assert!(layer == Layer::Bonus || layer == Layer::Strategic,
+            "`process_resource_list` can only be used to place bonus or strategic resources, not luxury resources.
+            If you want to place luxury resources, please use `place_specific_number_of_resources` instead."
+        );
+
+        if tile_list.is_empty() {
             return;
         }
-
-        assert!(layer == Layer::Bonus || layer == Layer::Strategic, "This function is only used to place strategic and bonus resources on the map, not luxury resources.");
 
         let resource_weight = resource_list_to_place
             .iter()
@@ -115,9 +117,9 @@ impl TileMap {
             .collect::<Vec<_>>();
         let dist = WeightedIndex::new(resource_weight).unwrap();
 
-        let num_resources_to_place = (plot_list.len() as f64 / frequency).ceil() as u32;
+        let num_resources_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
 
-        let mut plot_list_iter = plot_list.iter().peekable();
+        let mut plot_list_iter = tile_list.iter().peekable();
 
         // Main loop
         for _ in 0..num_resources_to_place {
@@ -135,7 +137,7 @@ impl TileMap {
                 if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
                     self.resource_query[tile.index()] =
                         Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_impact_and_ripples(map_parameters, tile, layer, Some(radius));
+                    self.place_impact_and_ripples(tile, layer, Some(radius));
                     break;
                 }
             }
@@ -143,7 +145,7 @@ impl TileMap {
             // Completed first pass of plot_list, now change to seeking lowest value instead of zero value.
             // If no eligible 0 value is found, second pass: Seek the lowest value (value < 98) on the impact matrix
             if plot_list_iter.peek().is_none() {
-                let best_plot = plot_list
+                let best_plot = tile_list
                     .iter()
                     .filter(|&&tile| {
                         self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
@@ -152,7 +154,7 @@ impl TileMap {
                 if let Some(&tile) = best_plot {
                     self.resource_query[tile.index()] =
                         Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_impact_and_ripples(map_parameters, tile, layer, Some(radius));
+                    self.place_impact_and_ripples(tile, layer, Some(radius));
                 }
             }
         }
@@ -626,16 +628,11 @@ impl TileMap {
     // function AssignStartingPlots:AttemptToPlaceHillsAtPlot
     /// Attempts to place a Hill at the currently chosen tile.
     /// If successful, it returns `true`, otherwise it returns `false`.
-    pub fn attempt_to_place_hill_at_tile(
-        &mut self,
-        map_parameters: &MapParameters,
-        tile: Tile,
-    ) -> bool {
-        let grid = map_parameters.grid;
+    pub fn attempt_to_place_hill_at_tile(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) != TerrainType::Water
             && tile.feature(self) != Some(Feature::Forest)
-            && !tile.has_river(self, grid)
+            && !tile.has_river(self)
         {
             self.terrain_type_query[tile.index()] = TerrainType::Hill;
             self.feature_query[tile.index()] = None;
@@ -683,12 +680,9 @@ impl TileMap {
     /// * The second boolean is `true` as well if [`Feature::Oasis`] was placed.
     pub fn attempt_to_place_bonus_resource_at_plot(
         &mut self,
-        map_parameters: &MapParameters,
         tile: Tile,
         allow_oasis: bool,
     ) -> (bool, bool) {
-        let grid = map_parameters.grid;
-
         let terrain_type = tile.terrain_type(self);
         let base_terrain = tile.base_terrain(self);
         let feature = tile.feature(self);
@@ -714,7 +708,7 @@ impl TileMap {
                                 return (true, false);
                             }
                             BaseTerrain::Desert => {
-                                if tile.is_freshwater(self, grid) {
+                                if tile.is_freshwater(self) {
                                     self.resource_query[tile.index()] =
                                         Some((Resource::Resource("Wheat".to_owned()), 1));
                                     return (true, false);
@@ -816,7 +810,6 @@ impl TileMap {
     /// - `max_radius` must be greater than or equal to `min_radius`. Otherwise, the function will panic.
     pub fn place_specific_number_of_resources(
         &mut self,
-        map_parameters: &MapParameters,
         resource: Resource,
         quantity: u32,
         amount: u32,
@@ -826,7 +819,7 @@ impl TileMap {
         max_radius: u32,
         tile_list: &[Tile],
     ) -> u32 {
-        assert!(
+        debug_assert!(
             max_radius >= min_radius,
             "'max_radius' must be greater than or equal to 'min_radius'!"
         );
@@ -881,7 +874,7 @@ impl TileMap {
         tile_and_impact_radius
             .into_iter()
             .for_each(|(tile, radius)| {
-                self.place_impact_and_ripples(map_parameters, tile, layer.unwrap(), Some(radius))
+                self.place_impact_and_ripples(tile, layer.unwrap(), Some(radius))
             });
 
         num_left_to_place

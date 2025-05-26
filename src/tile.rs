@@ -81,16 +81,19 @@ impl Tile {
     /// # Panics
     /// This method will panic if the tile is out of bounds for the given map size.
     pub fn to_offset_coordinate(&self, grid: HexGrid) -> OffsetCoordinate {
-        let map_width = grid.size.width;
-        let map_height = grid.size.height;
+        let width = grid.size.width;
+        let height = grid.size.height;
 
-        assert!(
-            self.0 < (map_width * map_height) as usize,
-            "Index out of bounds"
+        debug_assert!(
+            self.0 < (width * height) as usize,
+            "Tile is out of bounds! Tile index: {}, Map size: {}x{}",
+            self.0,
+            width,
+            height
         );
 
-        let x = self.0 as i32 % map_width;
-        let y = self.0 as i32 / map_width;
+        let x = self.0 as i32 % width;
+        let y = self.0 as i32 / width;
 
         OffsetCoordinate::new(x, y)
     }
@@ -175,7 +178,7 @@ impl Tile {
         tile_map.landmass_id_query[self.0]
     }
 
-    pub fn neighbor_tiles<'a>(&'a self, grid: HexGrid) -> Vec<Self> {
+    pub fn neighbor_tiles(&self, grid: HexGrid) -> Vec<Self> {
         self.tiles_at_distance(1, grid)
     }
 
@@ -251,10 +254,11 @@ impl Tile {
     /// - `map_parameters`: A reference to the map parameters, which include hex layout settings.
     /// # Returns
     /// - `bool`: Returns true if there is a river on the current tile, false otherwise.
-    pub fn has_river(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
+    pub fn has_river(&self, tile_map: &TileMap) -> bool {
+        let grid = tile_map.world_grid.grid;
         grid.edge_direction_array()
             .iter()
-            .any(|&direction| self.has_river_in_direction(direction, tile_map, grid))
+            .any(|&direction| self.has_river_in_direction(direction, tile_map))
     }
 
     /// Checks if there is a river on the current tile in the specified direction.
@@ -266,12 +270,8 @@ impl Tile {
     ///
     /// # Returns
     /// - `bool`: Returns true if there is a river in the specified direction, false otherwise.
-    pub fn has_river_in_direction(
-        &self,
-        direction: Direction,
-        tile_map: &TileMap,
-        grid: HexGrid,
-    ) -> bool {
+    pub fn has_river_in_direction(&self, direction: Direction, tile_map: &TileMap) -> bool {
+        let grid = tile_map.world_grid.grid;
         // Get the edge index for the specified direction.
         let edge_index = grid.hex_layout.orientation.edge_index(direction);
 
@@ -315,12 +315,13 @@ impl Tile {
     /// Check if the tile is freshwater
     ///
     /// Freshwater is not water and is adjacent to lake, oasis or has a river
-    pub fn is_freshwater(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
+    pub fn is_freshwater(&self, tile_map: &TileMap) -> bool {
+        let grid = tile_map.world_grid.grid;
         self.terrain_type(tile_map) != TerrainType::Water
             && (self.neighbor_tiles(grid).iter().any(|tile| {
                 tile.base_terrain(tile_map) == BaseTerrain::Lake
                     || tile.feature(tile_map) == Some(Feature::Oasis)
-            }) || self.has_river(tile_map, grid))
+            }) || self.has_river(tile_map))
     }
 
     /// Check if the tile is coastal land.
@@ -328,7 +329,8 @@ impl Tile {
     /// A tile is considered `coastal land` if it is not `Water` and has at least one neighboring tile that is `Coast`.
     /// # Notice
     /// If the tile is not `Water` and has at least one neighboring tile that is `Lake`, but it has no neighboring tile that is `Coast`, it is not `coastal land`.
-    pub fn is_coastal_land(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
+    pub fn is_coastal_land(&self, tile_map: &TileMap) -> bool {
+        let grid = tile_map.world_grid.grid;
         self.terrain_type(tile_map) != TerrainType::Water
             && self
                 .neighbor_tiles(grid)
@@ -355,17 +357,16 @@ impl Tile {
         tile_map: &TileMap,
         map_parameters: &MapParameters,
     ) -> bool {
-        let grid = map_parameters.grid;
         // This variable is the maximum distance a Settler can move.
         // It can be customized in the MapParameters in the future.
         const SETTLER_MOVEMENT: u32 = 2;
         matches!(
             self.terrain_type(tile_map),
             TerrainType::Flatland | TerrainType::Hill
-        ) && (self.is_coastal_land(tile_map, grid)
+        ) && (self.is_coastal_land(tile_map)
             || (!map_parameters.civilization_starting_tile_must_be_coastal_land
                 && self
-                    .tiles_in_distance(SETTLER_MOVEMENT, map_parameters.grid)
+                    .tiles_in_distance(SETTLER_MOVEMENT, tile_map.world_grid.grid)
                     .iter()
                     .all(|tile| tile.base_terrain(tile_map) != BaseTerrain::Coast)))
     }

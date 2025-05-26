@@ -7,6 +7,7 @@ use crate::component::map_component::base_terrain::BaseTerrain;
 use crate::component::map_component::feature::Feature;
 use crate::component::map_component::terrain_type::TerrainType;
 use crate::grid::offset_coordinate::OffsetCoordinate;
+use crate::map_parameters::HexGrid;
 use crate::{
     map_parameters::{Rectangle, RegionDivideMethod, WrapType},
     tile::Tile,
@@ -18,6 +19,8 @@ impl TileMap {
     /// Generates regions for the map according civilization number and region divide method.
     /// The number of regions is equal to the number of civilizations.
     pub fn generate_regions(&mut self, map_parameters: &MapParameters) {
+        let grid = self.world_grid.grid;
+
         let civilization_num = map_parameters.civilization_num;
 
         match map_parameters.region_divide_method {
@@ -25,10 +28,9 @@ impl TileMap {
                 // -- Identify the biggest landmass.
                 let biggest_landmass_id = self.get_biggest_area_id();
 
-                let landmass_region =
-                    Region::landmass_region(self, map_parameters, biggest_landmass_id);
+                let landmass_region = Region::landmass_region(self, biggest_landmass_id);
 
-                self.divide_into_regions(map_parameters, civilization_num, landmass_region);
+                self.divide_into_regions(civilization_num, landmass_region);
             }
             RegionDivideMethod::Continent => {
                 let mut landmass_ids: Vec<_> = self
@@ -42,7 +44,7 @@ impl TileMap {
 
                 let mut landmass_region_list: Vec<_> = landmass_ids
                     .into_iter()
-                    .map(|landmass_id| Region::landmass_region(self, map_parameters, landmass_id))
+                    .map(|landmass_id| Region::landmass_region(self, landmass_id))
                     .collect();
 
                 landmass_region_list.sort_by_key(|region| region.fertility_sum);
@@ -77,28 +79,24 @@ impl TileMap {
 
                 for (index, region) in best_landmass_region_list.into_iter().enumerate() {
                     if number_of_civs_on_landmass[index] > 0 {
-                        self.divide_into_regions(
-                            map_parameters,
-                            number_of_civs_on_landmass[index],
-                            region,
-                        );
+                        self.divide_into_regions(number_of_civs_on_landmass[index], region);
                     }
                 }
             }
             RegionDivideMethod::WholeMapRectangle => {
-                let rectangle = Rectangle {
-                    west_x: 0,
-                    south_y: 0,
-                    width: map_parameters.map_size.width,
-                    height: map_parameters.map_size.height,
-                };
+                let rectangle = Rectangle::new(
+                    OffsetCoordinate::new(0, 0),
+                    grid.size.width,
+                    grid.size.height,
+                    grid,
+                );
 
-                let region = Region::rectangle_region(self, map_parameters, rectangle);
-                self.divide_into_regions(map_parameters, civilization_num, region);
+                let region = Region::rectangle_region(self, grid, rectangle);
+                self.divide_into_regions(civilization_num, region);
             }
             RegionDivideMethod::CustomRectangle(rectangle) => {
-                let region = Region::rectangle_region(self, map_parameters, rectangle);
-                self.divide_into_regions(map_parameters, civilization_num, region);
+                let region = Region::rectangle_region(self, grid, rectangle);
+                self.divide_into_regions(civilization_num, region);
             }
         }
     }
@@ -109,30 +107,27 @@ impl TileMap {
     /// * `map_parameters` - The map parameters.
     /// * `divisions_num` - The number of divisions to make. In origin code, this should <= 22.
     /// * `region` - The region to divide.
-    fn divide_into_regions(
-        &mut self,
-        map_parameters: &MapParameters,
-        divisions_num: u32,
-        region: Region,
-    ) {
+    fn divide_into_regions(&mut self, divisions_num: u32, region: Region) {
+        let grid = self.world_grid.grid;
+
         let mut stack = vec![(region, divisions_num)];
 
         while let Some((mut current_region, current_divisions_num)) = stack.pop() {
             if current_divisions_num == 1 {
-                current_region.measure_terrain(self, map_parameters);
+                current_region.measure_terrain(self);
                 current_region.determine_region_type();
                 self.region_list.push(current_region);
             } else {
                 match current_divisions_num {
                     2 => {
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, 50.0);
+                            current_region.chop_into_two_regions(grid, 50.0);
                         stack.push((first_section, 1));
                         stack.push((second_section, 1));
                     }
                     3 => {
                         let (first_section, second_section, third_section) =
-                            current_region.chop_into_three_regions(map_parameters);
+                            current_region.chop_into_three_regions(grid);
                         stack.push((first_section, 1));
                         stack.push((second_section, 1));
                         stack.push((third_section, 1));
@@ -140,42 +135,42 @@ impl TileMap {
                     5 => {
                         let chop_percent = 3. / 5. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 3));
                         stack.push((second_section, 2));
                     }
                     7 => {
                         let chop_percent = 3. / 7. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 3));
                         stack.push((second_section, 4));
                     }
                     11 => {
                         let chop_percent = 3. / 11. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 3));
                         stack.push((second_section, 8));
                     }
                     13 => {
                         let chop_percent = 5. / 13. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 5));
                         stack.push((second_section, 8));
                     }
                     17 => {
                         let chop_percent = 9. / 17. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 9));
                         stack.push((second_section, 8));
                     }
                     19 => {
                         let chop_percent = 7. / 19. * 100.0;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(map_parameters, chop_percent);
+                            current_region.chop_into_two_regions(grid, chop_percent);
                         stack.push((first_section, 7));
                         stack.push((second_section, 12));
                     }
@@ -183,14 +178,14 @@ impl TileMap {
                         if current_divisions_num % 3 == 0 {
                             let subdivisions = current_divisions_num / 3;
                             let (first_section, second_section, third_section) =
-                                current_region.chop_into_three_regions(map_parameters);
+                                current_region.chop_into_three_regions(grid);
                             stack.push((first_section, subdivisions));
                             stack.push((second_section, subdivisions));
                             stack.push((third_section, subdivisions));
                         } else if current_divisions_num % 2 == 0 {
                             let subdivisions = current_divisions_num / 2;
                             let (first_section, second_section) =
-                                current_region.chop_into_two_regions(map_parameters, 50.0);
+                                current_region.chop_into_two_regions(grid, 50.0);
                             stack.push((first_section, subdivisions));
                             stack.push((second_section, subdivisions));
                         } else {
@@ -209,20 +204,18 @@ impl TileMap {
     /// Returns a list of fertility values for all tiles in the landmass rectangle.
     fn measure_start_placement_fertility_of_landmass(
         &self,
-        map_parameters: &MapParameters,
         area_id: usize,
         landmass_rectangle: Rectangle,
     ) -> Vec<i32> {
-        let tile_count = landmass_rectangle.width * landmass_rectangle.height;
+        let tile_count = landmass_rectangle.width() * landmass_rectangle.height();
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in landmass_rectangle.iter_tiles(map_parameters) {
+        for tile in landmass_rectangle.iter_tiles(self.world_grid.grid) {
             if tile.area_id(self) != area_id {
                 area_fertility_list.push(0);
             } else {
-                let tile_fertility =
-                    self.measure_start_placement_fertility_of_tile(map_parameters, tile, true);
+                let tile_fertility = self.measure_start_placement_fertility_of_tile(tile, true);
                 area_fertility_list.push(tile_fertility);
             }
         }
@@ -232,19 +225,14 @@ impl TileMap {
 
     // function AssignStartingPlots:MeasureStartPlacementFertilityInRectangle
     /// Returns a list of fertility values for all tiles in the rectangle.
-    fn measure_start_placement_fertility_in_rectangle(
-        &self,
-        map_parameters: &MapParameters,
-        rectangle: Rectangle,
-    ) -> Vec<i32> {
-        let tile_count = rectangle.width * rectangle.height;
+    fn measure_start_placement_fertility_in_rectangle(&self, rectangle: Rectangle) -> Vec<i32> {
+        let tile_count = rectangle.width() * rectangle.height();
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in rectangle.iter_tiles(map_parameters) {
+        for tile in rectangle.iter_tiles(self.world_grid.grid) {
             // Check for coastal land is disabled.
-            let tile_fertility =
-                self.measure_start_placement_fertility_of_tile(map_parameters, tile, false);
+            let tile_fertility = self.measure_start_placement_fertility_of_tile(tile, false);
             area_fertility_list.push(tile_fertility);
         }
 
@@ -255,12 +243,9 @@ impl TileMap {
     /// Returns the fertility of a tile for starting placement.
     fn measure_start_placement_fertility_of_tile(
         &self,
-        map_parameters: &MapParameters,
         tile: Tile,
         check_for_coastal_land: bool,
     ) -> i32 {
-        let grid = map_parameters.grid;
-
         let mut tile_fertility = 0;
         let terrain_type = tile.terrain_type(self);
         let base_terrain = tile.base_terrain(self);
@@ -312,15 +297,15 @@ impl TileMap {
             }
         }
 
-        if tile.has_river(self, grid) {
+        if tile.has_river(self) {
             tile_fertility += 1;
         }
 
-        if tile.is_freshwater(self, grid) {
+        if tile.is_freshwater(self) {
             tile_fertility += 1;
         }
 
-        if check_for_coastal_land && tile.is_coastal_land(self, grid) {
+        if check_for_coastal_land && tile.is_coastal_land(self) {
             tile_fertility += 2;
         }
 
@@ -328,14 +313,10 @@ impl TileMap {
     }
 
     /// Get landmass rectangle for the region.
-    fn obtain_landmass_boundaries(
-        &self,
-        map_parameters: &MapParameters,
-        area_id: usize,
-    ) -> Rectangle {
-        let map_height = map_parameters.map_size.height as i32;
-        let map_width = map_parameters.map_size.width as i32;
-        let grid = map_parameters.grid;
+    fn obtain_landmass_boundaries(&self, area_id: usize) -> Rectangle {
+        let grid = self.world_grid.grid;
+        let map_height = grid.size.height;
+        let map_width = grid.size.width;
         // -- Set up variables that will be returned by this function.
         let mut wrap_x = false;
         let mut wrap_y = false;
@@ -597,12 +578,7 @@ impl TileMap {
             north_y - south_y + 1
         };
 
-        Rectangle {
-            west_x,
-            south_y,
-            width,
-            height,
-        }
+        Rectangle::new(OffsetCoordinate::new(west_x, south_y), width, height, grid)
     }
 
     /// Get the biggest AreaID.
@@ -714,32 +690,20 @@ impl Region {
     ///
     /// # Notice
     /// We don't need to run `remove_dead_rows_and_columns()` here because the method `obtain_landmass_boundaries()` already did it.
-    fn landmass_region(
-        tile_map: &TileMap,
-        map_parameters: &MapParameters,
-        landmass_id: usize,
-    ) -> Self {
-        let rectangle = tile_map.obtain_landmass_boundaries(map_parameters, landmass_id);
+    fn landmass_region(tile_map: &TileMap, landmass_id: usize) -> Self {
+        let rectangle = tile_map.obtain_landmass_boundaries(landmass_id);
 
-        let fertility_list = tile_map.measure_start_placement_fertility_of_landmass(
-            map_parameters,
-            landmass_id,
-            rectangle,
-        );
+        let fertility_list =
+            tile_map.measure_start_placement_fertility_of_landmass(landmass_id, rectangle);
 
         Self::new(rectangle, Some(landmass_id), fertility_list)
     }
 
-    fn rectangle_region(
-        tile_map: &TileMap,
-        map_parameters: &MapParameters,
-        rectangle: Rectangle,
-    ) -> Self {
-        let fertility_list =
-            tile_map.measure_start_placement_fertility_in_rectangle(map_parameters, rectangle);
+    fn rectangle_region(tile_map: &TileMap, grid: HexGrid, rectangle: Rectangle) -> Self {
+        let fertility_list = tile_map.measure_start_placement_fertility_in_rectangle(rectangle);
 
         let mut region = Self::new(rectangle, None, fertility_list);
-        region.remove_dead_row_and_column(map_parameters);
+        region.remove_dead_row_and_column(grid);
         region
     }
 
@@ -749,21 +713,17 @@ impl Region {
     /// At first, we check if the region is taller or wider. If it is taller, we divide it into two regions horizontally. If it is wider, we divide it vertically.
     /// The first region will have a fertility sum that is `chop_percent` percent of the total fertility sum of the region.
     /// The second region will have the remaining fertility sum.
-    fn chop_into_two_regions(
-        &self,
-        map_parameters: &MapParameters,
-        chop_percent: f32,
-    ) -> (Region, Region) {
-        let map_height = map_parameters.map_size.height as i32;
-        let map_width = map_parameters.map_size.width as i32;
+    fn chop_into_two_regions(&self, grid: HexGrid, chop_percent: f32) -> (Region, Region) {
+        let map_height = grid.size.height as i32;
+        let map_width = grid.size.width as i32;
 
-        let taller = self.rectangle.height > self.rectangle.width;
+        let taller = self.rectangle.height() > self.rectangle.width();
 
         // Now divide the region.
         let target_fertility = (self.fertility_sum as f32 * chop_percent / 100.) as i32;
 
-        let first_region_west_x = self.rectangle.west_x;
-        let first_region_south_y = self.rectangle.south_y;
+        let first_region_west_x = self.rectangle.west_x();
+        let first_region_south_y = self.rectangle.south_y();
 
         // Scope variables that get decided conditionally.
         let first_region_width;
@@ -781,16 +741,16 @@ impl Region {
         let mut second_region_fertility_list = Vec::new();
 
         if taller {
-            first_region_width = self.rectangle.width;
-            second_region_west_x = self.rectangle.west_x;
-            second_region_width = self.rectangle.width;
+            first_region_width = self.rectangle.width();
+            second_region_west_x = self.rectangle.west_x();
+            second_region_width = self.rectangle.width();
 
-            let rect_y = (0..self.rectangle.height)
+            let rect_y = (0..self.rectangle.height())
                 .find(|&y| {
                     // Calculate the fertility of the current row
-                    let current_row_fertility: i32 = (0..self.rectangle.width)
+                    let current_row_fertility: i32 = (0..self.rectangle.width())
                         .map(|x| {
-                            let fert_index = y * self.rectangle.width + x;
+                            let fert_index = y * self.rectangle.width() + x;
                             let tile_fertility = self.fertility_list[fert_index as usize];
                             // Record this plot's fertility in a new fertility table. (Needed for further subdivisions).
                             first_region_fertility_list.push(tile_fertility);
@@ -807,15 +767,15 @@ impl Region {
                 .expect("No suitable row found for chop_into_two_regions");
 
             first_region_height = rect_y + 1;
-            second_region_south_y = (self.rectangle.south_y + first_region_height) % map_height;
-            second_region_height = self.rectangle.height - first_region_height;
+            second_region_south_y = (self.rectangle.south_y() + first_region_height) % map_height;
+            second_region_height = self.rectangle.height() - first_region_height;
 
             second_region_fertility_list
                 .reserve((second_region_width * second_region_height) as usize);
 
-            for rect_y in first_region_height..self.rectangle.height {
-                for rect_x in 0..self.rectangle.width {
-                    let fert_index = rect_y * self.rectangle.width + rect_x;
+            for rect_y in first_region_height..self.rectangle.height() {
+                for rect_x in 0..self.rectangle.width() {
+                    let fert_index = rect_y * self.rectangle.width() + rect_x;
                     let tile_fertility = self.fertility_list[fert_index as usize];
 
                     // Record this plot in a new fertility table. (Needed for further subdivisions).
@@ -828,16 +788,16 @@ impl Region {
                 }
             }
         } else {
-            first_region_height = self.rectangle.height;
-            second_region_south_y = self.rectangle.south_y;
-            second_region_height = self.rectangle.height;
+            first_region_height = self.rectangle.height();
+            second_region_south_y = self.rectangle.south_y();
+            second_region_height = self.rectangle.height();
 
-            let rect_x = (0..self.rectangle.width)
+            let rect_x = (0..self.rectangle.width())
                 .find(|&x| {
                     // Calculate the fertility of the current column
-                    let current_column_fertility: i32 = (0..self.rectangle.height)
+                    let current_column_fertility: i32 = (0..self.rectangle.height())
                         .map(|y| {
-                            let fert_index = y * self.rectangle.width + x;
+                            let fert_index = y * self.rectangle.width() + x;
                             self.fertility_list[fert_index as usize]
                         })
                         .sum();
@@ -851,16 +811,16 @@ impl Region {
                 .expect("No suitable column found for chop_into_two_regions");
 
             first_region_width = rect_x + 1;
-            second_region_west_x = (self.rectangle.west_x + first_region_width) % map_width;
-            second_region_width = self.rectangle.width - first_region_width;
+            second_region_west_x = (self.rectangle.west_x() + first_region_width) % map_width;
+            second_region_width = self.rectangle.width() - first_region_width;
 
             second_region_fertility_list
                 .reserve((second_region_width * second_region_height) as usize);
 
             // Process the second region
-            for rect_y in 0..self.rectangle.height {
-                for rect_x in first_region_width..self.rectangle.width {
-                    let fert_index = rect_y * self.rectangle.width + rect_x;
+            for rect_y in 0..self.rectangle.height() {
+                for rect_x in first_region_width..self.rectangle.width() {
+                    let fert_index = rect_y * self.rectangle.width() + rect_x;
                     let tile_fertility = self.fertility_list[fert_index as usize];
 
                     // Record this plot in a new fertility table. (Needed for further subdivisions).
@@ -874,9 +834,9 @@ impl Region {
             }
 
             // Process the first region
-            for rect_y in 0..self.rectangle.height {
+            for rect_y in 0..self.rectangle.height() {
                 for rect_x in 0..first_region_width {
-                    let fert_index = rect_y * self.rectangle.width + rect_x;
+                    let fert_index = rect_y * self.rectangle.width() + rect_x;
                     let tile_fertility = self.fertility_list[fert_index as usize];
 
                     // Record this plot in a new fertility table. (Needed for further subdivisions).
@@ -885,19 +845,19 @@ impl Region {
             }
         }
 
-        let first_region_rectangle = Rectangle {
-            west_x: first_region_west_x,
-            south_y: first_region_south_y,
-            width: first_region_width,
-            height: first_region_height,
-        };
+        let first_region_rectangle = Rectangle::new(
+            OffsetCoordinate::new(first_region_west_x, first_region_south_y),
+            first_region_width,
+            first_region_height,
+            grid,
+        );
 
-        let second_region_rectangle = Rectangle {
-            west_x: second_region_west_x,
-            south_y: second_region_south_y,
-            width: second_region_width,
-            height: second_region_height,
-        };
+        let second_region_rectangle = Rectangle::new(
+            OffsetCoordinate::new(second_region_west_x, second_region_south_y),
+            second_region_width,
+            second_region_height,
+            grid,
+        );
 
         let mut first_region = Region::new(
             first_region_rectangle,
@@ -911,9 +871,9 @@ impl Region {
             second_region_fertility_list,
         );
 
-        first_region.remove_dead_row_and_column(map_parameters);
+        first_region.remove_dead_row_and_column(grid);
 
-        second_region.remove_dead_row_and_column(map_parameters);
+        second_region.remove_dead_row_and_column(grid);
 
         (first_region, second_region)
     }
@@ -925,12 +885,11 @@ impl Region {
     /// The fertility of each region is 1/3 of the original region's fertility.
     /// # Notice
     /// We don't need to run `remove_dead_rows_and_columns()` here because the `remove_dead_row_and_column()` function has been called in the `chop_into_two_regions` function.
-    fn chop_into_three_regions(&self, map_parameters: &MapParameters) -> (Region, Region, Region) {
-        let (first_section_region, remaining_region) =
-            self.chop_into_two_regions(map_parameters, 33.3);
+    fn chop_into_three_regions(&self, grid: HexGrid) -> (Region, Region, Region) {
+        let (first_section_region, remaining_region) = self.chop_into_two_regions(grid, 33.3);
 
         let (second_section_region, third_section_region) =
-            remaining_region.chop_into_two_regions(map_parameters, 50.0);
+            remaining_region.chop_into_two_regions(grid, 50.0);
 
         (
             first_section_region,
@@ -941,108 +900,70 @@ impl Region {
 
     // function AssignStartingPlots:RemoveDeadRows
     /// Removes the edge rows and columns of the region where all tiles' fertility is 0.
-    fn remove_dead_row_and_column(&mut self, map_parameters: &MapParameters) {
-        let map_height = map_parameters.map_size.height as i32;
-        let map_width = map_parameters.map_size.width as i32;
+    fn remove_dead_row_and_column(&mut self, grid: HexGrid) {
+        let width = self.rectangle.width();
+        let height = self.rectangle.height();
 
-        // Check for rows to remove on the bottom.
-        let mut adjust_south = 0;
-        for y in 0..self.rectangle.height {
-            // check if the row has any non-zero fertility values
-            let keep_this_row = (0..self.rectangle.width).any(|x| {
-                let i = (y * self.rectangle.width + x) as usize;
-                self.fertility_list[i] != 0
-            });
+        // Calculate the number of rows which need to be removed from the south edge.
+        let adjust_south = (0..height)
+            .take_while(|&y| (0..width).all(|x| self.fertility_list[(y * width + x) as usize] == 0))
+            .count() as i32;
 
-            if keep_this_row {
-                break;
-            } else {
-                adjust_south += 1;
-            }
+        // Calculate the number of rows which need to be removed from the north edge.
+        let adjust_north = (0..height)
+            .rev()
+            .take_while(|&y| (0..width).all(|x| self.fertility_list[(y * width + x) as usize] == 0))
+            .count() as i32;
+
+        // Calculate the number of columns which need to be removed from the west edge.
+        let adjust_west = (0..width)
+            .take_while(|&x| {
+                (0..height).all(|y| self.fertility_list[(y * width + x) as usize] == 0)
+            })
+            .count() as i32;
+
+        // Calculate the number of columns which need to be removed from the east edge.
+        let adjust_east = (0..width)
+            .rev()
+            .take_while(|&x| {
+                (0..height).all(|y| self.fertility_list[(y * width + x) as usize] == 0)
+            })
+            .count() as i32;
+
+        // Early return if no adjustments needed
+        if adjust_south == 0 && adjust_north == 0 && adjust_west == 0 && adjust_east == 0 {
+            return;
         }
 
-        // Check for rows to remove on the top.
-        let mut adjust_north = 0;
-        for y in (0..self.rectangle.height).rev() {
-            // check if the row has any non-zero fertility values
-            let keep_this_row = (0..self.rectangle.width).any(|x| {
-                let i = (y * self.rectangle.width + x) as usize;
-                self.fertility_list[i] != 0
-            });
+        let adjusted_west_x = self.rectangle.west_x() + adjust_west;
+        let adjusted_south_y = self.rectangle.south_y() + adjust_south;
+        let adjusted_width = (self.rectangle.width() - adjust_west) - adjust_east;
+        let adjusted_height = (self.rectangle.height() - adjust_south) - adjust_north;
 
-            if keep_this_row {
-                break;
-            } else {
-                adjust_north += 1;
-            }
-        }
+        let fertility_list = &self.fertility_list;
 
-        // Check for columns to remove on the left.
-        let mut adjust_west = 0;
-        for x in 0..self.rectangle.width {
-            // check if the column has any non-zero fertility values
-            let keep_this_column = (0..self.rectangle.height).any(|y| {
-                let i = (y * self.rectangle.width + x) as usize;
-                self.fertility_list[i] != 0
-            });
+        let adjusted_fertility_list = (0..adjusted_height)
+            .flat_map(|y| {
+                let row_start = (y + adjust_south) * self.rectangle.width() + adjust_west;
+                (0..adjusted_width).map(move |x| fertility_list[(row_start + x) as usize])
+            })
+            .collect::<Vec<_>>();
 
-            if keep_this_column {
-                break;
-            } else {
-                adjust_west += 1;
-            }
-        }
+        // Update region properties.
+        // # Notice
+        // - `landmass_id` does not need to update.
+        // - `fertility_sum` does not need to update, because we removed the rows and columns with 0 fertility,
+        //   so the fertility sum will not change.
+        self.rectangle = Rectangle::new(
+            OffsetCoordinate::new(adjusted_west_x, adjusted_south_y),
+            adjusted_width,
+            adjusted_height,
+            grid,
+        );
 
-        // Check for columns to remove on the right.
-        let mut adjust_east = 0;
-        for x in (0..self.rectangle.width).rev() {
-            // check if the column has any non-zero fertility values
-            let keep_this_column = (0..self.rectangle.height).any(|y| {
-                let i = (y * self.rectangle.width + x) as usize;
-                self.fertility_list[i] != 0
-            });
+        self.fertility_list = adjusted_fertility_list;
 
-            if keep_this_column {
-                break;
-            } else {
-                adjust_east += 1;
-            }
-        }
-
-        // If adjustments were made, truncate the region.
-        if adjust_south > 0 || adjust_north > 0 || adjust_west > 0 || adjust_east > 0 {
-            let adjusted_west_x = (self.rectangle.west_x + adjust_west) % map_width;
-            let adjusted_south_y = (self.rectangle.south_y + adjust_south) % map_height;
-            let adjusted_width = (self.rectangle.width - adjust_west) - adjust_east;
-            let adjusted_height = (self.rectangle.height - adjust_south) - adjust_north;
-
-            let mut adjusted_fertility_list =
-                Vec::with_capacity((adjusted_width * adjusted_height) as usize);
-
-            for y in 0..adjusted_height {
-                for x in 0..adjusted_width {
-                    let i =
-                        ((y + adjust_south) * self.rectangle.width + (x + adjust_west)) as usize;
-                    let tile_fertility = self.fertility_list[i];
-                    adjusted_fertility_list.push(tile_fertility);
-                }
-            }
-
-            // Update region properties.
-            // Notice: landmass_id does not need to update.
-            self.rectangle = Rectangle {
-                west_x: adjusted_west_x,
-                south_y: adjusted_south_y,
-                width: adjusted_width,
-                height: adjusted_height,
-            };
-
-            self.fertility_list = adjusted_fertility_list;
-
-            self.fertility_sum = self.fertility_list.iter().sum();
-
-            self.tile_count = self.fertility_list.len() as i32;
-        }
+        self.tile_count = self.fertility_list.len() as i32;
     }
 
     /// Measures the terrain in the region, and sets the [`Region::terrain_statistic`] field.
@@ -1050,12 +971,12 @@ impl Region {
     /// Terrain statistics include the num of flatland and hill tiles, the sum of fertility, and the sum of coastal land tiles, .., etc.
     /// When `landmass_id` is `None`, it will ignore the landmass ID and measure all the land and water terrain in the region.
     /// Otherwise, it will only measure the terrain which is Water/Mountain or whose `area_id` equal to the region's `landmass_id`.
-    pub fn measure_terrain(&mut self, tile_map: &TileMap, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
+    pub fn measure_terrain(&mut self, tile_map: &TileMap) {
+        let grid = tile_map.world_grid.grid;
 
         let mut terrain_statistic = TerrainStatistic::default();
 
-        for tile in self.rectangle.iter_tiles(map_parameters) {
+        for tile in self.rectangle.iter_tiles(grid) {
             let terrain_type = tile.terrain_type(tile_map);
             let base_terrain = tile.base_terrain(tile_map);
             let feature = tile.feature(tile_map);
@@ -1090,19 +1011,20 @@ impl Region {
                             terrain_statistic.feature_num[feature] += 1;
                         }
 
-                        if tile.has_river(tile_map, grid) {
+                        if tile.has_river(tile_map) {
                             terrain_statistic.river_num += 1;
                         }
 
-                        if tile.is_coastal_land(tile_map, grid) {
+                        if tile.is_coastal_land(tile_map) {
                             terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
-                        if !tile.is_coastal_land(tile_map, grid)
-                            && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
-                                neighbor_tile.is_coastal_land(tile_map, grid)
-                            })
+                        if !tile.is_coastal_land(tile_map)
+                            && tile
+                                .neighbor_tiles(grid)
+                                .iter()
+                                .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
                         }
@@ -1118,19 +1040,20 @@ impl Region {
                             terrain_statistic.feature_num[feature] += 1;
                         }
 
-                        if tile.has_river(tile_map, grid) {
+                        if tile.has_river(tile_map) {
                             terrain_statistic.river_num += 1;
                         }
 
-                        if tile.is_coastal_land(tile_map, grid) {
+                        if tile.is_coastal_land(tile_map) {
                             terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
-                        if !tile.is_coastal_land(tile_map, grid)
-                            && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
-                                neighbor_tile.is_coastal_land(tile_map, grid)
-                            })
+                        if !tile.is_coastal_land(tile_map)
+                            && tile
+                                .neighbor_tiles(grid)
+                                .iter()
+                                .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
                         }

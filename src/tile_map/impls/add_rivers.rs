@@ -5,12 +5,12 @@ use crate::{
     grid::{direction::Direction, hex_grid::hex::HexOrientation},
     map_parameters::HexGrid,
     tile::Tile,
-    tile_map::{MapParameters, TileMap},
+    tile_map::TileMap,
 };
 
 impl TileMap {
-    pub fn add_rivers(&mut self, map_parameters: &MapParameters) {
-        let grid = map_parameters.grid;
+    pub fn add_rivers(&mut self) {
+        let grid = self.world_grid.grid;
 
         let river_source_range_default = 4;
         let sea_water_range_default = 3;
@@ -40,7 +40,7 @@ impl TileMap {
                     1 => {
                         // Land tiles that are not near the coast are the 2nd priority for river starting locations.
                         terrain_type != TerrainType::Water
-                            && !tile.is_coastal_land(self, grid)
+                            && !tile.is_coastal_land(self)
                             && self.random_number_generator.gen_range(0..8) == 0
                     }
                     2 => {
@@ -75,15 +75,15 @@ impl TileMap {
                     && !tile
                         .tiles_in_distance(river_source_range, grid)
                         .iter()
-                        .any(|tile| tile.is_freshwater(self, grid))
+                        .any(|tile| tile.is_freshwater(self))
                     && !tile
                         .tiles_in_distance(sea_water_range, grid)
                         .iter()
                         .any(|tile| tile.terrain_type(self) == TerrainType::Water)
                 {
-                    let start_tile = self.get_inland_corner(tile, map_parameters);
+                    let start_tile = self.get_inland_corner(tile);
                     if let Some(start_tile) = start_tile {
-                        self.do_river(start_tile, None, map_parameters);
+                        self.do_river(start_tile, None);
                     }
                 }
             });
@@ -104,13 +104,8 @@ impl TileMap {
     /// That because when we implement it, we should concern the map parameters.
     /// For example, hex is Flat or Pointy, map is wrapx or not, map is wrapy or not, etc.
     /// In original CIV5, we only need to consider the case where the map is WrapX and the hex is pointy.
-    fn do_river(
-        &mut self,
-        start_tile: Tile,
-        original_flow_direction: Option<Direction>,
-        map_parameters: &MapParameters,
-    ) {
-        let grid = map_parameters.grid;
+    fn do_river(&mut self, start_tile: Tile, original_flow_direction: Option<Direction>) {
+        let grid = self.world_grid.grid;
         // This array contains the list of tuples.
         // In this tuple, the elemment means as follows:
         // 1. The first element indicates the next possible flow direction of the river.
@@ -170,16 +165,10 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::NorthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthWest,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthEast, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthWest, self)
                                 {
                                     break;
                                 } else {
@@ -196,16 +185,9 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::East, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::East,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthWest,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::East, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthWest, self)
                                 {
                                     break;
                                 }
@@ -226,11 +208,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 }
@@ -241,11 +219,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthWest, grid)
                             {
                                 if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2.has_river_in_direction(
-                                        Direction::East,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile2.has_river_in_direction(Direction::East, self)
                                 {
                                     break;
                                 }
@@ -266,11 +240,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 }
@@ -280,11 +250,8 @@ impl TileMap {
                             if let Some(neighbor_tile2) =
                                 river_tile.neighbor_tile(Direction::East, grid)
                             {
-                                if neighbor_tile2.has_river_in_direction(
-                                    Direction::SouthWest,
-                                    self,
-                                    grid,
-                                ) {
+                                if neighbor_tile2.has_river_in_direction(Direction::SouthWest, self)
+                                {
                                     break;
                                 }
                             } else {
@@ -298,16 +265,8 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthWest, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::East,
-                                        self,
-                                        grid,
-                                    )
-                                    || river_tile.has_river_in_direction(
-                                        Direction::SouthWest,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile.has_river_in_direction(Direction::East, self)
+                                    || river_tile.has_river_in_direction(Direction::SouthWest, self)
                                 {
                                     break;
                                 }
@@ -322,16 +281,9 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::West, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::East,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile.has_river_in_direction(Direction::East, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 } else {
@@ -351,16 +303,8 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::NorthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::NorthEast,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::South,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::NorthEast, self)
+                                    || neighbor_tile.has_river_in_direction(Direction::South, self)
                                 {
                                     break;
                                 }
@@ -381,11 +325,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 }
@@ -396,11 +336,8 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::South, grid)
                             {
                                 if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2.has_river_in_direction(
-                                        Direction::NorthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile2
+                                        .has_river_in_direction(Direction::NorthEast, self)
                                 {
                                     break;
                                 }
@@ -421,11 +358,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthEast, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 }
@@ -436,11 +369,7 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::NorthEast, grid)
                             {
                                 if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2.has_river_in_direction(
-                                        Direction::South,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile2.has_river_in_direction(Direction::South, self)
                                 {
                                     break;
                                 }
@@ -455,16 +384,9 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::South, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(
-                                        Direction::South,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::NorthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || river_tile.has_river_in_direction(Direction::South, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::NorthEast, self)
                                 {
                                     break;
                                 }
@@ -479,16 +401,10 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::SouthWest, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::NorthEast,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::NorthEast, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 } else {
@@ -505,16 +421,9 @@ impl TileMap {
                                 river_tile.neighbor_tile(Direction::North, grid)
                             {
                                 if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::South,
-                                        self,
-                                        grid,
-                                    )
-                                    || neighbor_tile.has_river_in_direction(
-                                        Direction::SouthEast,
-                                        self,
-                                        grid,
-                                    )
+                                    || neighbor_tile.has_river_in_direction(Direction::South, self)
+                                    || neighbor_tile
+                                        .has_river_in_direction(Direction::SouthEast, self)
                                 {
                                     break;
                                 } else {
@@ -561,7 +470,7 @@ impl TileMap {
             let mut best_value = i32::MAX;
             next_flow_direction_and_neighbor_tile_iter.for_each(
                 |(flow_direction, neighbor_tile)| {
-                    let mut value = self.river_value_at_tile(map_parameters, neighbor_tile);
+                    let mut value = self.river_value_at_tile(neighbor_tile);
                     // That will make `flow_direction` equal to `original_flow_direction` is more likely to be preferred.
                     if Some(flow_direction) == original_flow_direction {
                         value = (value * 3) / 4;
@@ -605,7 +514,7 @@ impl TileMap {
     /// Returns the value representing the suitability of flow direction for a river according to the tile.
     ///
     /// The lower the value, the more suitable the flow direction is.
-    fn river_value_at_tile(&mut self, map_parameters: &MapParameters, tile: Tile) -> i32 {
+    fn river_value_at_tile(&mut self, tile: Tile) -> i32 {
         fn tile_elevation(tile_map: &TileMap, tile: Tile) -> i32 {
             match tile.terrain_type(tile_map) {
                 TerrainType::Mountain => 4,
@@ -615,7 +524,7 @@ impl TileMap {
             }
         }
 
-        let grid = map_parameters.grid;
+        let grid = self.world_grid.grid;
 
         // Check if the tile itself or any of its neighboring tiles are natural wonders.
         if tile.natural_wonder(self).is_some()
@@ -659,8 +568,8 @@ impl TileMap {
     /// # Returns
     /// An `Option<TileIndex>`, which will be `Some(TileIndex)` if an inland corner is found,
     /// or `None` if no such corner exists.
-    fn get_inland_corner(&mut self, tile: Tile, map_parameters: &MapParameters) -> Option<Tile> {
-        let grid = map_parameters.grid;
+    fn get_inland_corner(&mut self, tile: Tile) -> Option<Tile> {
+        let grid = self.world_grid.grid;
         // We choose current tile and its `map_parameters.edge_direction_array()[3..6]` neighbors as the candidate inland corners
 
         // Initialize a list with the current tile

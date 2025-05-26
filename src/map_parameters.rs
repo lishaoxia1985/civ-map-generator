@@ -12,12 +12,8 @@ use crate::{
 };
 
 pub struct MapParameters {
-    pub name: String,
-    pub map_size: MapSize,
     pub map_type: MapType,
-    pub grid: HexGrid,
-    /// The map use which type of offset coordinate
-    pub no_ruins: bool,
+    pub world_grid: WorldGrid,
     pub seed: u64,
     pub large_lake_num: u32,
     /// The max area size of a lake.
@@ -42,20 +38,147 @@ pub struct MapParameters {
     pub resource_setting: ResourceSetting,
 }
 
+/// Represents a game world composed of grids.
+///
+/// Combines physical grid representation with logical world size classification
+/// for map generation and game scaling purposes.
+///
+/// # Instantiation
+///
+/// `WorldGrid` instances can only be created through two supported methods:
+///
+/// 1. [`WorldGrid::from_grid`] constructor - Creates from a custom-sized grid,
+///    automatically determining the [`WorldSize`] based on grid dimensions:
+/// ```rust
+/// let grid = HexGrid {
+///     size: Size { width: 80, height: 40 },
+///     hex_layout: HexLayout {
+///         orientation: HexOrientation::Flat,
+///         size: DVec2::new(8., 8.),
+///         origin: DVec2::new(0., 0.),
+///     },
+///     map_wrapping: MapWrapping {
+///         x: WrapType::Wrap,
+///         y: WrapType::None,
+///     },
+///     offset: Offset::Odd,
+/// };
+///
+/// let world_grid = WorldGrid::from_grid(grid);
+/// ```
+///
+/// 2. Explicit [`WorldSize`] specification - Creates with default grid dimensions
+///    for a standardized world size:
+/// ```rust
+/// let world_size = WorldSize::Standard;
+/// // Create a new HexGrid with 0 dimensions.
+/// let mut grid = HexGrid {
+///    size: Size { width: 0, height: 0 },
+///    hex_layout: HexLayout {
+///        orientation: HexOrientation::Flat,
+///        size: DVec2::new(8., 8.),
+///        origin: DVec2::new(0., 0.),
+///    },
+///    map_wrapping: MapWrapping {
+///        x: WrapType::Wrap,
+///        y: WrapType::None,
+///    },
+///    offset: Offset::Odd,
+/// };
+///
+/// // Sets default dimensions based on world size classification
+/// grid.set_default_size(world_size);
+///
+/// let world_grid = WorldGrid {
+///     grid,
+///     world_size,
+/// };
+/// ```
+///
+#[derive(Clone, Copy)]
+pub struct WorldGrid {
+    pub grid: HexGrid,
+    pub world_size: WorldSize,
+}
+
+impl WorldGrid {
+    pub fn from_grid(grid: HexGrid) -> Self {
+        let world_size = grid.get_world_size();
+        Self { grid, world_size }
+    }
+
+    /// Get the size of the grid.
+    pub fn size(&self) -> Size {
+        self.grid.size
+    }
+
+    /// Get the world size of the grid.
+    pub fn world_size(&self) -> WorldSize {
+        self.world_size
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct HexGrid {
-    pub size: MapSize,
+    pub size: Size,
     pub hex_layout: HexLayout,
     pub map_wrapping: MapWrapping,
     pub offset: Offset,
 }
 
 impl HexGrid {
-    /// Get the center of the map in pixel coordinates.
+    /// Get the world size of the grid based on its dimensions.
+    ///
+    /// Maybe be as one function of trait in the future?
+    fn get_world_size(&self) -> WorldSize {
+        let width = self.size.width;
+        let height = self.size.height;
+        let area = width * height;
+        match area {
+            // When area <= 40 * 24, set the WorldSize to "Duel" and give a warning message
+            area if area < 960 => {
+                eprintln!(
+                    "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is 40 * 24 = 960 in the original CIV5 game.",
+                    width, height, area
+                );
+                WorldSize::Duel
+            }
+            // For "Duel" size: area <= 56 * 36
+            area if area < 2016 => WorldSize::Duel,
+            // For "Tiny" size: area <= 66 * 42
+            area if area < 2772 => WorldSize::Tiny,
+            // For "Small" size: area <= 80 * 52
+            area if area < 4160 => WorldSize::Small,
+            // For "Standard" size: area <= 104 * 64
+            area if area < 6656 => WorldSize::Standard,
+            // For "Large" size: area <= 128 * 80
+            area if area < 10240 => WorldSize::Large,
+            // For "Huge" size: area >= 128 * 80
+            _ => WorldSize::Huge,
+        }
+    }
+
+    /// Set the default size of the grid based on the provided `WorldSize`.
+    ///
+    /// Maybe be as one function of trait in the future?
+    fn set_default_size(&mut self, world_size: WorldSize) {
+        let (width, height) = match world_size {
+            WorldSize::Duel => (40, 24),
+            WorldSize::Tiny => (56, 36),
+            WorldSize::Small => (66, 42),
+            WorldSize::Standard => (80, 52),
+            WorldSize::Large => (104, 64),
+            WorldSize::Huge => (128, 80),
+        };
+        let size = Size { width, height };
+        self.size = size;
+    }
+
+    /// Get the center of the grid in pixel coordinates.
     ///
     /// # Notice
     /// When we show the map, we need to set camera to the center of the map.
-    pub fn grid_center(&self) -> DVec2 {
+    pub fn center(&self) -> DVec2 {
         let width = self.size.width;
         let height = self.size.height;
 
@@ -97,40 +220,22 @@ impl HexGrid {
     }
 }
 
+/// Represents the size of a grid or map with a specified width and height.
 #[derive(Clone, Copy)]
-pub struct MapSize {
+pub struct Size {
     pub width: i32,
     pub height: i32,
-    pub world_size: WorldSize,
 }
 
-impl MapSize {
+impl Size {
     pub fn new(width: i32, height: i32) -> Self {
-        Self {
-            width,
-            height,
-            world_size: WorldSize::new(width, height),
-        }
-    }
-
-    pub const fn from_world_size(world_size: WorldSize) -> Self {
-        let (width, height) = match world_size {
-            WorldSize::Duel => (40, 24),
-            WorldSize::Tiny => (56, 36),
-            WorldSize::Small => (66, 42),
-            WorldSize::Standard => (80, 52),
-            WorldSize::Large => (104, 64),
-            WorldSize::Huge => (128, 80),
-        };
-
-        MapSize {
-            width,
-            height,
-            world_size,
-        }
+        Self { width, height }
     }
 }
 
+/// Defines standard world size presets for game maps or environments.
+///
+/// Variants represent different scale levels from smallest to largest.
 #[derive(Clone, Copy)]
 pub enum WorldSize {
     Duel,
@@ -139,35 +244,6 @@ pub enum WorldSize {
     Standard,
     Large,
     Huge,
-}
-
-impl WorldSize {
-    // Function to determine the WorldSize based on the width and height product
-    fn new(width: i32, height: i32) -> WorldSize {
-        let area = width * height;
-        match area {
-            // When area <= 40 * 24, set the WorldSize to "Duel" and give a warning message
-            area if area < 960 => {
-                eprintln!(
-                    "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is 40 * 24 = 960 in the original CIV5 game.",
-                    width, height, area
-                );
-                WorldSize::Duel
-            }
-            // For "Duel" size: area <= 56 * 36
-            area if area < 2016 => WorldSize::Duel,
-            // For "Tiny" size: area <= 66 * 42
-            area if area < 2772 => WorldSize::Tiny,
-            // For "Small" size: area <= 80 * 52
-            area if area < 4160 => WorldSize::Small,
-            // For "Standard" size: area <= 104 * 64
-            area if area < 6656 => WorldSize::Standard,
-            // For "Large" size: area <= 128 * 80
-            area if area < 10240 => WorldSize::Large,
-            // For "Huge" size: area >= 128 * 80
-            _ => WorldSize::Huge,
-        }
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -259,10 +335,12 @@ pub enum ResourceSetting {
 
 impl Default for MapParameters {
     fn default() -> Self {
-        let map_size = MapSize::from_world_size(WorldSize::Standard);
-        let grid_size = map_size;
-        let grid = HexGrid {
-            size: grid_size,
+        let world_size = WorldSize::Standard;
+        let mut grid = HexGrid {
+            size: Size {
+                width: 0,
+                height: 0,
+            },
             hex_layout: HexLayout {
                 orientation: HexOrientation::Flat,
                 size: DVec2::new(8., 8.),
@@ -274,12 +352,12 @@ impl Default for MapParameters {
             },
             offset: Offset::Odd,
         };
+        grid.set_default_size(world_size);
+
+        let world_grid = WorldGrid { grid, world_size };
         Self {
-            name: "perlin map".to_owned(),
-            map_size: MapSize::from_world_size(WorldSize::Standard),
             map_type: MapType::Fractal,
-            grid,
-            no_ruins: false,
+            world_grid,
             seed: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
@@ -303,26 +381,181 @@ impl Default for MapParameters {
 }
 
 #[derive(Debug, Clone, Copy)]
-/// This struct is used to describe a rectangular region of the map.
-/// We can use it to get all tiles in this region.
+/// Defines a rectangular region within a tile-based map coordinate system.
+///
+/// Provides functionality to retrieve all tiles contained within the region.
 pub struct Rectangle {
-    /// `west_x` should in the range `[0, map_width - 1]`. We will write these check in the future.
-    pub west_x: i32,
-    /// `south_y` should in the range `[0, map_height - 1]`. We will write these check in the future.
-    pub south_y: i32,
-    pub width: i32,
-    pub height: i32,
+    /// The origin point in offset coordinates.
+    ///
+    /// # Grid Interpretation
+    /// - Represents the south-west corner (bottom-left in visual terms)
+    ///
+    /// # Coordinate Constraints
+    /// - x ∈ [0, width)
+    /// - y ∈ [0, height)
+    ///
+    /// where `width` and `height` are the dimensions of the containing grid.
+    origin: OffsetCoordinate,
+
+    /// The horizontal extent of the rectangle in tile units.
+    ///
+    /// # Requirements
+    /// - Must be a positive integer (≥1)
+    width: i32,
+
+    /// The vertical extent of the rectangle in tile units.
+    ///
+    /// # Requirements
+    /// - Must be a positive integer (≥1)
+    height: i32,
 }
 
 impl Rectangle {
+    /// Creates a new rectangle with the given origin, width, height, and grid.
+    ///
+    /// # Parameters
+    /// - `origin`: The origin of the rectangle in offset coordinates.
+    /// This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    /// It can be any valid offset coordinate,
+    /// we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
+    /// - `width`: The width of the rectangle in tiles.
+    /// - `height`: The height of the rectangle in tiles.
+    /// - `grid`: The grid of the map. It is used to determine the map boundaries and wrapping behavior.
+    ///
+    /// # Panics
+    /// This function will panic if the rectangle is not valid.
+    pub fn new(origin: OffsetCoordinate, width: i32, height: i32, grid: HexGrid) -> Self {
+        // Debug-only validation
+        debug_assert!(
+            width > 0 && height > 0,
+            "Rectangle dimensions must be positive (got {}x{})",
+            width,
+            height
+        );
+        debug_assert!(
+            width <= grid.size.width && height <= grid.size.height,
+            "Rectangle dimensions {}x{} exceed grid size {}x{}",
+            width,
+            height,
+            grid.size.width,
+            grid.size.height
+        );
+
+        let [mut x, mut y] = origin.to_array();
+
+        // Apply wrapping if enabled
+        if let WrapType::Wrap = grid.map_wrapping.x {
+            x = x.rem_euclid(grid.size.width);
+        }
+
+        if let WrapType::Wrap = grid.map_wrapping.y {
+            y = y.rem_euclid(grid.size.height);
+        }
+
+        // Debug-only bounds checking
+        debug_assert!(
+            x >= 0 && x < grid.size.width && y >= 0 && y < grid.size.height,
+            "Origin coordinate ({},{}) is out of bounds for non-wrapped axes in {}x{} grid",
+            x,
+            y,
+            grid.size.width,
+            grid.size.height
+        );
+
+        Self {
+            origin: OffsetCoordinate::new(x, y),
+            width,
+            height,
+        }
+    }
+
+    /// Creates a new rectangle from the given origin and top-left corner.
+    ///
+    /// # Parameters
+    /// - `origin`: The origin of the rectangle in offset coordinates.
+    /// This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    /// It can be any valid offset coordinate,
+    /// we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
+    /// - `top_right_corner`: The top-right corner of the rectangle in offset coordinates.
+    /// This represents the top-right (north-east) corner of the rectangle in the grid.
+    /// It can be any valid offset coordinate.
+    /// - `grid`: The grid of the map. It is used to determine the map boundaries and wrapping behavior.
+    ///
+    /// # Panics
+    /// This function will panic if the rectangle is not valid.
+    pub fn from_corners(
+        origin: OffsetCoordinate,
+        top_right_corner: OffsetCoordinate,
+        grid: HexGrid,
+    ) -> Self {
+        let [mut x, mut y] = origin.to_array();
+        // Ensure origin's x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
+        if grid.map_wrapping.x == WrapType::Wrap {
+            x = x.rem_euclid(grid.size.width);
+        };
+        if grid.map_wrapping.y == WrapType::Wrap {
+            y = y.rem_euclid(grid.size.height);
+        };
+
+        let origin = OffsetCoordinate::new(x, y);
+
+        let [mut width, mut height] = (top_right_corner.0 - origin.0 + 1).to_array();
+
+        if grid.map_wrapping.x == WrapType::Wrap {
+            width = width.rem_euclid(grid.size.width);
+        }
+        if grid.map_wrapping.y == WrapType::Wrap {
+            height = height.rem_euclid(grid.size.height);
+        }
+
+        debug_assert!(
+            x >= 0
+                && x < grid.size.width
+                && y >= 0
+                && y < grid.size.height
+                && width > 0
+                && width <= grid.size.width
+                && height > 0
+                && height <= grid.size.height,
+            "The rectangle does not exist"
+        );
+
+        Self {
+            origin,
+            width,
+            height,
+        }
+    }
+
+    #[inline]
+    pub fn origin(&self) -> OffsetCoordinate {
+        self.origin
+    }
+
+    #[inline]
+    pub fn west_x(&self) -> i32 {
+        self.origin.0.x
+    }
+
+    #[inline]
+    pub fn south_y(&self) -> i32 {
+        self.origin.0.y
+    }
+
+    #[inline]
+    pub fn width(&self) -> i32 {
+        self.width
+    }
+
+    #[inline]
+    pub fn height(&self) -> i32 {
+        self.height
+    }
+
     /// Returns an iterator over all tiles in current rectangle region of the map.
-    pub fn iter_tiles<'a>(
-        &'a self,
-        map_parameters: &'a MapParameters,
-    ) -> impl Iterator<Item = Tile> + 'a {
-        let grid = map_parameters.grid;
-        (self.south_y..self.south_y + self.height).flat_map(move |y| {
-            (self.west_x..self.west_x + self.width).map(move |x| {
+    pub fn iter_tiles<'a>(&'a self, grid: HexGrid) -> impl Iterator<Item = Tile> + 'a {
+        (self.south_y()..self.south_y() + self.height).flat_map(move |y| {
+            (self.west_x()..self.west_x() + self.width).map(move |x| {
                 let offset_coordinate = OffsetCoordinate::new(x, y);
                 Tile::from_offset_coordinate(grid, offset_coordinate)
                     .expect("Offset coordinate is outside the map!")
@@ -333,23 +566,22 @@ impl Rectangle {
     /// Checks if the given tile is inside the current rectangle.
     ///
     /// Returns `true` if the given tile is inside the current rectangle.
-    pub fn contains(&self, map_parameters: &MapParameters, tile: Tile) -> bool {
-        let grid = map_parameters.grid;
+    pub fn contains(&self, grid: HexGrid, tile: Tile) -> bool {
         let [mut x, mut y] = tile.to_offset_coordinate(grid).to_array();
 
         // We should consider the map is wrapped around horizontally.
-        if x < self.west_x {
-            x += map_parameters.map_size.width;
+        if x < self.west_x() {
+            x += grid.size.width;
         }
 
         // We should consider the map is wrapped around vertically.
-        if y < self.south_y {
-            y += map_parameters.map_size.height;
+        if y < self.south_y() {
+            y += grid.size.height;
         }
 
-        x >= self.west_x
-            && x < self.west_x + self.width
-            && y >= self.south_y
-            && y < self.south_y + self.height
+        x >= self.west_x()
+            && x < self.west_x() + self.width
+            && y >= self.south_y()
+            && y < self.south_y() + self.height
     }
 }
