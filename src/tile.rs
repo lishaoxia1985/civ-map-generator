@@ -38,8 +38,8 @@ impl Tile {
     /// Converts an offset coordinate to the corresponding tile based on map parameters.
     ///
     /// # Parameters
-    /// - `map_parameters`: A reference to the map parameters, which includes map size and wrapping behavior.
-    /// - `offset_coordinate`: The offset coordinate to convert.
+    /// - `grid`: A `HexGrid` that contains the map size and wrapping information.
+    /// - `offset_coordinate`: An `OffsetCoordinate` that represents the position on the map.
     ///
     /// # Returns
     /// - `Result<Self, String>`: Returns an instance of `Self` if the coordinate is valid,
@@ -72,7 +72,7 @@ impl Tile {
     /// Converts a tile to the corresponding offset coordinate based on map parameters.
     ///
     /// # Parameters
-    /// - `map_parameters`: A reference to `MapParameters`, which contains the dimensions of the map.
+    /// - `grid`: A `HexGrid` that contains the map size information.
     ///
     /// # Returns
     /// Returns an `OffsetCoordinate` that corresponds to the provided tile, calculated based on the map parameters.
@@ -98,7 +98,7 @@ impl Tile {
     /// Converts the current tile to a hexagonal coordinate based on the map parameters.
     ///
     /// # Returns
-    /// Returns a `Hex` coordinate that corresponds to the provided map position, calculated based on the map parameters.
+    /// Returns a `Hex` coordinate that corresponds to the provided map position, calculated based on the map grid parameters.
     /// This coordinate represents the position in hexagonal space within the map grid.
     ///
     /// # Panics
@@ -119,7 +119,7 @@ impl Tile {
     /// while a value approaching `1.0` indicates proximity to the poles.
     ///
     /// # Parameters
-    /// - `map_parameters`: A reference to `MapParameters`, which contains the size and dimensions of the map.
+    /// - `grid`: A `HexGrid` that contains the map size information.
     ///
     /// # Returns
     /// A `f64` representing the latitude of the tile, with values ranging from `0.0` (equator) to `1.0` (poles).
@@ -183,7 +183,7 @@ impl Tile {
     ///
     /// # Parameters
     /// - `direction`: The direction to locate the neighboring tile.
-    /// - `map_parameters`: A reference to the map parameters that include layout and offset information.
+    /// - `grid`: The grid parameters that include layout and offset information.
     ///
     /// # Returns
     /// An `Option<TileIndex>`. This is `Some` if the neighboring tile exists,
@@ -251,11 +251,10 @@ impl Tile {
     /// - `map_parameters`: A reference to the map parameters, which include hex layout settings.
     /// # Returns
     /// - `bool`: Returns true if there is a river on the current tile, false otherwise.
-    pub fn has_river(&self, tile_map: &TileMap, map_parameters: &MapParameters) -> bool {
-        map_parameters
-            .edge_direction_array()
+    pub fn has_river(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
+        grid.edge_direction_array()
             .iter()
-            .any(|&direction| self.has_river_in_direction(direction, tile_map, map_parameters.grid))
+            .any(|&direction| self.has_river_in_direction(direction, tile_map, grid))
     }
 
     /// Checks if there is a river on the current tile in the specified direction.
@@ -316,12 +315,12 @@ impl Tile {
     /// Check if the tile is freshwater
     ///
     /// Freshwater is not water and is adjacent to lake, oasis or has a river
-    pub fn is_freshwater(&self, tile_map: &TileMap, map_parameters: &MapParameters) -> bool {
+    pub fn is_freshwater(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
         self.terrain_type(tile_map) != TerrainType::Water
-            && (self.neighbor_tiles(map_parameters.grid).iter().any(|tile| {
+            && (self.neighbor_tiles(grid).iter().any(|tile| {
                 tile.base_terrain(tile_map) == BaseTerrain::Lake
                     || tile.feature(tile_map) == Some(Feature::Oasis)
-            }) || self.has_river(tile_map, map_parameters))
+            }) || self.has_river(tile_map, grid))
     }
 
     /// Check if the tile is coastal land.
@@ -329,10 +328,10 @@ impl Tile {
     /// A tile is considered `coastal land` if it is not `Water` and has at least one neighboring tile that is `Coast`.
     /// # Notice
     /// If the tile is not `Water` and has at least one neighboring tile that is `Lake`, but it has no neighboring tile that is `Coast`, it is not `coastal land`.
-    pub fn is_coastal_land(&self, tile_map: &TileMap, map_parameters: &MapParameters) -> bool {
+    pub fn is_coastal_land(&self, tile_map: &TileMap, grid: HexGrid) -> bool {
         self.terrain_type(tile_map) != TerrainType::Water
             && self
-                .neighbor_tiles(map_parameters.grid)
+                .neighbor_tiles(grid)
                 .iter()
                 .any(|&tile| tile.base_terrain(tile_map) == BaseTerrain::Coast)
     }
@@ -356,13 +355,14 @@ impl Tile {
         tile_map: &TileMap,
         map_parameters: &MapParameters,
     ) -> bool {
+        let grid = map_parameters.grid;
         // This variable is the maximum distance a Settler can move.
         // It can be customized in the MapParameters in the future.
         const SETTLER_MOVEMENT: u32 = 2;
         matches!(
             self.terrain_type(tile_map),
             TerrainType::Flatland | TerrainType::Hill
-        ) && (self.is_coastal_land(tile_map, map_parameters)
+        ) && (self.is_coastal_land(tile_map, grid)
             || (!map_parameters.civilization_starting_tile_must_be_coastal_land
                 && self
                     .tiles_in_distance(SETTLER_MOVEMENT, map_parameters.grid)

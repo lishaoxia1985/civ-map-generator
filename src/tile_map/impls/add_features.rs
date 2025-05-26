@@ -58,7 +58,7 @@ impl TileMap {
             if tile.is_impassable(self, &ruleset) {
                 continue;
             } else if tile.terrain_type(self) == TerrainType::Water {
-                if !tile.has_river(self, map_parameters)
+                if !tile.has_river(self, grid)
                     && ruleset.features["Ice"]
                         .occurs_on_type
                         .contains(&tile.terrain_type(self))
@@ -90,7 +90,7 @@ impl TileMap {
             else {
                 /* **********start to add Floodplain********** */
                 num_land_plots += 1;
-                if tile.has_river(self, map_parameters)
+                if tile.has_river(self, grid)
                     && ruleset.features["Floodplain"]
                         .occurs_on_type
                         .contains(&tile.terrain_type(self))

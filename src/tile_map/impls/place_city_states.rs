@@ -25,6 +25,8 @@ impl TileMap {
     /// This is because some city state placements are made as compensation for situations where
     /// multiple regions are assigned the same luxury resource type.
     pub fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let grid = map_parameters.grid;
+
         self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
         let mut city_state_list = ruleset
@@ -116,7 +118,7 @@ impl TileMap {
 
             self.iter_tiles().for_each(|tile| {
                 if tile.can_be_city_state_starting_tile(self, None, false, false) {
-                    if tile.is_coastal_land(self, map_parameters) {
+                    if tile.is_coastal_land(self, grid) {
                         coastal_tile_list.push(tile);
                     } else {
                         inland_tile_list.push(tile);
@@ -203,6 +205,8 @@ impl TileMap {
         force_it: bool,
         ignore_collisions: bool,
     ) -> [Vec<Tile>; 2] {
+        let grid = map_parameters.grid;
+
         let region = &self.region_list[region_index];
         let rectangle = &region.rectangle;
 
@@ -255,7 +259,7 @@ impl TileMap {
                     force_it,
                     ignore_collisions,
                 ) {
-                    if tile.is_coastal_land(self, map_parameters) {
+                    if tile.is_coastal_land(self, grid) {
                         coastal_tile_list.push(tile);
                     } else {
                         inland_tile_list.push(tile);
@@ -272,7 +276,7 @@ impl TileMap {
                         force_it,
                         ignore_collisions,
                     ) {
-                        if tile.is_coastal_land(self, map_parameters) {
+                        if tile.is_coastal_land(self, grid) {
                             coastal_tile_list.push(tile);
                         } else {
                             inland_tile_list.push(tile);
@@ -354,6 +358,8 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) {
+        let grid = map_parameters.grid;
+
         let mut num_city_states_unassigned = map_parameters.city_state_num;
 
         // Store region index which city state is assigned to
@@ -411,7 +417,7 @@ impl TileMap {
                             num_civ_landmass_tiles += 1;
                         } else {
                             num_uninhabited_landmass_tiles += 1;
-                            if tile.is_coastal_land(self, map_parameters) {
+                            if tile.is_coastal_land(self, grid) {
                                 self.uninhabited_areas_coastal_land_tiles.push(tile)
                             } else {
                                 self.uninhabited_areas_inland_tiles.push(tile)
@@ -454,7 +460,7 @@ impl TileMap {
                                         TerrainType::Flatland | TerrainType::Hill
                                     ) && tile.base_terrain(self) != BaseTerrain::Snow
                                 ); */
-                                if tile.is_coastal_land(self, map_parameters) {
+                                if tile.is_coastal_land(self, grid) {
                                     self.uninhabited_areas_coastal_land_tiles.push(tile);
                                 } else {
                                     self.uninhabited_areas_inland_tiles.push(tile);
@@ -643,7 +649,7 @@ impl TileMap {
                         } else if feature == Some(Feature::Forest) {
                             inner_can_have_bonus += 1;
                         }
-                    } else if tile.is_freshwater(self, map_parameters) {
+                    } else if tile.is_freshwater(self, grid) {
                         match base_terrain {
                             BaseTerrain::Grassland => {
                                 inner_four_food += 1;
@@ -761,7 +767,7 @@ impl TileMap {
                             } else if feature == Some(Feature::Forest) {
                                 outer_can_have_bonus += 1;
                             }
-                        } else if tile_at_distance_two.is_freshwater(self, map_parameters) {
+                        } else if tile_at_distance_two.is_freshwater(self, grid) {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     outer_four_food += 1;

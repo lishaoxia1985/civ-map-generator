@@ -631,10 +631,11 @@ impl TileMap {
         map_parameters: &MapParameters,
         tile: Tile,
     ) -> bool {
+        let grid = map_parameters.grid;
         if tile.resource(self).is_none()
             && tile.terrain_type(self) != TerrainType::Water
             && tile.feature(self) != Some(Feature::Forest)
-            && !tile.has_river(self, map_parameters)
+            && !tile.has_river(self, grid)
         {
             self.terrain_type_query[tile.index()] = TerrainType::Hill;
             self.feature_query[tile.index()] = None;
@@ -686,6 +687,8 @@ impl TileMap {
         tile: Tile,
         allow_oasis: bool,
     ) -> (bool, bool) {
+        let grid = map_parameters.grid;
+
         let terrain_type = tile.terrain_type(self);
         let base_terrain = tile.base_terrain(self);
         let feature = tile.feature(self);
@@ -711,7 +714,7 @@ impl TileMap {
                                 return (true, false);
                             }
                             BaseTerrain::Desert => {
-                                if tile.is_freshwater(self, map_parameters) {
+                                if tile.is_freshwater(self, grid) {
                                     self.resource_query[tile.index()] =
                                         Some((Resource::Resource("Wheat".to_owned()), 1));
                                     return (true, false);

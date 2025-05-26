@@ -54,7 +54,7 @@ impl TileMap {
         // Notice: Now it is only used for `Great Barrier Reef`,
         //         in original game, neighbor_tile_direction is not randomly selected.
         //         it is always Direction::SouthEast.
-        let neighbor_tile_direction = *map_parameters
+        let neighbor_tile_direction = *grid
             .edge_direction_array()
             .choose(&mut self.random_number_generator)
             .expect("Failed to choose a random direction");
@@ -102,8 +102,7 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self, map_parameters)
-                            != possible_natural_wonder.is_fresh_water
+                        if tile.is_freshwater(self, grid) != possible_natural_wonder.is_fresh_water
                         {
                             continue;
                         };
@@ -382,7 +381,7 @@ impl TileMap {
         // Notice: Now it is only used for `Great Barrier Reef`,
         //         in original game, neighbor_tile_direction is not randomly selected.
         //         it is always Direction::SouthEast.
-        let neighbor_tile_direction = *map_parameters
+        let neighbor_tile_direction = *grid
             .edge_direction_array()
             .choose(&mut self.random_number_generator)
             .expect("Failed to choose a random direction");
@@ -430,8 +429,7 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self, map_parameters)
-                            != possible_natural_wonder.is_fresh_water
+                        if tile.is_freshwater(self, grid) != possible_natural_wonder.is_fresh_water
                         {
                             continue;
                         };

@@ -16,7 +16,6 @@ pub struct MapParameters {
     pub map_size: MapSize,
     pub map_type: MapType,
     pub grid: HexGrid,
-    pub map_wrapping: MapWrapping,
     /// The map use which type of offset coordinate
     pub no_ruins: bool,
     pub seed: u64,
@@ -49,6 +48,53 @@ pub struct HexGrid {
     pub hex_layout: HexLayout,
     pub map_wrapping: MapWrapping,
     pub offset: Offset,
+}
+
+impl HexGrid {
+    /// Get the center of the map in pixel coordinates.
+    ///
+    /// # Notice
+    /// When we show the map, we need to set camera to the center of the map.
+    pub fn grid_center(&self) -> DVec2 {
+        let width = self.size.width;
+        let height = self.size.height;
+
+        let (min_offset_x, min_offset_y) = [0, 1, width].into_iter().fold(
+            (0.0_f64, 0.0_f64),
+            |(min_offset_x, min_offset_y), index| {
+                let hex = Tile::new(index as usize).to_hex_coordinate(*self);
+
+                let [offset_x, offset_y] = self.hex_layout.hex_to_pixel(hex).to_array();
+                (min_offset_x.min(offset_x), min_offset_y.min(offset_y))
+            },
+        );
+
+        let (max_offset_x, max_offset_y) = [
+            width * (height - 1) - 1,
+            width * height - 2,
+            width * height - 1,
+        ]
+        .into_iter()
+        .fold((0.0_f64, 0.0_f64), |(max_offset_x, max_offset_y), index| {
+            let hex = Tile::new(index as usize).to_hex_coordinate(*self);
+
+            let [offset_x, offset_y] = self.hex_layout.hex_to_pixel(hex).to_array();
+            (max_offset_x.max(offset_x), max_offset_y.max(offset_y))
+        });
+
+        DVec2::new(
+            (min_offset_x + max_offset_x) / 2.,
+            (min_offset_y + max_offset_y) / 2.,
+        )
+    }
+
+    pub const fn edge_direction_array(&self) -> [Direction; 6] {
+        self.hex_layout.orientation.edge_direction()
+    }
+
+    pub const fn corner_direction_array(&self) -> [Direction; 6] {
+        self.hex_layout.orientation.corner_direction()
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -143,8 +189,6 @@ pub enum WrapType {
     None,
     /// The map will wrap around.
     Wrap,
-    /// The edges of the map will be all water tiles.
-    Polar,
 }
 
 pub enum MapType {
@@ -226,7 +270,7 @@ impl Default for MapParameters {
             },
             map_wrapping: MapWrapping {
                 x: WrapType::Wrap,
-                y: WrapType::Polar,
+                y: WrapType::None,
             },
             offset: Offset::Odd,
         };
@@ -235,10 +279,6 @@ impl Default for MapParameters {
             map_size: MapSize::from_world_size(WorldSize::Standard),
             map_type: MapType::Fractal,
             grid,
-            map_wrapping: MapWrapping {
-                x: WrapType::Wrap,
-                y: WrapType::Polar,
-            },
             no_ruins: false,
             seed: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -259,54 +299,6 @@ impl Default for MapParameters {
             civilization_starting_tile_must_be_coastal_land: false,
             resource_setting: ResourceSetting::Standard,
         }
-    }
-}
-
-impl MapParameters {
-    /// Get the center of the map in pixel coordinates.
-    ///
-    /// # Notice
-    /// When we show the map, we need to set camera to the center of the map.
-    pub fn map_center(&self) -> DVec2 {
-        let grid = self.grid;
-        let width = self.map_size.width;
-        let height = self.map_size.height;
-
-        let (min_offset_x, min_offset_y) = [0, 1, width].into_iter().fold(
-            (0.0_f64, 0.0_f64),
-            |(min_offset_x, min_offset_y), index| {
-                let hex = Tile::new(index as usize).to_hex_coordinate(grid);
-
-                let [offset_x, offset_y] = self.grid.hex_layout.hex_to_pixel(hex).to_array();
-                (min_offset_x.min(offset_x), min_offset_y.min(offset_y))
-            },
-        );
-
-        let (max_offset_x, max_offset_y) = [
-            width * (height - 1) - 1,
-            width * height - 2,
-            width * height - 1,
-        ]
-        .into_iter()
-        .fold((0.0_f64, 0.0_f64), |(max_offset_x, max_offset_y), index| {
-            let hex = Tile::new(index as usize).to_hex_coordinate(grid);
-
-            let [offset_x, offset_y] = self.grid.hex_layout.hex_to_pixel(hex).to_array();
-            (max_offset_x.max(offset_x), max_offset_y.max(offset_y))
-        });
-
-        DVec2::new(
-            (min_offset_x + max_offset_x) / 2.,
-            (min_offset_y + max_offset_y) / 2.,
-        )
-    }
-
-    pub const fn edge_direction_array(&self) -> [Direction; 6] {
-        self.grid.hex_layout.orientation.edge_direction()
-    }
-
-    pub const fn corner_direction_array(&self) -> [Direction; 6] {
-        self.grid.hex_layout.orientation.corner_direction()
     }
 }
 

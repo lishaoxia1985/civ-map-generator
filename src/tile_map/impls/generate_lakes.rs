@@ -114,7 +114,7 @@ impl TileMap {
         // Check if the current tile is suitable for a lake
         if tile.terrain_type(self) == TerrainType::Water
             || tile.natural_wonder(self).is_some()
-            || tile.has_river(self, map_parameters)
+            || tile.has_river(self, grid)
         {
             return false;
         }

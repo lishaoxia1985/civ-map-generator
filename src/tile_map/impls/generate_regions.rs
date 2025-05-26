@@ -259,6 +259,8 @@ impl TileMap {
         tile: Tile,
         check_for_coastal_land: bool,
     ) -> i32 {
+        let grid = map_parameters.grid;
+
         let mut tile_fertility = 0;
         let terrain_type = tile.terrain_type(self);
         let base_terrain = tile.base_terrain(self);
@@ -310,15 +312,15 @@ impl TileMap {
             }
         }
 
-        if tile.has_river(self, map_parameters) {
+        if tile.has_river(self, grid) {
             tile_fertility += 1;
         }
 
-        if tile.is_freshwater(self, map_parameters) {
+        if tile.is_freshwater(self, grid) {
             tile_fertility += 1;
         }
 
-        if check_for_coastal_land && tile.is_coastal_land(self, map_parameters) {
+        if check_for_coastal_land && tile.is_coastal_land(self, grid) {
             tile_fertility += 2;
         }
 
@@ -343,7 +345,7 @@ impl TileMap {
         let mut north_y = 0;
 
         // Check if the landmass wraps around the map horizontally.
-        if map_parameters.map_wrapping.x == WrapType::Wrap {
+        if grid.map_wrapping.x == WrapType::Wrap {
             let mut found_first_column = false;
             let mut found_last_column = false;
 
@@ -379,7 +381,7 @@ impl TileMap {
         }
 
         // Check if the landmass wraps around the map vertically.
-        if map_parameters.map_wrapping.y == WrapType::Wrap {
+        if grid.map_wrapping.y == WrapType::Wrap {
             let mut found_first_row = false;
             let mut found_last_row = false;
             for x in 0..map_width {
@@ -1088,18 +1090,18 @@ impl Region {
                             terrain_statistic.feature_num[feature] += 1;
                         }
 
-                        if tile.has_river(tile_map, map_parameters) {
+                        if tile.has_river(tile_map, grid) {
                             terrain_statistic.river_num += 1;
                         }
 
-                        if tile.is_coastal_land(tile_map, map_parameters) {
+                        if tile.is_coastal_land(tile_map, grid) {
                             terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
-                        if !tile.is_coastal_land(tile_map, map_parameters)
+                        if !tile.is_coastal_land(tile_map, grid)
                             && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
-                                neighbor_tile.is_coastal_land(tile_map, map_parameters)
+                                neighbor_tile.is_coastal_land(tile_map, grid)
                             })
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
@@ -1116,18 +1118,18 @@ impl Region {
                             terrain_statistic.feature_num[feature] += 1;
                         }
 
-                        if tile.has_river(tile_map, map_parameters) {
+                        if tile.has_river(tile_map, grid) {
                             terrain_statistic.river_num += 1;
                         }
 
-                        if tile.is_coastal_land(tile_map, map_parameters) {
+                        if tile.is_coastal_land(tile_map, grid) {
                             terrain_statistic.coastal_land_num += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
-                        if !tile.is_coastal_land(tile_map, map_parameters)
+                        if !tile.is_coastal_land(tile_map, grid)
                             && tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
-                                neighbor_tile.is_coastal_land(tile_map, map_parameters)
+                                neighbor_tile.is_coastal_land(tile_map, grid)
                             })
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;

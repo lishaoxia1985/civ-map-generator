@@ -535,6 +535,8 @@ impl TileMap {
     }
 
     fn place_marble(&mut self, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
+
         let luxury_resource = "Marble".to_string();
         let marble_already_placed: u32 = self.placed_resource_count(&luxury_resource);
 
@@ -558,7 +560,7 @@ impl TileMap {
                     if feature == None {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                if !tile.is_freshwater(self, map_parameters) {
+                                if !tile.is_freshwater(self, grid) {
                                     marble_tile_list.push(tile);
                                 }
                             }
@@ -566,7 +568,7 @@ impl TileMap {
                                 marble_tile_list.push(tile);
                             }
                             BaseTerrain::Plain => {
-                                if !tile.is_freshwater(self, map_parameters) {
+                                if !tile.is_freshwater(self, grid) {
                                     marble_tile_list.push(tile);
                                 }
                             }
@@ -690,7 +692,7 @@ impl TileMap {
                         } else {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
-                                    if tile.is_freshwater(self, map_parameters) {
+                                    if tile.is_freshwater(self, grid) {
                                         region_fresh_water_grass_flat_no_feature_tile_list
                                             .push(tile);
                                     } else {
@@ -826,8 +828,7 @@ impl TileMap {
                                 } else {
                                     match base_terrain {
                                         BaseTerrain::Grassland => {
-                                            if tile_at_distance.is_freshwater(self, map_parameters)
-                                            {
+                                            if tile_at_distance.is_freshwater(self, grid) {
                                                 region_fresh_water_grass_flat_no_feature_tile_list
                                                     .push(tile_at_distance);
                                             } else {
@@ -993,7 +994,7 @@ impl TileMap {
                     } else {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self, map_parameters) {
+                                if tile.is_freshwater(self, grid) {
                                     region_fresh_water_grass_flat_no_feature_tile_list.push(tile);
                                 } else {
                                     region_dry_grass_flat_no_feature_tile_list.push(tile);
@@ -1110,7 +1111,7 @@ impl TileMap {
                             } else {
                                 match base_terrain {
                                     BaseTerrain::Grassland => {
-                                        if tile.is_freshwater(self, map_parameters) {
+                                        if tile.is_freshwater(self, grid) {
                                             allowed_luxuries.insert("Sugar".to_string());
                                             allowed_luxuries.insert("Cotton".to_string());
                                             allowed_luxuries.insert("Wine".to_string());

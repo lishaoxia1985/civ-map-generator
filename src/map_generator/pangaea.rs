@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{
     component::map_component::terrain_type::TerrainType,
-    fractal::{CvFractal, Flags},
+    fractal::{CvFractal, FractalFlags},
     generate_common_methods,
     map_parameters::{MapParameters, SeaLevel, WorldAge, WorldSize},
     tile_map::TileMap,
@@ -74,31 +74,17 @@ impl Generator for Pangaea {
 
         let grid = map_parameters.grid;
 
-        let width = map_parameters.map_size.width;
-        let height = map_parameters.map_size.height;
-
         let continents_fractal = tile_map.continents_fractal(map_parameters);
 
-        let mut mountains_fractal = CvFractal::create(
-            &mut tile_map.random_number_generator,
-            width,
-            height,
-            4,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
-            7,
-            6,
-        );
+        let flags = FractalFlags::empty();
+
+        let mut mountains_fractal =
+            CvFractal::create(&mut tile_map.random_number_generator, grid, 4, flags, 7, 6);
 
         mountains_fractal.ridge_builder(
             &mut tile_map.random_number_generator,
             num_plates * 2 / 3,
-            &Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             6,
             1,
             grid,
@@ -106,13 +92,9 @@ impl Generator for Pangaea {
 
         let mut hills_fractal = CvFractal::create(
             &mut tile_map.random_number_generator,
-            width,
-            height,
+            grid,
             grain,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             7,
             6,
         );
@@ -120,10 +102,7 @@ impl Generator for Pangaea {
         hills_fractal.ridge_builder(
             &mut tile_map.random_number_generator,
             num_plates,
-            &Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             1,
             2,
             grid,

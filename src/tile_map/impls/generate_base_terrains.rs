@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::{
     component::map_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
-    fractal::{CvFractal, Flags},
+    fractal::{CvFractal, FractalFlags},
     map_parameters::Temperature,
     tile_map::{MapParameters, TileMap},
 };
@@ -52,40 +52,30 @@ impl TileMap {
         let plains_top_percent = 100;
         let plains_bottom_percent = max(0, 100 - plains_percent);
 
+        let flags = FractalFlags::empty();
+
         //let (seed, seed2, seed3) = self.random_number_generator.gen();
         let variation_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            grid,
             grain_amount,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             -1,
             -1,
         );
         let deserts_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            grid,
             grain_amount,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             -1,
             -1,
         );
         let plains_fractal = CvFractal::create(
             &mut self.random_number_generator,
-            map_parameters.map_size.width,
-            map_parameters.map_size.height,
+            grid,
             grain_amount,
-            Flags {
-                map_wrapping: map_parameters.map_wrapping,
-                ..Default::default()
-            },
+            flags,
             -1,
             -1,
         );

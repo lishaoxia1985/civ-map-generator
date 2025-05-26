@@ -463,6 +463,8 @@ impl TileMap {
         frequency: f64,
         plot_list: &[Tile],
     ) {
+        let grid = map_parameters.grid;
+
         if plot_list.is_empty() {
             return;
         }
@@ -552,7 +554,7 @@ impl TileMap {
                     match terrain_type {
                         TerrainType::Flatland => match base_terrain {
                             BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self, map_parameters) {
+                                if tile.is_freshwater(self, grid) {
                                     selected_resource = Some("Horses");
                                     selected_quantity = horse_amt;
                                 } else {
@@ -761,6 +763,8 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) -> [Vec<Tile>; 11] {
+        let grid = map_parameters.grid;
+
         let mut coast_list = Vec::new();
         let mut flatland_list = Vec::new(); // very complex
         let mut jungle_flat_list = Vec::new();
@@ -826,7 +830,7 @@ impl TileMap {
                         } else {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
-                                    if tile.is_freshwater(self, map_parameters) {
+                                    if tile.is_freshwater(self, grid) {
                                         /* region_fresh_water_grass_flat_no_feature_tile_list
                                         .push(tile); */
                                     } else {

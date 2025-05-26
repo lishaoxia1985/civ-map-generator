@@ -227,6 +227,7 @@ impl TileMap {
 
     // function AssignStartingPlots:AddExtraBonusesToHillsRegions
     fn add_extra_bonuses_to_hills_regions(&mut self, map_parameters: &MapParameters) {
+        let grid = map_parameters.grid;
         // Identify Hills Regions, if any.
         let mut hills_region_indices = Vec::new();
         for (region_index, region) in self.region_list.iter().enumerate() {
@@ -312,7 +313,7 @@ impl TileMap {
                                     BaseTerrain::Grassland
                                         | BaseTerrain::Plain
                                         | BaseTerrain::Tundra
-                                ) && !tile.is_freshwater(self, map_parameters)
+                                ) && !tile.is_freshwater(self, grid)
                                 {
                                     dry_hills.push(tile);
                                 }
@@ -322,7 +323,7 @@ impl TileMap {
                                         flat_grass.push(tile);
                                     }
                                     BaseTerrain::Desert => {
-                                        if tile.is_freshwater(self, map_parameters) {
+                                        if tile.is_freshwater(self, grid) {
                                             flat_plains.push(tile);
                                         }
                                     }
@@ -504,7 +505,7 @@ impl TileMap {
                                 } else if feature == Some(Feature::Floodplain) {
                                     plot_list.push(tile);
                                 } else if base_terrain == BaseTerrain::Desert
-                                    && tile.is_freshwater(self, map_parameters)
+                                    && tile.is_freshwater(self, grid)
                                 {
                                     plot_list.push(tile);
                                 }
@@ -630,6 +631,8 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) -> [Vec<Tile>; 11] {
+        let grid = map_parameters.grid;
+
         let mut extra_deer_list = Vec::new(); // forest, tundra, (hill or flat)
         let mut desert_wheat_list = Vec::new(); // flood_plain or flat desert with fresh water
         let mut banana_list = Vec::new(); // jungle, (hill or flat)
@@ -656,7 +659,7 @@ impl TileMap {
                     || (terrain_type == TerrainType::Flatland
                         && base_terrain == BaseTerrain::Desert
                         && feature == None
-                        && tile.is_freshwater(self, map_parameters))
+                        && tile.is_freshwater(self, grid))
                 {
                     desert_wheat_list.push(tile);
                 }
@@ -709,7 +712,7 @@ impl TileMap {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     grass_flat_no_feature.push(tile);
-                                    if tile.is_freshwater(self, map_parameters) {
+                                    if tile.is_freshwater(self, grid) {
                                         /* region_fresh_water_grass_flat_no_feature_tile_list
                                         .push(tile); */
                                     } else {

@@ -651,11 +651,11 @@ impl TileMap {
         let mut num_grassland = 0;
         let mut num_plain = 0;
 
-        if starting_tile.is_coastal_land(self, map_parameters) {
+        if starting_tile.is_coastal_land(self, grid) {
             along_ocean = true;
         }
 
-        if starting_tile.has_river(self, map_parameters) {
+        if starting_tile.has_river(self, grid) {
             is_river = true;
         }
 
@@ -690,7 +690,7 @@ impl TileMap {
                         forest_count += 1;
                     }
 
-                    if neighbor_tile.has_river(self, map_parameters) {
+                    if neighbor_tile.has_river(self, grid) {
                         near_river = true;
                     }
 
@@ -709,7 +709,7 @@ impl TileMap {
                     } else if feature == Some(Feature::Oasis) {
                         inner_three_food += 1;
                         num_native_two_food_first_ring += 1;
-                    } else if neighbor_tile.is_freshwater(self, map_parameters) {
+                    } else if neighbor_tile.is_freshwater(self, grid) {
                         match base_terrain {
                             BaseTerrain::Grassland => {
                                 inner_four_food += 1;
@@ -845,7 +845,7 @@ impl TileMap {
                             forest_count += 1;
                         }
 
-                        if tile_at_distance_two.has_river(self, map_parameters) {
+                        if tile_at_distance_two.has_river(self, grid) {
                             near_river = true;
                         }
 
@@ -864,7 +864,7 @@ impl TileMap {
                         } else if feature == Some(Feature::Oasis) {
                             outer_three_food += 1;
                             num_native_two_food_second_ring += 1;
-                        } else if tile_at_distance_two.is_freshwater(self, map_parameters) {
+                        } else if tile_at_distance_two.is_freshwater(self, grid) {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
                                     outer_four_food += 1;

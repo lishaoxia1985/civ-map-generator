@@ -253,9 +253,9 @@ impl TileMap {
                     if center_rectangle.contains(map_parameters, tile) {
                         // Center Bias
                         center_coastal_plots.push(tile);
-                        if tile.has_river(self, map_parameters) {
+                        if tile.has_river(self, grid) {
                             center_plots_on_river.push(tile);
-                        } else if tile.is_freshwater(self, map_parameters) {
+                        } else if tile.is_freshwater(self, grid) {
                             center_fresh_plots.push(tile);
                         } else {
                             center_dry_plots.push(tile);
@@ -263,9 +263,9 @@ impl TileMap {
                     } else if middle_rectangle.contains(map_parameters, tile) {
                         // Middle Bias
                         middle_coastal_plots.push(tile);
-                        if tile.has_river(self, map_parameters) {
+                        if tile.has_river(self, grid) {
                             middle_plots_on_river.push(tile);
-                        } else if tile.is_freshwater(self, map_parameters) {
+                        } else if tile.is_freshwater(self, grid) {
                             middle_fresh_plots.push(tile);
                         } else {
                             middle_dry_plots.push(tile);
@@ -555,10 +555,10 @@ impl TileMap {
                     if center_rectangle.contains(map_parameters, tile) {
                         // Center Bias
                         center_candidates.push(tile);
-                        if tile.has_river(self, map_parameters) {
+                        if tile.has_river(self, grid) {
                             center_river.push(tile);
-                        } else if tile.is_freshwater(self, map_parameters)
-                            || tile.is_coastal_land(self, map_parameters)
+                        } else if tile.is_freshwater(self, grid)
+                            || tile.is_coastal_land(self, grid)
                         {
                             center_coastal_land_and_freshwater.push(tile);
                         } else {
@@ -567,10 +567,10 @@ impl TileMap {
                     } else if middle_rectangle.contains(map_parameters, tile) {
                         // Middle Bias
                         middle_candidates.push(tile);
-                        if tile.has_river(self, map_parameters) {
+                        if tile.has_river(self, grid) {
                             middle_river.push(tile);
-                        } else if tile.is_freshwater(self, map_parameters)
-                            || tile.is_coastal_land(self, map_parameters)
+                        } else if tile.is_freshwater(self, grid)
+                            || tile.is_coastal_land(self, grid)
                         {
                             middle_coastal_land_and_freshwater.push(tile);
                         } else {
@@ -849,7 +849,7 @@ impl TileMap {
         let mut river_total = 0;
         let mut coastal_land_score = 0;
 
-        if tile.is_coastal_land(self, map_parameters) {
+        if tile.is_coastal_land(self, grid) {
             coastal_land_score = 40;
         }
 
@@ -871,7 +871,7 @@ impl TileMap {
                         }
                     }
                 });
-            if neighbor_tile.has_river(self, map_parameters) {
+            if neighbor_tile.has_river(self, grid) {
                 river_total += 1;
             }
         });
@@ -914,7 +914,7 @@ impl TileMap {
                             }
                         }
                     });
-                if tile_at_distance_two.has_river(self, map_parameters) {
+                if tile_at_distance_two.has_river(self, grid) {
                     river_total += 1;
                 }
             });
@@ -973,7 +973,7 @@ impl TileMap {
                             }
                         }
                     });
-                if tile_at_distance_three.has_river(self, map_parameters) {
+                if tile_at_distance_three.has_river(self, grid) {
                     river_total += 1;
                 }
             });

@@ -40,7 +40,7 @@ impl TileMap {
                     1 => {
                         // Land tiles that are not near the coast are the 2nd priority for river starting locations.
                         terrain_type != TerrainType::Water
-                            && !tile.is_coastal_land(self, map_parameters)
+                            && !tile.is_coastal_land(self, grid)
                             && self.random_number_generator.gen_range(0..8) == 0
                     }
                     2 => {
@@ -75,7 +75,7 @@ impl TileMap {
                     && !tile
                         .tiles_in_distance(river_source_range, grid)
                         .iter()
-                        .any(|tile| tile.is_freshwater(self, map_parameters))
+                        .any(|tile| tile.is_freshwater(self, grid))
                     && !tile
                         .tiles_in_distance(sea_water_range, grid)
                         .iter()
@@ -668,7 +668,7 @@ impl TileMap {
 
         // Collect valid neighbor tiles in edge directions [3..6]
         tile_list.extend(
-            map_parameters.edge_direction_array()[3..6]
+            grid.edge_direction_array()[3..6]
                 .iter()
                 .filter_map(|&direction| tile.neighbor_tile(direction, grid)),
         );
@@ -676,16 +676,14 @@ impl TileMap {
         // Retain only those tiles that qualify as inland corners
         // An inland corner requires all neighbors in edge directions [0..3] to exist and not be water
         tile_list.retain(|&tile| {
-            map_parameters.edge_direction_array()[0..3]
-                .iter()
-                .all(|&direction| {
-                    let neighbor_tile = tile.neighbor_tile(direction, grid);
-                    if let Some(neighbor_tile) = neighbor_tile {
-                        neighbor_tile.terrain_type(self) != TerrainType::Water
-                    } else {
-                        false
-                    }
-                })
+            grid.edge_direction_array()[0..3].iter().all(|&direction| {
+                let neighbor_tile = tile.neighbor_tile(direction, grid);
+                if let Some(neighbor_tile) = neighbor_tile {
+                    neighbor_tile.terrain_type(self) != TerrainType::Water
+                } else {
+                    false
+                }
+            })
         });
 
         // Choose a random corner if any exist
