@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Sub},
 };
 
-use glam::{DMat2, DVec2, IVec2};
+use glam::{DVec2, IVec2};
 
 use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 
@@ -11,7 +11,7 @@ use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 pub struct Square(IVec2);
 
 impl Square {
-    /// Square neighbor coordinates array, following [`SquareOrientation::ORTHOGONAL_EDGE`] or [`SquareOrientation::DIAMOND_EDGE`] order.
+    /// Square neighbor coordinates array, following [`SquareOrientation::ORTHOGONAL_EDGE`] order.
     pub const SQUARE_DIRECTIONS: [Self; 4] = [
         Self::new(1, 0),
         Self::new(0, -1),
@@ -38,10 +38,6 @@ impl Square {
     pub fn to_offset_coordinate(self, orientation: SquareOrientation) -> OffsetCoordinate {
         match orientation {
             SquareOrientation::Orthogonal => OffsetCoordinate::new(self.x(), self.y()),
-            SquareOrientation::Diamond => {
-                todo!("We have not implemented diamond orientation yet. Please use Orthogonal for now.")
-                // OffsetCoordinate::new(self.x(), self.x() + self.y())
-            }
         }
     }
 
@@ -165,10 +161,6 @@ impl SquareLayout {
     pub fn square_to_pixel(self, square: Square) -> DVec2 {
         match self.orientation {
             SquareOrientation::Orthogonal => self.origin + square.0.as_dvec2() * self.size,
-            SquareOrientation::Diamond => {
-                let forward_matrix = DMat2::from_cols_array(&[0.5, -0.5, 0.5, 0.5]);
-                self.origin + forward_matrix * square.0.as_dvec2() * self.size
-            }
         }
     }
 
@@ -176,14 +168,6 @@ impl SquareLayout {
         let pt = (pixel_position - self.origin) / self.size;
         match self.orientation {
             SquareOrientation::Orthogonal => Square((pt + DVec2::new(0.5, 0.5)).floor().as_ivec2()),
-            SquareOrientation::Diamond => {
-                let inverse_matrix = DMat2::from_cols(DVec2::new(1.0, 1.0), DVec2::new(-1.0, 1.0));
-                Square(
-                    (inverse_matrix * pt + DVec2::new(0.5, 0.5))
-                        .floor()
-                        .as_ivec2(),
-                )
-            }
         }
     }
 
@@ -206,13 +190,6 @@ impl SquareLayout {
                 Direction::NorthWest => DVec2::new(-1., 1.),
                 _ => panic!("Invalid direction"),
             },
-            SquareOrientation::Diamond => match direction {
-                Direction::East => DVec2::new(1., 0.),
-                Direction::South => DVec2::new(0., -1.),
-                Direction::West => DVec2::new(-1., 0.),
-                Direction::North => DVec2::new(0., 1.),
-                _ => panic!("Invalid direction"),
-            },
         };
         offset_value * self.size / 2.
     }
@@ -222,8 +199,6 @@ impl SquareLayout {
 pub enum SquareOrientation {
     /// 🔳
     Orthogonal,
-    /// 🔷
-    Diamond,
 }
 
 impl SquareOrientation {
@@ -266,50 +241,6 @@ impl SquareOrientation {
         Direction::SouthWest,
         Direction::NorthWest,
     ];
-
-    /// Diamond Square edge directions, the directions of the edges of a `Square` relative to its center.
-    ///
-    /// - The number in the Square-A is the index of the direction of the Square-A corner in the array of all the corner direction
-    /// - The number outside the Square-A is the index of the direction of the Square-A edge in the array of all the edge direction
-    ///
-    /// ```txt
-    ///
-    ///                /\
-    ///               /  \
-    ///              /    \
-    ///             /      \
-    ///            /        \
-    ///           /\        /\
-    ///          /  \      /  \
-    ///         /    \    /    \
-    ///        /      \  /      \
-    ///       /   3    \/   0    \
-    ///      /\        /\        /\
-    ///     /  \      / 3\      /  \
-    ///    /    \    /    \    /    \
-    ///   /      \  /      \  /      \
-    ///  /        \/2  A   0\/        \
-    ///  \        /\        /\        /
-    ///   \      /  \      /  \      /
-    ///    \    /    \    /    \    /
-    ///     \  /      \1 /      \  /
-    ///      \/   2    \/   1    \/
-    ///       \        /\        /
-    ///        \      /  \      /
-    ///         \    /    \    /
-    ///          \  /      \  /
-    ///           \/        \/
-    ///            \        /
-    ///             \      /
-    ///              \    /
-    ///               \  /
-    ///                \/
-    ///  ```
-    const DIAMOND_EDGE: [Direction; 4] = Self::ORTHOGONAL_CORNER;
-
-    /// Diamond Square corner directions, the directions of the corners of a `Square` relative to its center.
-    /// > See [`Self::DIAMOND_EDGE`] for more information
-    const DIAMOND_CORNER: [Direction; 4] = Self::ORTHOGONAL_EDGE;
 
     #[inline]
     /// Get the index of the direction of the [`Square`] corner in the array of all the corner direction
@@ -362,7 +293,6 @@ impl SquareOrientation {
     pub const fn edge_direction(&self) -> [Direction; 4] {
         match self {
             SquareOrientation::Orthogonal => Self::ORTHOGONAL_EDGE,
-            SquareOrientation::Diamond => Self::DIAMOND_EDGE,
         }
     }
 
@@ -371,7 +301,6 @@ impl SquareOrientation {
     pub const fn corner_direction(&self) -> [Direction; 4] {
         match self {
             SquareOrientation::Orthogonal => Self::ORTHOGONAL_CORNER,
-            SquareOrientation::Diamond => Self::DIAMOND_CORNER,
         }
     }
 }

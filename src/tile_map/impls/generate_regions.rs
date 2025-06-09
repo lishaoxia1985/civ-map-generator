@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 use crate::component::map_component::base_terrain::BaseTerrain;
 use crate::component::map_component::feature::Feature;
 use crate::component::map_component::terrain_type::TerrainType;
+use crate::grid::hex_grid::HexGrid;
 use crate::grid::offset_coordinate::OffsetCoordinate;
-use crate::map_parameters::HexGrid;
+use crate::grid::WrapFlags;
 use crate::{
-    map_parameters::{Rectangle, RegionDivideMethod, WrapType},
+    map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
     tile_map::{MapParameters, TileMap},
 };
@@ -326,7 +327,7 @@ impl TileMap {
         let mut north_y = 0;
 
         // Check if the landmass wraps around the map horizontally.
-        if grid.map_wrapping.x == WrapType::Wrap {
+        if grid.wrap_flags.contains(WrapFlags::WrapX) {
             let mut found_first_column = false;
             let mut found_last_column = false;
 
@@ -362,7 +363,7 @@ impl TileMap {
         }
 
         // Check if the landmass wraps around the map vertically.
-        if grid.map_wrapping.y == WrapType::Wrap {
+        if grid.wrap_flags.contains(WrapFlags::WrapY) {
             let mut found_first_row = false;
             let mut found_last_row = false;
             for x in 0..map_width {

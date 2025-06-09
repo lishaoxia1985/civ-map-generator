@@ -2,8 +2,10 @@ use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     component::map_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
-    grid::{direction::Direction, hex_grid::hex::HexOrientation},
-    map_parameters::HexGrid,
+    grid::{
+        direction::Direction,
+        hex_grid::{hex::HexOrientation, HexGrid},
+    },
     tile::Tile,
     tile_map::TileMap,
 };

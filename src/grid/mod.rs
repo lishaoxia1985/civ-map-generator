@@ -1,6 +1,8 @@
 use direction::Direction;
 use offset_coordinate::OffsetCoordinate;
 
+use bitflags::bitflags;
+
 pub mod direction;
 pub mod hex_grid;
 pub mod offset_coordinate;
@@ -40,4 +42,29 @@ trait Grid {
 
     /// Computes the distance from `self` to `rhs` in the grid.
     fn distance_to(self, rhs: Self) -> i32;
+}
+
+/// Represents the size of a grid or map with a specified width and height.
+#[derive(Clone, Copy)]
+pub struct Size {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Size {
+    pub fn new(width: i32, height: i32) -> Self {
+        Self { width, height }
+    }
+}
+
+bitflags! {
+    /// Bitflags representing how a grid/map wraps at its borders.
+    ///
+    /// - `WrapX`: Enable horizontal wrapping (left/right edges connect)
+    /// - `WrapY`: Enable vertical wrapping (top/bottom edges connect)
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct WrapFlags: u8 {
+        const WrapX = 0b0000_0001;
+        const WrapY = 0b0000_0010;
+    }
 }

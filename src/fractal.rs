@@ -10,13 +10,14 @@ use glam::DVec2;
 use image::{imageops::resize, GrayImage, ImageBuffer};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 
-use crate::{
-    grid::{
-        direction::Direction,
-        hex_grid::hex::{Hex, HexLayout, HexOrientation, SQRT_3},
-        offset_coordinate::OffsetCoordinate,
+use crate::grid::{
+    direction::Direction,
+    hex_grid::{
+        hex::{Hex, HexLayout, HexOrientation, SQRT_3},
+        HexGrid,
     },
-    map_parameters::{HexGrid, WrapType},
+    offset_coordinate::OffsetCoordinate,
+    WrapFlags,
 };
 
 struct VoronoiSeed {
@@ -89,8 +90,8 @@ pub struct CvFractal {
 }
 
 bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     /// Flags for the CvFractal. It is used to control the behavior of the fractal generation.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct FractalFlags: u8 {
         /// When flag is set, The closer to the edge of the grid, the closer the value of the height to 0.
         ///
@@ -222,7 +223,7 @@ impl CvFractal {
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
         let hint_width = (self.fractal_width >> smooth)
-            + if self.grid.map_wrapping.x == WrapType::Wrap {
+            + if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
                 0
             } else {
                 1
@@ -232,7 +233,7 @@ impl CvFractal {
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
         let hint_height = (self.fractal_height >> smooth)
-            + if self.grid.map_wrapping.y == WrapType::Wrap {
+            + if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
                 0
             } else {
                 1
@@ -267,7 +268,7 @@ impl CvFractal {
             /*********** start to preprocess fractal_array[][] at the beginning of every iter stage in Diamond-Square algorithm. ***********/
 
             // If wrapping in the Y direction is needed, copy the bottom row to the top
-            if self.grid.map_wrapping.y == WrapType::Wrap {
+            if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
                 for x in 0..=self.fractal_width {
                     self.fractal_array[x as usize][self.fractal_height as usize] =
                         self.fractal_array[x as usize][0];
@@ -281,7 +282,7 @@ impl CvFractal {
             }
 
             // If wrapping in the X direction is needed, copy the leftmost column to the rightmost
-            if self.grid.map_wrapping.x == WrapType::Wrap {
+            if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
                 for y in 0..=self.fractal_height {
                     self.fractal_array[self.fractal_width as usize][y as usize] =
                         self.fractal_array[0][y as usize];
@@ -296,7 +297,7 @@ impl CvFractal {
 
             // If crust construction is needed, perform the processing
             if self.flags.contains(FractalFlags::CenterRift) {
-                if self.grid.map_wrapping.y == WrapType::Wrap {
+                if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
                     for x in 0..=self.fractal_width {
                         for y in 0..=(self.fractal_height / 6) {
                             let factor = ((self.fractal_height / 12) - y).abs() + 1;
@@ -307,7 +308,7 @@ impl CvFractal {
                     }
                 }
 
-                if self.grid.map_wrapping.x == WrapType::Wrap {
+                if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
                     for y in 0..=self.fractal_height {
                         for x in 0..=(self.fractal_width / 6) {
                             let factor = ((self.fractal_width / 12) - x).abs() + 1;
@@ -332,14 +333,14 @@ impl CvFractal {
             //      2. In the original Square Step will use the calculation result of the Diamond Step,
             //         in this code Square Step doesn't use the calculation result of the Diamond Step.
             for x in 0..((self.fractal_width >> pass)
-                + if self.grid.map_wrapping.x == WrapType::Wrap {
+                + if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
                     0
                 } else {
                     1
                 })
             {
                 for y in 0..((self.fractal_height >> pass)
-                    + if self.grid.map_wrapping.y == WrapType::Wrap {
+                    + if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
                         0
                     } else {
                         1
@@ -648,7 +649,7 @@ impl CvFractal {
         // If the map is wrapping, adjust the estimate vector accordingly.
         // The distance from the dest to the start's left may be shorter than the distance from the dest to the start's right.
         // So we make sure the distance from the dest to the start is always shortest.
-        if self.grid.map_wrapping.x == WrapType::Wrap {
+        if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
             if estimate_vector.x > self.fractal_width / 2 {
                 estimate_vector.x -= self.fractal_width;
             } else if estimate_vector.x < -self.fractal_width / 2 {
@@ -658,7 +659,7 @@ impl CvFractal {
 
         // The distance from the dest to the start's top may be shorter than the distance from the dest to the start's bottom.
         // So we make sure the distance from the dest to the start is always shortest.
-        if self.grid.map_wrapping.y == WrapType::Wrap {
+        if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
             if estimate_vector.y > self.fractal_height / 2 {
                 estimate_vector.y -= self.fractal_height;
             } else if estimate_vector.y < -self.fractal_height / 2 {
@@ -735,9 +736,12 @@ mod tests {
     use glam::DVec2;
     use rand::{rngs::StdRng, SeedableRng};
 
-    use crate::{
-        grid::hex_grid::hex::{HexLayout, HexOrientation, Offset},
-        map_parameters::{HexGrid, MapWrapping, Size, WrapType},
+    use crate::grid::{
+        hex_grid::{
+            hex::{HexLayout, HexOrientation, Offset},
+            HexGrid,
+        },
+        Size, WrapFlags,
     };
 
     use super::{CvFractal, FractalFlags};
@@ -760,10 +764,7 @@ mod tests {
                 size: DVec2::new(8., 8.),
                 origin: DVec2::new(0., 0.),
             },
-            map_wrapping: MapWrapping {
-                x: WrapType::Wrap,
-                y: WrapType::None,
-            },
+            wrap_flags: WrapFlags::WrapX,
             offset: Offset::Odd,
         };
 

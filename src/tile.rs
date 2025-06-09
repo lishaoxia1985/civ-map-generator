@@ -7,10 +7,14 @@ use crate::{
     },
     grid::{
         direction::Direction,
-        hex_grid::hex::{Hex, HexOrientation},
+        hex_grid::{
+            hex::{Hex, HexOrientation},
+            HexGrid,
+        },
         offset_coordinate::OffsetCoordinate,
+        WrapFlags,
     },
-    map_parameters::{HexGrid, MapParameters, WrapType},
+    map_parameters::MapParameters,
     ruleset::Ruleset,
     tile_map::{impls::generate_regions::Region, Layer, TileMap},
 };
@@ -54,10 +58,10 @@ impl Tile {
         // Check if the offset coordinate is inside the map
         let [mut x, mut y] = offset_coordinate.to_array();
 
-        if grid.map_wrapping.x == WrapType::Wrap {
+        if grid.wrap_flags.contains(WrapFlags::WrapX) {
             x = x.rem_euclid(width);
         };
-        if grid.map_wrapping.y == WrapType::Wrap {
+        if grid.wrap_flags.contains(WrapFlags::WrapY) {
             y = y.rem_euclid(height);
         };
 
