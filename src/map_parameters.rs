@@ -9,7 +9,7 @@ use crate::{
             HexGrid,
         },
         offset_coordinate::OffsetCoordinate,
-        Size, WrapFlags,
+        Grid, Size, WrapFlags,
     },
     tile::Tile,
 };
@@ -210,7 +210,7 @@ impl Default for MapParameters {
                 width: 0,
                 height: 0,
             },
-            hex_layout: HexLayout {
+            layout: HexLayout {
                 orientation: HexOrientation::Flat,
                 size: DVec2::new(8., 8.),
                 origin: DVec2::new(0., 0.),
@@ -262,18 +262,16 @@ pub struct Rectangle {
     ///
     /// where `width` and `height` are the dimensions of the containing grid.
     origin: OffsetCoordinate,
-
     /// The horizontal extent of the rectangle in tile units.
     ///
     /// # Requirements
     /// - Must be a positive integer (≥1)
-    width: i32,
-
+    width: u32,
     /// The vertical extent of the rectangle in tile units.
     ///
     /// # Requirements
     /// - Must be a positive integer (≥1)
-    height: i32,
+    height: u32,
 }
 
 impl Rectangle {
@@ -290,7 +288,7 @@ impl Rectangle {
     ///
     /// # Panics
     /// This function will panic if the rectangle is not valid.
-    pub fn new(origin: OffsetCoordinate, width: i32, height: i32, grid: HexGrid) -> Self {
+    pub fn new(origin: OffsetCoordinate, width: u32, height: u32, grid: HexGrid) -> Self {
         // Debug-only validation
         debug_assert!(
             width > 0 && height > 0,
@@ -299,37 +297,20 @@ impl Rectangle {
             height
         );
         debug_assert!(
-            width <= grid.size.width && height <= grid.size.height,
+            width <= grid.width() && height <= grid.height(),
             "Rectangle dimensions {}x{} exceed grid size {}x{}",
             width,
             height,
-            grid.size.width,
-            grid.size.height
+            grid.width(),
+            grid.height()
         );
 
-        let [mut x, mut y] = origin.to_array();
-
-        // Apply wrapping if enabled
-        if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            x = x.rem_euclid(grid.size.width);
-        }
-
-        if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            y = y.rem_euclid(grid.size.height);
-        }
-
-        // Debug-only bounds checking
-        debug_assert!(
-            x >= 0 && x < grid.size.width && y >= 0 && y < grid.size.height,
-            "Origin coordinate ({},{}) is out of bounds for non-wrapped axes in {}x{} grid",
-            x,
-            y,
-            grid.size.width,
-            grid.size.height
-        );
+        let normalize_origin = grid
+            .normalize_offset(origin)
+            .expect(&format!("Offset coordinate out of bounds: {:?}", origin));
 
         Self {
-            origin: OffsetCoordinate::new(x, y),
+            origin: normalize_origin,
             width,
             height,
         }
@@ -354,42 +335,31 @@ impl Rectangle {
         top_right_corner: OffsetCoordinate,
         grid: HexGrid,
     ) -> Self {
-        let [mut x, mut y] = origin.to_array();
-        // Ensure origin's x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
-        if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            x = x.rem_euclid(grid.size.width);
-        };
-        if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            y = y.rem_euclid(grid.size.height);
-        };
+        let normalize_origin = grid
+            .normalize_offset(origin)
+            .expect(&format!("Offset coordinate out of bounds: {:?}", origin));
 
-        let origin = OffsetCoordinate::new(x, y);
-
-        let [mut width, mut height] = (top_right_corner.0 - origin.0 + 1).to_array();
+        let [mut width, mut height] = (top_right_corner.0 - normalize_origin.0 + 1).to_array();
 
         if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            width = width.rem_euclid(grid.size.width);
+            width = width.rem_euclid(grid.width() as i32);
         }
         if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            height = height.rem_euclid(grid.size.height);
+            height = height.rem_euclid(grid.height() as i32);
         }
 
         debug_assert!(
-            x >= 0
-                && x < grid.size.width
-                && y >= 0
-                && y < grid.size.height
-                && width > 0
-                && width <= grid.size.width
+            width > 0
+                && width <= grid.width() as i32
                 && height > 0
-                && height <= grid.size.height,
+                && height <= grid.height() as i32,
             "The rectangle does not exist"
         );
 
         Self {
             origin,
-            width,
-            height,
+            width: width as u32,
+            height: height as u32,
         }
     }
 
@@ -409,22 +379,21 @@ impl Rectangle {
     }
 
     #[inline]
-    pub fn width(&self) -> i32 {
+    pub fn width(&self) -> u32 {
         self.width
     }
 
     #[inline]
-    pub fn height(&self) -> i32 {
+    pub fn height(&self) -> u32 {
         self.height
     }
 
     /// Returns an iterator over all tiles in current rectangle region of the map.
     pub fn iter_tiles<'a>(&'a self, grid: HexGrid) -> impl Iterator<Item = Tile> + 'a {
-        (self.south_y()..self.south_y() + self.height).flat_map(move |y| {
-            (self.west_x()..self.west_x() + self.width).map(move |x| {
+        (self.south_y()..self.south_y() + self.height as i32).flat_map(move |y| {
+            (self.west_x()..self.west_x() + self.width as i32).map(move |x| {
                 let offset_coordinate = OffsetCoordinate::new(x, y);
-                Tile::from_offset_coordinate(grid, offset_coordinate)
-                    .expect("Offset coordinate is outside the map!")
+                Tile::from_offset(offset_coordinate, grid)
             })
         })
     }
@@ -433,21 +402,21 @@ impl Rectangle {
     ///
     /// Returns `true` if the given tile is inside the current rectangle.
     pub fn contains(&self, grid: HexGrid, tile: Tile) -> bool {
-        let [mut x, mut y] = tile.to_offset_coordinate(grid).to_array();
+        let [mut x, mut y] = tile.to_offset(grid).to_array();
 
         // We should consider the map is wrapped around horizontally.
         if x < self.west_x() {
-            x += grid.size.width;
+            x += grid.width() as i32;
         }
 
         // We should consider the map is wrapped around vertically.
         if y < self.south_y() {
-            y += grid.size.height;
+            y += grid.height() as i32;
         }
 
         x >= self.west_x()
-            && x < self.west_x() + self.width
+            && x < self.west_x() + self.width as i32
             && y >= self.south_y()
-            && y < self.south_y() + self.height
+            && y < self.south_y() + self.height as i32
     }
 }

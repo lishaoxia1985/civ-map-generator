@@ -138,7 +138,7 @@ impl Generator for Pangaea {
         let axis = center_position * 3. / 5.;
 
         tile_map.iter_tiles().for_each(|tile| {
-            let [x, y] = tile.to_offset_coordinate(grid).to_array();
+            let [x, y] = tile.to_offset(grid).to_array();
             let height = continents_fractal.get_height(x, y);
 
             let mountain_height = mountains_fractal.get_height(x, y);

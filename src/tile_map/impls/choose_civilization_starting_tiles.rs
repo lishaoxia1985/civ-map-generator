@@ -58,9 +58,6 @@ impl TileMap {
 
         let region = &self.region_list[region_index];
 
-        let success_flag = false; // Returns true when a start is placed, false when process fails.
-        let forced_placement_flag = false; // Returns true if this region had no eligible starts and one was forced to occur.
-
         let mut fallback_tile_and_score = Vec::new();
 
         let mut area_id_and_fertility = HashMap::new();
@@ -124,8 +121,7 @@ impl TileMap {
         } else {
             let origin = region.rectangle.origin();
 
-            let tile = Tile::from_offset_coordinate(grid, origin)
-                .expect("Offset coordinate is outside the map!");
+            let tile = Tile::from_offset(origin, grid);
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
             self.feature_query[tile.index()] = None;
@@ -160,28 +156,13 @@ impl TileMap {
             .terrain_statistic
             .coastal_land_num;
 
-        let success_flag; // Returns true when a start is placed, false when process fails.
-        let mut forced_placement_flag; // Returns true if this region had no eligible starts and one was forced to occur.
-
         if coastal_land_sum < 3 {
             // This region cannot support an Along Ocean start.
             // Try instead to find an inland start for it.
-            (success_flag, forced_placement_flag) = self.find_start(map_parameters, region_index);
-
-            if !success_flag {
-                forced_placement_flag = true;
-
-                let origin = self.region_list[region_index].rectangle.origin();
-
-                let tile = Tile::from_offset_coordinate(grid, origin)
-                    .expect("Offset coordinate is outside the map!");
-                self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-                self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
-                self.feature_query[tile.index()] = None;
-                self.natural_wonder_query[tile.index()] = None;
-                self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples_for_civilization(tile);
-            }
+            // When `success_flag` is `false`,
+            // We don't need write the code to force a starting tile to be placed, because the `find_start` function will do it for us.
+            let (success_flag, forced_placement_flag) =
+                self.find_start(map_parameters, region_index);
 
             return (success_flag, forced_placement_flag);
         }
@@ -193,16 +174,16 @@ impl TileMap {
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
         let center_width = CENTER_BIAS * rectangle.width() as f64;
-        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as i32;
+        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as u32;
         let center_width = rectangle.width() - (non_center_width * 2);
 
-        let center_west_x = rectangle.west_x() + non_center_width;
+        let center_west_x = rectangle.west_x() + non_center_width as i32;
 
         let center_height = CENTER_BIAS * rectangle.height() as f64;
-        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as i32;
+        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as u32;
         let center_height = rectangle.height() - (non_center_height * 2);
 
-        let center_south_y = rectangle.south_y() + non_center_height;
+        let center_south_y = rectangle.south_y() + non_center_height as i32;
 
         let center_rectangle = Rectangle::new(
             OffsetCoordinate::new(center_west_x, center_south_y),
@@ -212,16 +193,16 @@ impl TileMap {
         );
 
         let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
-        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as i32;
+        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as u32;
         let middle_width = rectangle.width() - (outer_width * 2);
 
-        let middle_west_x = rectangle.west_x() + outer_width;
+        let middle_west_x = rectangle.west_x() + outer_width as i32;
 
         let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
-        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as i32;
+        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as u32;
         let middle_height = rectangle.height() - (outer_height * 2);
 
-        let middle_south_y = rectangle.south_y() + outer_height;
+        let middle_south_y = rectangle.south_y() + outer_height as i32;
 
         let middle_rectangle = Rectangle::new(
             OffsetCoordinate::new(middle_west_x, middle_south_y),
@@ -329,14 +310,14 @@ impl TileMap {
                 // Iterate through eligible plots and choose the one closest to the center of the region.
                 let mut closest_tile = None;
                 let mut closest_distance =
-                    i32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
+                    u32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
 
                 // Because west_x >= 0, bullseye_x will always be >= 0.
                 let mut bullseye_x = rectangle.west_x() as f64 + (rectangle.width() as f64 / 2.0);
                 // Because south_y >= 0, bullseye_y will always be >= 0.
                 let mut bullseye_y = rectangle.south_y() as f64 + (rectangle.height() as f64 / 2.0);
 
-                match (grid.hex_layout.orientation, grid.offset) {
+                match (grid.layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
                         if bullseye_y / 2.0 != (bullseye_y / 2.0).floor() {
                             // Y coord is odd, add .5 to X coord for hex-shift.
@@ -366,14 +347,14 @@ impl TileMap {
                 }
 
                 for tile in outer_eligible_list.into_iter() {
-                    let offset_coordinate = tile.to_offset_coordinate(grid);
+                    let offset_coordinate = tile.to_offset(grid);
 
                     let [x, y] = offset_coordinate.to_array();
 
                     let mut adjusted_x = x as f64;
                     let mut adjusted_y = y as f64;
 
-                    match (grid.hex_layout.orientation, grid.offset) {
+                    match (grid.layout.orientation, grid.offset) {
                         (HexOrientation::Pointy, Offset::Odd) => {
                             if y % 2 != 0 {
                                 // Y coord is odd, add .5 to X coord for hex-shift.
@@ -449,23 +430,12 @@ impl TileMap {
             self.place_impact_and_ripples_for_civilization(max_score_tile);
             return (true, false);
         } else {
-            (success_flag, forced_placement_flag) = self.find_start(map_parameters, region_index);
-
-            if !success_flag {
-                forced_placement_flag = true;
-
-                let origin = rectangle.origin();
-
-                let tile = Tile::from_offset_coordinate(grid, origin)
-                    .expect("Offset coordinate is outside the map!");
-                self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-                self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
-                self.feature_query[tile.index()] = None;
-                self.natural_wonder_query[tile.index()] = None;
-                self.region_list[region_index].starting_tile = tile;
-                self.place_impact_and_ripples_for_civilization(tile);
-            }
-
+            // This region cannot support an Along Ocean start.
+            // Try instead to find an inland start for it.
+            // When `success_flag` is `false`,
+            // We don't need write the code to force a starting tile to be placed, because the `find_start` function will do it for us.
+            let (success_flag, forced_placement_flag) =
+                self.find_start(map_parameters, region_index);
             return (success_flag, forced_placement_flag);
         }
     }
@@ -492,16 +462,16 @@ impl TileMap {
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
         let center_width = CENTER_BIAS * rectangle.width() as f64;
-        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as i32;
+        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as u32;
         let center_width = rectangle.width() - (non_center_width * 2);
 
-        let center_west_x = rectangle.west_x() + non_center_width;
+        let center_west_x = rectangle.west_x() + non_center_width as i32;
 
         let center_height = CENTER_BIAS * rectangle.height() as f64;
-        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as i32;
+        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as u32;
         let center_height = rectangle.height() - (non_center_height * 2);
 
-        let center_south_y = rectangle.south_y() + non_center_height;
+        let center_south_y = rectangle.south_y() + non_center_height as i32;
 
         let center_rectangle = Rectangle::new(
             OffsetCoordinate::new(center_west_x, center_south_y),
@@ -511,16 +481,16 @@ impl TileMap {
         );
 
         let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
-        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as i32;
+        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as u32;
         let middle_width = rectangle.width() - (outer_width * 2);
 
-        let middle_west_x = rectangle.west_x() + outer_width;
+        let middle_west_x = rectangle.west_x() + outer_width as i32;
 
         let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
-        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as i32;
+        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as u32;
         let middle_height = rectangle.height() - (outer_height * 2);
 
-        let middle_south_y = rectangle.south_y() + outer_height;
+        let middle_south_y = rectangle.south_y() + outer_height as i32;
 
         let middle_rectangle = Rectangle::new(
             OffsetCoordinate::new(middle_west_x, middle_south_y),
@@ -625,14 +595,14 @@ impl TileMap {
                 // Iterate through eligible plots and choose the one closest to the center of the region.
                 let mut closest_plot = None;
                 let mut closest_distance =
-                    i32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
+                    u32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
 
                 // Because west_x >= 0, bullseye_x will always be >= 0.
                 let mut bullseye_x = rectangle.west_x() as f64 + (rectangle.width() as f64 / 2.0);
                 // Because south_y >= 0, bullseye_y will always be >= 0.
                 let mut bullseye_y = rectangle.south_y() as f64 + (rectangle.height() as f64 / 2.0);
 
-                match (grid.hex_layout.orientation, grid.offset) {
+                match (grid.layout.orientation, grid.offset) {
                     (HexOrientation::Pointy, Offset::Odd) => {
                         if bullseye_y / 2.0 != (bullseye_y / 2.0).floor() {
                             // Y coord is odd, add .5 to X coord for hex-shift.
@@ -662,14 +632,14 @@ impl TileMap {
                 }
 
                 for tile in outer_eligible_list.into_iter() {
-                    let offset_coordinate = tile.to_offset_coordinate(grid);
+                    let offset_coordinate = tile.to_offset(grid);
 
                     let [x, y] = offset_coordinate.to_array();
 
                     let mut adjusted_x = x as f64;
                     let mut adjusted_y = y as f64;
 
-                    match (grid.hex_layout.orientation, grid.offset) {
+                    match (grid.layout.orientation, grid.offset) {
                         (HexOrientation::Pointy, Offset::Odd) => {
                             if y % 2 != 0 {
                                 // Y coord is odd, add .5 to X coord for hex-shift.
@@ -747,8 +717,7 @@ impl TileMap {
         } else {
             let origin = region.rectangle.origin();
 
-            let tile = Tile::from_offset_coordinate(grid, origin)
-                .expect("Offset coordinate is outside the map!");
+            let tile = Tile::from_offset(origin, grid);
             self.terrain_type_query[tile.index()] = TerrainType::Flatland;
             self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
             self.feature_query[tile.index()] = None;

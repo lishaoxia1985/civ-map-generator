@@ -38,15 +38,31 @@ impl Hex {
         Self(IVec2::new(x, y))
     }
 
-    const fn x(self) -> i32 {
+    /// Creates a new [`Hex`] from an [`OffsetCoordinate`].
+    ///
+    pub const fn from_offset(
+        offset_coordinate: OffsetCoordinate,
+        orientation: HexOrientation,
+        offset: Offset,
+    ) -> Self {
+        let [x, y] = offset_coordinate.to_array();
+
+        let (q, r) = match orientation {
+            HexOrientation::Pointy => (x - (y + offset as i32 * (y & 1)) / 2, y),
+            HexOrientation::Flat => (x, y - (x + offset as i32 * (x & 1)) / 2),
+        };
+        Hex::new(q, r)
+    }
+
+    pub const fn x(self) -> i32 {
         self.0.x
     }
 
-    const fn y(self) -> i32 {
+    pub const fn y(self) -> i32 {
         self.0.y
     }
 
-    const fn z(self) -> i32 {
+    pub const fn z(self) -> i32 {
         -self.0.x - self.0.y
     }
 
@@ -54,19 +70,15 @@ impl Hex {
         self.0
     }
 
-    pub fn to_offset_coordinate(
-        self,
-        offset: Offset,
-        orientation: HexOrientation,
-    ) -> OffsetCoordinate {
+    pub fn to_offset(self, orientation: HexOrientation, offset: Offset) -> OffsetCoordinate {
         let (col, row) = match orientation {
             HexOrientation::Pointy => (
-                self.0.x + (self.0.y + offset.value() * (self.0.y & 1)) / 2,
+                self.0.x + (self.0.y + offset as i32 * (self.0.y & 1)) / 2,
                 self.0.y,
             ),
             HexOrientation::Flat => (
                 self.0.x,
-                self.0.y + (self.0.x + offset.value() * (self.0.x & 1)) / 2,
+                self.0.y + (self.0.x + offset as i32 * (self.0.x & 1)) / 2,
             ),
         };
         OffsetCoordinate::new(col, row)
@@ -287,18 +299,8 @@ pub fn hex_linedraw(a: Hex, b: Hex) -> Vec<Hex> {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Offset {
-    Even,
-    Odd,
-}
-
-impl Offset {
-    #[inline]
-    pub const fn value(self) -> i32 {
-        match self {
-            Self::Even => 1,
-            Self::Odd => -1,
-        }
-    }
+    Even = 1,
+    Odd = -1,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -660,50 +662,62 @@ mod tests {
         equal_hex(
             "conversion_roundtrip even-q",
             a,
-            a.to_offset_coordinate(Offset::Even, HexOrientation::Flat)
-                .to_hex(Offset::Even, HexOrientation::Flat),
+            Hex::from_offset(
+                a.to_offset(HexOrientation::Flat, Offset::Even),
+                HexOrientation::Flat,
+                Offset::Even,
+            ),
         );
         equal_offset_coordinate(
             "conversion_roundtrip even-q",
             b,
-            b.to_hex(Offset::Even, HexOrientation::Flat)
-                .to_offset_coordinate(Offset::Even, HexOrientation::Flat),
+            Hex::from_offset(b, HexOrientation::Flat, Offset::Even)
+                .to_offset(HexOrientation::Flat, Offset::Even),
         );
         equal_hex(
             "conversion_roundtrip odd-q",
             a,
-            a.to_offset_coordinate(Offset::Odd, HexOrientation::Flat)
-                .to_hex(Offset::Odd, HexOrientation::Flat),
+            Hex::from_offset(
+                a.to_offset(HexOrientation::Flat, Offset::Odd),
+                HexOrientation::Flat,
+                Offset::Odd,
+            ),
         );
         equal_offset_coordinate(
             "conversion_roundtrip odd-q",
             b,
-            b.to_hex(Offset::Odd, HexOrientation::Flat)
-                .to_offset_coordinate(Offset::Odd, HexOrientation::Flat),
+            Hex::from_offset(b, HexOrientation::Flat, Offset::Odd)
+                .to_offset(HexOrientation::Flat, Offset::Odd),
         );
         equal_hex(
             "conversion_roundtrip even-r",
             a,
-            a.to_offset_coordinate(Offset::Even, HexOrientation::Pointy)
-                .to_hex(Offset::Even, HexOrientation::Pointy),
+            Hex::from_offset(
+                a.to_offset(HexOrientation::Pointy, Offset::Even),
+                HexOrientation::Pointy,
+                Offset::Even,
+            ),
         );
         equal_offset_coordinate(
             "conversion_roundtrip even-r",
             b,
-            b.to_hex(Offset::Even, HexOrientation::Pointy)
-                .to_offset_coordinate(Offset::Even, HexOrientation::Pointy),
+            Hex::from_offset(b, HexOrientation::Pointy, Offset::Even)
+                .to_offset(HexOrientation::Pointy, Offset::Even),
         );
         equal_hex(
             "conversion_roundtrip odd-r",
             a,
-            a.to_offset_coordinate(Offset::Odd, HexOrientation::Pointy)
-                .to_hex(Offset::Odd, HexOrientation::Pointy),
+            Hex::from_offset(
+                a.to_offset(HexOrientation::Pointy, Offset::Odd),
+                HexOrientation::Pointy,
+                Offset::Odd,
+            ),
         );
         equal_offset_coordinate(
             "conversion_roundtrip odd-r",
             b,
-            b.to_hex(Offset::Odd, HexOrientation::Pointy)
-                .to_offset_coordinate(Offset::Odd, HexOrientation::Pointy),
+            Hex::from_offset(b, HexOrientation::Pointy, Offset::Odd)
+                .to_offset(HexOrientation::Pointy, Offset::Odd),
         );
     }
 
@@ -712,12 +726,12 @@ mod tests {
         equal_offset_coordinate(
             "offset_from_hex even-q",
             OffsetCoordinate::new(1, 3),
-            Hex::new(1, 2).to_offset_coordinate(Offset::Even, HexOrientation::Flat),
+            Hex::new(1, 2).to_offset(HexOrientation::Flat, Offset::Even),
         );
         equal_offset_coordinate(
             "offset_from_hex odd-q",
             OffsetCoordinate::new(1, 2),
-            Hex::new(1, 2).to_offset_coordinate(Offset::Odd, HexOrientation::Flat),
+            Hex::new(1, 2).to_offset(HexOrientation::Flat, Offset::Odd),
         );
     }
 
@@ -726,12 +740,20 @@ mod tests {
         equal_hex(
             "offset_to_hex even-q",
             Hex::new(1, 2),
-            OffsetCoordinate::new(1, 3).to_hex(Offset::Even, HexOrientation::Flat),
+            Hex::from_offset(
+                OffsetCoordinate::new(1, 3),
+                HexOrientation::Flat,
+                Offset::Even,
+            ),
         );
         equal_hex(
             "offset_to_hex odd-q",
             Hex::new(1, 2),
-            OffsetCoordinate::new(1, 2).to_hex(Offset::Odd, HexOrientation::Flat),
+            Hex::from_offset(
+                OffsetCoordinate::new(1, 2),
+                HexOrientation::Flat,
+                Offset::Odd,
+            ),
         );
     }
 

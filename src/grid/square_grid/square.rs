@@ -23,6 +23,12 @@ impl Square {
         Self(IVec2::new(x, y))
     }
 
+    /// Create a new [`Square`] from an [`OffsetCoordinate`].
+    ///
+    pub const fn from_offset(offset_coordinate: OffsetCoordinate) -> Self {
+        Self(offset_coordinate.into_inner())
+    }
+
     pub const fn x(&self) -> i32 {
         self.0.x
     }
@@ -35,10 +41,9 @@ impl Square {
         self.0
     }
 
-    pub fn to_offset_coordinate(self, orientation: SquareOrientation) -> OffsetCoordinate {
-        match orientation {
-            SquareOrientation::Orthogonal => OffsetCoordinate::new(self.x(), self.y()),
-        }
+    /// Create a new [`Square`] from an [`OffsetCoordinate`].
+    pub fn to_offset(self) -> OffsetCoordinate {
+        OffsetCoordinate::new(self.x(), self.y())
     }
 
     /// Get [`Square`] at the given `direction` from `self`.
@@ -143,7 +148,7 @@ impl From<[i32; 2]> for Square {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SquareLayout {
+pub struct SquareLayout {
     pub orientation: SquareOrientation,
     pub size: DVec2,
     pub origin: DVec2,

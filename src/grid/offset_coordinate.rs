@@ -1,9 +1,6 @@
-use glam::IVec2;
+use core::convert::From;
 
-use super::{
-    hex_grid::hex::{Hex, HexOrientation, Offset},
-    square_grid::square::Square,
-};
+use glam::IVec2;
 
 /// A coordinate in the offset coordinate system.
 ///
@@ -37,25 +34,17 @@ impl OffsetCoordinate {
         Self(IVec2::new(x, y))
     }
 
-    pub fn to_hex(self, offset: Offset, orientation: HexOrientation) -> Hex {
-        let (q, r) = match orientation {
-            HexOrientation::Pointy => (
-                self.0.x - (self.0.y + offset.value() * (self.0.y & 1)) / 2,
-                self.0.y,
-            ),
-            HexOrientation::Flat => (
-                self.0.x,
-                self.0.y - (self.0.x + offset.value() * (self.0.x & 1)) / 2,
-            ),
-        };
-        Hex::new(q, r)
-    }
-
-    pub const fn to_square(self) -> Square {
-        Square::new(self.0.x, self.0.y)
+    pub const fn into_inner(self) -> IVec2 {
+        self.0
     }
 
     pub const fn to_array(self) -> [i32; 2] {
         [self.0.x, self.0.y]
+    }
+}
+
+impl From<[u32; 2]> for OffsetCoordinate {
+    fn from(value: [u32; 2]) -> Self {
+        OffsetCoordinate::new(value[0] as i32, value[1] as i32)
     }
 }

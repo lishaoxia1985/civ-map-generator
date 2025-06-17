@@ -327,74 +327,33 @@ impl TileMap {
         let mut north_y = 0;
 
         // Check if the landmass wraps around the map horizontally.
+        // Check if the first and last columns of the map contain tiles that belong to the area.
+        // If so, the landmass wraps around the map horizontally.
+        // If not, the landmass does not wrap around the map horizontally.
         if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            let mut found_first_column = false;
-            let mut found_last_column = false;
-
-            for y in 0..map_height {
-                if !found_first_column {
-                    let first_offset_coordinate = OffsetCoordinate::new(0, y);
-                    let tile_first_index =
-                        Tile::from_offset_coordinate(grid, first_offset_coordinate)
-                            .expect("Offset coordinate is outside the map!");
-                    if tile_first_index.area_id(self) == area_id {
-                        // Found a tile belonging to current area in first column.
-                        found_first_column = true;
-                    }
-                }
-
-                if !found_last_column {
-                    let last_offset_coordinate = OffsetCoordinate::new(map_width - 1, y);
-                    let tile_last_index =
-                        Tile::from_offset_coordinate(grid, last_offset_coordinate)
-                            .expect("Offset coordinate is outside the map!");
-                    if tile_last_index.area_id(self) == area_id {
-                        // Found a tile belonging to current area in last column.
-                        found_last_column = true;
-                    }
-                }
-
-                // Break early if current area has tiles on both sides of map edge.
-                if found_first_column && found_last_column {
-                    wrap_x = true;
-                    break;
-                }
-            }
+            wrap_x = (0..map_height).any(|y| {
+                let first_column_tile = Tile::from_offset(OffsetCoordinate::from([0, y]), grid);
+                first_column_tile.area_id(self) == area_id
+            }) && (0..map_height).any(|y| {
+                let last_column_tile =
+                    Tile::from_offset(OffsetCoordinate::from([map_width - 1, y]), grid);
+                last_column_tile.area_id(self) == area_id
+            });
         }
 
         // Check if the landmass wraps around the map vertically.
+        // Check if the first and last rows of the map contain tiles that belong to the area.
+        // If so, the landmass wraps around the map vertically.
+        // If not, the landmass does not wrap around the map vertically.
         if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            let mut found_first_row = false;
-            let mut found_last_row = false;
-            for x in 0..map_width {
-                if !found_first_row {
-                    let first_offset_coordinate = OffsetCoordinate::new(x, 0);
-                    let tile_first_index =
-                        Tile::from_offset_coordinate(grid, first_offset_coordinate)
-                            .expect("Offset coordinate is outside the map!");
-                    if tile_first_index.area_id(self) == area_id {
-                        // Found a tile belonging to current area in first row.
-                        found_first_row = true;
-                    }
-                }
-
-                if !found_last_row {
-                    let last_offset_coordinate = OffsetCoordinate::new(x, map_height - 1);
-                    let tile_last_index =
-                        Tile::from_offset_coordinate(grid, last_offset_coordinate)
-                            .expect("Offset coordinate is outside the map!");
-                    if tile_last_index.area_id(self) == area_id {
-                        // Found a tile belonging to current area in last row.
-                        found_last_row = true;
-                    }
-                }
-
-                // Break early if current area has tiles on both sides of map edge.
-                if found_first_row && found_last_row {
-                    wrap_y = true;
-                    break;
-                }
-            }
+            wrap_y = (0..map_width).any(|x| {
+                let first_row_tile = Tile::from_offset(OffsetCoordinate::from([x, 0]), grid);
+                first_row_tile.area_id(self) == area_id
+            }) && (0..map_width).any(|x| {
+                let last_row_tile =
+                    Tile::from_offset(OffsetCoordinate::from([x, map_height - 1]), grid);
+                last_row_tile.area_id(self) == area_id
+            });
         }
 
         // Find West and East edges of this landmass.
@@ -403,9 +362,8 @@ impl TileMap {
             // Check for any area membership one column at a time, left to right.
             for x in 0..map_width {
                 if (0..map_height).any(|y| {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     tile.area_id(self) == area_id
                 }) {
                     west_x = x;
@@ -416,9 +374,8 @@ impl TileMap {
             // Check for any area membership one column at a time, right to left.
             for x in (0..map_width).rev() {
                 if (0..map_height).any(|y| {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     tile.area_id(self) == area_id
                 }) {
                     east_x = x;
@@ -437,9 +394,8 @@ impl TileMap {
                 let mut found_area_in_column = false;
 
                 for y in 0..map_height {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
                         found_area_in_column = true;
                     }
@@ -458,9 +414,8 @@ impl TileMap {
                 let mut found_area_in_column = false;
 
                 for y in 0..map_height {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
                         found_area_in_column = true;
                     }
@@ -486,9 +441,8 @@ impl TileMap {
             // Check for any area membership one row at a time, bottom to top.
             for y in 0..map_height {
                 if (0..map_width).any(|x| {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     tile.area_id(self) == area_id
                 }) {
                     south_y = y;
@@ -499,9 +453,8 @@ impl TileMap {
             // Check for any area membership one row at a time, top to bottom.
             for y in (0..map_height).rev() {
                 if (0..map_width).any(|x| {
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     tile.area_id(self) == area_id
                 }) {
                     north_y = y;
@@ -519,9 +472,8 @@ impl TileMap {
                 let mut found_area_in_row = false;
                 for x in 0..map_width {
                     // Checking row.
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
                         // Found a plot belonging to i_area_id, will have to check the next row too.
                         found_area_in_row = true;
@@ -542,9 +494,8 @@ impl TileMap {
                 let mut found_area_in_row = false;
                 for x in 0..map_width {
                     // Checking row.
-                    let offset_coordinate = OffsetCoordinate::new(x, y);
-                    let tile = Tile::from_offset_coordinate(grid, offset_coordinate)
-                        .expect("Offset coordinate is outside the map!");
+                    let offset_coordinate = OffsetCoordinate::from([x, y]);
+                    let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
                         // Found a plot belonging to i_area_id, will have to check the next row too.
                         found_area_in_row = true;
@@ -579,7 +530,12 @@ impl TileMap {
             north_y - south_y + 1
         };
 
-        Rectangle::new(OffsetCoordinate::new(west_x, south_y), width, height, grid)
+        Rectangle::new(
+            OffsetCoordinate::from([west_x, south_y]),
+            width,
+            height,
+            grid,
+        )
     }
 
     /// Get the biggest AreaID.
@@ -715,9 +671,6 @@ impl Region {
     /// The first region will have a fertility sum that is `chop_percent` percent of the total fertility sum of the region.
     /// The second region will have the remaining fertility sum.
     fn chop_into_two_regions(&self, grid: HexGrid, chop_percent: f32) -> (Region, Region) {
-        let map_height = grid.size.height as i32;
-        let map_width = grid.size.width as i32;
-
         let taller = self.rectangle.height() > self.rectangle.width();
 
         // Now divide the region.
@@ -768,7 +721,7 @@ impl Region {
                 .expect("No suitable row found for chop_into_two_regions");
 
             first_region_height = rect_y + 1;
-            second_region_south_y = (self.rectangle.south_y() + first_region_height) % map_height;
+            second_region_south_y = self.rectangle.south_y() + first_region_height as i32;
             second_region_height = self.rectangle.height() - first_region_height;
 
             second_region_fertility_list
@@ -812,7 +765,7 @@ impl Region {
                 .expect("No suitable column found for chop_into_two_regions");
 
             first_region_width = rect_x + 1;
-            second_region_west_x = (self.rectangle.west_x() + first_region_width) % map_width;
+            second_region_west_x = self.rectangle.west_x() + first_region_width as i32;
             second_region_width = self.rectangle.width() - first_region_width;
 
             second_region_fertility_list
@@ -908,20 +861,20 @@ impl Region {
         // Calculate the number of rows which need to be removed from the south edge.
         let adjust_south = (0..height)
             .take_while(|&y| (0..width).all(|x| self.fertility_list[(y * width + x) as usize] == 0))
-            .count() as i32;
+            .count();
 
         // Calculate the number of rows which need to be removed from the north edge.
         let adjust_north = (0..height)
             .rev()
             .take_while(|&y| (0..width).all(|x| self.fertility_list[(y * width + x) as usize] == 0))
-            .count() as i32;
+            .count();
 
         // Calculate the number of columns which need to be removed from the west edge.
         let adjust_west = (0..width)
             .take_while(|&x| {
                 (0..height).all(|y| self.fertility_list[(y * width + x) as usize] == 0)
             })
-            .count() as i32;
+            .count();
 
         // Calculate the number of columns which need to be removed from the east edge.
         let adjust_east = (0..width)
@@ -929,23 +882,24 @@ impl Region {
             .take_while(|&x| {
                 (0..height).all(|y| self.fertility_list[(y * width + x) as usize] == 0)
             })
-            .count() as i32;
+            .count();
 
         // Early return if no adjustments needed
         if adjust_south == 0 && adjust_north == 0 && adjust_west == 0 && adjust_east == 0 {
             return;
         }
 
-        let adjusted_west_x = self.rectangle.west_x() + adjust_west;
-        let adjusted_south_y = self.rectangle.south_y() + adjust_south;
-        let adjusted_width = (self.rectangle.width() - adjust_west) - adjust_east;
-        let adjusted_height = (self.rectangle.height() - adjust_south) - adjust_north;
+        let adjusted_west_x = self.rectangle.west_x() + adjust_west as i32;
+        let adjusted_south_y = self.rectangle.south_y() + adjust_south as i32;
+        let adjusted_width = (self.rectangle.width() - adjust_west as u32) - adjust_east as u32;
+        let adjusted_height = (self.rectangle.height() - adjust_south as u32) - adjust_north as u32;
 
         let fertility_list = &self.fertility_list;
 
         let adjusted_fertility_list = (0..adjusted_height)
             .flat_map(|y| {
-                let row_start = (y + adjust_south) * self.rectangle.width() + adjust_west;
+                let row_start =
+                    (y + adjust_south as u32) * self.rectangle.width() + adjust_west as u32;
                 (0..adjusted_width).map(move |x| fertility_list[(row_start + x) as usize])
             })
             .collect::<Vec<_>>();

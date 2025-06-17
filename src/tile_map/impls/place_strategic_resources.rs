@@ -696,13 +696,9 @@ impl TileMap {
     pub fn placed_resource_count(&self, resource: &str) -> u32 {
         self.resource_query
             .iter()
-            .filter_map(|assignment_resource| {
-                assignment_resource
-                    .as_ref()
-                    .and_then(|(assignment_resource, quantity)| {
-                        (assignment_resource.name() == resource).then_some(*quantity)
-                    })
-            })
+            .filter_map(|assignment_resource| assignment_resource.as_ref())
+            .filter(|(r, _)| r.name() == resource)
+            .map(|(_, q)| *q)
             .sum()
     }
 

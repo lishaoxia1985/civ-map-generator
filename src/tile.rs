@@ -12,7 +12,7 @@ use crate::{
             HexGrid,
         },
         offset_coordinate::OffsetCoordinate,
-        WrapFlags,
+        Cell, Grid,
     },
     map_parameters::MapParameters,
     ruleset::Ruleset,
@@ -31,7 +31,28 @@ impl Tile {
         Self(index)
     }
 
-    /// Get the index of the tile。
+    /// Creates a `Tile` from an `OffsetCoordinate` according to the specified `HexGrid`.
+    ///
+    pub fn from_offset(offset_coordinate: OffsetCoordinate, grid: HexGrid) -> Self {
+        let cell = grid
+            .offset_to_cell(offset_coordinate)
+            .expect("Offset coordinate is out of bounds for the grid size");
+        Self::from_cell(cell)
+    }
+
+    /// Creates a `Tile` from a `Cell`.
+    ///
+    #[inline(always)]
+    pub fn from_cell(cell: Cell) -> Self {
+        Self(cell.index())
+    }
+
+    #[inline(always)]
+    pub fn to_cell(&self) -> Cell {
+        Cell::new(self.0)
+    }
+
+    /// Get the index of the tile.
     ///
     /// The index indicates the tile's position on the map, typically used to access or reference specific tiles.
     #[inline(always)]
@@ -39,67 +60,17 @@ impl Tile {
         self.0
     }
 
-    /// Converts an offset coordinate to the corresponding tile based on map parameters.
-    ///
-    /// # Parameters
-    /// - `grid`: A `HexGrid` that contains the map size and wrapping information.
-    /// - `offset_coordinate`: An `OffsetCoordinate` that represents the position on the map.
-    ///
-    /// # Returns
-    /// - `Result<Self, String>`: Returns an instance of `Self` if the coordinate is valid,
-    ///   or an error message if the coordinate is outside the map bounds.
-    pub fn from_offset_coordinate(
-        grid: HexGrid,
-        offset_coordinate: OffsetCoordinate,
-    ) -> Result<Self, String> {
-        let grid_size = grid.size;
-        let width = grid_size.width as i32;
-        let height = grid_size.height as i32;
-        // Check if the offset coordinate is inside the map
-        let [mut x, mut y] = offset_coordinate.to_array();
-
-        if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            x = x.rem_euclid(width);
-        };
-        if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            y = y.rem_euclid(height);
-        };
-
-        if x >= 0 && x < width && y >= 0 && y < height {
-            let index = (x + y * grid_size.width) as usize;
-            Ok(Self(index))
-        } else {
-            Err(String::from("Offset coordinate is outside the map!"))
-        }
-    }
-
-    /// Converts a tile to the corresponding offset coordinate based on map parameters.
+    /// Converts a tile to the corresponding offset coordinate based on grid parameters.
     ///
     /// # Parameters
     /// - `grid`: A `HexGrid` that contains the map size information.
     ///
     /// # Returns
-    /// Returns an `OffsetCoordinate` that corresponds to the provided tile, calculated based on the map parameters.
+    /// Returns an `OffsetCoordinate` that corresponds to the provided tile, calculated based on the grid parameters.
     /// This coordinate represents the position of the tile within the map grid.
     ///
-    /// # Panics
-    /// This method will panic if the tile is out of bounds for the given map size.
-    pub fn to_offset_coordinate(&self, grid: HexGrid) -> OffsetCoordinate {
-        let width = grid.size.width;
-        let height = grid.size.height;
-
-        debug_assert!(
-            self.0 < (width * height) as usize,
-            "Tile is out of bounds! Tile index: {}, Map size: {}x{}",
-            self.0,
-            width,
-            height
-        );
-
-        let x = self.0 as i32 % width;
-        let y = self.0 as i32 / width;
-
-        OffsetCoordinate::new(x, y)
+    pub fn to_offset(&self, grid: HexGrid) -> OffsetCoordinate {
+        grid.cell_to_offset(self.to_cell())
     }
 
     /// Converts the current tile to a hexagonal coordinate based on the map parameters.
@@ -111,9 +82,8 @@ impl Tile {
     /// # Panics
     /// This method will panic if the tile is out of bounds for the given map size.
     pub fn to_hex_coordinate(&self, grid: HexGrid) -> Hex {
-        // We don't need to check if the index is valid here, as it has already been checked in `to_offset_coordinate`
-        self.to_offset_coordinate(grid)
-            .to_hex(grid.offset, grid.hex_layout.orientation)
+        let offset_coordinate = self.to_offset(grid);
+        Hex::from_offset(offset_coordinate, grid.layout.orientation, grid.offset)
     }
 
     /// Calculates the latitude of the tile on the tile map.
@@ -135,8 +105,8 @@ impl Tile {
     /// This method will panic if the tile is out of bounds for the given map size.
     pub fn latitude(&self, grid: HexGrid) -> f64 {
         // We don't need to check if the index is valid here, as it has already been checked in `to_offset_coordinate`
-        let y = self.to_offset_coordinate(grid).0.y;
-        let half_height = grid.size.height as f64 / 2.0;
+        let y = self.to_offset(grid).0.y;
+        let half_height = grid.height() as f64 / 2.0;
         ((half_height - y as f64) / half_height).abs()
     }
 
@@ -199,56 +169,36 @@ impl Tile {
     /// # Panics
     /// This method will panic if the current tile is out of bounds for the given map size.
     pub fn neighbor_tile(&self, direction: Direction, grid: HexGrid) -> Option<Self> {
-        let orientation = grid.hex_layout.orientation;
-        // We don't need to check if the tile is valid here, as it has already been checked in `to_hex_coordinate`
-        let neighbor_offset_coordinate = self
-            .to_hex_coordinate(grid)
-            .neighbor(orientation, direction)
-            .to_offset_coordinate(grid.offset, orientation);
-
-        Self::from_offset_coordinate(grid, neighbor_offset_coordinate).ok()
+        grid.neighbor(self.to_cell(), direction)
+            .map(|neighbor_cell| Self::from_cell(neighbor_cell))
     }
 
     /// Get the tiles at the given distance from the current tile.
     pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> Vec<Self> {
-        // We don't need to check if the index is valid here, as it has already been checked in `to_hex_coordinate`
-        let hex = self.to_hex_coordinate(grid);
-        hex.hexes_at_distance(distance)
+        grid.cells_at_distance(self.to_cell(), distance)
             .iter()
-            .filter_map(|hex_coordinate| {
-                let offset_coordinate =
-                    hex_coordinate.to_offset_coordinate(grid.offset, grid.hex_layout.orientation);
-
-                Self::from_offset_coordinate(grid, offset_coordinate).ok()
-            })
+            .map(|&cell| Self::from_cell(cell))
             .collect()
     }
 
     /// Get the tiles within the given distance from the current tile, including the current tile.
     pub fn tiles_in_distance<'a>(&'a self, distance: u32, grid: HexGrid) -> Vec<Self> {
-        // We don't need to check if the tile is valid here, as it has already been checked in `to_hex_coordinate`
-        let hex = self.to_hex_coordinate(grid);
-        hex.hexes_in_distance(distance)
+        grid.cells_within_distance(self.to_cell(), distance)
             .iter()
-            .filter_map(|hex_coordinate| {
-                let offset_coordinate =
-                    hex_coordinate.to_offset_coordinate(grid.offset, grid.hex_layout.orientation);
-
-                Self::from_offset_coordinate(grid, offset_coordinate).ok()
-            })
+            .map(|&cell| Self::from_cell(cell))
             .collect()
     }
 
     pub fn pixel_position(&self, grid: HexGrid) -> DVec2 {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
-        grid.hex_layout.hex_to_pixel(hex)
+        grid.layout.hex_to_pixel(hex)
     }
 
     pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> DVec2 {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
-        grid.hex_layout.corner(hex, direction)
+        grid.layout.corner(hex, direction)
     }
 
     /// Checks if there is a river on the current tile.
@@ -277,7 +227,7 @@ impl Tile {
     pub fn has_river_in_direction(&self, direction: Direction, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
         // Get the edge index for the specified direction.
-        let edge_index = grid.hex_layout.orientation.edge_index(direction);
+        let edge_index = grid.layout.orientation.edge_index(direction);
 
         // Determine the tile and edge direction to check based on the edge index.
         let (check_tile, check_edge_direction) = if edge_index < 3 {
@@ -429,7 +379,7 @@ impl Tile {
 /// # Panics
 /// This function will panic if an invalid flow direction is provided.
 fn edge_direction_for_flow_direction(flow_direction: Direction, grid: HexGrid) -> Direction {
-    match grid.hex_layout.orientation {
+    match grid.layout.orientation {
         HexOrientation::Pointy => match flow_direction {
             Direction::North | Direction::South => Direction::East,
             Direction::NorthEast | Direction::SouthWest => Direction::SouthEast,

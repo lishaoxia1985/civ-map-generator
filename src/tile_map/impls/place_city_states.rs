@@ -213,17 +213,17 @@ impl TileMap {
 
         if taller {
             let non_center_height =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.height() as f64).floor() as i32;
+                ((1. - CENTER_BIAS) / 2.0 * rectangle.height() as f64).floor() as u32;
 
             center_west_x = rectangle.west_x();
-            center_south_y = rectangle.south_y() + non_center_height;
+            center_south_y = rectangle.south_y() + non_center_height as i32;
             center_width = rectangle.width();
             center_height = rectangle.height() - (non_center_height * 2);
         } else {
             let non_center_width =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.width() as f64).floor() as i32;
+                ((1. - CENTER_BIAS) / 2.0 * rectangle.width() as f64).floor() as u32;
 
-            center_west_x = rectangle.west_x() + non_center_width;
+            center_west_x = rectangle.west_x() + non_center_width as i32;
             center_south_y = rectangle.south_y();
             center_width = rectangle.width() - (non_center_width * 2);
             center_height = rectangle.height();

@@ -5,6 +5,7 @@ use crate::{
     grid::{
         direction::Direction,
         hex_grid::{hex::HexOrientation, HexGrid},
+        Grid,
     },
     tile::Tile,
     tile_map::TileMap,
@@ -113,7 +114,7 @@ impl TileMap {
         // 1. The first element indicates the next possible flow direction of the river.
         // 2. The second element represents the direction of a neighboring tile relative to the current tile.
         //    We evaluate the weight value of these neighboring tiles using a certain algorithm and select the minimum one to determine the next flow direction of the river.
-        let flow_direction_and_neighbor_tile_direction = match grid.hex_layout.orientation {
+        let flow_direction_and_neighbor_tile_direction = match grid.layout.orientation {
             HexOrientation::Pointy => [
                 (Direction::North, Direction::NorthWest),
                 (Direction::NorthEast, Direction::NorthEast),
@@ -157,7 +158,7 @@ impl TileMap {
         loop {
             let mut river_tile;
             if let Some(this_flow_direction) = this_flow_direction {
-                match grid.hex_layout.orientation {
+                match grid.layout.orientation {
                     HexOrientation::Pointy => match this_flow_direction {
                         Direction::East | Direction::West => unreachable!(),
                         Direction::North => {
@@ -622,7 +623,7 @@ impl TileMap {
 /// - The first element represents the flow direction after a clockwise turn.
 /// - The second element represents the flow direction after a counterclockwise turn.
 fn next_flow_directions(flow_direction: Direction, grid: HexGrid) -> [Direction; 2] {
-    let hex_orientation = grid.hex_layout.orientation;
+    let hex_orientation = grid.layout.orientation;
     [
         hex_orientation.corner_clockwise(flow_direction), // turn_right_flow_direction
         hex_orientation.corner_counter_clockwise(flow_direction), // turn_left_flow_direction

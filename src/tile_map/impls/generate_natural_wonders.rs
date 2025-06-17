@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashSet};
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
+use crate::grid::Grid;
 use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
@@ -527,14 +528,10 @@ impl TileMap {
                     let tile_and_score = natural_wonder_and_tile_and_score
                         .get_mut(natural_wonder_name)
                         .unwrap();
-                    for (tile_x_index, score) in tile_and_score.iter_mut() {
+                    for (tile_x, score) in tile_and_score.iter_mut() {
                         let closest_natural_wonder_dist = placed_natural_wonder_tiles
                             .iter()
-                            .map(|tile_y_index| {
-                                let position_x_hex = tile_x_index.to_hex_coordinate(grid);
-                                let position_y_hex = tile_y_index.to_hex_coordinate(grid);
-                                position_x_hex.distance_to(position_y_hex)
-                            })
+                            .map(|tile_y| grid.distance_to(tile_x.to_cell(), tile_y.to_cell()))
                             .min()
                             .unwrap_or(1000000);
                         *score = if closest_natural_wonder_dist <= 10 {

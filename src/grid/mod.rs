@@ -1,4 +1,5 @@
 use direction::Direction;
+use glam::DVec2;
 use offset_coordinate::OffsetCoordinate;
 
 use bitflags::bitflags;
@@ -8,51 +9,176 @@ pub mod hex_grid;
 pub mod offset_coordinate;
 pub mod square_grid;
 
-trait Grid {
+/// Grid trait defines the interface for a grid structure.
+/// Grid uses [`OffsetCoordinate`] representing each unique position in the grid.
+/// Grids implement this trait with their specific coordinate types,
+/// such as [`Hex`](hex_grid::hex::Hex) for hexagonal grids or [`Square`](square_grid::square::Square) for square grids.
+/// their specific coordinate types is used to calculate the neighbors of a given coordinate,
+/// distance between coordinates, and other grid-related operations.
+///
+pub trait Grid {
     /// The type of coordinate used in the grid.
-    /// For example, for a hex grid, this would be `Hex`.
-    /// For a square grid, this would be `Square`.
-    type CoordinateType;
+    /// This type is used to calculate neighbors, distances, and other grid-related operations.
+    /// For a hex grid, this would be [`Hex`](hex_grid::hex::Hex).
+    /// For a square grid, this would be [`Square`](square_grid::square::Square).
+    type GridCoordinateType;
 
-    fn edge_direction_array<const N: usize>(&self) -> [Direction; N];
+    /// The type of the edge direction and corner array.
+    /// It should be `[Direction; N]` where N is the number of edges or corners.
+    /// For a hex grid, this would be `[Direction; 6]`.
+    /// For a square grid, this would be `[Direction; 4]`.
+    type DirectionArrayType;
 
-    fn corner_direction_array<const N: usize>(&self) -> [Direction; N];
+    fn edge_direction_array(&self) -> Self::DirectionArrayType;
+
+    fn corner_direction_array(&self) -> Self::DirectionArrayType;
+
+    fn size(&self) -> Size;
 
     /// Returns the width of the grid.
-    fn width(&self) -> i32;
+    fn width(&self) -> u32 {
+        self.size().width
+    }
 
     /// Returns the height of the grid.
-    fn height(&self) -> i32;
+    fn height(&self) -> u32 {
+        self.size().height
+    }
+
+    fn wrap_flags(&self) -> WrapFlags;
 
     /// Returns if the grid is wrapped in the X direction.
-    fn wrap_x(&self) -> bool;
+    fn wrap_x(&self) -> bool {
+        self.wrap_flags().contains(WrapFlags::WrapX)
+    }
 
     /// Returns if the grid is wrapped in the Y direction.
-    fn wrap_y(&self) -> bool;
+    fn wrap_y(&self) -> bool {
+        self.wrap_flags().contains(WrapFlags::WrapY)
+    }
 
-    /// Converts a coordinate of the grid to an offset coordinate.
-    fn to_offset_coordinate(&self, offset_coordinate: OffsetCoordinate) -> OffsetCoordinate;
+    /// Get the center of the grid in pixel coordinates.
+    ///
+    /// # Notice
+    /// When we show the map, we need to set camera to the center of the map.
+    fn center(&self) -> DVec2;
 
-    /// Converts an offset coordinate to the grid's coordinate type.
-    /// If the offset coordinate is not valid, returns an error.
-    fn from_offset_coordinate(
+    /// Converts a `Cell` to an `OffsetCoordinate`. If the cell is out of bounds, it will panic.
+    ///
+    fn cell_to_offset(&self, cell: Cell) -> OffsetCoordinate {
+        let width = self.size().width;
+        let height = self.size().height;
+
+        debug_assert!(
+            cell.0 < (width * height) as usize,
+            "Tile is out of bounds! Tile index: {}, Map size: {}x{}",
+            cell.0,
+            width,
+            height
+        );
+
+        let x = cell.0 as u32 % width;
+        let y = cell.0 as u32 / width;
+
+        OffsetCoordinate::from([x, y])
+    }
+
+    /// Converts an `OffsetCoordinate`  to a `Cell`. If the coordinate is out of bounds, an error is returned.
+    ///
+    /// # Arguments
+    /// * `offset_coordinate` - The coordinate to convert
+    ///
+    fn offset_to_cell(&self, offset_coordinate: OffsetCoordinate) -> Result<Cell, String> {
+        self.normalize_offset(offset_coordinate)
+            .map(|normalized_coordinate| {
+                let [x, y] = normalized_coordinate.to_array();
+                Cell((x + y * self.size().width as i32) as usize)
+            })
+    }
+
+    /// Normalizes an offset coordinate to fit within the grid's bounds. If the coordinate is out of bounds, an error is returned.
+    ///
+    /// # Returns
+    ///
+    /// Returns a normalized `OffsetCoordinate` that fits within the grid's bounds.
+    /// The normalized `OffsetCoordinate` should meet the conditions:
+    /// - x ∈ [0, width)
+    /// - y ∈ [0, height)
+    ///
+    /// If the coordinate is out of bounds, an error is returned.
+    /// - If the grid is not wrapped in the X direction, and `offset_coordinate`'s `x` is out of bounds, i.e., not in the range `[0, width)`, the function will return an error.
+    /// - If the grid is not wrapped in the Y direction, and `offset_coordinate`'s `y` is out of bounds, i.e., not in the range `[0, height)`, the function will return an error.
+    ///
+    fn normalize_offset(
         &self,
         offset_coordinate: OffsetCoordinate,
-    ) -> Result<Self::CoordinateType, String>;
+    ) -> Result<OffsetCoordinate, String> {
+        let mut x = offset_coordinate.0.x;
+        let mut y = offset_coordinate.0.y;
 
-    /// Computes the distance from `self` to `rhs` in the grid.
-    fn distance_to(self, rhs: Self) -> i32;
+        if self.wrap_x() {
+            x = x.rem_euclid(self.width() as i32);
+        }
+        if self.wrap_y() {
+            y = y.rem_euclid(self.height() as i32);
+        }
+
+        let offset_coordinate = OffsetCoordinate::new(x, y);
+
+        if self.within_grid_bounds(offset_coordinate) {
+            Ok(offset_coordinate)
+        } else {
+            Err(format!(
+                "Offset coordinate out of bounds: {:?}",
+                offset_coordinate
+            ))
+        }
+    }
+
+    /// Checks if the given `OffsetCoordinate` is within the grid's bounds.
+    ///
+    fn within_grid_bounds(&self, offset_coordinate: OffsetCoordinate) -> bool {
+        offset_coordinate.0.x >= 0
+            && offset_coordinate.0.x < self.width() as i32
+            && offset_coordinate.0.y >= 0
+            && offset_coordinate.0.y < self.height() as i32
+    }
+
+    /// Converts a coordinate of the grid to an offset coordinate.
+    fn grid_coordinate_to_offset(
+        &self,
+        grid_coordinate: Self::GridCoordinateType,
+    ) -> OffsetCoordinate;
+
+    /// Computes the distance from `start` to `dest` in the grid.
+    fn distance_to(&self, start: Cell, dest: Cell) -> i32;
+
+    /// Returns the neighbor of `center` in the given `direction`.
+    fn neighbor(&self, center: Cell, direction: Direction) -> Option<Cell>;
+
+    /// Returns all coordinates that are at a distance of `distance` from `center`.
+    fn cells_at_distance(&self, center: Cell, distance: u32) -> Vec<Cell>;
+
+    /// Returns all coordinates that are within a distance of `distance` from `center`.
+    /// This includes the center coordinate itself.
+    fn cells_within_distance(&self, center: Cell, distance: u32) -> Vec<Cell>;
+
+    /// Determine the direction of `dest` relative to `start`.
+    ///
+    /// If `dest` is located to the north of `start`, the function returns `Some(Direction::North)`.
+    /// If `dest` is equal to `start`, the function returns [`None`].
+    fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction>;
 }
 
 /// Represents the size of a grid or map with a specified width and height.
 #[derive(Clone, Copy)]
 pub struct Size {
-    pub width: i32,
-    pub height: i32,
+    pub width: u32,
+    pub height: u32,
 }
 
 impl Size {
-    pub fn new(width: i32, height: i32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }
 }
@@ -66,5 +192,24 @@ bitflags! {
     pub struct WrapFlags: u8 {
         const WrapX = 0b0000_0001;
         const WrapY = 0b0000_0010;
+    }
+}
+
+/// Representing a cell or  tile in a grid, which is identified by a unique index.
+///
+/// It is a wrapper around a `usize` index, which uniquely identifies the cell within the grid.
+/// The index is used to access the cell in a flat representation of the grid, such as a 1D array.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Cell(usize);
+
+impl Cell {
+    /// Creates a new `Cell` with the given index.
+    pub fn new(index: usize) -> Self {
+        Self(index)
+    }
+
+    /// Returns the index of the cell in the grid.
+    pub fn index(&self) -> usize {
+        self.0
     }
 }
