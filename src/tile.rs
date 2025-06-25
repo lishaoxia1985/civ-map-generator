@@ -1,4 +1,4 @@
-use glam::DVec2;
+use glam::Vec2;
 
 use crate::{
     component::map_component::{
@@ -189,13 +189,13 @@ impl Tile {
             .collect()
     }
 
-    pub fn pixel_position(&self, grid: HexGrid) -> DVec2 {
+    pub fn pixel_position(&self, grid: HexGrid) -> Vec2 {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
         grid.layout.hex_to_pixel(hex)
     }
 
-    pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> DVec2 {
+    pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> Vec2 {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
         grid.layout.corner(hex, direction)

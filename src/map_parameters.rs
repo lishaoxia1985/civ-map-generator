@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use glam::DVec2;
+use glam::Vec2;
 
 use crate::{
     grid::{
@@ -53,16 +53,17 @@ pub struct MapParameters {
 /// 1. [`WorldGrid::from_grid`] constructor - Creates from a custom-sized grid,
 ///    automatically determining the [`WorldSize`] based on grid dimensions:
 /// ```rust
-/// use civ_map_generator::grid::hex_grid::hex::*;
+/// use civ_map_generator::grid::*;
+/// use civ_map_generator::grid::hex_grid::*;
 /// use civ_map_generator::map_parameters::*;
-/// use glam::DVec2;
+/// use glam::Vec2;
 ///
 /// let grid = HexGrid {
 ///     size: Size { width: 80, height: 40 },
 ///     hex_layout: HexLayout {
 ///         orientation: HexOrientation::Flat,
-///         size: DVec2::new(8., 8.),
-///         origin: DVec2::new(0., 0.),
+///         size: Vec2::new(8., 8.),
+///         origin: Vec2::new(0., 0.),
 ///     },
 ///     wrap_flags: WrapFlags::WrapX,
 ///     offset: Offset::Odd,
@@ -74,9 +75,10 @@ pub struct MapParameters {
 /// 2. Explicit [`WorldSize`] specification - Creates with default grid dimensions
 ///    for a standardized world size:
 /// ```rust
-/// use civ_map_generator::grid::hex_grid::hex::*;
+/// use civ_map_generator::grid::*;
+/// use civ_map_generator::grid::hex_grid::*;
 /// use civ_map_generator::map_parameters::*;
-/// use glam::DVec2;
+/// use glam::Vec2;
 ///
 /// let world_size = WorldSize::Standard;
 /// // Create a new HexGrid with 0 dimensions.
@@ -84,8 +86,8 @@ pub struct MapParameters {
 ///    size: Size { width: 0, height: 0 },
 ///    hex_layout: HexLayout {
 ///        orientation: HexOrientation::Flat,
-///        size: DVec2::new(8., 8.),
-///        origin: DVec2::new(0., 0.),
+///        size: Vec2::new(8., 8.),
+///        origin: Vec2::new(0., 0.),
 ///    },
 ///    wrap_flags: WrapFlags::WrapX,
 ///    offset: Offset::Odd,
@@ -212,8 +214,8 @@ impl Default for MapParameters {
             },
             layout: HexLayout {
                 orientation: HexOrientation::Flat,
-                size: DVec2::new(8., 8.),
-                origin: DVec2::new(0., 0.),
+                size: Vec2::new(8., 8.),
+                origin: Vec2::new(0., 0.),
             },
             wrap_flags: WrapFlags::WrapX,
             offset: Offset::Odd,

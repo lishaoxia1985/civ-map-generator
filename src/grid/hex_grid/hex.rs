@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
+use core::f32::consts::{FRAC_PI_3, FRAC_PI_6};
 use std::array;
 use std::cmp::{max, min};
-use std::f64::consts::{FRAC_PI_3, FRAC_PI_6};
 use std::ops::{Add, Sub};
 
-use glam::{DMat2, DVec2, IVec2};
+use glam::{IVec2, Mat2, Vec2};
 
 use crate::grid::direction::Direction;
 use crate::grid::offset_coordinate::OffsetCoordinate;
 
-pub const SQRT_3: f64 = 1.732_050_807_568_877_2_f64;
+pub const SQRT_3: f32 = 1.732_050_807_568_877_2_f32;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Hex(IVec2);
@@ -182,15 +182,15 @@ impl Hex {
     }
 
     /// Rounds floating point coordinates to [`Hex`].
-    pub fn round(fractional_hex: DVec2) -> Self {
+    pub fn round(fractional_hex: Vec2) -> Self {
         let mut rounded = fractional_hex.round();
 
         let diff = fractional_hex - rounded;
 
         if diff.x.abs() >= diff.y.abs() {
-            rounded.x += 0.5_f64.mul_add(diff.y, diff.x).round();
+            rounded.x += 0.5_f32.mul_add(diff.y, diff.x).round();
         } else {
-            rounded.y += 0.5_f64.mul_add(diff.x, diff.y).round();
+            rounded.y += 0.5_f32.mul_add(diff.x, diff.y).round();
         }
 
         Self(rounded.as_ivec2())
@@ -237,11 +237,11 @@ impl DoubledCoordinate {
 #[derive(Clone, Copy, Debug)]
 pub struct HexLayout {
     pub orientation: HexOrientation,
-    pub size: DVec2,
-    pub origin: DVec2,
+    pub size: Vec2,
+    pub origin: Vec2,
 }
 impl HexLayout {
-    pub fn new(orientation: HexOrientation, size: DVec2, origin: DVec2) -> Self {
+    pub fn new(orientation: HexOrientation, size: Vec2, origin: Vec2) -> Self {
         Self {
             orientation,
             size,
@@ -249,16 +249,16 @@ impl HexLayout {
         }
     }
 
-    pub fn hex_to_pixel(self, hex: Hex) -> DVec2 {
+    pub fn hex_to_pixel(self, hex: Hex) -> Vec2 {
         let m = self.orientation.conversion_matrix();
-        let size: DVec2 = self.size;
-        let origin: DVec2 = self.origin;
+        let size: Vec2 = self.size;
+        let origin: Vec2 = self.origin;
         let mat2 = m.forward_matrix;
-        let pixel_position = mat2 * (hex.0.as_dvec2()) * size;
+        let pixel_position = mat2 * (hex.0.as_vec2()) * size;
         pixel_position + origin
     }
 
-    pub fn pixel_to_hex(self, pixel_position: DVec2) -> Hex {
+    pub fn pixel_to_hex(self, pixel_position: Vec2) -> Hex {
         let m = self.orientation.conversion_matrix();
         let (size, origin) = (self.size, self.origin);
         let pt = (pixel_position - origin) / size;
@@ -268,32 +268,32 @@ impl HexLayout {
     }
 
     /// Get the corner pixel coordinates of the given hexagonal coordinates according to corner direction
-    pub fn corner(self, hex: Hex, direction: Direction) -> DVec2 {
-        let center: DVec2 = self.hex_to_pixel(hex);
-        let offset: DVec2 = self.corner_offset(direction);
+    pub fn corner(self, hex: Hex, direction: Direction) -> Vec2 {
+        let center: Vec2 = self.hex_to_pixel(hex);
+        let offset: Vec2 = self.corner_offset(direction);
         center + offset
     }
 
     /// Retrieves all 6 corner pixel coordinates of the given hexagonal coordinates
-    pub fn all_corners(self, hex: Hex) -> [DVec2; 6] {
+    pub fn all_corners(self, hex: Hex) -> [Vec2; 6] {
         let corner_array = self.orientation.corner_direction();
         array::from_fn(|i| self.corner(hex, corner_array[i]))
     }
 
-    fn corner_offset(self, direction: Direction) -> DVec2 {
-        let size: DVec2 = self.size;
-        let angle: f64 = self.orientation.corner_angle(direction);
-        size * DVec2::from_angle(angle)
+    fn corner_offset(self, direction: Direction) -> Vec2 {
+        let size: Vec2 = self.size;
+        let angle: f32 = self.orientation.corner_angle(direction);
+        size * Vec2::from_angle(angle)
     }
 }
 
 pub fn hex_linedraw(a: Hex, b: Hex) -> Vec<Hex> {
     let n: i32 = a.distance_to(b);
-    let a_nudge = a.0.as_dvec2() + DVec2::new(1e-06, 1e-06);
-    let b_nudge = b.0.as_dvec2() + DVec2::new(1e-06, 1e-06);
-    let step: f64 = 1.0 / max(n, 1) as f64;
+    let a_nudge = a.0.as_vec2() + Vec2::new(1e-06, 1e-06);
+    let b_nudge = b.0.as_vec2() + Vec2::new(1e-06, 1e-06);
+    let step: f32 = 1.0 / max(n, 1) as f32;
     (0..=n)
-        .map(|i| Hex::round(a_nudge.lerp(b_nudge, step * i as f64)))
+        .map(|i| Hex::round(a_nudge.lerp(b_nudge, step * i as f32)))
         .collect()
 }
 
@@ -307,9 +307,9 @@ pub enum Offset {
 /// This struct stored a forward and inverse matrix, for pixel/hex conversion
 pub struct ConversionMatrix {
     /// Matrix used to compute hexagonal coordinates to pixel coordinates
-    pub forward_matrix: DMat2,
+    pub forward_matrix: Mat2,
     /// Matrix used to compute pixel coordinates to hexagonal coordinates
-    pub inverse_matrix: DMat2,
+    pub inverse_matrix: Mat2,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -452,36 +452,36 @@ impl HexOrientation {
 
     #[inline]
     /// Returns the angle of the `Hex` corner in radians of the given direction for the hexagons
-    pub fn corner_angle(self, direction: Direction) -> f64 {
+    pub fn corner_angle(self, direction: Direction) -> f32 {
         let start_angle = match self {
             HexOrientation::Pointy => FRAC_PI_6,
             HexOrientation::Flat => 0.0,
         };
-        let corner_index = self.corner_index(direction) as f64;
+        let corner_index = self.corner_index(direction) as f32;
         //equal to `start_angle - corner_index * FRAC_PI_3`
         corner_index.mul_add(-FRAC_PI_3, start_angle)
     }
 
     #[inline]
     /// Returns the angle of the `Hex` edge in radians of the given direction for the hexagons
-    pub fn edge_angle(self, direction: Direction) -> f64 {
+    pub fn edge_angle(self, direction: Direction) -> f32 {
         let start_angle = match self {
             HexOrientation::Pointy => 0.0,
             HexOrientation::Flat => FRAC_PI_6,
         };
-        let edge_index = self.edge_index(direction) as f64;
+        let edge_index = self.edge_index(direction) as f32;
         //equal to `start_angle - edge_index * FRAC_PI_3`
         edge_index.mul_add(-FRAC_PI_3, start_angle)
     }
 
     const POINTY_CONVERSION_MATRIX: ConversionMatrix = ConversionMatrix {
-        forward_matrix: DMat2::from_cols_array(&[SQRT_3, 0.0, SQRT_3 / 2.0, 3.0 / 2.0]),
-        inverse_matrix: DMat2::from_cols_array(&[SQRT_3 / 3.0, 0.0, -1.0 / 3.0, 2.0 / 3.0]),
+        forward_matrix: Mat2::from_cols_array(&[SQRT_3, 0.0, SQRT_3 / 2.0, 3.0 / 2.0]),
+        inverse_matrix: Mat2::from_cols_array(&[SQRT_3 / 3.0, 0.0, -1.0 / 3.0, 2.0 / 3.0]),
     };
 
     const FLAT_CONVERSION_MATRIX: ConversionMatrix = ConversionMatrix {
-        forward_matrix: DMat2::from_cols_array(&[3.0 / 2.0, SQRT_3 / 2.0, 0.0, SQRT_3]),
-        inverse_matrix: DMat2::from_cols_array(&[2.0 / 3.0, -1.0 / 3.0, 0.0, SQRT_3 / 3.0]),
+        forward_matrix: Mat2::from_cols_array(&[3.0 / 2.0, SQRT_3 / 2.0, 0.0, SQRT_3]),
+        inverse_matrix: Mat2::from_cols_array(&[2.0 / 3.0, -1.0 / 3.0, 0.0, SQRT_3 / 3.0]),
     };
 
     #[inline]
@@ -516,7 +516,7 @@ impl HexOrientation {
 #[cfg(test)]
 mod tests {
 
-    use glam::{DVec2, IVec2};
+    use glam::{IVec2, Vec2};
 
     use super::{
         hex_linedraw, Direction, DoubledCoordinate, Hex, HexLayout, HexOrientation, Offset,
@@ -600,13 +600,13 @@ mod tests {
 
     #[test]
     pub fn test_hex_round() {
-        let a = DVec2::ZERO;
-        let b = DVec2::new(1.0, -1.0);
-        let c = DVec2::new(0.0, -1.0);
+        let a = Vec2::ZERO;
+        let b = Vec2::new(1.0, -1.0);
+        let c = Vec2::new(0.0, -1.0);
         equal_hex(
             "hex_round 1",
             Hex::new(5, -10),
-            Hex::round(DVec2::ZERO.lerp(DVec2::new(10.0, -20.0), 0.5)),
+            Hex::round(Vec2::ZERO.lerp(Vec2::new(10.0, -20.0), 0.5)),
         );
         equal_hex("hex_round 2", Hex::round(a), Hex::round(a.lerp(b, 0.499)));
         equal_hex("hex_round 3", Hex::round(b), Hex::round(a.lerp(b, 0.501)));
@@ -643,14 +643,14 @@ mod tests {
         let h = Hex::new(3, 4);
         let flat: HexLayout = HexLayout {
             orientation: HexOrientation::Flat,
-            size: DVec2 { x: 10.0, y: 15.0 },
-            origin: DVec2 { x: 35.0, y: 71.0 },
+            size: Vec2 { x: 10.0, y: 15.0 },
+            origin: Vec2 { x: 35.0, y: 71.0 },
         };
         equal_hex("layout", h, flat.pixel_to_hex(flat.hex_to_pixel(h)));
         let pointy: HexLayout = HexLayout {
             orientation: HexOrientation::Pointy,
-            size: DVec2 { x: 10.0, y: 15.0 },
-            origin: DVec2 { x: 35.0, y: 71.0 },
+            size: Vec2 { x: 10.0, y: 15.0 },
+            origin: Vec2 { x: 35.0, y: 71.0 },
         };
         equal_hex("layout", h, pointy.pixel_to_hex(pointy.hex_to_pixel(h)));
     }

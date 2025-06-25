@@ -656,7 +656,7 @@ impl CvFractal {
 mod tests {
     use std::path::Path;
 
-    use glam::DVec2;
+    use glam::Vec2;
     use rand::{rngs::StdRng, SeedableRng};
 
     use crate::grid::{
@@ -684,8 +684,8 @@ mod tests {
             size: grid_size,
             layout: HexLayout {
                 orientation: HexOrientation::Flat,
-                size: DVec2::new(8., 8.),
-                origin: DVec2::new(0., 0.),
+                size: Vec2::new(8., 8.),
+                origin: Vec2::new(0., 0.),
             },
             wrap_flags: WrapFlags::WrapX,
             offset: Offset::Odd,

@@ -1,4 +1,4 @@
-use glam::{DVec2, IVec3};
+use glam::{IVec3, Vec2};
 use hex::{Hex, HexLayout, Offset};
 
 use crate::{
@@ -88,7 +88,7 @@ impl Grid for HexGrid {
         self.wrap_flags
     }
 
-    fn center(&self) -> DVec2 {
+    fn center(&self) -> Vec2 {
         let width = self.size.width;
         let height = self.size.height;
 
@@ -99,7 +99,7 @@ impl Grid for HexGrid {
         ];
 
         let (min_offset_x, min_offset_y) = bottom_left_offset_coordinates.into_iter().fold(
-            (0.0_f64, 0.0_f64),
+            (0.0_f32, 0.0_f32),
             |(min_offset_x, min_offset_y), offset_coordinate| {
                 let hex = Hex::from_offset(offset_coordinate, self.layout.orientation, self.offset);
 
@@ -115,7 +115,7 @@ impl Grid for HexGrid {
         ];
 
         let (max_offset_x, max_offset_y) = top_right_offset_coordinates.into_iter().fold(
-            (0.0_f64, 0.0_f64),
+            (0.0_f32, 0.0_f32),
             |(max_offset_x, max_offset_y), offset_coordinate| {
                 let hex = Hex::from_offset(offset_coordinate, self.layout.orientation, self.offset);
 
@@ -124,7 +124,7 @@ impl Grid for HexGrid {
             },
         );
 
-        DVec2::new(
+        Vec2::new(
             (min_offset_x + max_offset_x) / 2.,
             (min_offset_y + max_offset_y) / 2.,
         )

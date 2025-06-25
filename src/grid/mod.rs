@@ -1,5 +1,5 @@
 use direction::Direction;
-use glam::DVec2;
+use glam::Vec2;
 use offset_coordinate::OffsetCoordinate;
 
 use bitflags::bitflags;
@@ -61,7 +61,7 @@ pub trait Grid {
     ///
     /// # Notice
     /// When we show the map, we need to set camera to the center of the map.
-    fn center(&self) -> DVec2;
+    fn center(&self) -> Vec2;
 
     /// Converts a `Cell` to an `OffsetCoordinate`. If the cell is out of bounds, it will panic.
     ///

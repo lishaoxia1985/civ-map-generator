@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Sub},
 };
 
-use glam::{DVec2, IVec2};
+use glam::{IVec2, Vec2};
 
 use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 
@@ -150,12 +150,12 @@ impl From<[i32; 2]> for Square {
 #[derive(Clone, Copy, Debug)]
 pub struct SquareLayout {
     pub orientation: SquareOrientation,
-    pub size: DVec2,
-    pub origin: DVec2,
+    pub size: Vec2,
+    pub origin: Vec2,
 }
 
 impl SquareLayout {
-    pub fn new(orientation: SquareOrientation, size: DVec2, origin: DVec2) -> Self {
+    pub fn new(orientation: SquareOrientation, size: Vec2, origin: Vec2) -> Self {
         Self {
             orientation,
             size,
@@ -163,36 +163,36 @@ impl SquareLayout {
         }
     }
 
-    pub fn square_to_pixel(self, square: Square) -> DVec2 {
+    pub fn square_to_pixel(self, square: Square) -> Vec2 {
         match self.orientation {
-            SquareOrientation::Orthogonal => self.origin + square.0.as_dvec2() * self.size,
+            SquareOrientation::Orthogonal => self.origin + square.0.as_vec2() * self.size,
         }
     }
 
-    pub fn pixel_to_square(self, pixel_position: DVec2) -> Square {
+    pub fn pixel_to_square(self, pixel_position: Vec2) -> Square {
         let pt = (pixel_position - self.origin) / self.size;
         match self.orientation {
-            SquareOrientation::Orthogonal => Square((pt + DVec2::new(0.5, 0.5)).floor().as_ivec2()),
+            SquareOrientation::Orthogonal => Square((pt + Vec2::new(0.5, 0.5)).floor().as_ivec2()),
         }
     }
 
-    pub fn corner(self, square: Square, direction: Direction) -> DVec2 {
+    pub fn corner(self, square: Square, direction: Direction) -> Vec2 {
         let center = self.square_to_pixel(square);
         center + self.corner_offset(direction)
     }
 
-    pub fn all_corners(self, square: Square) -> [DVec2; 4] {
+    pub fn all_corners(self, square: Square) -> [Vec2; 4] {
         let corner_array = self.orientation.corner_direction();
         array::from_fn(|i| self.corner(square, corner_array[i]))
     }
 
-    fn corner_offset(self, direction: Direction) -> DVec2 {
+    fn corner_offset(self, direction: Direction) -> Vec2 {
         let offset_value = match self.orientation {
             SquareOrientation::Orthogonal => match direction {
-                Direction::NorthEast => DVec2::new(1., 1.),
-                Direction::SouthEast => DVec2::new(1., -1.),
-                Direction::SouthWest => DVec2::new(-1., -1.),
-                Direction::NorthWest => DVec2::new(-1., 1.),
+                Direction::NorthEast => Vec2::new(1., 1.),
+                Direction::SouthEast => Vec2::new(1., -1.),
+                Direction::SouthWest => Vec2::new(-1., -1.),
+                Direction::NorthWest => Vec2::new(-1., 1.),
                 _ => panic!("Invalid direction"),
             },
         };
