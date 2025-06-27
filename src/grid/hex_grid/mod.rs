@@ -1,10 +1,7 @@
 use glam::{IVec3, Vec2};
 use hex::{Hex, HexLayout, Offset};
 
-use crate::{
-    grid::{offset_coordinate::OffsetCoordinate, Cell},
-    map_parameters::WorldSize,
-};
+use crate::grid::{offset_coordinate::OffsetCoordinate, Cell, GridSize, WorldSizeType};
 
 use super::{direction::Direction, Grid, Size, WrapFlags};
 
@@ -14,56 +11,33 @@ pub mod hex;
 pub struct HexGrid {
     pub size: Size,
     pub layout: HexLayout,
-    pub wrap_flags: WrapFlags,
     pub offset: Offset,
+    pub wrap_flags: WrapFlags,
 }
 
 impl HexGrid {
-    /// Get the world size of the grid based on its dimensions.
-    ///
-    /// Maybe be as one function of trait in the future?
-    pub fn get_world_size(&self) -> WorldSize {
-        let width = self.size.width;
-        let height = self.size.height;
-        let area = width * height;
-        match area {
-            // When area <= 40 * 24, set the WorldSize to "Duel" and give a warning message
-            area if area < 960 => {
-                eprintln!(
-                    "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is 40 * 24 = 960 in the original CIV5 game.",
-                    width, height, area
-                );
-                WorldSize::Duel
-            }
-            // For "Duel" size: area <= 56 * 36
-            area if area < 2016 => WorldSize::Duel,
-            // For "Tiny" size: area <= 66 * 42
-            area if area < 2772 => WorldSize::Tiny,
-            // For "Small" size: area <= 80 * 52
-            area if area < 4160 => WorldSize::Small,
-            // For "Standard" size: area <= 104 * 64
-            area if area < 6656 => WorldSize::Standard,
-            // For "Large" size: area <= 128 * 80
-            area if area < 10240 => WorldSize::Large,
-            // For "Huge" size: area >= 128 * 80
-            _ => WorldSize::Huge,
-        }
-    }
+    pub fn new(size: Size, layout: HexLayout, offset: Offset, wrap_flags: WrapFlags) -> Self {
+        use crate::grid::hex_grid::hex::HexOrientation;
 
-    /// Set the default size of the grid based on the provided `WorldSize`.
-    ///
-    /// Maybe be as one function of trait in the future?
-    pub fn set_default_size(&mut self, world_size: WorldSize) {
-        let (width, height) = match world_size {
-            WorldSize::Duel => (40, 24),
-            WorldSize::Tiny => (56, 36),
-            WorldSize::Small => (66, 42),
-            WorldSize::Standard => (80, 52),
-            WorldSize::Large => (104, 64),
-            WorldSize::Huge => (128, 80),
-        };
-        let size = Size { width, height };
-        self.size = size;
+        match layout.orientation {
+            HexOrientation::Pointy => {
+                if wrap_flags.contains(WrapFlags::WrapY) && size.height % 2 == 1 {
+                    panic!("For pointy hexes, height must be even when wrapping on the y-axis.");
+                }
+            }
+            HexOrientation::Flat => {
+                if wrap_flags.contains(WrapFlags::WrapX) && size.width % 2 == 1 {
+                    panic!("For flat hexes, width must be even when wrapping on the x-axis.");
+                }
+            }
+        }
+
+        Self {
+            size,
+            layout,
+            offset,
+            wrap_flags,
+        }
     }
 }
 
@@ -285,5 +259,37 @@ impl Grid for HexGrid {
         });
 
         max_direction
+    }
+}
+
+impl GridSize for HexGrid {
+    // Define the default size for each world size type, according to CIV5 standards.
+    fn default_size(world_size_type: WorldSizeType) -> Size {
+        match world_size_type {
+            WorldSizeType::Duel => Size {
+                width: 40,
+                height: 24,
+            },
+            WorldSizeType::Tiny => Size {
+                width: 56,
+                height: 36,
+            },
+            WorldSizeType::Small => Size {
+                width: 66,
+                height: 42,
+            },
+            WorldSizeType::Standard => Size {
+                width: 80,
+                height: 52,
+            },
+            WorldSizeType::Large => Size {
+                width: 104,
+                height: 64,
+            },
+            WorldSizeType::Huge => Size {
+                width: 128,
+                height: 80,
+            },
+        }
     }
 }

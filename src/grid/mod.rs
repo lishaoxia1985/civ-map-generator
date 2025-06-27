@@ -181,6 +181,12 @@ impl Size {
     pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }
+
+    /// Returns how many cells are in the grid.
+    ///
+    pub fn area(&self) -> u32 {
+        self.width * self.height
+    }
 }
 
 bitflags! {
@@ -212,4 +218,59 @@ impl Cell {
     pub fn index(&self) -> usize {
         self.0
     }
+}
+
+/// Trait for grids that can determine their world size type based on their size and provide a default size based on [WorldSizeType].
+pub trait GridSize: Grid {
+    /// Get world size type of the grid based on its size.
+    ///
+    fn world_size_type(&self) -> WorldSizeType {
+        let width = self.width();
+        let height = self.height();
+        let area = width * height;
+
+        // Get the threshold areas for each world size from default_size
+        let duel_area = Self::default_size(WorldSizeType::Duel).area();
+        let tiny_area = Self::default_size(WorldSizeType::Tiny).area();
+        let small_area = Self::default_size(WorldSizeType::Small).area();
+        let standard_area = Self::default_size(WorldSizeType::Standard).area();
+        let large_area = Self::default_size(WorldSizeType::Large).area();
+        let huge_area = Self::default_size(WorldSizeType::Huge).area();
+
+        match area {
+            // When area < duel_area, show warning
+            area if area < duel_area => {
+                eprintln!(
+                "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is {} in the original CIV5 game.",
+                width, height, area, duel_area
+            );
+                WorldSizeType::Duel
+            }
+            // Compare with each threshold
+            area if area < tiny_area => WorldSizeType::Duel,
+            area if area < small_area => WorldSizeType::Tiny,
+            area if area < standard_area => WorldSizeType::Small,
+            area if area < large_area => WorldSizeType::Standard,
+            area if area < huge_area => WorldSizeType::Large,
+            _ => WorldSizeType::Huge,
+        }
+    }
+
+    /// Get the default size of the grid based on its world size type.
+    /// This is used to initialize the grid with a default size.
+    ///
+    fn default_size(world_size_type: WorldSizeType) -> Size;
+}
+
+/// Defines standard world size type presets for game maps or environments.
+///
+/// Variants represent different scale levels from smallest to largest.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum WorldSizeType {
+    Duel,
+    Tiny,
+    Small,
+    Standard,
+    Large,
+    Huge,
 }

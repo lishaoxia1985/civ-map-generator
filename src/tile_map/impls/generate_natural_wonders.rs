@@ -5,13 +5,12 @@ use std::collections::{BTreeMap, HashSet};
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
-use crate::grid::Grid;
+use crate::grid::{Grid, WorldSizeType};
 use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         terrain_type::TerrainType,
     },
-    map_parameters::WorldSize,
     ruleset::{unique::Unique, Ruleset},
     tile::Tile,
     tile_map::{Layer, TileMap},
@@ -28,7 +27,7 @@ impl TileMap {
     pub fn place_natural_wonders(&mut self, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
-        let world_size = self.world_grid.world_size;
+        let world_size = self.world_grid.world_size_type;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
@@ -349,7 +348,7 @@ impl TileMap {
     pub fn generate_natural_wonders(&mut self, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
-        let world_size = self.world_grid.world_size;
+        let world_size = self.world_grid.world_size_type;
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
@@ -688,13 +687,13 @@ impl TileMap {
 }
 
 /// Get how many natural wonders should be placed on the map based on the world size.
-fn get_world_natural_wonder_target_number(world_size: WorldSize) -> u32 {
-    match world_size {
-        WorldSize::Duel => 2,
-        WorldSize::Tiny => 3,
-        WorldSize::Small => 4,
-        WorldSize::Standard => 5,
-        WorldSize::Large => 6,
-        WorldSize::Huge => 7,
+fn get_world_natural_wonder_target_number(world_size_type: WorldSizeType) -> u32 {
+    match world_size_type {
+        WorldSizeType::Duel => 2,
+        WorldSizeType::Tiny => 3,
+        WorldSizeType::Small => 4,
+        WorldSizeType::Standard => 5,
+        WorldSizeType::Large => 6,
+        WorldSizeType::Huge => 7,
     }
 }

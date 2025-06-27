@@ -3,7 +3,8 @@ use rand::Rng;
 use crate::{
     component::map_component::terrain_type::TerrainType,
     fractal::{CvFractal, FractalFlags},
-    map_parameters::{SeaLevel, WorldAge, WorldSize},
+    grid::WorldSizeType,
+    map_parameters::{SeaLevel, WorldAge},
     tile_map::{MapParameters, TileMap},
 };
 
@@ -52,22 +53,22 @@ impl TileMap {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
-        let grain = match self.world_grid.world_size {
-            WorldSize::Duel => 3,
-            WorldSize::Tiny => 3,
-            WorldSize::Small => 4,
-            WorldSize::Standard => 4,
-            WorldSize::Large => 5,
-            WorldSize::Huge => 5,
+        let grain = match self.world_grid.world_size_type {
+            WorldSizeType::Duel => 3,
+            WorldSizeType::Tiny => 3,
+            WorldSizeType::Small => 4,
+            WorldSizeType::Standard => 4,
+            WorldSizeType::Large => 5,
+            WorldSizeType::Huge => 5,
         };
 
-        let mut num_plates = match self.world_grid.world_size {
-            WorldSize::Duel => 6,
-            WorldSize::Tiny => 9,
-            WorldSize::Small => 12,
-            WorldSize::Standard => 18,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 30,
+        let mut num_plates = match self.world_grid.world_size_type {
+            WorldSizeType::Duel => 6,
+            WorldSizeType::Tiny => 9,
+            WorldSizeType::Small => 12,
+            WorldSizeType::Standard => 18,
+            WorldSizeType::Large => 24,
+            WorldSizeType::Huge => 30,
         };
 
         num_plates = (num_plates as f64 * adjust_plates) as i32;
@@ -168,13 +169,13 @@ impl TileMap {
         // Default no rifts. Set grain to between 1 and 3 to add rifts.
         let rift_grain = -1;
 
-        let num_plates_for_continents = match self.world_grid.world_size {
-            WorldSize::Duel => 4,
-            WorldSize::Tiny => 8,
-            WorldSize::Small => 16,
-            WorldSize::Standard => 20,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 32,
+        let num_plates_for_continents = match self.world_grid.world_size_type {
+            WorldSizeType::Duel => 4,
+            WorldSizeType::Tiny => 8,
+            WorldSizeType::Small => 16,
+            WorldSizeType::Standard => 20,
+            WorldSizeType::Large => 24,
+            WorldSizeType::Huge => 32,
         };
 
         let grid = self.world_grid.grid;

@@ -9,7 +9,8 @@ use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
     },
-    map_parameters::{MapParameters, ResourceSetting, WorldSize},
+    grid::WorldSizeType,
+    map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
     tile_map::{Layer, TileMap},
@@ -20,7 +21,7 @@ impl TileMap {
     /// Place Luxury Resources on the map.
     /// Before running this function, [`TileMap::assign_luxury_roles`] function must be run.
     pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        let world_size = self.world_grid.world_size;
+        let world_size = self.world_grid.world_size_type;
         let resource_setting = map_parameters.resource_setting;
 
         // Stores number of each luxury had extras handed out at civ starts because of low fertility.
@@ -1180,7 +1181,7 @@ impl TileMap {
 }
 
 /// TODO: This function will implement in file 'map_parameters.rs' in the future.
-fn get_region_luxury_target_numbers(world_size: WorldSize) -> Vec<u32> {
+fn get_region_luxury_target_numbers(world_size: WorldSizeType) -> Vec<u32> {
     // This data was separated out to allow easy replacement in map scripts.
     // This table, indexed by civ-count, provides the target amount of luxuries to place in each region.
     // These vector's length is 22, which is the maximum number of civilizations in the game.
@@ -1208,12 +1209,12 @@ fn get_region_luxury_target_numbers(world_size: WorldSize) -> Vec<u32> {
     ];
 
     match world_size {
-        WorldSize::Duel => duel_values,
-        WorldSize::Tiny => tiny_values,
-        WorldSize::Small => small_values,
-        WorldSize::Standard => standard_values,
-        WorldSize::Large => large_values,
-        WorldSize::Huge => huge_values,
+        WorldSizeType::Duel => duel_values,
+        WorldSizeType::Tiny => tiny_values,
+        WorldSizeType::Small => small_values,
+        WorldSizeType::Standard => standard_values,
+        WorldSizeType::Large => large_values,
+        WorldSizeType::Huge => huge_values,
     }
 }
 
@@ -1228,35 +1229,35 @@ fn get_region_luxury_target_numbers(world_size: WorldSize) -> Vec<u32> {
 /// It is important to note that it is just one factor in the formula for placing luxuries,
 /// meaning other elements (such as civilization count) also contribute to the final result.
 fn get_world_luxury_target_numbers(
-    world_size: WorldSize,
+    world_size_type: WorldSizeType,
     resource_setting: ResourceSetting,
 ) -> [u32; 2] {
     match resource_setting {
-        ResourceSetting::Sparse => match world_size {
-            WorldSize::Duel => [14, 3],
-            WorldSize::Tiny => [24, 4],
-            WorldSize::Small => [36, 4],
-            WorldSize::Standard => [48, 5],
-            WorldSize::Large => [60, 5],
-            WorldSize::Huge => [76, 6],
+        ResourceSetting::Sparse => match world_size_type {
+            WorldSizeType::Duel => [14, 3],
+            WorldSizeType::Tiny => [24, 4],
+            WorldSizeType::Small => [36, 4],
+            WorldSizeType::Standard => [48, 5],
+            WorldSizeType::Large => [60, 5],
+            WorldSizeType::Huge => [76, 6],
         },
 
-        ResourceSetting::Abundant => match world_size {
-            WorldSize::Duel => [24, 3],
-            WorldSize::Tiny => [40, 4],
-            WorldSize::Small => [60, 4],
-            WorldSize::Standard => [80, 5],
-            WorldSize::Large => [100, 5],
-            WorldSize::Huge => [128, 6],
+        ResourceSetting::Abundant => match world_size_type {
+            WorldSizeType::Duel => [24, 3],
+            WorldSizeType::Tiny => [40, 4],
+            WorldSizeType::Small => [60, 4],
+            WorldSizeType::Standard => [80, 5],
+            WorldSizeType::Large => [100, 5],
+            WorldSizeType::Huge => [128, 6],
         },
 
-        _ => match world_size {
-            WorldSize::Duel => [18, 3],
-            WorldSize::Tiny => [30, 4],
-            WorldSize::Small => [45, 4],
-            WorldSize::Standard => [60, 5],
-            WorldSize::Large => [75, 5],
-            WorldSize::Huge => [95, 6],
+        _ => match world_size_type {
+            WorldSizeType::Duel => [18, 3],
+            WorldSizeType::Tiny => [30, 4],
+            WorldSizeType::Small => [45, 4],
+            WorldSizeType::Standard => [60, 5],
+            WorldSizeType::Large => [75, 5],
+            WorldSizeType::Huge => [95, 6],
         },
     }
 }

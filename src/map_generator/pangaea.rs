@@ -5,7 +5,8 @@ use crate::{
     component::map_component::terrain_type::TerrainType,
     fractal::{CvFractal, FractalFlags},
     generate_common_methods,
-    map_parameters::{MapParameters, SeaLevel, WorldAge, WorldSize},
+    grid::WorldSizeType,
+    map_parameters::{MapParameters, SeaLevel, WorldAge},
     tile_map::TileMap,
 };
 
@@ -56,22 +57,22 @@ impl Generator for Pangaea {
                 .gen_range(sea_level_low..=sea_level_high),
         };
 
-        let grain = match world_grid.world_size {
-            WorldSize::Duel => 3,
-            WorldSize::Tiny => 3,
-            WorldSize::Small => 4,
-            WorldSize::Standard => 4,
-            WorldSize::Large => 5,
-            WorldSize::Huge => 5,
+        let grain = match world_grid.world_size_type {
+            WorldSizeType::Duel => 3,
+            WorldSizeType::Tiny => 3,
+            WorldSizeType::Small => 4,
+            WorldSizeType::Standard => 4,
+            WorldSizeType::Large => 5,
+            WorldSizeType::Huge => 5,
         };
 
-        let num_plates = match world_grid.world_size {
-            WorldSize::Duel => 6,
-            WorldSize::Tiny => 9,
-            WorldSize::Small => 12,
-            WorldSize::Standard => 18,
-            WorldSize::Large => 24,
-            WorldSize::Huge => 30,
+        let num_plates = match world_grid.world_size_type {
+            WorldSizeType::Duel => 6,
+            WorldSizeType::Tiny => 9,
+            WorldSizeType::Small => 12,
+            WorldSizeType::Standard => 18,
+            WorldSizeType::Large => 24,
+            WorldSizeType::Huge => 30,
         };
 
         let continents_fractal = tile_map.continents_fractal();

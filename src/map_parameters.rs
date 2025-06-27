@@ -1,3 +1,4 @@
+use core::debug_assert;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use glam::Vec2;
@@ -9,7 +10,7 @@ use crate::{
             HexGrid,
         },
         offset_coordinate::OffsetCoordinate,
-        Grid, Size, WrapFlags,
+        Grid, GridSize, Size, WorldSizeType, WrapFlags,
     },
     tile::Tile,
 };
@@ -53,21 +54,20 @@ pub struct MapParameters {
 /// 1. [`WorldGrid::from_grid`] constructor - Creates from a custom-sized grid,
 ///    automatically determining the [`WorldSize`] based on grid dimensions:
 /// ```rust
-/// use civ_map_generator::grid::*;
-/// use civ_map_generator::grid::hex_grid::*;
+/// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
 /// use civ_map_generator::map_parameters::*;
 /// use glam::Vec2;
 ///
-/// let grid = HexGrid {
-///     size: Size { width: 80, height: 40 },
-///     hex_layout: HexLayout {
+/// let grid = HexGrid::new(
+///     Size { width: 80, height: 40 }, // Custom grid size
+///     HexLayout {
 ///         orientation: HexOrientation::Flat,
 ///         size: Vec2::new(8., 8.),
 ///         origin: Vec2::new(0., 0.),
-///     },
-///     wrap_flags: WrapFlags::WrapX,
-///     offset: Offset::Odd,
-/// };
+///     }, // Hex layout
+///     Offset::Odd, // Odd offset for hexagonal grid
+///     WrapFlags::WrapX, // Wrap horizontally
+/// );
 ///
 /// let world_grid = WorldGrid::from_grid(grid);
 /// ```
@@ -75,43 +75,79 @@ pub struct MapParameters {
 /// 2. Explicit [`WorldSize`] specification - Creates with default grid dimensions
 ///    for a standardized world size:
 /// ```rust
-/// use civ_map_generator::grid::*;
-/// use civ_map_generator::grid::hex_grid::*;
+/// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
 /// use civ_map_generator::map_parameters::*;
 /// use glam::Vec2;
 ///
-/// let world_size = WorldSize::Standard;
-/// // Create a new HexGrid with 0 dimensions.
-/// let mut grid = HexGrid {
-///    size: Size { width: 0, height: 0 },
-///    hex_layout: HexLayout {
-///        orientation: HexOrientation::Flat,
-///        size: Vec2::new(8., 8.),
-///        origin: Vec2::new(0., 0.),
-///    },
-///    wrap_flags: WrapFlags::WrapX,
-///    offset: Offset::Odd,
-/// };
+/// let world_size_type = WorldSizeType::Standard;
+/// let mut grid = HexGrid::new(
+///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
+///     HexLayout {
+///         orientation: HexOrientation::Flat,
+///         size: Vec2::new(8., 8.),
+///         origin: Vec2::new(0., 0.),
+///     }, // Hex layout
+///     Offset::Odd, // Odd offset for hexagonal grid
+///     WrapFlags::WrapX, // Wrap horizontally
+/// );
 ///
-/// // Sets default dimensions based on world size classification
-/// grid.set_default_size(world_size);
-///
-/// let world_grid = WorldGrid {
-///     grid,
-///     world_size,
-/// };
+/// let world_grid = WorldGrid::new(grid, world_size_type);
 /// ```
 ///
 #[derive(Clone, Copy)]
 pub struct WorldGrid {
     pub grid: HexGrid,
-    pub world_size: WorldSize,
+    pub world_size_type: WorldSizeType,
 }
 
 impl WorldGrid {
+    /// Creates a new `WorldGrid` with the specified grid and world size.
+    ///
+    /// # Notice
+    /// Before calling this function, ensure that the grid's size matches the specified world size.
+    /// This check is performed at runtime through `debug_assert!`, which only activates in debug mode.
+    ///
+    /// # Usage
+    /// This function should be used exclusively with the initialization syntax shown below.
+    /// Direct initialization with the `new` function outside of this pattern is not supported:
+    ///
+    /// ```rust
+    /// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
+    /// use civ_map_generator::map_parameters::*;
+    /// use glam::Vec2;
+    ///
+    /// let world_size_type = WorldSizeType::Standard;
+    /// let mut grid = HexGrid::new(
+    ///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
+    ///     HexLayout {
+    ///         orientation: HexOrientation::Flat,
+    ///         size: Vec2::new(8., 8.),
+    ///         origin: Vec2::new(0., 0.),
+    ///     }, // Hex layout
+    ///     Offset::Odd, // Odd offset for hexagonal grid
+    ///     WrapFlags::WrapX, // Wrap horizontally
+    /// );
+    ///
+    /// let world_grid = WorldGrid::new(grid, world_size_type);
+    /// ```
+    ///
+    pub fn new(grid: HexGrid, world_size: WorldSizeType) -> Self {
+        debug_assert!(
+            grid.world_size_type() == world_size,
+            "Grid size does not match the specified world size"
+        );
+        Self {
+            grid,
+            world_size_type: world_size,
+        }
+    }
+
     pub fn from_grid(grid: HexGrid) -> Self {
-        let world_size = grid.get_world_size();
-        Self { grid, world_size }
+        let world_size = grid.world_size_type();
+        Self {
+            grid,
+            world_size_type: world_size,
+        }
     }
 
     /// Get the size of the grid.
@@ -120,22 +156,9 @@ impl WorldGrid {
     }
 
     /// Get the world size of the grid.
-    pub fn world_size(&self) -> WorldSize {
-        self.world_size
+    pub fn world_size(&self) -> WorldSizeType {
+        self.world_size_type
     }
-}
-
-/// Defines standard world size presets for game maps or environments.
-///
-/// Variants represent different scale levels from smallest to largest.
-#[derive(Clone, Copy)]
-pub enum WorldSize {
-    Duel,
-    Tiny,
-    Small,
-    Standard,
-    Large,
-    Huge,
 }
 
 pub enum MapType {
@@ -206,12 +229,9 @@ pub enum ResourceSetting {
 
 impl Default for MapParameters {
     fn default() -> Self {
-        let world_size = WorldSize::Standard;
-        let mut grid = HexGrid {
-            size: Size {
-                width: 0,
-                height: 0,
-            },
+        let world_size = WorldSizeType::Standard;
+        let grid = HexGrid {
+            size: HexGrid::default_size(world_size),
             layout: HexLayout {
                 orientation: HexOrientation::Flat,
                 size: Vec2::new(8., 8.),
@@ -220,9 +240,9 @@ impl Default for MapParameters {
             wrap_flags: WrapFlags::WrapX,
             offset: Offset::Odd,
         };
-        grid.set_default_size(world_size);
 
-        let world_grid = WorldGrid { grid, world_size };
+        let world_grid = WorldGrid::new(grid, world_size);
+
         Self {
             map_type: MapType::Fractal,
             world_grid,

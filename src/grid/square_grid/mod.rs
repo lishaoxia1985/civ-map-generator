@@ -4,7 +4,7 @@ use crate::grid::{
     direction::Direction,
     offset_coordinate::{self, OffsetCoordinate},
     square_grid::square::{Square, SquareLayout},
-    Cell, Grid,
+    Cell, Grid, GridSize, WorldSizeType,
 };
 
 use super::{Size, WrapFlags};
@@ -16,6 +16,16 @@ pub struct SquareGrid {
     pub size: Size,
     pub layout: SquareLayout,
     pub wrap_flags: WrapFlags,
+}
+
+impl SquareGrid {
+    pub fn new(size: Size, layout: SquareLayout, wrap_flags: WrapFlags) -> Self {
+        Self {
+            size,
+            layout,
+            wrap_flags,
+        }
+    }
 }
 
 impl Grid for SquareGrid {
@@ -206,5 +216,37 @@ impl Grid for SquareGrid {
         });
 
         max_direction
+    }
+}
+
+impl GridSize for SquareGrid {
+    fn default_size(world_size_type: WorldSizeType) -> Size {
+        // Define the default size for each world size type, according to CIV4 standards.
+        match world_size_type {
+            WorldSizeType::Duel => Size {
+                width: 48,
+                height: 32,
+            },
+            WorldSizeType::Tiny => Size {
+                width: 60,
+                height: 40,
+            },
+            WorldSizeType::Small => Size {
+                width: 72,
+                height: 48,
+            },
+            WorldSizeType::Standard => Size {
+                width: 96,
+                height: 64,
+            },
+            WorldSizeType::Large => Size {
+                width: 120,
+                height: 80,
+            },
+            WorldSizeType::Huge => Size {
+                width: 144,
+                height: 96,
+            },
+        }
     }
 }
