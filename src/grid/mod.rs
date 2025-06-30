@@ -144,11 +144,10 @@ pub trait Grid {
             && offset_coordinate.0.y < self.height() as i32
     }
 
-    /// Converts a coordinate of the grid to an offset coordinate.
-    fn grid_coordinate_to_offset(
-        &self,
-        grid_coordinate: Self::GridCoordinateType,
-    ) -> OffsetCoordinate;
+    /// Convert `GridCoordinateType` to a [`Cell`] in the grid.
+    ///
+    /// If the grid coordinate is out of bounds, it will return `None`.
+    fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell>;
 
     /// Computes the distance from `start` to `dest` in the grid.
     fn distance_to(&self, start: Cell, dest: Cell) -> i32;

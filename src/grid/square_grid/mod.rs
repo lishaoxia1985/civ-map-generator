@@ -67,17 +67,11 @@ impl Grid for SquareGrid {
         )
     }
 
-    fn grid_coordinate_to_offset(
-        &self,
-        grid_coordinate: Self::GridCoordinateType,
-    ) -> offset_coordinate::OffsetCoordinate {
+    fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell> {
         // Convert the square coordinate to an offset coordinate
         let offset_coordinate = grid_coordinate.to_offset();
 
-        self.normalize_offset(offset_coordinate).expect(&format!(
-            "Offset coordinate out of bounds: ({}, {})",
-            offset_coordinate.0.x, offset_coordinate.0.y
-        ))
+        self.offset_to_cell(offset_coordinate).ok()
     }
 
     fn distance_to(&self, start: Cell, dest: Cell) -> i32 {
@@ -134,11 +128,7 @@ impl Grid for SquareGrid {
         center_square
             .squares_at_distance(distance)
             .iter()
-            .filter_map(|&square_coordinate| {
-                let offset_coordinate = self.grid_coordinate_to_offset(square_coordinate);
-
-                self.offset_to_cell(offset_coordinate).ok()
-            })
+            .filter_map(|&square_coordinate| self.grid_coordinate_to_cell(square_coordinate))
             .collect()
     }
 
@@ -149,11 +139,7 @@ impl Grid for SquareGrid {
         center_square
             .squares_in_distance(distance)
             .iter()
-            .filter_map(|&square_coordinate| {
-                let offset_coordinate = self.grid_coordinate_to_offset(square_coordinate);
-
-                self.offset_to_cell(offset_coordinate).ok()
-            })
+            .filter_map(|&square_coordinate| self.grid_coordinate_to_cell(square_coordinate))
             .collect()
     }
 

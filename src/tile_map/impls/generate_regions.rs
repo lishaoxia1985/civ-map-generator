@@ -519,13 +519,13 @@ impl TileMap {
 
         // Convert east_x and north_y into width and height.
         let width = if wrap_x {
-            east_x - west_x + 1 + map_width
+            east_x + map_width - west_x + 1
         } else {
             east_x - west_x + 1
         };
 
         let height = if wrap_y {
-            north_y - south_y + 1 + map_height
+            north_y + map_height - south_y + 1
         } else {
             north_y - south_y + 1
         };
