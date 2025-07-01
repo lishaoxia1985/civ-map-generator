@@ -48,14 +48,14 @@ impl TileMap {
                     }
                     2 => {
                         // If there are still not enough rivers generated, the algorithm should run again using Mountain and Hill as the river starting locations.
-                        let num_tiles = self.area_list[area_id as usize].size;
+                        let num_tiles = self.area_list[area_id].size;
                         let num_river_edges = self.river_edge_count(area_id);
                         matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill)
                             && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
                     }
                     3 => {
                         // At last if there are still not enough rivers generated, the algorithm should run again using any Land tiles as the river starting locations.
-                        let num_tiles = self.area_list[area_id as usize].size;
+                        let num_tiles = self.area_list[area_id].size;
                         let num_river_edges = self.river_edge_count(area_id);
                         terrain_type != TerrainType::Water
                             && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
