@@ -2,7 +2,7 @@ use glam::Vec2;
 
 use crate::grid::{
     direction::Direction,
-    offset_coordinate::{self, OffsetCoordinate},
+    offset_coordinate::OffsetCoordinate,
     square_grid::square::{Square, SquareLayout},
     Cell, Grid, GridSize, WorldSizeType,
 };

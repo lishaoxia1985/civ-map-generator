@@ -88,7 +88,6 @@ impl Generator for Pangaea {
             flags,
             6,
             1,
-            grid,
         );
 
         let mut hills_fractal = CvFractal::create(
@@ -106,7 +105,6 @@ impl Generator for Pangaea {
             flags,
             1,
             2,
-            grid,
         );
 
         let [water_threshold] = continents_fractal.get_height_from_percents([water_percent]);

@@ -9,12 +9,13 @@ use image::{imageops::resize, GrayImage, ImageBuffer};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 
 use crate::grid::{
-    direction::Direction, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, Cell, Grid,
+    direction::Direction, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, Cell, Grid, Size,
     WrapFlags,
 };
 
+/// A seed for the Voronoi diagram in the fractal grid.
 struct VoronoiSeed {
-    /// The offset coordinate of the seed
+    /// The cell of the seed in the fractal grid.
     pub cell: Cell,
     /// `weakness` implies the influence of the seed on its surrounding area
     pub weakness: i32,
@@ -26,22 +27,17 @@ struct VoronoiSeed {
 
 impl VoronoiSeed {
     /// Generates a random seed for the fractal
-    pub fn gen_random_seed(
-        random: &mut StdRng,
-        fractal_width: i32,
-        fractal_height: i32,
-        grid: HexGrid,
-    ) -> Self {
-        let offset_coordinate = OffsetCoordinate::new(
-            random.gen_range(0..fractal_width),
-            random.gen_range(0..fractal_height),
-        );
+    pub fn gen_random_seed(random: &mut StdRng, fractal_grid: HexGrid) -> Self {
+        let offset_coordinate = OffsetCoordinate::from([
+            random.gen_range(0..fractal_grid.width()),
+            random.gen_range(0..fractal_grid.height()),
+        ]);
 
-        let cell = grid.offset_to_cell(offset_coordinate).unwrap();
+        let cell = fractal_grid.offset_to_cell(offset_coordinate).unwrap();
 
         let weakness = random.gen_range(0..6);
 
-        let edge_direction = grid.layout.orientation.edge_direction();
+        let edge_direction = fractal_grid.layout.orientation.edge_direction();
         let bias_direction = *edge_direction.choose(random).unwrap();
 
         let directional_bias_strength = random.gen_range(0..4);
@@ -56,9 +52,10 @@ impl VoronoiSeed {
 }
 
 pub struct CvFractal {
-    /// The grid which the fractal is based on.
-    /// This grid values contain the information about grid, for example: the wrapping type, size of the grid...
+    /// The grid is used in the game. Its size is `map_width * map_height`.
     grid: HexGrid,
+    /// The fractal grid, it is different from the original grid, it is used to store the fractal's values.
+    fractal_grid: HexGrid,
     /// It describes the fractal's properties.
     flags: FractalFlags,
     /// It is an exponent related to the width of the source fractal,
@@ -125,6 +122,11 @@ impl CvFractal {
         let fractal_width = 1 << width_exp;
         let fractal_height = 1 << height_exp;
 
+        let fractal_grid = HexGrid {
+            size: Size::new(fractal_width, fractal_height),
+            ..grid
+        };
+
         let fractal_array =
             vec![vec![0; (fractal_height + 1) as usize]; (fractal_width + 1) as usize];
 
@@ -133,12 +135,13 @@ impl CvFractal {
 
         Self {
             grid,
+            fractal_grid,
             fractal_array,
             flags,
             width_exp,
             height_exp,
-            fractal_width,
-            fractal_height,
+            fractal_width: fractal_width as i32,
+            fractal_height: fractal_height as i32,
             width_ratio,
             height_ratio,
         }
@@ -217,7 +220,7 @@ impl CvFractal {
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
         let hint_width = (self.fractal_width >> smooth)
-            + if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
+            + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                 0
             } else {
                 1
@@ -227,7 +230,7 @@ impl CvFractal {
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
         let hint_height = (self.fractal_height >> smooth)
-            + if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
+            + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                 0
             } else {
                 1
@@ -262,7 +265,7 @@ impl CvFractal {
             /*********** start to preprocess fractal_array[][] at the beginning of every iter stage in Diamond-Square algorithm. ***********/
 
             // If wrapping in the Y direction is needed, copy the bottom row to the top
-            if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
+            if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                 for x in 0..=self.fractal_width {
                     self.fractal_array[x as usize][self.fractal_height as usize] =
                         self.fractal_array[x as usize][0];
@@ -276,7 +279,7 @@ impl CvFractal {
             }
 
             // If wrapping in the X direction is needed, copy the leftmost column to the rightmost
-            if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
+            if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                 for y in 0..=self.fractal_height {
                     self.fractal_array[self.fractal_width as usize][y as usize] =
                         self.fractal_array[0][y as usize];
@@ -291,7 +294,7 @@ impl CvFractal {
 
             // If crust construction is needed, perform the processing
             if self.flags.contains(FractalFlags::CenterRift) {
-                if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
+                if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                     for x in 0..=self.fractal_width {
                         for y in 0..=(self.fractal_height / 6) {
                             let factor = ((self.fractal_height / 12) - y).abs() + 1;
@@ -302,7 +305,7 @@ impl CvFractal {
                     }
                 }
 
-                if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
+                if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                     for y in 0..=self.fractal_height {
                         for x in 0..=(self.fractal_width / 6) {
                             let factor = ((self.fractal_width / 12) - x).abs() + 1;
@@ -327,14 +330,14 @@ impl CvFractal {
             //      2. In the original Square Step will use the calculation result of the Diamond Step,
             //         in this code Square Step doesn't use the calculation result of the Diamond Step.
             for x in 0..((self.fractal_width >> pass)
-                + if self.grid.wrap_flags.contains(WrapFlags::WrapX) {
+                + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                     0
                 } else {
                     1
                 })
             {
                 for y in 0..((self.fractal_height >> pass)
-                    + if self.grid.wrap_flags.contains(WrapFlags::WrapY) {
+                    + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                         0
                     } else {
                         1
@@ -516,7 +519,6 @@ impl CvFractal {
         ridge_flags: FractalFlags,
         blend_ridge: i32,
         blend_fract: i32,
-        grid: HexGrid,
     ) {
         // this will use a modified Voronoi system to give the appearance of mountain ranges
 
@@ -525,21 +527,21 @@ impl CvFractal {
         let mut voronoi_seeds: Vec<VoronoiSeed> = Vec::with_capacity(num_voronoi_seeds as usize);
 
         for _ in 0..num_voronoi_seeds {
-            let mut voronoi_seed =
-                VoronoiSeed::gen_random_seed(random, self.fractal_width, self.fractal_height, grid);
+            let mut voronoi_seed = VoronoiSeed::gen_random_seed(random, self.fractal_grid);
 
             // Check if the new random seed is too close to an existing seed
             // If it is, generate a new random seed until it is not too close
             while voronoi_seeds.iter().any(|existing_seed| {
-                let distance_between_voronoi_seeds =
-                    grid.distance_to(voronoi_seed.cell, existing_seed.cell);
+                let distance_between_voronoi_seeds = self
+                    .fractal_grid
+                    .distance_to(voronoi_seed.cell, existing_seed.cell);
                 distance_between_voronoi_seeds < 7
             }) {
                 let offset_coordinate = OffsetCoordinate::new(
                     random.gen_range(0..self.fractal_width),
                     random.gen_range(0..self.fractal_height),
                 );
-                voronoi_seed.cell = grid.offset_to_cell(offset_coordinate).unwrap();
+                voronoi_seed.cell = self.fractal_grid.offset_to_cell(offset_coordinate).unwrap();
             }
 
             voronoi_seeds.push(voronoi_seed);
@@ -549,7 +551,10 @@ impl CvFractal {
             for y in 0..self.fractal_height {
                 // get the hex coordinate for this position
                 let current_offset_coordinate = OffsetCoordinate::new(x, y);
-                let current_cell = grid.offset_to_cell(current_offset_coordinate).unwrap();
+                let current_cell = self
+                    .fractal_grid
+                    .offset_to_cell(current_offset_coordinate)
+                    .unwrap();
 
                 // find the distance to each of the seeds (with modifiers for strength of the seed, directional bias, and random factors)
                 // closest seed distance is the distance to the seed with the lowest distance
@@ -557,8 +562,9 @@ impl CvFractal {
                 // next closest seed distance is the distance to the seed with the second lowest distance
                 let mut next_closest_seed_distance = i32::MAX;
                 for current_voronoi_seed in &voronoi_seeds {
-                    let mut modified_distance =
-                        grid.distance_to(current_cell, current_voronoi_seed.cell);
+                    let mut modified_distance = self
+                        .fractal_grid
+                        .distance_to(current_cell, current_voronoi_seed.cell);
                     // Checking if ridge_flags is not empty
                     // If it is empty, we don't need to modify the distance
                     // If it is not empty, we need to modify the distance
@@ -570,8 +576,9 @@ impl CvFractal {
                         // make the influence of the seed on its surrounding area more random
                         modified_distance += current_voronoi_seed.weakness;
 
-                        let relative_direction =
-                            grid.estimate_direction(current_cell, current_voronoi_seed.cell);
+                        let relative_direction = self
+                            .fractal_grid
+                            .estimate_direction(current_cell, current_voronoi_seed.cell);
 
                         // make the influence of the seed more directional
                         if relative_direction == Some(current_voronoi_seed.bias_direction) {

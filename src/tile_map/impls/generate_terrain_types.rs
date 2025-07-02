@@ -88,20 +88,12 @@ impl TileMap {
             flags,
             6,
             1,
-            grid,
         );
 
         let mut hills_fractal =
             CvFractal::create(&mut self.random_number_generator, grid, grain, flags, 7, 6);
 
-        hills_fractal.ridge_builder(
-            &mut self.random_number_generator,
-            num_plates,
-            flags,
-            1,
-            2,
-            grid,
-        );
+        hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
 
         let [water_threshold] = continents_fractal.get_height_from_percents([water_percent]);
 
@@ -220,7 +212,6 @@ impl TileMap {
             flags,
             1,
             2,
-            grid,
         );
 
         continents_fractal
