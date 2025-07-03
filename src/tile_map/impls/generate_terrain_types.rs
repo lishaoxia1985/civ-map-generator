@@ -71,7 +71,7 @@ impl TileMap {
             WorldSizeType::Huge => 30,
         };
 
-        num_plates = (num_plates as f64 * adjust_plates) as i32;
+        num_plates = (num_plates as f64 * adjust_plates) as u32;
 
         let grid = self.world_grid.grid;
 

@@ -18,11 +18,11 @@ struct VoronoiSeed {
     /// The cell of the seed in the fractal grid.
     pub cell: Cell,
     /// `weakness` implies the influence of the seed on its surrounding area
-    pub weakness: i32,
+    pub weakness: u32,
     /// `bias_direction` indicates the preferred direction or bias when assigning points within its influence region during the generation of the diagram.
     pub bias_direction: Direction,
     /// The strength of the bias direction.
-    pub directional_bias_strength: i32,
+    pub directional_bias_strength: u32,
 }
 
 impl VoronoiSeed {
@@ -37,8 +37,12 @@ impl VoronoiSeed {
 
         let weakness = random.gen_range(0..6);
 
-        let edge_direction = fractal_grid.layout.orientation.edge_direction();
-        let bias_direction = *edge_direction.choose(random).unwrap();
+        let bias_direction = *fractal_grid
+            .layout
+            .orientation
+            .edge_direction()
+            .choose(random)
+            .unwrap();
 
         let directional_bias_strength = random.gen_range(0..4);
 
@@ -55,6 +59,8 @@ pub struct CvFractal {
     /// The grid is used in the game. Its size is `map_width * map_height`.
     grid: HexGrid,
     /// The fractal grid, it is different from the original grid, it is used to store the fractal's values.
+    /// Width resolution of the fractal grid is `1 << width_exp`, is a power of 2.
+    /// Height resolution of the fractal grid is `1 << height_exp`, is a power of 2.
     fractal_grid: HexGrid,
     /// It describes the fractal's properties.
     flags: FractalFlags,
@@ -67,11 +73,7 @@ pub struct CvFractal {
     /// Stores the 2D fractal array, the array size is `[fractal_width + 1][fractal_height + 1]`
     /// # Notice
     /// The last column and last row are not part of the fractal, they are used to calculate the fractal values.
-    fractal_array: Vec<Vec<i32>>,
-    /// Width resolution of the fractal, is a power of 2. It equals `1 << width_exp`
-    fractal_width: i32,
-    /// Height resolution of the fractal, is a power of 2. It equals `1 << height_exp`
-    fractal_height: i32,
+    fractal_array: Vec<Vec<u32>>,
     /// It represents the ratio between the width of the fractal (`fractal_width`) and the width of the 2D array (`map_width`).\
     /// It is used to calculate the source x position based on the given `x` coordinate.
     width_ratio: f64,
@@ -140,8 +142,6 @@ impl CvFractal {
             flags,
             width_exp,
             height_exp,
-            fractal_width: fractal_width as i32,
-            fractal_height: fractal_height as i32,
             width_ratio,
             height_ratio,
         }
@@ -203,11 +203,15 @@ impl CvFractal {
         &mut self,
         grain: i32,
         random: &mut StdRng,
-        hint_array: Option<Vec<Vec<i32>>>,
+        hint_array: Option<Vec<Vec<u32>>>,
         rifts: Option<&CvFractal>,
     ) {
+        let fractal_width = self.fractal_grid.size.width;
+        let fractal_height = self.fractal_grid.size.height;
+
         let min_exp = min(self.width_exp, self.height_exp);
-        let smooth = (min_exp - grain).clamp(0, min_exp);
+        // Convert to usize for the following calculations.
+        let smooth = (min_exp - grain).clamp(0, min_exp) as usize;
 
         assert!(
             smooth < 8,
@@ -219,7 +223,7 @@ impl CvFractal {
         // Notice: when the fractal is WrapX, we don't consider the last row (row index: `self.fractal_width`),
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
-        let hint_width = (self.fractal_width >> smooth)
+        let hint_width = (fractal_width >> smooth)
             + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                 0
             } else {
@@ -229,7 +233,7 @@ impl CvFractal {
         // Notice: when the fractal is WrapY, we don't consider the last column (column index: `self.fractal_height`),
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
-        let hint_height = (self.fractal_height >> smooth)
+        let hint_height = (fractal_height >> smooth)
             + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                 0
             } else {
@@ -245,18 +249,17 @@ impl CvFractal {
                 "Invalid hints array size."
             );
             // Assign an initial value to each vertex by `hint_array` for later use in the diamond-square algorithm.
-            for x in 0..hint_width {
-                for y in 0..hint_height {
-                    self.fractal_array[(x << smooth) as usize][(y << smooth) as usize] =
-                        hint_array[x as usize][y as usize];
+            for x in 0..hint_width as usize {
+                for y in 0..hint_height as usize {
+                    self.fractal_array[x << smooth][y << smooth] = hint_array[x][y];
                 }
             }
         } else {
             // Assign an initial value to each vertex by random number generator for later use in the diamond-square algorithm.
-            for x in 0..hint_width {
-                for y in 0..hint_height {
-                    self.fractal_array[(x << smooth) as usize][(y << smooth) as usize] =
-                        random.gen_range(0..256); // Fractal Gen 1
+            for x in 0..hint_width as usize {
+                for y in 0..hint_height as usize {
+                    self.fractal_array[x << smooth][y << smooth] = random.gen_range(0..256);
+                    // Fractal Gen 1
                 }
             }
         }
@@ -266,52 +269,48 @@ impl CvFractal {
 
             // If wrapping in the Y direction is needed, copy the bottom row to the top
             if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
-                for x in 0..=self.fractal_width {
-                    self.fractal_array[x as usize][self.fractal_height as usize] =
-                        self.fractal_array[x as usize][0];
+                for x in 0..=fractal_width as usize {
+                    self.fractal_array[x][fractal_height as usize] = self.fractal_array[x][0];
                 }
             } else if self.flags.contains(FractalFlags::Polar) {
                 // Polar coordinate transformation, the top and bottom row will be set to 0
-                for x in 0..=self.fractal_width {
-                    self.fractal_array[x as usize][0] = 0;
-                    self.fractal_array[x as usize][self.fractal_height as usize] = 0;
+                for x in 0..=fractal_width as usize {
+                    self.fractal_array[x][0] = 0;
+                    self.fractal_array[x][fractal_height as usize] = 0;
                 }
             }
 
             // If wrapping in the X direction is needed, copy the leftmost column to the rightmost
             if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
-                for y in 0..=self.fractal_height {
-                    self.fractal_array[self.fractal_width as usize][y as usize] =
-                        self.fractal_array[0][y as usize];
+                for y in 0..=fractal_height as usize {
+                    self.fractal_array[fractal_width as usize][y] = self.fractal_array[0][y];
                 }
             } else if self.flags.contains(FractalFlags::Polar) {
                 // Polar coordinate transformation, the rightmost and the leftmost column will be set to 0
-                for y in 0..=self.fractal_height {
-                    self.fractal_array[0][y as usize] = 0;
-                    self.fractal_array[self.fractal_width as usize][y as usize] = 0;
+                for y in 0..=fractal_height as usize {
+                    self.fractal_array[0][y] = 0;
+                    self.fractal_array[fractal_width as usize][y] = 0;
                 }
             }
 
             // If crust construction is needed, perform the processing
             if self.flags.contains(FractalFlags::CenterRift) {
                 if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
-                    for x in 0..=self.fractal_width {
-                        for y in 0..=(self.fractal_height / 6) {
-                            let factor = ((self.fractal_height / 12) - y).abs() + 1;
-                            self.fractal_array[x as usize][y as usize] /= factor;
-                            self.fractal_array[x as usize]
-                                [((self.fractal_height / 2) + y) as usize] /= factor;
+                    for x in 0..=fractal_width as usize {
+                        for y in 0..=(fractal_height / 6) as usize {
+                            let factor = ((fractal_height / 12) as i32 - y as i32).abs() as u32 + 1;
+                            self.fractal_array[x][y] /= factor;
+                            self.fractal_array[x][(fractal_height / 2) as usize + y] /= factor;
                         }
                     }
                 }
 
                 if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
-                    for y in 0..=self.fractal_height {
-                        for x in 0..=(self.fractal_width / 6) {
-                            let factor = ((self.fractal_width / 12) - x).abs() + 1;
-                            self.fractal_array[x as usize][y as usize] /= factor;
-                            self.fractal_array[((self.fractal_width / 2) + x) as usize]
-                                [y as usize] /= factor;
+                    for y in 0..=fractal_height as usize {
+                        for x in 0..=(fractal_width / 6) as usize {
+                            let factor = ((fractal_width / 12) as i32 - x as i32).abs() as u32 + 1;
+                            self.fractal_array[x][y] /= factor;
+                            self.fractal_array[(fractal_width / 2) as usize + x][y] /= factor;
                         }
                     }
                 }
@@ -329,14 +328,14 @@ impl CvFractal {
             //         in this code them are in the same iter.
             //      2. In the original Square Step will use the calculation result of the Diamond Step,
             //         in this code Square Step doesn't use the calculation result of the Diamond Step.
-            for x in 0..((self.fractal_width >> pass)
+            for x in 0..((fractal_width >> pass) as usize
                 + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapX) {
                     0
                 } else {
                     1
                 })
             {
-                for y in 0..((self.fractal_height >> pass)
+                for y in 0..((fractal_height >> pass) as usize
                     + if self.fractal_grid.wrap_flags.contains(WrapFlags::WrapY) {
                         0
                     } else {
@@ -345,46 +344,38 @@ impl CvFractal {
                 {
                     // Interpolate
                     let mut sum = 0;
-                    let randness = 1 << (7 - smooth + pass);
+                    let randness = 1 << (7 - smooth + pass) as i32;
                     // `(x << pass) & screen != 0` is equivalent to `(x << pass) % (1 << (pass + 1)) != 0`
                     // `(y << pass) & screen != 0` is equivalent to `(y << pass) % (1 << (pass +1)) != 0`
                     match ((x << pass) & screen != 0, (y << pass) & screen != 0) {
                         (true, true) => {
                             // (center)
-                            sum += self.fractal_array[((x - 1) << pass) as usize]
-                                [((y - 1) << pass) as usize];
-                            sum += self.fractal_array[((x + 1) << pass) as usize]
-                                [((y - 1) << pass) as usize];
-                            sum += self.fractal_array[((x - 1) << pass) as usize]
-                                [((y + 1) << pass) as usize];
-                            sum += self.fractal_array[((x + 1) << pass) as usize]
-                                [((y + 1) << pass) as usize];
+                            sum += self.fractal_array[(x - 1) << pass][(y - 1) << pass] as i32;
+                            sum += self.fractal_array[(x + 1) << pass][(y - 1) << pass] as i32;
+                            sum += self.fractal_array[(x - 1) << pass][(y + 1) << pass] as i32;
+                            sum += self.fractal_array[(x + 1) << pass][(y + 1) << pass] as i32;
                             sum >>= 2;
                             sum += random.gen_range(-randness..randness);
                             sum = sum.clamp(0, 255);
-                            self.fractal_array[(x << pass) as usize][(y << pass) as usize] = sum;
+                            self.fractal_array[x << pass][y << pass] = sum as u32;
                         }
                         (true, false) => {
                             // (horizontal)
-                            sum += self.fractal_array[((x - 1) << pass) as usize]
-                                [(y << pass) as usize];
-                            sum += self.fractal_array[((x + 1) << pass) as usize]
-                                [(y << pass) as usize];
+                            sum += self.fractal_array[(x - 1) << pass][y << pass] as i32;
+                            sum += self.fractal_array[(x + 1) << pass][y << pass] as i32;
                             sum >>= 1;
                             sum += random.gen_range(-randness..randness);
                             sum = sum.clamp(0, 255);
-                            self.fractal_array[(x << pass) as usize][(y << pass) as usize] = sum;
+                            self.fractal_array[x << pass][y << pass] = sum as u32;
                         }
                         (false, true) => {
                             // (vertical)
-                            sum += self.fractal_array[(x << pass) as usize]
-                                [((y - 1) << pass) as usize];
-                            sum += self.fractal_array[(x << pass) as usize]
-                                [((y + 1) << pass) as usize];
+                            sum += self.fractal_array[x << pass][(y - 1) << pass] as i32;
+                            sum += self.fractal_array[x << pass][(y + 1) << pass] as i32;
                             sum >>= 1;
                             sum += random.gen_range(-randness..randness);
                             sum = sum.clamp(0, 255);
-                            self.fractal_array[(x << pass) as usize][(y << pass) as usize] = sum;
+                            self.fractal_array[x << pass][y << pass] = sum as u32;
                         }
                         _ => {
                             // (corner) This was already set in the previous iter.
@@ -406,7 +397,7 @@ impl CvFractal {
         }
     }
 
-    pub fn get_height(&self, x: i32, y: i32) -> i32 {
+    pub fn get_height(&self, x: i32, y: i32) -> u32 {
         debug_assert!(
             0 <= x && x < self.grid.width() as i32,
             "'x' is out of the range of the grid width"
@@ -416,6 +407,9 @@ impl CvFractal {
             "'y' is out of the range of the grid height"
         );
 
+        let fractal_width = self.fractal_grid.size.width;
+        let fractal_height = self.fractal_grid.size.height;
+
         // Use bilinear interpolation to calculate the pixel value
         let src_x = (x as f64 + 0.5) * self.width_ratio - 0.5;
         let src_y = (y as f64 + 0.5) * self.height_ratio - 0.5;
@@ -423,15 +417,15 @@ impl CvFractal {
         let x_diff = src_x - src_x.floor();
         let y_diff = src_y - src_y.floor();
 
-        let src_x = min(src_x as usize, self.fractal_width as usize - 1);
-        let src_y = min(src_y as usize, self.fractal_height as usize - 1);
+        let src_x = min(src_x as usize, fractal_width as usize - 1);
+        let src_y = min(src_y as usize, fractal_height as usize - 1);
 
         let value = (1.0 - x_diff) * (1.0 - y_diff) * self.fractal_array[src_x][src_y] as f64
             + x_diff * (1.0 - y_diff) * self.fractal_array[src_x + 1][src_y] as f64
             + (1.0 - x_diff) * y_diff * self.fractal_array[src_x][src_y + 1] as f64
             + x_diff * y_diff * self.fractal_array[src_x + 1][src_y + 1] as f64;
 
-        let height = value.clamp(0.0, 255.0) as i32;
+        let height = value.clamp(0.0, 255.0) as u32;
 
         if self.flags.contains(FractalFlags::Percent) {
             (height * 100) >> 8
@@ -448,11 +442,11 @@ impl CvFractal {
     /// flattens the array, sorts it in an unstable manner, and calculates target values based on the input percentages.
     ///
     /// The final output is an array containing the calculated height values corresponding to the input percentages.
-    pub fn get_height_from_percents<const N: usize>(&self, percents: [i32; N]) -> [i32; N] {
+    pub fn get_height_from_percents<const N: usize>(&self, percents: [u32; N]) -> [u32; N] {
         let percents = percents.map(|p| p.clamp(0, 100));
 
         // Get all value from the fractal array except its last row and last column
-        let mut flatten: Vec<&i32> = self
+        let mut flatten: Vec<&u32> = self
             .fractal_array
             .iter()
             .take(self.fractal_array.len() - 1)
@@ -469,24 +463,26 @@ impl CvFractal {
     }
 
     fn tectonic_action(&mut self, rifts: &CvFractal) {
+        let fractal_width = self.fractal_grid.size.width;
+        let fractal_height = self.fractal_grid.size.height;
         //  Assumes FRAC_WRAP_X is on.
-        let rift_x = (self.fractal_width / 4) * 3;
+        let rift_x = (fractal_width / 4) * 3;
         // `width` is the distance from the leftmost/rightmost to the middle of the rift.
         // The width of the rift equals [2 * width].
-        let width = 16;
+        let width: u32 = 16;
         // `deep` is the maximum depth of the rift, which is in [0..=255].
         // The deepest point is typically in the middle of the rift.
         let deep = 0;
 
-        for y in 0..=self.fractal_height {
-            let rift_value = (rifts.fractal_array[rift_x as usize][y as usize] - 128)
-                * self.fractal_width
+        for y in 0..=fractal_height {
+            let rift_value = (rifts.fractal_array[rift_x as usize][y as usize] as i32 - 128)
+                * fractal_width as i32
                 / 128
                 / 8;
             for x in 0..width {
                 //  Rift along edge of map.
-                let right_x = self.yield_x(rift_value, x);
-                let left_x = self.yield_x(rift_value, -x);
+                let right_x = self.yield_x(rift_value, x as i32);
+                let left_x = self.yield_x(rift_value, -(x as i32));
 
                 self.fractal_array[right_x as usize][y as usize] =
                     (self.fractal_array[right_x as usize][y as usize] * x + deep * (width - x))
@@ -497,29 +493,30 @@ impl CvFractal {
             }
         }
 
-        for y in 0..=self.fractal_height {
-            self.fractal_array[self.fractal_width as usize][y as usize] =
-                self.fractal_array[0][y as usize];
+        for y in 0..=fractal_height as usize {
+            self.fractal_array[fractal_width as usize][y] = self.fractal_array[0][y];
         }
     }
 
     /// In a Wrap X map, given the coordinates of a point and an offset representing the direction of movement, calculate the new coordinates of the point after it moves accordingly.
     fn yield_x(&self, x: i32, offset_x: i32) -> i32 {
-        let width = self.fractal_width;
+        let fractal_width = self.fractal_grid.size.width;
         // Calculate the new coordinates without wrapping
         let nx = x + offset_x;
         // Wrap the coordinates and return the wrapped coordinates
-        nx.rem_euclid(width)
+        nx.rem_euclid(fractal_width as i32)
     }
 
     pub fn ridge_builder(
         &mut self,
         random: &mut StdRng,
-        num_voronoi_seeds: i32,
+        num_voronoi_seeds: u32,
         ridge_flags: FractalFlags,
-        blend_ridge: i32,
-        blend_fract: i32,
+        blend_ridge: u32,
+        blend_fract: u32,
     ) {
+        let fractal_width = self.fractal_grid.size.width;
+        let fractal_height = self.fractal_grid.size.height;
         // this will use a modified Voronoi system to give the appearance of mountain ranges
 
         let num_voronoi_seeds = max(num_voronoi_seeds, 3); // make sure that we have at least 3
@@ -527,30 +524,32 @@ impl CvFractal {
         let mut voronoi_seeds: Vec<VoronoiSeed> = Vec::with_capacity(num_voronoi_seeds as usize);
 
         for _ in 0..num_voronoi_seeds {
-            let mut voronoi_seed = VoronoiSeed::gen_random_seed(random, self.fractal_grid);
+            let mut voronoi_seed;
 
-            // Check if the new random seed is too close to an existing seed
-            // If it is, generate a new random seed until it is not too close
-            while voronoi_seeds.iter().any(|existing_seed| {
-                let distance_between_voronoi_seeds = self
-                    .fractal_grid
-                    .distance_to(voronoi_seed.cell, existing_seed.cell);
-                distance_between_voronoi_seeds < 7
-            }) {
-                let offset_coordinate = OffsetCoordinate::new(
-                    random.gen_range(0..self.fractal_width),
-                    random.gen_range(0..self.fractal_height),
-                );
-                voronoi_seed.cell = self.fractal_grid.offset_to_cell(offset_coordinate).unwrap();
+            loop {
+                voronoi_seed = VoronoiSeed::gen_random_seed(random, self.fractal_grid);
+
+                // Check if the new random seed is too close to an existing seed
+                let is_too_close = voronoi_seeds.iter().any(|existing_seed| {
+                    let distance_between_voronoi_seeds = self
+                        .fractal_grid
+                        .distance_to(voronoi_seed.cell, existing_seed.cell);
+                    distance_between_voronoi_seeds < 7
+                });
+
+                // If it's not too close, break the loop
+                if !is_too_close {
+                    break;
+                }
             }
 
             voronoi_seeds.push(voronoi_seed);
         }
 
-        for x in 0..self.fractal_width {
-            for y in 0..self.fractal_height {
+        for x in 0..fractal_width as usize {
+            for y in 0..fractal_height as usize {
                 // get the hex coordinate for this position
-                let current_offset_coordinate = OffsetCoordinate::new(x, y);
+                let current_offset_coordinate = OffsetCoordinate::new(x as i32, y as i32);
                 let current_cell = self
                     .fractal_grid
                     .offset_to_cell(current_offset_coordinate)
@@ -574,7 +573,7 @@ impl CvFractal {
                     // The directional bias strength is used to make the influence of the seed more directional
                     if !ridge_flags.is_empty() {
                         // make the influence of the seed on its surrounding area more random
-                        modified_distance += current_voronoi_seed.weakness;
+                        modified_distance += current_voronoi_seed.weakness as i32;
 
                         let relative_direction = self
                             .fractal_grid
@@ -582,11 +581,13 @@ impl CvFractal {
 
                         // make the influence of the seed more directional
                         if relative_direction == Some(current_voronoi_seed.bias_direction) {
-                            modified_distance -= current_voronoi_seed.directional_bias_strength;
+                            modified_distance -=
+                                current_voronoi_seed.directional_bias_strength as i32;
                         } else if relative_direction
                             == Some(current_voronoi_seed.bias_direction.opposite())
                         {
-                            modified_distance += current_voronoi_seed.directional_bias_strength;
+                            modified_distance +=
+                                current_voronoi_seed.directional_bias_strength as i32;
                         }
 
                         modified_distance = max(1, modified_distance);
@@ -601,11 +602,12 @@ impl CvFractal {
                 }
 
                 // use the modified distance between the two closest seeds to determine the ridge height
-                let ridge_height = (255 * closest_seed_distance) / next_closest_seed_distance;
+                let ridge_height =
+                    (255 * closest_seed_distance as u32) / next_closest_seed_distance as u32;
 
                 // blend the new ridge height with the previous fractal height
-                self.fractal_array[x as usize][y as usize] = (ridge_height * blend_ridge
-                    + self.fractal_array[x as usize][y as usize] * blend_fract)
+                self.fractal_array[x][y] = (ridge_height * blend_ridge
+                    + self.fractal_array[x][y] * blend_fract)
                     / max(blend_ridge + blend_fract, 1);
             }
         }
@@ -625,34 +627,36 @@ impl CvFractal {
         let _ = image::save_buffer(
             Path::new(&path),
             &pixels,
-            width as u32,
-            height as u32,
+            width,
+            height,
             image::ColorType::L8,
         );
     }
 
     /// Get the noise map of the 2d Array which is used in the civ map. The map is saved as a gray image.
     ///
-    /// The function is same as [`CvFractal::write_to_file`], but it uses the crate function of the image crate.
+    /// The function is same as [`CvFractal::write_to_file`], but it uses the image crate to resize the image.
+    ///
     pub fn write_to_file_by_image(&self, path: &Path) {
         let map_width = self.grid.size.width;
         let map_height = self.grid.size.height;
         // get gray_image from `self.fractal_array`
-        let width = self.fractal_width as usize;
-        let height = self.fractal_height as usize;
-        let mut pixels = vec![0; width * height];
-        for y in 0..height {
-            for x in 0..width {
-                pixels[y * width + x] = self.fractal_array[x][y] as u8;
+        let fractal_width = self.fractal_grid.size.width;
+        let fractal_height = self.fractal_grid.size.height;
+        let mut pixels = vec![0; (fractal_width * fractal_height) as usize];
+        for y in 0..fractal_height as usize {
+            for x in 0..fractal_width as usize {
+                pixels[y * fractal_width as usize + x] = self.fractal_array[x][y] as u8;
             }
         }
-        let image: GrayImage = ImageBuffer::from_raw(width as u32, height as u32, pixels).unwrap();
+        let image: GrayImage =
+            ImageBuffer::from_raw(fractal_width, fractal_height, pixels).unwrap();
 
         // get resized_image
         let resized_image = resize(
             &image,
-            map_width as u32,
-            map_height as u32,
+            map_width,
+            map_height,
             image::imageops::FilterType::Triangle,
         );
         resized_image.save(path).unwrap();

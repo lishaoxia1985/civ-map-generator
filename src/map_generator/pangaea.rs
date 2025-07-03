@@ -154,7 +154,7 @@ impl Generator for Pangaea {
                 h = h - (h * 0.125)
             }
 
-            let height = ((height as f64 + h + h) * 0.33) as i32;
+            let height = ((height as f64 + h + h) * 0.33) as u32;
 
             if height <= water_threshold {
                 // No hills or mountains here, but check for tectonic islands if that setting is active.
