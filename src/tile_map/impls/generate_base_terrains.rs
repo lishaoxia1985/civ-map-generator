@@ -60,24 +60,24 @@ impl TileMap {
             grid,
             grain_amount,
             flags,
-            -1,
-            -1,
+            CvFractal::DEFAULT_WIDTH_EXP,
+            CvFractal::DEFAULT_HEIGHT_EXP,
         );
         let deserts_fractal = CvFractal::create(
             &mut self.random_number_generator,
             grid,
             grain_amount,
             flags,
-            -1,
-            -1,
+            CvFractal::DEFAULT_WIDTH_EXP,
+            CvFractal::DEFAULT_HEIGHT_EXP,
         );
         let plains_fractal = CvFractal::create(
             &mut self.random_number_generator,
             grid,
             grain_amount,
             flags,
-            -1,
-            -1,
+            CvFractal::DEFAULT_WIDTH_EXP,
+            CvFractal::DEFAULT_HEIGHT_EXP,
         );
 
         let [desert_top, plains_top] =

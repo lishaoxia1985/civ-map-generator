@@ -158,8 +158,16 @@ impl TileMap {
 
     pub fn continents_fractal(&mut self) -> CvFractal {
         let continent_grain = 2;
-        // Default no rifts. Set grain to between 1 and 3 to add rifts.
-        let rift_grain = -1;
+        // Default configuration with no rifts.
+        // To add rifts, set `rift_grain` to a value between 1 and 3 (inclusive).
+        //
+        // Note: In the original implementation:
+        // - `rift_grain` defaults to -1
+        // - Negative values disable rift generation
+        //
+        // This implementation uses unsigned integers (`u32`), so we use `u32::MAX`
+        // as the sentinel value to represent the disabled state.
+        let rift_grain = u32::MAX;
 
         let num_plates_for_continents = match self.world_grid.world_size_type {
             WorldSizeType::Duel => 4,

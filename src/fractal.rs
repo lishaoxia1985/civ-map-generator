@@ -5,7 +5,10 @@ use std::{
 
 use bitflags::bitflags;
 
-use image::{imageops::resize, GrayImage, ImageBuffer};
+use image::{
+    imageops::{resize, FilterType},
+    DynamicImage, GrayImage, ImageBuffer,
+};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 
 use crate::grid::{
@@ -56,30 +59,25 @@ impl VoronoiSeed {
 }
 
 pub struct CvFractal {
-    /// The grid is used in the game. Its size is `map_width * map_height`.
+    /// The map/world grid is used in the game, differnt from [`CvFractal::fractal_grid`].
+    /// Its size is up to the map/world size.
     grid: HexGrid,
-    /// The fractal grid, it is different from the original grid, it is used to store the fractal's values.
+    /// The fractal grid, different from [`CvFractal::grid`], it is used to store the fractal's values.
     /// Width resolution of the fractal grid is `1 << width_exp`, is a power of 2.
     /// Height resolution of the fractal grid is `1 << height_exp`, is a power of 2.
     fractal_grid: HexGrid,
-    /// It describes the fractal's properties.
+    /// The fractal's flags. It is used to control the fractal's generation process.
     flags: FractalFlags,
     /// It is an exponent related to the width of the source fractal,
     /// `width_exp = 7` means the width of the source fractal is `2^7`
-    width_exp: i32,
+    width_exp: u32,
     /// It is an exponent related to the height of the source fractal,
     /// `height_exp = 7` means the height of the source fractal is `2^7`
-    height_exp: i32,
+    height_exp: u32,
     /// Stores the 2D fractal array, the array size is `[fractal_width + 1][fractal_height + 1]`
     /// # Notice
     /// The last column and last row are not part of the fractal, they are used to calculate the fractal values.
     fractal_array: Vec<Vec<u32>>,
-    /// It represents the ratio between the width of the fractal (`fractal_width`) and the width of the 2D array (`map_width`).\
-    /// It is used to calculate the source x position based on the given `x` coordinate.
-    width_ratio: f64,
-    /// It represents the ratio between the height of the fractal (`fractal_height`) and the height of the 2D array (`map_height`).\
-    /// Similar to width_ratio, it is used to calculate the source y position based on the given `y` coordinate.
-    height_ratio: f64,
 }
 
 bitflags! {
@@ -96,31 +94,30 @@ bitflags! {
         const Percent = 0b00000010;
         /// When flag is set, draws rift in center of world
         const CenterRift = 0b00000100;
-        /// When flag is set, draws inverts the heights, the value of the invert height equals to `255 - the value of the original height`
+        /// When flag is set, inverts the fractal height values, e.g. the original value is `fractal_value`, the new value is `255 - fractal_value`
         const InvertHeights = 0b00001000;
     }
 }
 
 impl CvFractal {
-    const DEFAULT_WIDTH_EXP: i32 = 7;
-    const DEFAULT_HEIGHT_EXP: i32 = 6;
+    pub const DEFAULT_WIDTH_EXP: u32 = 7;
+    pub const DEFAULT_HEIGHT_EXP: u32 = 6;
 
     /// Creates a new empty fractal with the given parameters.
-    fn new(grid: HexGrid, flags: FractalFlags, width_exp: i32, height_exp: i32) -> Self {
-        let map_width = grid.size.width;
-        let map_height = grid.size.height;
-
-        let width_exp = if width_exp < 0 {
-            Self::DEFAULT_WIDTH_EXP
-        } else {
-            width_exp
-        };
-        let height_exp = if height_exp < 0 {
-            Self::DEFAULT_HEIGHT_EXP
-        } else {
-            height_exp
-        };
-
+    ///
+    /// # Arguments
+    /// * `grid` - The base map/world grid (distinct from [`CvFractal::fractal_grid`])
+    /// * `flags` - Bit flags controlling fractal generation behavior
+    /// * `width_exp` - The exponent for calculating fractal width (width = 2^width_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
+    /// * `height_exp` - The exponent for calculating fractal height (height = 2^height_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
+    ///
+    fn new(grid: HexGrid, flags: FractalFlags, width_exp: u32, height_exp: u32) -> Self {
         let fractal_width = 1 << width_exp;
         let fractal_height = 1 << height_exp;
 
@@ -132,9 +129,6 @@ impl CvFractal {
         let fractal_array =
             vec![vec![0; (fractal_height + 1) as usize]; (fractal_width + 1) as usize];
 
-        let width_ratio = fractal_width as f64 / map_width as f64;
-        let height_ratio = fractal_height as f64 / map_height as f64;
-
         Self {
             grid,
             fractal_grid,
@@ -142,85 +136,164 @@ impl CvFractal {
             flags,
             width_exp,
             height_exp,
-            width_ratio,
-            height_ratio,
         }
     }
 
-    /// # Arguments
+    /// Creates a fractal with the given parameters.
     ///
+    /// # Arguments
     /// * `random` - A mutable reference to a random number generator.
-    /// * `grain` - Controls the level of detail or smoothness of the fractal. A higher value leads to more rougher,
-    ///   while a lower value produces more smoother.
-    ///         - When `grain = min(width_exp, height_exp)`, the fractal is completely random.
-    ///         - When `grain = 0`, the fractal is the smoothest.
+    /// * `grid` - The base map/world grid (distinct from [`CvFractal::fractal_grid`])
+    /// * `grain` - Controls the level of detail or smoothness of the fractal.\
+    ///     * Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
+    ///     * Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
+    ///         - Higher grain → Fewer iterations → More random noise\
+    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///         - Lower grain → More iterations → Smoother gradients\
+    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    /// * `flags` - Bit flags controlling fractal generation behavior
+    /// * `width_exp` - The exponent for calculating fractal width (width = 2^width_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
+    /// * `height_exp` - The exponent for calculating fractal height (height = 2^height_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
     ///
     /// # Panics
     ///
-    /// Panics when `min(width_exp, height_exp) - grain >= 8`
+    /// Panics if `grain` is invalid.
     ///
     pub fn create(
         random: &mut StdRng,
         grid: HexGrid,
-        grain: i32,
+        grain: u32,
         flags: FractalFlags,
-        width_exp: i32,
-        height_exp: i32,
+        width_exp: u32,
+        height_exp: u32,
     ) -> Self {
+        let min_exp = min(width_exp, height_exp);
+        let min_allowed = min_exp.saturating_sub(7);
+        debug_assert!(
+            grain >= min_allowed && grain <= min_exp,
+            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
+            min_allowed,
+            min_exp,
+            grain,
+            width_exp,
+            height_exp
+        );
+
         let mut fractal = Self::new(grid, flags, width_exp, height_exp);
-        fractal.frac_init_internal(grain, random, None, None);
+        fractal.frac_init_internal(random, grain, None, None);
         fractal
     }
 
-    pub fn create_rifts(
-        random: &mut StdRng,
-        grid: HexGrid,
-        grain: i32,
-        flags: FractalFlags,
-        rifts: &CvFractal,
-        width_exp: i32,
-        height_exp: i32,
-    ) -> Self {
-        let mut fractal = Self::new(grid, flags, width_exp, height_exp);
-        fractal.frac_init_internal(grain, random, None, Some(rifts));
-        fractal
-    }
-
-    /// # Arguments
+    ///  Creates a fractal with rifts.
     ///
-    /// * `grain` - Controls the level of detail or smoothness of the fractal. A higher value leads to more rougher,
-    ///   while a lower value produces more smoother.
-    /// * hint_array - At first the fractal is divided into a grid of small squares,
-    ///   the points where adjacent grid lines meet are called **the vertices of the grid**,
-    ///   we assign an initial value to each vertex by `hint_array` for later use in the diamond-square algorithm.
-    ///   hint_array is usually generated by grayscale image.
+    /// # Arguments
+    /// * `random` - Random number generator
+    /// * `grid` - The base map/world grid (distinct from [`CvFractal::fractal_grid`])
+    /// * `grain` - Controls the level of detail or smoothness of the fractal.\
+    ///     * Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
+    ///     * Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
+    ///         - Higher grain → Fewer iterations → More random noise\
+    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///         - Lower grain → More iterations → Smoother gradients\
+    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    /// * `flags` - Bit flags controlling fractal generation behavior
+    /// * `rift` - a reference to a [`CvFractal`] to control the rifts generation of the fractal
+    /// * `width_exp` - The exponent for calculating fractal width (width = 2^width_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
+    /// * `height_exp` - The exponent for calculating fractal height (height = 2^height_exp)
+    ///   * Type: `u32` (unlike original CIV5 which allowed negatives)
+    ///   * Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
+    ///   * To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
     ///
     /// # Panics
     ///
-    /// Panics when `min(`[CvFractal::width_exp]`, `[CvFractal::height_exp]`) - grain >= 8`
+    /// Panics if `grain` is invalid.
+    ///
+    pub fn create_rifts(
+        random: &mut StdRng,
+        grid: HexGrid,
+        grain: u32,
+        flags: FractalFlags,
+        rifts: &CvFractal,
+        width_exp: u32,
+        height_exp: u32,
+    ) -> Self {
+        let min_exp = min(width_exp, height_exp);
+        let min_allowed = min_exp.saturating_sub(7);
+        debug_assert!(
+            grain >= min_allowed && grain <= min_exp,
+            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
+            min_allowed,
+            min_exp,
+            grain,
+            width_exp,
+            height_exp
+        );
+
+        let mut fractal = Self::new(grid, flags, width_exp, height_exp);
+        fractal.frac_init_internal(random, grain, None, Some(rifts));
+        fractal
+    }
+
+    /// Generate a fractal with the given parameters.
+    /// # Arguments
+    ///
+    /// * `random` - Random number generator.
+    /// * `grain` - Controls the level of detail or smoothness of the fractal.\
+    ///     * Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
+    ///     * Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
+    ///         - Higher grain → Fewer iterations → More random noise\
+    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///         - Lower grain → More iterations → Smoother gradients\
+    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    /// * `img` - Optional image to use as a source for the fractal.
+    /// At first the fractal is divided into a grid of small squares,
+    /// the points where adjacent grid lines meet are called **the vertices of the grid**,
+    /// we assign an initial value to each vertex for later use in the diamond-square algorithm.
+    /// When `img` is `None`, the initial value of each vertex is randomly generated.
+    /// When `img` is `Some`, the initial value of each vertex is determined by `img`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `grain` is invalid.
     ///
     fn frac_init_internal(
         &mut self,
-        grain: i32,
         random: &mut StdRng,
-        hint_array: Option<Vec<Vec<u32>>>,
+        grain: u32,
+        img: Option<&DynamicImage>,
         rifts: Option<&CvFractal>,
     ) {
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
 
         let min_exp = min(self.width_exp, self.height_exp);
-        // Convert to usize for the following calculations.
-        let smooth = (min_exp - grain).clamp(0, min_exp) as usize;
-
-        assert!(
-            smooth < 8,
-            "'min(self.width_exp, self.height_exp) - grain < 8' should be true!"
+        let min_allowed = min_exp.saturating_sub(7);
+        debug_assert!(
+            grain >= min_allowed && grain <= min_exp,
+            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
+            min_allowed,
+            min_exp,
+            grain,
+            self.width_exp,
+            self.height_exp
         );
+
+        // Convert to usize for the following calculations.
+        let smooth = (min_exp - grain) as usize;
+
         // At first, We should divide the fractal into a grid of small (2^smooth) * (2^smooth) squares,
         // When the fractal is divided into a grid of small squares, the points where adjacent grid lines meet are called `the vertices of the grid`(abbreviated as `Vertices`).
         // `hint_width` is the num of `Vertices` in every row after dividing.
-        // Notice: when the fractal is WrapX, we don't consider the last row (row index: `self.fractal_width`),
+        // Notice: when the fractal is WrapX, we don't consider the last row,
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
         let hint_width = (fractal_width >> smooth)
@@ -230,7 +303,7 @@ impl CvFractal {
                 1
             };
         // `hint_height` is the num of `Vertices` in every column after dividing.
-        // Notice: when the fractal is WrapY, we don't consider the last column (column index: `self.fractal_height`),
+        // Notice: when the fractal is WrapY, we don't consider the last column,
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
         let hint_height = (fractal_height >> smooth)
@@ -240,14 +313,39 @@ impl CvFractal {
                 1
             };
 
-        // The `hint_array` is the array of the vertices of the grid, every element is in [0..=255],
-        // The array size is `[hint_width][hint_width]`
-        if let Some(hint_array) = hint_array {
-            assert!(
-                hint_array.len() == hint_width as usize
-                    && hint_array[0].len() == hint_height as usize,
-                "Invalid hints array size."
-            );
+        if let Some(img) = img {
+            // Resize image if needed with informative message
+            let hint_img = if hint_width != img.width() || hint_height != img.height() {
+                eprintln!(
+                    "Image size {}x{} doesn't match hint size {}x{}.
+                    We will resize the image to the hint size.
+                    Please check if it is the correct behavior.
+                    Resizing...",
+                    img.width(),
+                    img.height(),
+                    hint_width,
+                    hint_height
+                );
+                img.resize_exact(hint_width, hint_height, FilterType::Triangle)
+            } else {
+                eprintln!(
+                    "Image size matches hint size: {}x{}",
+                    img.width(),
+                    img.height()
+                );
+                img.clone()
+            };
+
+            // Convert to grayscale and create hint array
+            let gray_img = hint_img.to_luma8();
+            let hint_array: Vec<Vec<u32>> = (0..hint_height)
+                .map(|y| {
+                    (0..hint_width)
+                        .map(|x| gray_img.get_pixel(x, y)[0] as u32)
+                        .collect()
+                })
+                .collect();
+
             // Assign an initial value to each vertex by `hint_array` for later use in the diamond-square algorithm.
             for x in 0..hint_width as usize {
                 for y in 0..hint_height as usize {
@@ -409,10 +507,12 @@ impl CvFractal {
 
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
+        let width_ratio = fractal_width as f64 / self.grid.width() as f64;
+        let height_ratio = fractal_height as f64 / self.grid.height() as f64;
 
         // Use bilinear interpolation to calculate the pixel value
-        let src_x = (x as f64 + 0.5) * self.width_ratio - 0.5;
-        let src_y = (y as f64 + 0.5) * self.height_ratio - 0.5;
+        let src_x = (x as f64 + 0.5) * width_ratio - 0.5;
+        let src_y = (y as f64 + 0.5) * height_ratio - 0.5;
 
         let x_diff = src_x - src_x.floor();
         let y_diff = src_y - src_y.floor();
@@ -617,12 +717,9 @@ impl CvFractal {
     pub fn write_to_file(&self, path: &Path) {
         let width = self.grid.width();
         let height = self.grid.height();
-        let mut pixels = vec![];
-        for y in 0..height {
-            for x in 0..width {
-                pixels.push(self.get_height(x as i32, y as i32) as u8);
-            }
-        }
+        let pixels: Vec<u8> = (0..height)
+            .flat_map(|y| (0..width).map(move |x| self.get_height(x as i32, y as i32) as u8))
+            .collect();
 
         let _ = image::save_buffer(
             Path::new(&path),
@@ -643,22 +740,17 @@ impl CvFractal {
         // get gray_image from `self.fractal_array`
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
-        let mut pixels = vec![0; (fractal_width * fractal_height) as usize];
-        for y in 0..fractal_height as usize {
-            for x in 0..fractal_width as usize {
-                pixels[y * fractal_width as usize + x] = self.fractal_array[x][y] as u8;
-            }
-        }
+
+        // NOTICE: `pixels` doesn't contain the last row and column of the `fractal_array`
+        let pixels: Vec<u8> = (0..fractal_height as usize)
+            .flat_map(|y| (0..fractal_width as usize).map(move |x| self.fractal_array[x][y] as u8))
+            .collect();
+
         let image: GrayImage =
             ImageBuffer::from_raw(fractal_width, fractal_height, pixels).unwrap();
 
         // get resized_image
-        let resized_image = resize(
-            &image,
-            map_width,
-            map_height,
-            image::imageops::FilterType::Triangle,
-        );
+        let resized_image = resize(&image, map_width, map_height, FilterType::Triangle);
         resized_image.save(path).unwrap();
     }
 }
