@@ -268,7 +268,7 @@ impl TileMap {
             let mut dry_hills = Vec::new();
             let mut flat_grass = Vec::new();
             let mut flat_tundra = Vec::new();
-            for tile in rectangle.iter_tiles(self.world_grid.grid) {
+            for tile in rectangle.all_tiles(self.world_grid.grid) {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
                 let feature = tile.feature(self);
@@ -456,74 +456,68 @@ impl TileMap {
                 .find(|(region_type_, _)| *region_type_ == region_type)
                 .unwrap()
                 .1;
-            starting_tile
-                .tiles_at_distance(3, grid)
-                .iter()
-                .for_each(|&tile| {
-                    let terrain_type = tile.terrain_type(self);
-                    let base_terrain = tile.base_terrain(self);
-                    let feature = tile.feature(self);
-                    match chosen_bonus_resource {
-                        "Deer" => {
-                            if feature == Some(Feature::Forest) {
-                                plot_list.push(tile);
-                            } else if terrain_type == TerrainType::Flatland
-                                && base_terrain == BaseTerrain::Tundra
-                            {
-                                plot_list.push(tile);
-                            }
-                        }
-                        "Bananas" => {
-                            if feature == Some(Feature::Jungle) {
-                                plot_list.push(tile);
-                            }
-                        }
-                        "Wheat" => {
-                            if terrain_type == TerrainType::Flatland {
-                                if base_terrain == BaseTerrain::Plain && feature.is_none() {
-                                    plot_list.push(tile);
-                                } else if feature == Some(Feature::Floodplain) {
-                                    plot_list.push(tile);
-                                } else if base_terrain == BaseTerrain::Desert
-                                    && tile.is_freshwater(self)
-                                {
-                                    plot_list.push(tile);
-                                }
-                            }
-                        }
-
-                        "Sheep" => {
-                            if terrain_type == TerrainType::Hill
-                                && feature.is_none()
-                                && matches!(
-                                    base_terrain,
-                                    BaseTerrain::Plain
-                                        | BaseTerrain::Grassland
-                                        | BaseTerrain::Tundra
-                                )
-                            {
-                                plot_list.push(tile);
-                            }
-                        }
-                        "Cow" => {
-                            if terrain_type == TerrainType::Flatland
-                                && feature.is_none()
-                                && base_terrain == BaseTerrain::Grassland
-                            {
-                                plot_list.push(tile);
-                            }
-                        }
-                        _ => {
-                            unreachable!()
+            starting_tile.tiles_at_distance(3, grid).for_each(|tile| {
+                let terrain_type = tile.terrain_type(self);
+                let base_terrain = tile.base_terrain(self);
+                let feature = tile.feature(self);
+                match chosen_bonus_resource {
+                    "Deer" => {
+                        if feature == Some(Feature::Forest) {
+                            plot_list.push(tile);
+                        } else if terrain_type == TerrainType::Flatland
+                            && base_terrain == BaseTerrain::Tundra
+                        {
+                            plot_list.push(tile);
                         }
                     }
-                    if base_terrain == BaseTerrain::Coast
-                        && feature != Some(Feature::Atoll)
-                        && feature != Some(Feature::Ice)
-                    {
-                        fish_list.push(tile);
+                    "Bananas" => {
+                        if feature == Some(Feature::Jungle) {
+                            plot_list.push(tile);
+                        }
                     }
-                });
+                    "Wheat" => {
+                        if terrain_type == TerrainType::Flatland {
+                            if base_terrain == BaseTerrain::Plain && feature.is_none() {
+                                plot_list.push(tile);
+                            } else if feature == Some(Feature::Floodplain) {
+                                plot_list.push(tile);
+                            } else if base_terrain == BaseTerrain::Desert
+                                && tile.is_freshwater(self)
+                            {
+                                plot_list.push(tile);
+                            }
+                        }
+                    }
+                    "Sheep" => {
+                        if terrain_type == TerrainType::Hill
+                            && feature.is_none()
+                            && matches!(
+                                base_terrain,
+                                BaseTerrain::Plain | BaseTerrain::Grassland | BaseTerrain::Tundra
+                            )
+                        {
+                            plot_list.push(tile);
+                        }
+                    }
+                    "Cow" => {
+                        if terrain_type == TerrainType::Flatland
+                            && feature.is_none()
+                            && base_terrain == BaseTerrain::Grassland
+                        {
+                            plot_list.push(tile);
+                        }
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+                if base_terrain == BaseTerrain::Coast
+                    && feature != Some(Feature::Atoll)
+                    && feature != Some(Feature::Ice)
+                {
+                    fish_list.push(tile);
+                }
+            });
             if plot_list.len() > 0 {
                 plot_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
@@ -617,7 +611,7 @@ impl TileMap {
         let mut desert_flat_no_feature = Vec::new();
         let mut forest_flat_that_are_not_tundra = Vec::new();
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if !self.player_collision_data[tile.index()] && tile.resource(self).is_none() {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);

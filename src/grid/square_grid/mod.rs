@@ -111,7 +111,7 @@ impl Grid for SquareGrid {
         start_square.distance_to(dest_square)
     }
 
-    fn neighbor(&self, center: Cell, direction: Direction) -> Option<Cell> {
+    fn neighbor(self, center: Cell, direction: Direction) -> Option<Cell> {
         let center = self.cell_to_offset(center);
 
         let center_square = Square::from_offset(center);
@@ -121,26 +121,24 @@ impl Grid for SquareGrid {
         self.offset_to_cell(neighbor_offset_coordinate).ok()
     }
 
-    fn cells_at_distance(&self, center: Cell, distance: u32) -> Vec<Cell> {
+    fn cells_at_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell> {
         let center = self.cell_to_offset(center);
 
         let center_square = Square::from_offset(center);
         center_square
             .squares_at_distance(distance)
-            .iter()
-            .filter_map(|&square_coordinate| self.grid_coordinate_to_cell(square_coordinate))
-            .collect()
+            .into_iter()
+            .filter_map(move |square| self.grid_coordinate_to_cell(square))
     }
 
-    fn cells_within_distance(&self, center: Cell, distance: u32) -> Vec<Cell> {
+    fn cells_within_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell> {
         let center = self.cell_to_offset(center);
 
         let center_square = Square::from_offset(center);
         center_square
             .squares_in_distance(distance)
-            .iter()
-            .filter_map(|&square_coordinate| self.grid_coordinate_to_cell(square_coordinate))
-            .collect()
+            .into_iter()
+            .filter_map(move |square| self.grid_coordinate_to_cell(square))
     }
 
     fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction> {

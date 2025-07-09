@@ -534,7 +534,7 @@ impl TileMap {
         };
 
         let mut marble_tile_list = Vec::new();
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             let terrain_type = tile.terrain_type(self);
             let base_terrain = tile.base_terrain(self);
             let feature = tile.feature(self);
@@ -630,7 +630,7 @@ impl TileMap {
         let mut region_flood_plain_tile_list = Vec::new();
         let mut region_jungle_flat_tile_list = Vec::new();
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if !self.player_collision_data[tile.index()] && tile.resource(self).is_none() {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
@@ -642,7 +642,7 @@ impl TileMap {
                             && feature != Some(Feature::Ice)
                             && feature != Some(Feature::Atoll)
                         {
-                            if tile.neighbor_tiles(grid).iter().any(|neighbor_tile| {
+                            if tile.neighbor_tiles(grid).any(|neighbor_tile| {
                                 neighbor_tile.terrain_type(self) != TerrainType::Water
                             }) {
                                 region_coast_next_to_land_tile_list.push(tile);
@@ -917,7 +917,7 @@ impl TileMap {
         let mut region_flood_plain_tile_list = Vec::new();
         let mut region_jungle_flat_tile_list = Vec::new();
 
-        rectangle.iter_tiles(grid).for_each(|tile| {
+        rectangle.all_tiles(grid).for_each(|tile| {
             let terrain_type = tile.terrain_type(self);
             let base_terrain = tile.base_terrain(self);
             let feature = tile.feature(self);
@@ -931,7 +931,6 @@ impl TileMap {
                         if let Some(landmass_id) = landmass_id {
                             if tile
                                 .neighbor_tiles(grid)
-                                .iter()
                                 .any(|neighbor_tile| neighbor_tile.area_id(self) == landmass_id)
                             {
                                 region_coast_next_to_land_tile_list.push(tile);
@@ -1033,7 +1032,6 @@ impl TileMap {
         for ripple_radius in 1..=radius {
             city_site
                 .tiles_at_distance(ripple_radius, grid)
-                .iter()
                 .for_each(|tile| {
                     let terrain_type = tile.terrain_type(self);
                     let base_terrain = tile.base_terrain(self);

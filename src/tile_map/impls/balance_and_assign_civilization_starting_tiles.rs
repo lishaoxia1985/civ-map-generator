@@ -8,6 +8,7 @@ use crate::{
     },
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
+    tile::Tile,
     tile_map::{Layer, TileMap},
 };
 
@@ -655,9 +656,9 @@ impl TileMap {
             is_river = true;
         }
 
-        let mut neighbor_tiles = starting_tile.neighbor_tiles(grid);
+        let mut neighbor_tile_list: Vec<Tile> = starting_tile.neighbor_tiles(grid).collect();
 
-        neighbor_tiles.iter().for_each(|neighbor_tile| {
+        neighbor_tile_list.iter().for_each(|neighbor_tile| {
             let terrain_type = neighbor_tile.terrain_type(self);
             let base_terrain = neighbor_tile.base_terrain(self);
             let feature = neighbor_tile.feature(self);
@@ -802,9 +803,10 @@ impl TileMap {
             }
         });
 
-        let mut tiles_at_distance_two = starting_tile.tiles_at_distance(2, grid);
+        let mut tile_at_distance_two_list: Vec<Tile> =
+            starting_tile.tiles_at_distance(2, grid).collect();
 
-        tiles_at_distance_two
+        tile_at_distance_two_list
             .iter()
             .for_each(|tile_at_distance_two| {
                 let terrain_type = tile_at_distance_two.terrain_type(self);
@@ -965,8 +967,8 @@ impl TileMap {
 
         // If drastic shortage, attempt to add a hill to first ring.
         if (outer_hammer_score < 8 && inner_hammer_score < 2) || inner_hammer_score == 0 {
-            neighbor_tiles.shuffle(&mut self.random_number_generator);
-            for &tile in neighbor_tiles.iter() {
+            neighbor_tile_list.shuffle(&mut self.random_number_generator);
+            for &tile in neighbor_tile_list.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
                 let placed_hill = self.attempt_to_place_hill_at_tile(tile);
                 if placed_hill {
@@ -982,9 +984,9 @@ impl TileMap {
 
         // If early hammers will be too short, attempt to add a small Horse or Iron to second ring.
         if inner_hammer_score < 3 && early_hammer_score < 6 {
-            tiles_at_distance_two.shuffle(&mut self.random_number_generator);
-            for &tile in tiles_at_distance_two.iter() {
-                let placed_strategic = self.attempt_to_place_small_strategic_at_plot(tile);
+            tile_at_distance_two_list.shuffle(&mut self.random_number_generator);
+            for &tile in tile_at_distance_two_list.iter() {
+                let placed_strategic = self.attempt_to_place_small_strategic_at_tile(tile);
                 if placed_strategic {
                     break;
                 }
@@ -1025,7 +1027,10 @@ impl TileMap {
         if native_two_food_tiles == 0 && num_food_bonus_needed < 3 {
             let mut tile_list = Vec::new();
 
-            for tile in neighbor_tiles.iter().chain(tiles_at_distance_two.iter()) {
+            for tile in neighbor_tile_list
+                .iter()
+                .chain(tile_at_distance_two_list.iter())
+            {
                 if tile.resource(self).is_none()
                     && tile.terrain_type(self) == TerrainType::Flatland
                     && tile.base_terrain(self) == BaseTerrain::Plain
@@ -1050,18 +1055,19 @@ impl TileMap {
             let mut outer_placed = 0;
 
             // We shuffle the `neighbor_tiles` that was used earlier, instead of recreating a new one.
-            neighbor_tiles.shuffle(&mut self.random_number_generator);
+            neighbor_tile_list.shuffle(&mut self.random_number_generator);
 
             // We shuffle the `tiles_at_distance_two` that was used earlier, instead of recreating a new one.
-            tiles_at_distance_two.shuffle(&mut self.random_number_generator);
+            tile_at_distance_two_list.shuffle(&mut self.random_number_generator);
 
             // Create a new vector to store the tiles at distance 3, and shuffle it.
-            let mut tiles_at_distance_three = starting_tile.tiles_at_distance(3, grid);
-            tiles_at_distance_three.shuffle(&mut self.random_number_generator);
+            let mut tile_at_distance_three_list: Vec<Tile> =
+                starting_tile.tiles_at_distance(3, grid).collect();
+            tile_at_distance_three_list.shuffle(&mut self.random_number_generator);
 
-            let mut first_ring_iter = neighbor_tiles.iter().peekable();
-            let mut second_ring_iter = tiles_at_distance_two.iter().peekable();
-            let mut third_ring_iter = tiles_at_distance_three.iter().peekable();
+            let mut first_ring_iter = neighbor_tile_list.iter().peekable();
+            let mut second_ring_iter = tile_at_distance_two_list.iter().peekable();
+            let mut third_ring_iter = tile_at_distance_three_list.iter().peekable();
 
             let mut allow_oasis = true; // Permanent flag. (We don't want to place more than one Oasis per location).
             while num_food_bonus_needed > 0 {
@@ -1074,7 +1080,7 @@ impl TileMap {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
                         let (placed_bonus, placed_oasis) =
-                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
+                            self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1095,7 +1101,7 @@ impl TileMap {
                     // Add bonus to second ring.
                     while let Some(&tile) = second_ring_iter.next() {
                         let (placed_bonus, placed_oasis) =
-                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
+                            self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1111,7 +1117,7 @@ impl TileMap {
                     // Add bonus to third ring.
                     while let Some(&tile) = third_ring_iter.next() {
                         let (placed_bonus, placed_oasis) =
-                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
+                            self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -1141,19 +1147,19 @@ impl TileMap {
             let mut inner_placed = false;
 
             // We shuffle the `neighbor_tiles` that was used earlier, instead of recreating a new one.
-            neighbor_tiles.shuffle(&mut self.random_number_generator);
+            neighbor_tile_list.shuffle(&mut self.random_number_generator);
 
             // We shuffle the `tiles_at_distance_two` that was used earlier, instead of recreating a new one.
-            tiles_at_distance_two.shuffle(&mut self.random_number_generator);
+            tile_at_distance_two_list.shuffle(&mut self.random_number_generator);
 
-            let mut first_ring_iter = neighbor_tiles.iter().peekable();
-            let mut second_ring_iter = tiles_at_distance_two.iter().peekable();
+            let mut first_ring_iter = neighbor_tile_list.iter().peekable();
+            let mut second_ring_iter = tile_at_distance_two_list.iter().peekable();
 
             while num_stone_needed > 0 {
                 if !inner_placed && first_ring_iter.peek().is_some() {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(tile);
+                        let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
                         if placed_bonus {
                             inner_placed = true;
                             num_stone_needed -= 1;
@@ -1163,7 +1169,7 @@ impl TileMap {
                 } else if second_ring_iter.peek().is_some() {
                     // Add bonus to second ring.
                     while let Some(&tile) = second_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_plot(tile);
+                        let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
                         if placed_bonus {
                             num_stone_needed -= 1;
                             break;

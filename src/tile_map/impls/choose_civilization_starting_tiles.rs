@@ -68,7 +68,7 @@ impl TileMap {
         // 2. It is not a coastal land tile, and it does not have any coastal land tiles as neighbors
         let mut area_id_and_candidate_tiles: HashMap<usize, Vec<Tile>> = HashMap::new();
 
-        for (i, tile) in region.rectangle.iter_tiles(grid).enumerate() {
+        for (i, tile) in region.rectangle.all_tiles(grid).enumerate() {
             if matches!(
                 tile.terrain_type(self),
                 TerrainType::Flatland | TerrainType::Hill
@@ -223,12 +223,12 @@ impl TileMap {
 
         let mut outer_coastal_plots = Vec::new();
 
-        for tile in rectangle.iter_tiles(grid) {
+        for tile in rectangle.all_tiles(grid) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 let landmass_id = self.region_list[region_index].area_id;
                 if landmass_id == Some(area_id) {
-                    if center_rectangle.contains(grid, tile) {
+                    if center_rectangle.contains(tile, grid) {
                         // Center Bias
                         center_coastal_plots.push(tile);
                         if tile.has_river(self) {
@@ -238,7 +238,7 @@ impl TileMap {
                         } else {
                             center_dry_plots.push(tile);
                         }
-                    } else if middle_rectangle.contains(grid, tile) {
+                    } else if middle_rectangle.contains(tile, grid) {
                         // Middle Bias
                         middle_coastal_plots.push(tile);
                         if tile.has_river(self) {
@@ -511,11 +511,11 @@ impl TileMap {
 
         let mut outer_plots = Vec::new();
 
-        for tile in region.rectangle.iter_tiles(grid) {
+        for tile in region.rectangle.all_tiles(grid) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 if region.area_id == Some(area_id) {
-                    if center_rectangle.contains(grid, tile) {
+                    if center_rectangle.contains(tile, grid) {
                         // Center Bias
                         center_candidates.push(tile);
                         if tile.has_river(self) {
@@ -525,7 +525,7 @@ impl TileMap {
                         } else {
                             center_inland_dry_land.push(tile);
                         }
-                    } else if middle_rectangle.contains(grid, tile) {
+                    } else if middle_rectangle.contains(tile, grid) {
                         // Middle Bias
                         middle_candidates.push(tile);
                         if tile.has_river(self) {
@@ -801,11 +801,10 @@ impl TileMap {
             coastal_land_score = 40;
         }
 
-        let neighbor_tiles = tile.neighbor_tiles(grid);
+        // Usually, the tile have 6 neighbors. If not, we count the missing neighbors as junk.
+        junk_total += 6 - tile.neighbor_tiles(grid).count() as i32;
 
-        junk_total += 6 - neighbor_tiles.len() as i32;
-
-        neighbor_tiles.into_iter().for_each(|neighbor_tile| {
+        tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
             let measure_tile_type = self.measure_single_tile(neighbor_tile, region);
             measure_tile_type
                 .into_iter()
@@ -842,12 +841,10 @@ impl TileMap {
             food_result_inner + production_result_inner + good_result_inner + river_total
                 - (junk_total * 3);
 
-        let tiles_at_distance_two = tile.tiles_at_distance(2, grid);
+        // Usually, there are 12 tiles at distance 2. If not, we count the missing tiles as junk.
+        junk_total += 6 * 2 - tile.tiles_at_distance(2, grid).count() as i32;
 
-        junk_total += 6 * 2 - tiles_at_distance_two.len() as i32;
-
-        tiles_at_distance_two
-            .into_iter()
+        tile.tiles_at_distance(2, grid)
             .for_each(|tile_at_distance_two| {
                 let measure_tile_type = self.measure_single_tile(tile_at_distance_two, region);
                 measure_tile_type
@@ -901,12 +898,10 @@ impl TileMap {
             food_result_middle + production_result_middle + good_result_middle + river_total
                 - (junk_total * 3);
 
-        let tiles_at_distance_three = tile.tiles_at_distance(3, grid);
+        // Usually, there are 18 tiles at distance 3. If not, we count the missing tiles as junk.
+        junk_total += 6 * 3 - tile.tiles_at_distance(3, grid).count() as i32;
 
-        junk_total += 6 * 3 - tiles_at_distance_three.len() as i32;
-
-        tiles_at_distance_three
-            .into_iter()
+        tile.tiles_at_distance(3, grid)
             .for_each(|tile_at_distance_three| {
                 let measure_tile_type = self.measure_single_tile(tile_at_distance_three, region);
                 measure_tile_type

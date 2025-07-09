@@ -217,6 +217,11 @@ impl CvFractal {
     ///
     /// Panics if `grain` is invalid.
     ///
+    /// # Notice
+    ///
+    /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
+    /// This function support to create both vertical and horizontal rifts.
+    /// But we suggest to create only one of them at a time.
     pub fn create_rifts(
         random: &mut StdRng,
         grid: HexGrid,
@@ -260,6 +265,8 @@ impl CvFractal {
     /// we assign an initial value to each vertex for later use in the diamond-square algorithm.
     /// When `img` is `None`, the initial value of each vertex is randomly generated.
     /// When `img` is `Some`, the initial value of each vertex is determined by `img`.
+    /// * `rifts` - Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.
+    ///     * `rifts`'s width and height must be equal to the width and height of `self`.
     ///
     /// # Panics
     ///
@@ -484,7 +491,16 @@ impl CvFractal {
         }
 
         if let Some(rifts) = rifts {
-            self.tectonic_action(rifts); //  Assumes FRAC_WRAP_X is on.
+            debug_assert!(
+                rifts.width_exp == self.width_exp,
+                "Rifts width_exp does not match Fractal width_exp"
+            );
+            debug_assert!(
+                rifts.height_exp == self.height_exp,
+                "Rifts height_exp does not match Fractal height_exp"
+            );
+
+            self.tectonic_action(rifts);
         }
 
         if self.flags.contains(FractalFlags::InvertHeights) {
@@ -565,46 +581,92 @@ impl CvFractal {
     fn tectonic_action(&mut self, rifts: &CvFractal) {
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
-        //  Assumes FRAC_WRAP_X is on.
+
+        // `deep` is the maximum depth of the rift, which is in [0..=255].
+        // The deepest point is typically in the middle of the rift.
+        const DEEP: u32 = 0;
+
+        // These values when fractal is WrapX
         let rift_x = (fractal_width / 4) * 3;
         // `width` is the distance from the leftmost/rightmost to the middle of the rift.
         // The width of the rift equals [2 * width].
-        let width: u32 = 16;
-        // `deep` is the maximum depth of the rift, which is in [0..=255].
-        // The deepest point is typically in the middle of the rift.
-        let deep = 0;
+        const WIDTH: u32 = 16;
 
-        for y in 0..=fractal_height {
-            let rift_value = (rifts.fractal_array[rift_x as usize][y as usize] as i32 - 128)
-                * fractal_width as i32
-                / 128
-                / 8;
-            for x in 0..width {
-                //  Rift along edge of map.
-                let right_x = self.yield_x(rift_value, x as i32);
-                let left_x = self.yield_x(rift_value, -(x as i32));
+        // These values when fractal is WrapY
+        let rift_y = (fractal_height / 4) * 3;
+        // `height` is the distance from the topmost/bottommost to the middle of the rift.
+        // The height of the rift equals [2 * height].
+        const HEIGHT: u32 = 16;
 
-                self.fractal_array[right_x as usize][y as usize] =
-                    (self.fractal_array[right_x as usize][y as usize] * x + deep * (width - x))
-                        / width;
-                self.fractal_array[left_x as usize][y as usize] =
-                    (self.fractal_array[left_x as usize][y as usize] * x + deep * (width - x))
-                        / width;
+        if self.fractal_grid.wrap_x() {
+            for y in 0..=fractal_height {
+                // `rift_value` is the horizontal center x-coordinate of the rift.
+                // It's in [-fractal_width / 8, fractal_width / 8 - fractal_width / 1024] range.
+                let rift_value = (rifts.fractal_array[rift_x as usize][y as usize] as i32 - 128)
+                    * fractal_width as i32
+                    / 128
+                    / 8;
+                for x in 0..WIDTH {
+                    //  Rift along edge of map.
+                    let right = self
+                        .fractal_grid
+                        .normalize_offset(OffsetCoordinate::new(rift_value + x as i32, y as i32))
+                        .unwrap();
+                    let left = self
+                        .fractal_grid
+                        .normalize_offset(OffsetCoordinate::new(rift_value - x as i32, y as i32))
+                        .unwrap();
+
+                    self.fractal_array[right.0.x as usize][y as usize] =
+                        (self.fractal_array[right.0.x as usize][y as usize] * x
+                            + DEEP * (WIDTH - x))
+                            / WIDTH;
+                    self.fractal_array[left.0.x as usize][y as usize] =
+                        (self.fractal_array[left.0.x as usize][y as usize] * x
+                            + DEEP * (WIDTH - x))
+                            / WIDTH;
+                }
+            }
+
+            for y in 0..=fractal_height as usize {
+                self.fractal_array[fractal_width as usize][y] = self.fractal_array[0][y];
             }
         }
 
-        for y in 0..=fractal_height as usize {
-            self.fractal_array[fractal_width as usize][y] = self.fractal_array[0][y];
-        }
-    }
+        if self.fractal_grid.wrap_y() {
+            for x in 0..=fractal_width {
+                // `rift_value` is the height of the rift at the given y coordinate
+                // It's in [-fractal_height / 8, fractal_height / 8 - fractal_height / 1024] range.
+                let rift_value = (rifts.fractal_array[x as usize][rift_y as usize] as i32 - 128)
+                    * fractal_height as i32
+                    / 128
+                    / 8;
+                for y in 0..HEIGHT {
+                    let top = self
+                        .fractal_grid
+                        .normalize_offset(OffsetCoordinate::new(x as i32, rift_value + y as i32))
+                        .unwrap();
+                    let bottom = self
+                        .fractal_grid
+                        .normalize_offset(OffsetCoordinate::new(x as i32, rift_value - y as i32))
+                        .unwrap();
 
-    /// In a Wrap X map, given the coordinates of a point and an offset representing the direction of movement, calculate the new coordinates of the point after it moves accordingly.
-    fn yield_x(&self, x: i32, offset_x: i32) -> i32 {
-        let fractal_width = self.fractal_grid.size.width;
-        // Calculate the new coordinates without wrapping
-        let nx = x + offset_x;
-        // Wrap the coordinates and return the wrapped coordinates
-        nx.rem_euclid(fractal_width as i32)
+                    self.fractal_array[x as usize][top.0.y as usize] =
+                        (self.fractal_array[x as usize][top.0.y as usize] * y
+                            + DEEP * (HEIGHT - y))
+                            / HEIGHT;
+                    self.fractal_array[x as usize][bottom.0.y as usize] =
+                        (self.fractal_array[x as usize][top.0.y as usize] * y
+                            + DEEP * (HEIGHT - y))
+                            / HEIGHT;
+                }
+            }
+
+            for x in 0..=fractal_width as usize {
+                self.fractal_array[x as usize][fractal_height as usize] =
+                    self.fractal_array[x as usize][0];
+            }
+        }
     }
 
     pub fn ridge_builder(

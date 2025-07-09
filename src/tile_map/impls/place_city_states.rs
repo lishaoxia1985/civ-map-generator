@@ -115,7 +115,7 @@ impl TileMap {
             let mut coastal_tile_list = Vec::new();
             let mut inland_tile_list = Vec::new();
 
-            self.iter_tiles().for_each(|tile| {
+            self.all_tiles().for_each(|tile| {
                 if tile.can_be_city_state_starting_tile(self, None, false, false) {
                     if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
@@ -239,7 +239,7 @@ impl TileMap {
         let mut coastal_tile_list = Vec::new();
         let mut inland_tile_list = Vec::new();
 
-        for tile in rectangle.iter_tiles(grid) {
+        for tile in rectangle.all_tiles(grid) {
             if should_process_all_tiles {
                 // When the rectangle is small enough, we will process all the tiles.
                 if tile.can_be_city_state_starting_tile(
@@ -258,7 +258,7 @@ impl TileMap {
                 // Process only tiles near enough to the region edge.
                 // That means tiles that are not in the center rectangle.
                 // That is because we often use the center rectangle to place civilizations.
-                if !center_rectangle.contains(grid, tile) {
+                if !center_rectangle.contains(tile, grid) {
                     if tile.can_be_city_state_starting_tile(
                         self,
                         Some(region),
@@ -391,7 +391,7 @@ impl TileMap {
             _num_city_states_uninhabited = 0;
         } else {
             // Possibility of plots that do not belong to any civ's Region. Evaluate these plots and assign an appropriate number of City States to them.
-            self.iter_tiles().for_each(|tile| {
+            self.all_tiles().for_each(|tile| {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
                 if matches!(terrain_type, TerrainType::Flatland | TerrainType::Hill)
@@ -400,7 +400,7 @@ impl TileMap {
                     if let RegionDivideMethod::CustomRectangle(rectangle) =
                         map_parameters.region_divide_method
                     {
-                        if rectangle.contains(self.world_grid.grid, tile) {
+                        if rectangle.contains(tile, self.world_grid.grid) {
                             num_civ_landmass_tiles += 1;
                         } else {
                             num_uninhabited_landmass_tiles += 1;
@@ -607,9 +607,9 @@ impl TileMap {
         // 1H: Plains, Jungle on Plains
 
         // Evaluate First Ring
-        let mut neighbor_tiles = tile.neighbor_tiles(grid);
+        let mut neighbor_tile_list: Vec<Tile> = tile.neighbor_tiles(grid).collect();
 
-        neighbor_tiles.iter().for_each(|neighbor_tile| {
+        neighbor_tile_list.iter().for_each(|neighbor_tile| {
             let terrain_type = neighbor_tile.terrain_type(self);
             let base_terrain = neighbor_tile.base_terrain(self);
             let feature = neighbor_tile.feature(self);
@@ -724,9 +724,9 @@ impl TileMap {
         });
 
         // Evaluate Second Ring
-        let mut tiles_at_distance_two = tile.tiles_at_distance(2, grid);
+        let mut tile_at_distance_two_list: Vec<Tile> = tile.tiles_at_distance(2, grid).collect();
 
-        tiles_at_distance_two
+        tile_at_distance_two_list
             .iter()
             .for_each(|tile_at_distance_two| {
                 let terrain_type = tile_at_distance_two.terrain_type(self);
@@ -823,8 +823,8 @@ impl TileMap {
         // Adjust the hammer situation, if needed.
         let mut _hammer_score = (4 * inner_hills) + (2 * inner_forest) + inner_one_hammer;
         if _hammer_score < 4 {
-            neighbor_tiles.shuffle(&mut self.random_number_generator);
-            for &tile in neighbor_tiles.iter() {
+            neighbor_tile_list.shuffle(&mut self.random_number_generator);
+            for &tile in neighbor_tile_list.iter() {
                 // Attempt to place a Hill at the currently chosen tile.
                 let placed_hill = self.attempt_to_place_hill_at_tile(tile);
                 if placed_hill {
@@ -855,13 +855,13 @@ impl TileMap {
             let mut allow_oasis = true;
 
             // We shuffle the `neighbor_tiles` that was used earlier, instead of recreating a new one.
-            neighbor_tiles.shuffle(&mut self.random_number_generator);
+            neighbor_tile_list.shuffle(&mut self.random_number_generator);
 
             // We shuffle the `tiles_at_distance_two` that was used earlier, instead of recreating a new one.
-            tiles_at_distance_two.shuffle(&mut self.random_number_generator);
+            tile_at_distance_two_list.shuffle(&mut self.random_number_generator);
 
-            let mut first_ring_iter = neighbor_tiles.iter().peekable();
-            let mut second_ring_iter = tiles_at_distance_two.iter().peekable();
+            /* let mut first_ring_iter = neighbor_tile_list.iter().peekable();
+            let mut second_ring_iter = tile_at_distance_two_list.iter().peekable();
 
             while num_food_bonus_needed > 0 {
                 if inner_placed < 2 && inner_can_have_bonus > 0 && first_ring_iter.peek().is_some()
@@ -869,7 +869,7 @@ impl TileMap {
                     // Add bonus to inner ring.
                     while let Some(&tile) = first_ring_iter.next() {
                         let (placed_bonus, placed_oasis) =
-                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
+                            self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -887,7 +887,7 @@ impl TileMap {
                     // Add bonus to second ring.
                     while let Some(&tile) = second_ring_iter.next() {
                         let (placed_bonus, placed_oasis) =
-                            self.attempt_to_place_bonus_resource_at_plot(tile, allow_oasis);
+                            self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
                             if allow_oasis && placed_oasis {
                                 // First oasis was placed on this pass, so change permission.
@@ -901,6 +901,58 @@ impl TileMap {
                     }
                 } else {
                     break;
+                }
+            } */
+
+            // The following code is equivalent to the commented code above, but it is faster.
+            // Process inner ring
+            if num_food_bonus_needed > 0 && inner_placed < 2 && inner_can_have_bonus > 0 {
+                for tile in neighbor_tile_list.into_iter() {
+                    let (placed_bonus, placed_oasis) =
+                        self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
+
+                    if placed_bonus {
+                        if allow_oasis && placed_oasis {
+                            allow_oasis = false;
+                        }
+                        inner_placed += 1;
+                        inner_can_have_bonus -= 1;
+                        num_food_bonus_needed -= 1;
+
+                        if num_food_bonus_needed == 0
+                            || inner_placed >= 2
+                            || inner_can_have_bonus == 0
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Process outer ring if still needed
+            if num_food_bonus_needed > 0
+                && (inner_placed + outer_placed) < 4
+                && outer_can_have_bonus > 0
+            {
+                for tile in tile_at_distance_two_list.into_iter() {
+                    let (placed_bonus, placed_oasis) =
+                        self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
+
+                    if placed_bonus {
+                        if allow_oasis && placed_oasis {
+                            allow_oasis = false;
+                        }
+                        outer_placed += 1;
+                        outer_can_have_bonus -= 1;
+                        num_food_bonus_needed -= 1;
+
+                        if num_food_bonus_needed == 0
+                            || (inner_placed + outer_placed) >= 4
+                            || outer_can_have_bonus == 0
+                        {
+                            break;
+                        }
+                    }
                 }
             }
         }

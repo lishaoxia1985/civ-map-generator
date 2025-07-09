@@ -140,7 +140,7 @@ impl TileMap {
     }
 
     /// Returns an iterator over all tiles in the map.
-    pub fn iter_tiles(&self) -> impl Iterator<Item = Tile> {
+    pub fn all_tiles(&self) -> impl Iterator<Item = Tile> {
         let size = &self.world_grid.size();
         (0..((size.width * size.height) as usize)).map(Tile::new)
     }

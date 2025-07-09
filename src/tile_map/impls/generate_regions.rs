@@ -212,7 +212,7 @@ impl TileMap {
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in landmass_rectangle.iter_tiles(self.world_grid.grid) {
+        for tile in landmass_rectangle.all_tiles(self.world_grid.grid) {
             if tile.area_id(self) != area_id {
                 area_fertility_list.push(0);
             } else {
@@ -231,7 +231,7 @@ impl TileMap {
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in rectangle.iter_tiles(self.world_grid.grid) {
+        for tile in rectangle.all_tiles(self.world_grid.grid) {
             // Check for coastal land is disabled.
             let tile_fertility = self.measure_start_placement_fertility_of_tile(tile, false);
             area_fertility_list.push(tile_fertility);
@@ -931,7 +931,7 @@ impl Region {
 
         let mut terrain_statistic = TerrainStatistic::default();
 
-        for tile in self.rectangle.iter_tiles(grid) {
+        for tile in self.rectangle.all_tiles(grid) {
             let terrain_type = tile.terrain_type(tile_map);
             let base_terrain = tile.base_terrain(tile_map);
             let feature = tile.feature(tile_map);
@@ -978,7 +978,6 @@ impl Region {
                         if !tile.is_coastal_land(tile_map)
                             && tile
                                 .neighbor_tiles(grid)
-                                .iter()
                                 .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;
@@ -1007,7 +1006,6 @@ impl Region {
                         if !tile.is_coastal_land(tile_map)
                             && tile
                                 .neighbor_tiles(grid)
-                                .iter()
                                 .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
                             terrain_statistic.next_to_coastal_land_num += 1;

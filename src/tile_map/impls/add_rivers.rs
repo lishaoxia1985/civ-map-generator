@@ -31,7 +31,7 @@ impl TileMap {
                 )
             };
 
-            self.iter_tiles().for_each(|tile| {
+            self.all_tiles().for_each(|tile| {
                 let terrain_type = tile.terrain_type(self);
                 let area_id = tile.area_id(self);
                 // Check if the tile can be a river starting location.
@@ -73,15 +73,12 @@ impl TileMap {
                     && tile.natural_wonder(self).is_none()
                     && !tile
                         .neighbor_tiles(grid)
-                        .iter()
                         .any(|neighbor_tile| neighbor_tile.natural_wonder(self).is_some())
                     && !tile
                         .tiles_in_distance(river_source_range, grid)
-                        .iter()
                         .any(|tile| tile.is_freshwater(self))
                     && !tile
                         .tiles_in_distance(sea_water_range, grid)
-                        .iter()
                         .any(|tile| tile.terrain_type(self) == TerrainType::Water)
                 {
                     let start_tile = self.get_inland_corner(tile);
@@ -533,20 +530,17 @@ impl TileMap {
         if tile.natural_wonder(self).is_some()
             || tile
                 .neighbor_tiles(grid)
-                .iter()
-                .any(|&neighbor_tile| neighbor_tile.natural_wonder(self).is_some())
+                .any(|neighbor_tile| neighbor_tile.natural_wonder(self).is_some())
         {
             return -1;
         }
 
         let mut sum = tile_elevation(self, tile) * 20;
 
-        let neighbor_tiles = tile.neighbor_tiles(grid);
-
         // Usually, the tile have 6 neighbors. If not, the sum increases by 40 for each missing neighbor of the tile.
-        sum += 40 * (6 - neighbor_tiles.len() as i32);
+        sum += 40 * (6 - tile.neighbor_tiles(grid).count() as i32);
 
-        neighbor_tiles.iter().for_each(|&neighbor_tile| {
+        tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
             sum += tile_elevation(self, neighbor_tile);
             if neighbor_tile.base_terrain(self) == BaseTerrain::Desert {
                 sum += 4;

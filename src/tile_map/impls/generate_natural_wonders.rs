@@ -59,7 +59,7 @@ impl TileMap {
             .choose(&mut self.random_number_generator)
             .expect("Failed to choose a random direction");
 
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             for &natural_wonder_name in &natural_wonder_list {
                 let possible_natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
 
@@ -123,10 +123,9 @@ impl TileMap {
                                     "Must be adjacent to [] [] tiles" => {
                                         let count = tile
                                             .neighbor_tiles(grid)
-                                            .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
-                                                    **tile,
+                                                    *tile,
                                                     unique.params[1].as_str(),
                                                 )
                                             })
@@ -136,10 +135,9 @@ impl TileMap {
                                     "Must be adjacent to [] to [] [] tiles" => {
                                         let count = tile
                                             .neighbor_tiles(grid)
-                                            .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
-                                                    **tile,
+                                                    *tile,
                                                     unique.params[2].as_str(),
                                                 )
                                             })
@@ -244,9 +242,7 @@ impl TileMap {
                                     placed_natural_wonder_tiles.push(neighbor_tile);
                                 }
                                 "Rock of Gibraltar" => {
-                                    let neighbor_tiles: Vec<_> = tile.neighbor_tiles(grid);
-
-                                    neighbor_tiles.into_iter().for_each(|neighbor_tile| {
+                                    tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
                                         if neighbor_tile.terrain_type(self) == TerrainType::Water {
                                             self.base_terrain_query[neighbor_tile.index()] =
                                                 BaseTerrain::Coast;
@@ -306,31 +302,28 @@ impl TileMap {
             if tile.terrain_type(self) != TerrainType::Water
                 && tile
                     .neighbor_tiles(grid)
-                    .iter()
                     .any(|neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
             {
                 let water_neighbor_tiles: Vec<_> = tile
                     .neighbor_tiles(grid)
-                    .into_iter()
                     .filter(|&neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
                     .collect();
 
                 water_neighbor_tiles
                     .iter()
                     .for_each(|&water_neighbor_tile| {
-                        let neighbor_neighbor_tiles = water_neighbor_tile.neighbor_tiles(grid);
-
-                        if neighbor_neighbor_tiles
-                            .iter()
-                            .any(|&neighbor_neighbor_tile| {
+                        // If the water neighbor tile has a lake neighbor, then change the water neighbor tile to a lake.
+                        // Otherwise, change the water neighbor tile to a coast.
+                        let has_lake_neighbor = water_neighbor_tile.neighbor_tiles(grid).any(
+                            |neighbor_neighbor_tile| {
                                 neighbor_neighbor_tile.base_terrain(self) == BaseTerrain::Lake
-                            })
+                            },
+                        );
+                        self.base_terrain_query[water_neighbor_tile.index()] = if has_lake_neighbor
                         {
-                            self.base_terrain_query[water_neighbor_tile.index()] =
-                                BaseTerrain::Lake;
+                            BaseTerrain::Lake
                         } else {
-                            self.base_terrain_query[water_neighbor_tile.index()] =
-                                BaseTerrain::Coast;
+                            BaseTerrain::Coast
                         };
                     });
             }
@@ -380,7 +373,7 @@ impl TileMap {
             .choose(&mut self.random_number_generator)
             .expect("Failed to choose a random direction");
 
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             for &natural_wonder_name in &natural_wonder_list {
                 let possible_natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
 
@@ -444,10 +437,9 @@ impl TileMap {
                                     "Must be adjacent to [] [] tiles" => {
                                         let count = tile
                                             .neighbor_tiles(grid)
-                                            .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
-                                                    **tile,
+                                                    *tile,
                                                     unique.params[1].as_str(),
                                                 )
                                             })
@@ -457,10 +449,9 @@ impl TileMap {
                                     "Must be adjacent to [] to [] [] tiles" => {
                                         let count = tile
                                             .neighbor_tiles(grid)
-                                            .iter()
                                             .filter(|tile| {
                                                 self.matches_wonder_filter(
-                                                    **tile,
+                                                    *tile,
                                                     unique.params[2].as_str(),
                                                 )
                                             })
@@ -585,17 +576,17 @@ impl TileMap {
                                 placed_natural_wonder_tiles.push(neighbor_tile);
                             }
                             "Rock of Gibraltar" => {
-                                let neighbor_tiles: Vec<_> = max_score_tile.neighbor_tiles(grid);
-
-                                neighbor_tiles.into_iter().for_each(|neighbor_tile| {
-                                    if neighbor_tile.terrain_type(self) == TerrainType::Water {
-                                        self.base_terrain_query[neighbor_tile.index()] =
-                                            BaseTerrain::Coast;
-                                    } else {
-                                        self.terrain_type_query[neighbor_tile.index()] =
-                                            TerrainType::Mountain;
-                                    }
-                                });
+                                max_score_tile
+                                    .neighbor_tiles(grid)
+                                    .for_each(|neighbor_tile| {
+                                        if neighbor_tile.terrain_type(self) == TerrainType::Water {
+                                            self.base_terrain_query[neighbor_tile.index()] =
+                                                BaseTerrain::Coast;
+                                        } else {
+                                            self.terrain_type_query[neighbor_tile.index()] =
+                                                TerrainType::Mountain;
+                                        }
+                                    });
                                 // Edit the choice tile's terrain_type to match the natural wonder
                                 self.terrain_type_query[max_score_tile.index()] =
                                     TerrainType::Flatland;
@@ -638,31 +629,28 @@ impl TileMap {
             if tile.terrain_type(self) != TerrainType::Water
                 && tile
                     .neighbor_tiles(grid)
-                    .iter()
                     .any(|neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
             {
                 let water_neighbor_tiles: Vec<_> = tile
                     .neighbor_tiles(grid)
-                    .into_iter()
                     .filter(|&neighbor_tile| neighbor_tile.terrain_type(self) == TerrainType::Water)
                     .collect();
 
                 water_neighbor_tiles
                     .iter()
                     .for_each(|&water_neighbor_tile| {
-                        let neighbor_neighbor_tiles = water_neighbor_tile.neighbor_tiles(grid);
-
-                        if neighbor_neighbor_tiles
-                            .iter()
-                            .any(|&neighbor_neighbor_tile| {
+                        // If the water neighbor tile has a lake neighbor, then change the water neighbor tile to a lake.
+                        // Otherwise, change the water neighbor tile to a coast.
+                        let has_lake_neighbor = water_neighbor_tile.neighbor_tiles(grid).any(
+                            |neighbor_neighbor_tile| {
                                 neighbor_neighbor_tile.base_terrain(self) == BaseTerrain::Lake
-                            })
+                            },
+                        );
+                        self.base_terrain_query[water_neighbor_tile.index()] = if has_lake_neighbor
                         {
-                            self.base_terrain_query[water_neighbor_tile.index()] =
-                                BaseTerrain::Lake;
+                            BaseTerrain::Lake
                         } else {
-                            self.base_terrain_query[water_neighbor_tile.index()] =
-                                BaseTerrain::Coast;
+                            BaseTerrain::Coast
                         };
                     });
             }

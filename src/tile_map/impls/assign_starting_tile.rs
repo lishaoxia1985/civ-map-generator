@@ -58,7 +58,7 @@ impl TileMap {
     /// Change all the terrains which both have [`Feature::Jungle`] and resource `Sugar` to a [`TerrainType::Flatland`]
     /// with [`BaseTerrain::Grassland`] and [`Feature::Marsh`].
     fn fix_sugar_jungles(&mut self) {
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if tile
                 .resource(self)
                 .map_or(false, |(resource, _)| resource.name() == "Sugar")
@@ -646,7 +646,7 @@ impl TileMap {
     // function AssignStartingPlots:AttemptToPlaceSmallStrategicAtPlot
     /// Attempts to place a Small `Horses` or `Iron` Resource at the currently chosen tile.
     /// If successful, it returns `true`, otherwise it returns `false`.
-    pub fn attempt_to_place_small_strategic_at_plot(&mut self, tile: Tile) -> bool {
+    pub fn attempt_to_place_small_strategic_at_tile(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) == TerrainType::Flatland
             && tile.feature(self).is_none()
@@ -678,7 +678,7 @@ impl TileMap {
     /// Returns a tuple of two booleans:
     /// * The first boolean is `true` if something was placed.
     /// * The second boolean is `true` as well if [`Feature::Oasis`] was placed.
-    pub fn attempt_to_place_bonus_resource_at_plot(
+    pub fn attempt_to_place_bonus_resource_at_tile(
         &mut self,
         tile: Tile,
         allow_oasis: bool,
@@ -766,7 +766,7 @@ impl TileMap {
     // function AssignStartingPlots:AttemptToPlaceStoneAtGrassPlot
     /// Attempts to place a stone at a grass plot.
     /// Returns `true` if Stone is placed. Otherwise returns `false`.
-    pub fn attempt_to_place_stone_at_grass_plot(&mut self, tile: Tile) -> bool {
+    pub fn attempt_to_place_stone_at_grass_tile(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
             && tile.terrain_type(self) == TerrainType::Flatland
             && tile.base_terrain(self) == BaseTerrain::Grassland

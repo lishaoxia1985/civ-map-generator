@@ -118,7 +118,7 @@ impl TileMap {
                 95,
             ]);
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             let [x, y] = tile.to_offset(grid).to_array();
             let height = continents_fractal.get_height(x, y);
 

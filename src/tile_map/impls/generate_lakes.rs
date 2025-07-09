@@ -24,7 +24,7 @@ impl TileMap {
             .map(|landmass| landmass.id)
             .collect();
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if candidate_lake_area_ids.contains(&tile.landmass_id(self)) {
                 self.base_terrain_query[tile.index()] = BaseTerrain::Lake;
             }
@@ -41,7 +41,7 @@ impl TileMap {
 
         let mut num_large_lakes_added = 0;
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if self.can_add_lake(tile)
                 && self.random_number_generator.gen_range(0..lake_plot_rand) == 0
             {
@@ -119,10 +119,8 @@ impl TileMap {
             return false;
         }
 
-        let neighbor_tiles = tile.neighbor_tiles(grid);
-
         // Check if all neighbor tiles are also suitable
-        neighbor_tiles.iter().all(|neighbor_tile| {
+        tile.neighbor_tiles(grid).all(|neighbor_tile| {
             neighbor_tile.terrain_type(self) != TerrainType::Water
                 && neighbor_tile.natural_wonder(self).is_none()
         })

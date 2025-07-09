@@ -152,7 +152,9 @@ impl Tile {
         tile_map.landmass_id_query[self.0]
     }
 
-    pub fn neighbor_tiles(&self, grid: HexGrid) -> Vec<Self> {
+    /// Returns an iterator over the neighboring tiles of the current tile.
+    ///
+    pub fn neighbor_tiles(&self, grid: HexGrid) -> impl Iterator<Item = Self> {
         self.tiles_at_distance(1, grid)
     }
 
@@ -173,20 +175,18 @@ impl Tile {
             .map(|neighbor_cell| Self::from_cell(neighbor_cell))
     }
 
-    /// Get the tiles at the given distance from the current tile.
-    pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> Vec<Self> {
+    /// Returns an iterator over the tiles at the given distance from the current tile.
+    ///
+    pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_at_distance(self.to_cell(), distance)
-            .iter()
-            .map(|&cell| Self::from_cell(cell))
-            .collect()
+            .map(|cell| Self::from_cell(cell))
     }
 
-    /// Get the tiles within the given distance from the current tile, including the current tile.
-    pub fn tiles_in_distance<'a>(&'a self, distance: u32, grid: HexGrid) -> Vec<Self> {
+    /// Returns an iterator over the tiles within the given distance from the current tile, including the current tile.
+    ///
+    pub fn tiles_in_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_within_distance(self.to_cell(), distance)
-            .iter()
-            .map(|&cell| Self::from_cell(cell))
-            .collect()
+            .map(|cell| Self::from_cell(cell))
     }
 
     pub fn pixel_position(&self, grid: HexGrid) -> Vec2 {
@@ -272,7 +272,7 @@ impl Tile {
     pub fn is_freshwater(&self, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
         self.terrain_type(tile_map) != TerrainType::Water
-            && (self.neighbor_tiles(grid).iter().any(|tile| {
+            && (self.neighbor_tiles(grid).any(|tile| {
                 tile.base_terrain(tile_map) == BaseTerrain::Lake
                     || tile.feature(tile_map) == Some(Feature::Oasis)
             }) || self.has_river(tile_map))
@@ -288,8 +288,7 @@ impl Tile {
         self.terrain_type(tile_map) != TerrainType::Water
             && self
                 .neighbor_tiles(grid)
-                .iter()
-                .any(|&tile| tile.base_terrain(tile_map) == BaseTerrain::Coast)
+                .any(|tile| tile.base_terrain(tile_map) == BaseTerrain::Coast)
     }
 
     /// Checks if a tile can be a starting tile of civilization.
@@ -321,7 +320,6 @@ impl Tile {
             || (!map_parameters.civilization_starting_tile_must_be_coastal_land
                 && self
                     .tiles_in_distance(SETTLER_MOVEMENT, tile_map.world_grid.grid)
-                    .iter()
                     .all(|tile| tile.base_terrain(tile_map) != BaseTerrain::Coast)))
     }
 

@@ -49,10 +49,8 @@ impl TileMap {
         let jungle_bottom = equator - (jungle_percent as f64 * 0.5).ceil() as i32;
         let jungle_top = equator + (jungle_percent as f64 * 0.5).ceil() as i32;
 
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             let latitude = tile.latitude(grid);
-
-            let neighbor_tiles = tile.neighbor_tiles(grid);
 
             /* **********start to add ice********** */
             if tile.is_impassable(self, &ruleset) {
@@ -69,14 +67,14 @@ impl TileMap {
                     if latitude > 0.78 {
                         let mut score = self.random_number_generator.gen_range(0..100) as f64;
                         score += latitude * 100.;
-                        if neighbor_tiles
-                            .iter()
-                            .any(|&tile| tile.terrain_type(self) != TerrainType::Water)
+                        if tile
+                            .neighbor_tiles(grid)
+                            .any(|tile| tile.terrain_type(self) != TerrainType::Water)
                         {
                             score /= 2.0;
                         }
-                        let a = neighbor_tiles
-                            .iter()
+                        let a = tile
+                            .neighbor_tiles(grid)
                             .filter(|tile| tile.feature(self) == Some(Feature::Ice))
                             .count();
                         score += 10. * a as f64;
@@ -130,8 +128,8 @@ impl TileMap {
                 {
                     let mut score = 300;
 
-                    let a = neighbor_tiles
-                        .iter()
+                    let a = tile
+                        .neighbor_tiles(grid)
                         .filter(|tile| tile.feature(self) == Some(Feature::Marsh))
                         .count();
                     match a {
@@ -162,8 +160,8 @@ impl TileMap {
                 {
                     let mut score = 300;
 
-                    let a = neighbor_tiles
-                        .iter()
+                    let a = tile
+                        .neighbor_tiles(grid)
                         .filter(|tile| tile.feature(self) == Some(Feature::Jungle))
                         .count();
                     match a {
@@ -205,8 +203,8 @@ impl TileMap {
                 {
                     let mut score = 300;
 
-                    let a = neighbor_tiles
-                        .iter()
+                    let a = tile
+                        .neighbor_tiles(grid)
                         .filter(|tile| tile.feature(self) == Some(Feature::Forest))
                         .count();
                     match a {

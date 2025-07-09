@@ -147,7 +147,7 @@ impl Grid for HexGrid {
         start_hex.distance_to(dest_hex)
     }
 
-    fn neighbor(&self, center: Cell, direction: Direction) -> Option<Cell> {
+    fn neighbor(self, center: Cell, direction: Direction) -> Option<Cell> {
         let center = self.cell_to_offset(center);
 
         let center_hex = Hex::from_offset(center, self.layout.orientation, self.offset);
@@ -157,26 +157,24 @@ impl Grid for HexGrid {
         self.offset_to_cell(neighbor_offset_coordinate).ok()
     }
 
-    fn cells_at_distance(&self, center: Cell, distance: u32) -> Vec<Cell> {
+    fn cells_at_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell> {
         let center = self.cell_to_offset(center);
 
         let center_hex = Hex::from_offset(center, self.layout.orientation, self.offset);
         center_hex
             .hexes_at_distance(distance)
-            .iter()
-            .filter_map(|&hex_coordinate| self.grid_coordinate_to_cell(hex_coordinate))
-            .collect()
+            .into_iter()
+            .filter_map(move |hex| self.grid_coordinate_to_cell(hex))
     }
 
-    fn cells_within_distance(&self, center: Cell, distance: u32) -> Vec<Cell> {
+    fn cells_within_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell> {
         let center = self.cell_to_offset(center);
 
         let center_hex = Hex::from_offset(center, self.layout.orientation, self.offset);
         center_hex
             .hexes_in_distance(distance)
-            .iter()
-            .filter_map(|&hex_coordinate| self.grid_coordinate_to_cell(hex_coordinate))
-            .collect()
+            .into_iter()
+            .filter_map(move |hex| self.grid_coordinate_to_cell(hex))
     }
 
     fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction> {

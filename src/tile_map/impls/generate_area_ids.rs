@@ -36,7 +36,7 @@ impl TileMap {
         // `tile_impassable` is used to check if the tile is impassable or not.
         // `tile_water` is used to check if the tile is water or not.
         let (tile_impassable, tile_water): (Vec<bool>, Vec<bool>) = self
-            .iter_tiles()
+            .all_tiles()
             .map(|tile| (tile.is_impassable(self, ruleset), tile.is_water(self)))
             .unzip();
 
@@ -52,13 +52,13 @@ impl TileMap {
             }
 
             // Get the neighbors of the two tiles
-            let tile_neighbors = tile.neighbor_tiles(grid);
-            let before_neighbors = before_tile.neighbor_tiles(grid);
+            let tile_neighbor_list: Vec<Tile> = tile.neighbor_tiles(grid).collect();
+            let before_neighbor_list: Vec<Tile> = before_tile.neighbor_tiles(grid).collect();
 
             // Get the common neighbors iterator
-            let mut common_neighbors_iter = tile_neighbors
+            let mut common_neighbors_iter = tile_neighbor_list
                 .iter()
-                .filter(|t| before_neighbors.contains(t));
+                .filter(|t| before_neighbor_list.contains(t));
 
             // Verify all common neighbors maintain the same properties
             common_neighbors_iter.all(|&neighbor| {
@@ -69,7 +69,7 @@ impl TileMap {
         };
 
         // First iterate, wide area
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             // If the tile is already part of an area, skip it.
             if tile.area_id(self) != UNINITIALIZED_AREA_ID {
                 continue;
@@ -106,7 +106,7 @@ impl TileMap {
         };
 
         // Second iterate, all the rest, small and thin area
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             // If the tile is already part of an area, skip it.
             if tile.area_id(self) != UNINITIALIZED_AREA_ID {
                 continue;
@@ -183,7 +183,7 @@ impl TileMap {
 
         // Precompute tile properties to avoid borrowing `self` in the closure
         // `tile_water` is used to check if the tile is water or not.
-        let tile_water: Vec<_> = self.iter_tiles().map(|tile| tile.is_water(self)).collect();
+        let tile_water: Vec<_> = self.all_tiles().map(|tile| tile.is_water(self)).collect();
 
         let check_tile = |tile: Tile, before_tile: Tile| {
             let tile_idx = tile.index();
@@ -191,7 +191,7 @@ impl TileMap {
             tile_water[tile_idx] == tile_water[before_idx]
         };
 
-        for tile in self.iter_tiles() {
+        for tile in self.all_tiles() {
             // If the tile is already part of a landmass, skip it.
             if tile.landmass_id(self) != UNINITIALIZED_LANDMASS_ID {
                 continue;
@@ -238,7 +238,7 @@ impl TileMap {
         queue.push_back(start_tile);
 
         while let Some(current_tile) = queue.pop_front() {
-            current_tile.neighbor_tiles(grid).iter().for_each(|&tile| {
+            current_tile.neighbor_tiles(grid).for_each(|tile| {
                 if check_tile(tile, current_tile) {
                     if tiles_in_area_or_landmass.insert(tile) {
                         queue.push_back(tile);

@@ -723,7 +723,7 @@ impl TileMap {
         let mut desert_flat_no_feature = Vec::new();
         let mut hills_list = Vec::new();
 
-        self.iter_tiles().for_each(|tile| {
+        self.all_tiles().for_each(|tile| {
             if !self.player_collision_data[tile.index()] && tile.resource(self).is_none() {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);

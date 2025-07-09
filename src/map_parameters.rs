@@ -411,7 +411,7 @@ impl Rectangle {
     }
 
     /// Returns an iterator over all tiles in current rectangle region of the map.
-    pub fn iter_tiles<'a>(&'a self, grid: HexGrid) -> impl Iterator<Item = Tile> + 'a {
+    pub fn all_tiles<'a>(&'a self, grid: HexGrid) -> impl Iterator<Item = Tile> + 'a {
         (self.south_y()..self.south_y() + self.height as i32).flat_map(move |y| {
             (self.west_x()..self.west_x() + self.width as i32).map(move |x| {
                 let offset_coordinate = OffsetCoordinate::new(x, y);
@@ -423,7 +423,7 @@ impl Rectangle {
     /// Checks if the given tile is inside the current rectangle.
     ///
     /// Returns `true` if the given tile is inside the current rectangle.
-    pub fn contains(&self, grid: HexGrid, tile: Tile) -> bool {
+    pub fn contains(&self, tile: Tile, grid: HexGrid) -> bool {
         let [mut x, mut y] = tile.to_offset(grid).to_array();
 
         // We should consider the map is wrapped around horizontally.

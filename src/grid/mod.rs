@@ -153,14 +153,52 @@ pub trait Grid {
     fn distance_to(&self, start: Cell, dest: Cell) -> i32;
 
     /// Returns the neighbor of `center` in the given `direction`.
-    fn neighbor(&self, center: Cell, direction: Direction) -> Option<Cell>;
+    fn neighbor(self, center: Cell, direction: Direction) -> Option<Cell>;
 
-    /// Returns all coordinates that are at a distance of `distance` from `center`.
-    fn cells_at_distance(&self, center: Cell, distance: u32) -> Vec<Cell>;
+    /// Returns an iterator over all grid cells that are at a distance of `distance` from `center`.
+    ///
+    /// # Arguments
+    ///
+    /// * `center` - The center cell.
+    /// * `distance` - The distance from the center cell.
+    ///
+    /// # Notice
+    ///
+    /// Before calling:
+    /// - For WarpX grids: `distance` should be ≤ `self.width() / 2`.
+    /// - For WarpY grids: `distance` should be ≤ `self.height() / 2`.
+    ///
+    /// If you need distances beyond these limits (not recommended), filter results like this:
+    /// ```rust, ignore
+    /// let cells = grid.cells_at_distance(center, distance)
+    /// .filter(|cell| {
+    ///     grid.distance_to(center, *cell) == distance as i32
+    /// }).collect::<Vec<_>>();
+    /// ```
+    ///
+    fn cells_at_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
 
-    /// Returns all coordinates that are within a distance of `distance` from `center`.
-    /// This includes the center coordinate itself.
-    fn cells_within_distance(&self, center: Cell, distance: u32) -> Vec<Cell>;
+    /// Returns an iterator over all grid cells that are within a distance of `distance` from `center`.
+    /// This includes the center cell itself.
+    ///
+    /// # Arguments
+    ///
+    /// * `center` - The center cell.
+    /// * `distance` - The distance from the center cell.
+    ///
+    /// # Notice
+    ///
+    /// Before calling:
+    /// - For WarpX grids: `distance` should be ≤ `self.width() / 2`.
+    /// - For WarpY grids: `distance` should be ≤ `self.height() / 2`.
+    ///
+    /// If you need distances beyond these limits (not recommended), remove duplicate results like this:
+    /// ```rust, ignore
+    /// let cells = grid.cells_within_distance(center, distance)
+    /// .collect::<HashSet<_>>();
+    /// ```
+    ///
+    fn cells_within_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
 
     /// Determine the direction of `dest` relative to `start`.
     ///
