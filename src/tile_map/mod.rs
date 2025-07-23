@@ -58,7 +58,7 @@ pub struct TileMap {
     /// - `value = 0` means no influence from existing impacts in current tile.
     /// - `value = 99` means an "impact" occurred in current tile, and current tile is a starting tile.
     /// - Values in (0, 99) represent "ripples", indicating that current tile is near a starting tile.
-    /// The larger values, the closer the tile is to the starting tile.
+    ///   The larger values, the closer the tile is to the starting tile.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
@@ -149,10 +149,17 @@ impl TileMap {
     ///
     /// When you add an element (such as a starting tile of civilization, a city state, a natural wonder, a marble, or a resource...) to the map,
     /// if you want to ensure no other elements appear around the element being added, you can use this function.
-    pub fn place_impact_and_ripples(&mut self, tile: Tile, layer: Layer, radius: Option<u32>) {
+    ///
+    /// # Arguments
+    ///
+    /// - `tile`: the tile to place the impact and ripples on.
+    /// - `layer`: the layer to place the impact and ripples on. It should be a variant of the [`Layer`] enum.
+    /// - `radius`: the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    ///     - When layer is [`Layer::Strategic`], [`Layer::Luxury`] or [`Layer::Bonus`], [`Layer::Fish`], this argument is used to determine the ripple radius.
+    ///     - When layer is other variants, this argument is ignored (recommended to use [`u32::MAX`] as placeholder).
+    pub fn place_impact_and_ripples(&mut self, tile: Tile, layer: Layer, radius: u32) {
         match layer {
             Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish => {
-                let radius = radius.expect("Radius required for this layer");
                 self.place_impact_and_ripples_for_resource(tile, layer, radius)
             }
             Layer::CityState => {
@@ -171,7 +178,7 @@ impl TileMap {
                 self.place_impact_and_ripples_for_resource(
                     tile,
                     Layer::NaturalWonder,
-                    self.world_grid.size().height as u32 / 5,
+                    self.world_grid.size().height / 5,
                 );
                 self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
                 self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
@@ -216,7 +223,6 @@ impl TileMap {
             let distance = index as u32 + 1;
 
             tile.tiles_at_distance(distance, grid)
-                .into_iter()
                 .for_each(|tile_at_distance| {
                     let mut current_value =
                         self.layer_data[Layer::Civilization][tile_at_distance.index()];
@@ -244,12 +250,15 @@ impl TileMap {
     ///
     /// We will place the resource impact on the tile and then place a ripple on all tiles within the radius.
     ///
-    /// # Parameters
-    /// - `tile` is the tile to place the resource impact on.
-    /// - `layer` is the layer to place the resource impact and ripple on. `layer` should not be [`Layer::Civilization`]. Otherwise, the function will panic.
-    /// - `radius` is the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    /// # Arguments
+    ///
+    /// - `tile`: the tile to place the resource impact on.
+    /// - `layer`: the layer to place the resource impact and ripple on. `layer` should not be [`Layer::Civilization`].
+    /// - `radius`: the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    ///
     /// # Panics
-    /// Panics if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
+    ///
+    /// Panics on dev mode if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
     fn place_impact_and_ripples_for_resource(&mut self, tile: Tile, layer: Layer, radius: u32) {
         debug_assert_ne!(
             layer,
@@ -271,14 +280,13 @@ impl TileMap {
             return;
         }
 
-        if radius > 0 && radius < (grid.size.height as u32 / 2) {
+        if radius > 0 && radius < (grid.size.height / 2) {
             for distance in 1..=radius {
                 // `distance` is the distance from the center tile to the current tile.
                 // The larger the distance, the smaller the ripple value.
                 let ripple_value = radius - distance + 1;
                 // Iterate over all tiles at this distance.
                 tile.tiles_at_distance(distance, grid)
-                    .into_iter()
                     .for_each(|tile_at_distance| {
                         // The current tile's ripple value.
                         let mut current_value = self.layer_data[layer][tile_at_distance.index()];

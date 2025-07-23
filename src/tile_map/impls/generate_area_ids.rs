@@ -239,10 +239,9 @@ impl TileMap {
 
         while let Some(current_tile) = queue.pop_front() {
             current_tile.neighbor_tiles(grid).for_each(|tile| {
-                if check_tile(tile, current_tile) {
-                    if tiles_in_area_or_landmass.insert(tile) {
-                        queue.push_back(tile);
-                    }
+                // NOTICE: Don't switch the order of `check_tile` and `tiles_in_area_or_landmass.insert(tile)`.
+                if check_tile(tile, current_tile) && tiles_in_area_or_landmass.insert(tile) {
+                    queue.push_back(tile);
                 }
             });
         }

@@ -234,7 +234,7 @@ impl Grid for HexGrid {
 
         let origin = Hex::new(0, 0);
 
-        let max_direction = edge_direction_array.into_iter().max_by_key(|&direction| {
+        edge_direction_array.into_iter().max_by_key(|&direction| {
             let unit_direction_vector = origin.neighbor(self.layout.orientation, direction);
             let unit_direction_cube_vector = IVec3::new(
                 unit_direction_vector.x(),
@@ -242,9 +242,7 @@ impl Grid for HexGrid {
                 unit_direction_vector.z(),
             );
             estimate_cube_vector.dot(unit_direction_cube_vector)
-        });
-
-        max_direction
+        })
     }
 }
 

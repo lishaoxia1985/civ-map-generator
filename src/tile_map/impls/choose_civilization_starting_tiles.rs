@@ -28,27 +28,26 @@ impl TileMap {
         // When map_parameters.region_divide_method is `RegionDivideMethod::WholeMapRectangle` or `RegionDivideMethod::CustomRectangle`, all region's landmass_id is always `None`.
         let ignore_landmass_id = self.region_list[0].area_id.is_none();
 
-        (0..self.region_list.len())
-            .into_iter()
-            .for_each(|region_index| {
-                if ignore_landmass_id {
-                    self.find_start_without_regard_to_area_id(map_parameters, region_index);
-                } else if map_parameters.civilization_starting_tile_must_be_coastal_land {
-                    self.find_coastal_land_start(map_parameters, region_index);
-                } else {
-                    self.find_start(map_parameters, region_index);
-                }
-            })
+        (0..self.region_list.len()).for_each(|region_index| {
+            if ignore_landmass_id {
+                self.find_start_without_regard_to_area_id(map_parameters, region_index);
+            } else if map_parameters.civilization_starting_tile_must_be_coastal_land {
+                self.find_coastal_land_start(map_parameters, region_index);
+            } else {
+                self.find_start(map_parameters, region_index);
+            }
+        })
     }
 
     // function AssignStartingPlots:FindStartWithoutRegardToAreaID
     /// Find a starting tile for a region without regard to [Region::landmass_id].
     ///
     /// # Returns
+    ///
     /// This function returns a tuple:
     /// - first element. If a starting tile was found in the region, it is `true`, otherwise `false`.
     /// - second element. If the region had no eligible starting tiles and a starting tile was forced to be placed,
-    /// and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
+    ///   and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
     fn find_start_without_regard_to_area_id(
         &mut self,
         map_parameters: &MapParameters,
@@ -117,7 +116,7 @@ impl TileMap {
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
             self.place_impact_and_ripples_for_civilization(max_score_tile);
-            return (true, false);
+            (true, false)
         } else {
             let origin = region.rectangle.origin();
 
@@ -128,7 +127,7 @@ impl TileMap {
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
             self.place_impact_and_ripples_for_civilization(tile);
-            return (false, true);
+            (false, true)
         }
     }
 
@@ -139,10 +138,11 @@ impl TileMap {
     /// - If there is no eligible starting tile, force a starting tile to be placed.
     ///
     /// # Returns
+    ///
     /// This function returns a tuple:
     /// - first element. If a starting tile was found in the region, it is `true`, otherwise `false`.
     /// - second element. If the region had no eligible starting tiles and a starting tile was forced to be placed,
-    /// and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
+    ///   and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
     fn find_coastal_land_start(
         &mut self,
         map_parameters: &MapParameters,
@@ -152,7 +152,7 @@ impl TileMap {
 
         let mut fallback_tile_and_score = Vec::new();
 
-        let coastal_land_sum = (&self.region_list[region_index])
+        let coastal_land_sum = self.region_list[region_index]
             .terrain_statistic
             .coastal_land_num;
 
@@ -282,7 +282,7 @@ impl TileMap {
             }
         }
 
-        if outer_coastal_plots.len() > 0 {
+        if !outer_coastal_plots.is_empty() {
             let mut outer_eligible_list = Vec::new();
             let mut found_eligible = false;
             let mut found_fallback = false;
@@ -428,7 +428,7 @@ impl TileMap {
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
             self.place_impact_and_ripples_for_civilization(max_score_tile);
-            return (true, false);
+            (true, false)
         } else {
             // This region cannot support an Along Ocean start.
             // Try instead to find an inland start for it.
@@ -436,7 +436,7 @@ impl TileMap {
             // We don't need write the code to force a starting tile to be placed, because the `find_start` function will do it for us.
             let (success_flag, forced_placement_flag) =
                 self.find_start(map_parameters, region_index);
-            return (success_flag, forced_placement_flag);
+            (success_flag, forced_placement_flag)
         }
     }
 
@@ -444,10 +444,11 @@ impl TileMap {
     /// Find a starting tile for a region.
     ///
     /// # Returns
+    ///
     /// This function returns a tuple:
     /// - first element. If a starting tile was found in the region, it is `true`, otherwise `false`.
     /// - second element. If the region had no eligible starting tiles and a starting tile was forced to be placed,
-    /// and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
+    ///   and then first element is `false`, and the second element is `true`. If first element is `true`, then the second element is always `false`.
     fn find_start(&mut self, map_parameters: &MapParameters, region_index: usize) -> (bool, bool) {
         let grid = self.world_grid.grid;
 
@@ -567,7 +568,7 @@ impl TileMap {
             }
         }
 
-        if outer_plots.len() > 0 {
+        if !outer_plots.is_empty() {
             let mut outer_eligible_list = Vec::new();
             let mut found_eligible = false;
             let mut found_fallback = false;
@@ -713,7 +714,7 @@ impl TileMap {
         if let Some(max_score_tile) = max_score_tile {
             self.region_list[region_index].starting_tile = max_score_tile;
             self.place_impact_and_ripples_for_civilization(max_score_tile);
-            return (true, false);
+            (true, false)
         } else {
             let origin = region.rectangle.origin();
 
@@ -724,7 +725,7 @@ impl TileMap {
             self.natural_wonder_query[tile.index()] = None;
             self.region_list[region_index].starting_tile = tile;
             self.place_impact_and_ripples_for_civilization(tile);
-            return (false, true);
+            (false, true)
         }
     }
 
@@ -751,11 +752,9 @@ impl TileMap {
                     best_tile_score = score;
                     best_tile = Some(tile);
                 }
-            } else {
-                if score > best_fallback_score {
-                    best_fallback_score = score;
-                    best_fallback_tile = Some(tile);
-                }
+            } else if score > best_fallback_score {
+                best_fallback_score = score;
+                best_fallback_tile = Some(tile);
             }
         }
 
@@ -771,10 +770,11 @@ impl TileMap {
     /// Evaluates a candidate tile for starting city placement.
     ///
     /// # Returns
+    ///
     /// This function returns a tuple:
     /// - first element. The score of the tile.
     /// - second element. A boolean indicating whether the tile meets the minimum requirements. If it does not meet the minimum requirements, it will be used as a fallback tile.
-    /// If the tile meets the minimum requirements, it is `true`, otherwise `false`.
+    ///   If the tile meets the minimum requirements, it is `true`, otherwise `false`.
     fn evaluate_candidate_tile(&self, tile: Tile, region: &Region) -> (i32, bool) {
         let grid = self.world_grid.grid;
 
@@ -953,12 +953,12 @@ impl TileMap {
     ///
     /// Measures a single tile's type whether it is Food, Production, Good, Junk, or a combination of (Food, Production, Good).
     /// - [`TileType::Food`] may be misleading, as this is the primary mechanism for biasing starting terrain.
-    /// It is not strictly equivalent to tile yield. That's because regions with different [`RegionType`] obtain food in various ways.
-    // Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support to compensate for food shortages.
-    /// For instance, in tundra regions I have tundra tiles set as Food, but grass are not.
-    /// A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
+    ///   It is not strictly equivalent to tile yield. That's because regions with different [`RegionType`] obtain food in various ways.
+    //    Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support to compensate for food shortages.
+    ///    For example, in tundra regions I have tundra tiles set as Food, but grass are not.
+    ///    A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
     /// - [`TileType::Good`] act as a hedge, and are the main way of differentiating one candidate site from another,
-    /// so that among a group of plots of similar terrain, the best tends to get picked.
+    ///   so that among a group of plots of similar terrain, the best tends to get picked.
     /// - [`TileType::Production`] is used to identify tiles that yield production.
     /// - [`TileType::Junk`] is used to identify tiles that yield nothing.
     fn measure_single_tile(&self, tile: Tile, region: &Region) -> EnumMap<TileType, bool> {

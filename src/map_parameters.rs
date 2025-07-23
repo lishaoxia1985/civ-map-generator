@@ -26,7 +26,7 @@ pub struct MapParameters {
     ///
     /// - Its 'length' is the number of iterations. if 'length' is 3, it means that the max coast length is 4 (3 + 1, because the water tiles adjacent to land must be coast).
     /// - its 'element' is the chance for each eligible plot to become an expansion coast in each iteration. `0.0` means no chance, `1.0` means 100% chance.\
-    /// If it is empty the coast will not expand, and then only the water tiles adjacent to land can become coast.
+    ///   If it is empty the coast will not expand, and then only the water tiles adjacent to land can become coast.
     pub coast_expand_chance: Vec<f64>,
     pub sea_level: SeaLevel,
     pub world_age: WorldAge,
@@ -301,9 +301,9 @@ impl Rectangle {
     ///
     /// # Parameters
     /// - `origin`: The origin of the rectangle in offset coordinates.
-    /// This represents the bottom-left (south-west) corner of the rectangle in the grid.
-    /// It can be any valid offset coordinate,
-    /// we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
+    ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate,
+    ///   we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
     /// - `width`: The width of the rectangle in tiles.
     /// - `height`: The height of the rectangle in tiles.
     /// - `grid`: The grid of the map. It is used to determine the map boundaries and wrapping behavior.
@@ -329,7 +329,7 @@ impl Rectangle {
 
         let normalize_origin = grid
             .normalize_offset(origin)
-            .expect(&format!("Offset coordinate out of bounds: {:?}", origin));
+            .unwrap_or_else(|_| panic!("Offset coordinate out of bounds: {:?}", origin));
 
         Self {
             origin: normalize_origin,
@@ -342,12 +342,12 @@ impl Rectangle {
     ///
     /// # Parameters
     /// - `origin`: The origin of the rectangle in offset coordinates.
-    /// This represents the bottom-left (south-west) corner of the rectangle in the grid.
-    /// It can be any valid offset coordinate,
-    /// we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
+    ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate,
+    ///   we will process this origin to ensure its x is in the range [0, map_width - 1] and y is in the range [0, map_height - 1].
     /// - `top_right_corner`: The top-right corner of the rectangle in offset coordinates.
-    /// This represents the top-right (north-east) corner of the rectangle in the grid.
-    /// It can be any valid offset coordinate.
+    ///   This represents the top-right (north-east) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate.
     /// - `grid`: The grid of the map. It is used to determine the map boundaries and wrapping behavior.
     ///
     /// # Panics
@@ -359,7 +359,7 @@ impl Rectangle {
     ) -> Self {
         let normalize_origin = grid
             .normalize_offset(origin)
-            .expect(&format!("Offset coordinate out of bounds: {:?}", origin));
+            .unwrap_or_else(|_| panic!("Offset coordinate out of bounds: {:?}", origin));
 
         let [mut width, mut height] = (top_right_corner.0 - normalize_origin.0 + 1).to_array();
 

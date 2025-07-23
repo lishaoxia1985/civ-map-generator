@@ -31,7 +31,7 @@ impl TileMap {
         let mut city_state_list = ruleset
             .nations
             .iter()
-            .filter(|(_, nation)| nation.city_state_type != "")
+            .filter(|(_, nation)| !nation.city_state_type.is_empty())
             .map(|(city_state, _)| city_state)
             .collect::<Vec<_>>();
 
@@ -160,7 +160,7 @@ impl TileMap {
         // Removes Feature Ice from coasts adjacent to the city state's new location
         self.clear_ice_near_city_site(tile, 1);
 
-        self.place_impact_and_ripples(tile, Layer::CityState, None);
+        self.place_impact_and_ripples(tile, Layer::CityState, u32::MAX);
 
         self.player_collision_data[tile.index()] = true;
     }
@@ -171,9 +171,7 @@ impl TileMap {
         let candidate_tile_list =
             self.get_candidate_city_state_tiles_in_region(region_index, false, false);
 
-        let tile = self.get_city_state_start_tile(&candidate_tile_list, false, false);
-
-        tile
+        self.get_city_state_start_tile(&candidate_tile_list, false, false)
     }
 
     // function AssignStartingPlots:ObtainNextSectionInRegion
@@ -258,18 +256,18 @@ impl TileMap {
                 // Process only tiles near enough to the region edge.
                 // That means tiles that are not in the center rectangle.
                 // That is because we often use the center rectangle to place civilizations.
-                if !center_rectangle.contains(tile, grid) {
-                    if tile.can_be_city_state_starting_tile(
+                if !center_rectangle.contains(tile, grid)
+                    && tile.can_be_city_state_starting_tile(
                         self,
                         Some(region),
                         force_it,
                         ignore_collisions,
-                    ) {
-                        if tile.is_coastal_land(self) {
-                            coastal_tile_list.push(tile);
-                        } else {
-                            inland_tile_list.push(tile);
-                        }
+                    )
+                {
+                    if tile.is_coastal_land(self) {
+                        coastal_tile_list.push(tile);
+                    } else {
+                        inland_tile_list.push(tile);
                     }
                 }
             }
@@ -285,12 +283,12 @@ impl TileMap {
     ///
     /// # Arguments
     ///
-    /// * `candidate_tile_list` - A list of candidate tiles.  
+    /// - `candidate_tile_list`: A list of candidate tiles.  
     ///   Typically, this is an array of two `Vec`s. The first `Vec` contains coastal tiles, and the second contains inland tiles.  
     ///   The selection is made first from the coastal tiles (`Vec`), and if unsuccessful, the selection proceeds with the inland tiles (`Vec`).
-    /// * `check_proximity` - A flag indicating whether to check the proximity to other city-states.  
+    /// - `check_proximity`: A flag indicating whether to check the proximity to other city-states.  
     ///   If `check_proximity` is `true`, the tile is chosen from those that are not too close to other city-states.
-    /// * `check_collision` - A flag indicating whether to check for collision with other city-states.  
+    /// - `check_collision`: A flag indicating whether to check for collision with other city-states.  
     ///   If `check_collision` is `true`, the tile is chosen from those that are not occupied by other city-states.
     ///
     /// # Returns
@@ -305,19 +303,18 @@ impl TileMap {
         let mut chosen_tile = None;
         // We choose tile according in the order of the candidate tile list.
         for candidate_list in candidate_tile_list {
-            if candidate_list.len() > 0 {
+            if !candidate_list.is_empty() {
                 let mut candidate_list = candidate_list.to_vec();
                 if check_collision {
                     // Place city state, avoiding collision
                     candidate_list.shuffle(&mut self.random_number_generator);
                     for tile in candidate_list {
-                        if self.player_collision_data[tile.index()] == false {
-                            if !check_proximity
-                                || self.layer_data[Layer::CityState][tile.index()] == 0
-                            {
-                                chosen_tile = Some(tile);
-                                break;
-                            }
+                        if !self.player_collision_data[tile.index()]
+                            && (!check_proximity
+                                || self.layer_data[Layer::CityState][tile.index()] == 0)
+                        {
+                            chosen_tile = Some(tile);
+                            break;
                         }
                     }
                 } else {
@@ -439,7 +436,7 @@ impl TileMap {
                         num_uninhabited_landmass_tiles += tiles.len();
                         // We should make sure that the uninhabited landmass is enough large to place a city state.
                         if tiles.len() >= 4 {
-                            tiles.into_iter().for_each(|&tile| {
+                            tiles.iter().for_each(|&tile| {
                                 // It have checked in the code above. So we don't need to check it again.
                                 /* debug_assert!(
                                     matches!(
@@ -507,7 +504,7 @@ impl TileMap {
             if num_city_states_shared_luxury > 0 {
                 for luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
-                        if &&region.luxury_resource == luxury_resource {
+                        if &&region.exclusive_luxury == luxury_resource {
                             city_state_region_assignments.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }
@@ -521,7 +518,7 @@ impl TileMap {
                 // If more to assign than number of regions, assign per region.
                 let num_regions = self.region_list.len() as u32;
                 let num_assignments_per_region = num_city_states_unassigned / num_regions;
-                num_city_states_unassigned = num_city_states_unassigned % num_regions;
+                num_city_states_unassigned %= num_regions;
 
                 for _ in 0..num_assignments_per_region {
                     for region_index in 0..self.region_list.len() {
@@ -559,12 +556,7 @@ impl TileMap {
 
     /// Normalizes each city state locations.
     pub fn normalize_city_state_locations(&mut self) {
-        let starting_tile_list: Vec<Tile> = self
-            .city_state_and_starting_tile
-            .values()
-            .map(|&starting_tile| starting_tile)
-            .collect();
-        for starting_tile in starting_tile_list {
+        for starting_tile in self.city_state_and_starting_tile.clone().into_values() {
             self.normalize_city_state(starting_tile);
         }
     }

@@ -23,7 +23,7 @@ impl TileMap {
         };
 
         let [extra_deer_list, desert_wheat_list, banana_list, coast_list, hills_open_list, dry_grass_flat_no_feature, grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, forest_flat_that_are_not_tundra] =
-            self.generate_bonus_resource_plot_lists();
+            self.generate_bonus_resource_tile_lists_in_map();
 
         self.place_fish(10. * bonus_multiplier, &coast_list);
         self.place_sexy_bonus_at_civ_starts();
@@ -277,7 +277,7 @@ impl TileMap {
                     && matches!(terrain_type, TerrainType::Hill | TerrainType::Flatland)
                 {
                     // Check plot for region membership. Only process this plot if it is a member.
-                    if landmass_id == Some(area_id) || landmass_id == None {
+                    if landmass_id == Some(area_id) || landmass_id.is_none() {
                         if let Some(feature) = feature {
                             match feature {
                                 Feature::Forest => {
@@ -292,42 +292,38 @@ impl TileMap {
                                 }
                                 _ => {}
                             }
-                        } else {
-                            if terrain_type == TerrainType::Hill {
-                                if matches!(
-                                    base_terrain,
-                                    BaseTerrain::Grassland
-                                        | BaseTerrain::Plain
-                                        | BaseTerrain::Tundra
-                                ) && !tile.is_freshwater(self)
-                                {
-                                    dry_hills.push(tile);
+                        } else if terrain_type == TerrainType::Hill {
+                            if matches!(
+                                base_terrain,
+                                BaseTerrain::Grassland | BaseTerrain::Plain | BaseTerrain::Tundra
+                            ) && !tile.is_freshwater(self)
+                            {
+                                dry_hills.push(tile);
+                            }
+                        } else if terrain_type == TerrainType::Flatland {
+                            match base_terrain {
+                                BaseTerrain::Grassland => {
+                                    flat_grass.push(tile);
                                 }
-                            } else if terrain_type == TerrainType::Flatland {
-                                match base_terrain {
-                                    BaseTerrain::Grassland => {
-                                        flat_grass.push(tile);
-                                    }
-                                    BaseTerrain::Desert => {
-                                        if tile.is_freshwater(self) {
-                                            flat_plains.push(tile);
-                                        }
-                                    }
-                                    BaseTerrain::Plain => {
+                                BaseTerrain::Desert => {
+                                    if tile.is_freshwater(self) {
                                         flat_plains.push(tile);
                                     }
-                                    BaseTerrain::Tundra => {
-                                        flat_tundra.push(tile);
-                                    }
-                                    _ => {}
                                 }
+                                BaseTerrain::Plain => {
+                                    flat_plains.push(tile);
+                                }
+                                BaseTerrain::Tundra => {
+                                    flat_tundra.push(tile);
+                                }
+                                _ => {}
                             }
                         }
                     }
                 }
             }
 
-            if dry_hills.len() > 0 {
+            if !dry_hills.is_empty() {
                 let resources_to_place = [ResourceToPlace {
                     resource: "Sheep".to_string(),
                     quantity: 1,
@@ -462,10 +458,9 @@ impl TileMap {
                 let feature = tile.feature(self);
                 match chosen_bonus_resource {
                     "Deer" => {
-                        if feature == Some(Feature::Forest) {
-                            plot_list.push(tile);
-                        } else if terrain_type == TerrainType::Flatland
-                            && base_terrain == BaseTerrain::Tundra
+                        if feature == Some(Feature::Forest)
+                            || (terrain_type == TerrainType::Flatland
+                                && base_terrain == BaseTerrain::Tundra)
                         {
                             plot_list.push(tile);
                         }
@@ -476,16 +471,13 @@ impl TileMap {
                         }
                     }
                     "Wheat" => {
-                        if terrain_type == TerrainType::Flatland {
-                            if base_terrain == BaseTerrain::Plain && feature.is_none() {
-                                plot_list.push(tile);
-                            } else if feature == Some(Feature::Floodplain) {
-                                plot_list.push(tile);
-                            } else if base_terrain == BaseTerrain::Desert
-                                && tile.is_freshwater(self)
-                            {
-                                plot_list.push(tile);
-                            }
+                        if terrain_type == TerrainType::Flatland
+                            && ((base_terrain == BaseTerrain::Plain && feature.is_none())
+                                || feature == Some(Feature::Floodplain)
+                                || (base_terrain == BaseTerrain::Desert
+                                    && tile.is_freshwater(self)))
+                        {
+                            plot_list.push(tile);
                         }
                     }
                     "Sheep" => {
@@ -518,7 +510,7 @@ impl TileMap {
                     fish_list.push(tile);
                 }
             });
-            if plot_list.len() > 0 {
+            if !plot_list.is_empty() {
                 plot_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
                     Resource::Resource(chosen_bonus_resource.to_string()),
@@ -543,7 +535,7 @@ impl TileMap {
                         &plot_list,
                     );
                 }
-            } else if fish_list.len() > 0 {
+            } else if !fish_list.is_empty() {
                 fish_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
                     Resource::Resource("Fish".to_string()),
@@ -584,21 +576,22 @@ impl TileMap {
                 }
                 self.resource_query[tile.index()] =
                     Some((Resource::Resource("Fish".to_string()), 1));
-                self.place_impact_and_ripples(tile, Layer::Fish, Some(fish_radius));
+                self.place_impact_and_ripples(tile, Layer::Fish, fish_radius);
                 num_left_to_place -= 1;
             }
         }
     }
 
     // AssignStartingPlots:GenerateGlobalResourcePlotLists
-    /// Generates a list of `Vec` of tiles that are available for placing bonus resources.
+    /// Generate the candidate tile lists for placing bonus resources on the entire map.
+    ///
     /// Each `Vec` is shuffled to ensure randomness.
     ///
     /// # Returns
-    /// A `Vec` of shuffled `Vec` of tiles, where each inner `Vec` represents a collection
-    /// of tiles that can be used to place bonus resources.
     ///
-    fn generate_bonus_resource_plot_lists(&mut self) -> [Vec<Tile>; 11] {
+    /// - `[Vec<Tile>; 11]`: An array of vectors of tiles, where each inner vector represents a list of candidate tiles matching a specific criteria.
+    ///   Each `Vec` is shuffled to ensure randomness.
+    fn generate_bonus_resource_tile_lists_in_map(&mut self) -> [Vec<Tile>; 11] {
         let mut extra_deer_list = Vec::new(); // forest, tundra, (hill or flat)
         let mut desert_wheat_list = Vec::new(); // flood_plain or flat desert with fresh water
         let mut banana_list = Vec::new(); // jungle, (hill or flat)
@@ -624,7 +617,7 @@ impl TileMap {
                 if feature == Some(Feature::Floodplain)
                     || (terrain_type == TerrainType::Flatland
                         && base_terrain == BaseTerrain::Desert
-                        && feature == None
+                        && feature.is_none()
                         && tile.is_freshwater(self))
                 {
                     desert_wheat_list.push(tile);
@@ -705,7 +698,7 @@ impl TileMap {
                     TerrainType::Hill => {
                         if base_terrain != BaseTerrain::Snow {
                             // hills_list.push(tile);
-                            if feature == None {
+                            if feature.is_none() {
                                 hills_open_list.push(tile);
                             } /* else if feature == Some(Feature::Forest) {
                                   region_hill_forest_tile_list.push(tile);

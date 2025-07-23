@@ -93,13 +93,14 @@ impl TileMap {
     /// This function is called to create a river.
     ///
     /// # Arguments
-    /// * `start_tile` - The tile where the river starts.
-    /// * `original_flow_direction` - The original flow direction of the river.
-    /// This is the original flow direction at the start of the river.
-    /// * `map_parameters` - The map parameters.
+    ///
+    /// - `start_tile`: The tile where the river starts.
+    /// - `original_flow_direction`: The original flow direction of the river.\
+    ///   This is the original flow direction at the start of the river.
     ///
     /// # Notice
-    /// In original CIV5, the end of the river is water or the edge of the map.
+    ///
+    /// TODO: In original CIV5, the end of the river is water or the edge of the map.
     /// In this function, we have not implemented that the river flows the edge of the map yet.
     /// That because when we implement it, we should concern the map parameters.
     /// For example, hex is Flat or Pointy, map is wrapx or not, map is wrapy or not, etc.
@@ -496,7 +497,7 @@ impl TileMap {
 
             /* End tackle with the situation when river flows to the edge of map */
 
-            if best_flow_direction != None {
+            if best_flow_direction.is_some() {
                 original_flow_direction = original_flow_direction.or(best_flow_direction);
                 start_tile = river_tile;
                 this_flow_direction = best_flow_direction;
@@ -551,23 +552,26 @@ impl TileMap {
         sum
     }
 
-    /// Retrieves an inland corner tile based on the provided tile and map parameters.
+    /// Retrieves an inland corner tile based on the provided tile.
     ///
-    /// An inland corner is defined as a tile that has all its neighboring tiles in specific directions
-    /// (0 to 3) not being water. The function will first collect the current tile and its neighbors
+    /// *An inland corner* is defined as a tile that has all its neighboring tiles in specific directions
+    /// (0 to 3) existing and not being water.
+    ///
+    /// At first, the function will collect the current tile and its neighbors
     /// located in specified edge directions (3 to 5), then filter out those that do not qualify
-    /// as inland corners.
+    /// as inland corners. Finally, choose one of the qualified inland corners randomly.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `tile`: The current tile.
-    /// - `map_parameters`: Parameters that define the map, including terrain types and edge directions.
     ///
     /// # Returns
-    /// An `Option<TileIndex>`, which will be `Some(TileIndex)` if an inland corner is found,
-    /// or `None` if no such corner exists.
+    ///
+    /// Returns `Some(Tile)` if an inland corner is found,
+    /// or `None` if no such inland corner exists.
     fn get_inland_corner(&mut self, tile: Tile) -> Option<Tile> {
         let grid = self.world_grid.grid;
-        // We choose current tile and its `map_parameters.edge_direction_array()[3..6]` neighbors as the candidate inland corners
+        // We choose current tile and its `grid.edge_direction_array()[3..6]` neighbors as the candidate inland corners
 
         // Initialize a list with the current tile
         let mut tile_list = vec![tile];
@@ -608,11 +612,13 @@ impl TileMap {
 
 /// Returns the next possible flow directions of the river based on the current flow direction.
 ///
-/// # Parameters
+/// # Arguments
+///
 /// - `flow_direction`: The current direction of the river flow.
-/// - `map_parameters`: A reference to the map parameters that include hex layout information.
+/// - `grid`: The grid containing the tile map.
 ///
 /// # Returns
+///
 /// An array containing two `Direction` values:
 /// - The first element represents the flow direction after a clockwise turn.
 /// - The second element represents the flow direction after a counterclockwise turn.

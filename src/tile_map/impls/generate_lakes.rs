@@ -72,18 +72,16 @@ impl TileMap {
         // Get the candidate tiles for the lake.
         // Notice: Don't transform the candidate tiles into lakes in this loop,
         // because if we do so, the result will not be as expected.
-        tile.neighbor_tiles(grid)
-            .into_iter()
-            .for_each(|neighbor_tile| {
-                // 1. Check if the tile can have a lake.
-                // 2. Randomly decide whether to add a lake to the tile. Larger `large_lake`, less likely to add a lake.
-                if self.can_add_lake(neighbor_tile)
-                    && self.random_number_generator.gen_range(0..(large_lake + 4)) < 3
-                {
-                    lake_tiles.push(neighbor_tile);
-                    large_lake += 1;
-                }
-            });
+        tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
+            // 1. Check if the tile can have a lake.
+            // 2. Randomly decide whether to add a lake to the tile. Larger `large_lake`, less likely to add a lake.
+            if self.can_add_lake(neighbor_tile)
+                && self.random_number_generator.gen_range(0..(large_lake + 4)) < 3
+            {
+                lake_tiles.push(neighbor_tile);
+                large_lake += 1;
+            }
+        });
 
         lake_tiles.into_iter().for_each(|tile| {
             self.terrain_type_query[tile.index()] = TerrainType::Water;
@@ -96,19 +94,20 @@ impl TileMap {
 
     /// Checks if a tile can have a lake.
     ///
-    /// A tile can have a lake if it meets the following conditions:
-    /// 1. The tile is not water.
-    /// 2. The tile is not a natural wonder.
-    /// 3. The tile is not adjacent to a river.
-    /// 4. The tile is not adjacent to water.
-    /// 5. The tile is not adjacent to a natural wonder.
+    /// A tile can have a lake if it meets all of the following conditions:
+    /// 1. It is not water.
+    /// 2. It is not a natural wonder.
+    /// 3. It is not adjacent to a river.
+    /// 4. It is not adjacent to water.
+    /// 5. It is not adjacent to a natural wonder.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `tile`: The tile being checked.
-    /// - `map_parameters`: A reference to the map parameters to retrieve edge directions and neighboring tile information.
     ///
     /// # Returns
-    /// - `true` if the tile can have a lake, otherwise `false`.
+    ///
+    /// Returns `true` if the tile can have a lake, otherwise `false`.
     fn can_add_lake(&self, tile: Tile) -> bool {
         let grid = self.world_grid.grid;
         // Check if the current tile is suitable for a lake

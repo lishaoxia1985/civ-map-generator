@@ -73,6 +73,12 @@ pub struct Ruleset {
     pub unit_types: HashMap<String, UnitType>,
 }
 
+impl Default for Ruleset {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Ruleset {
     pub fn new() -> Self {
         // TODO: load from json, for now just hardcode. This is a temporary solution.
@@ -235,7 +241,7 @@ impl Ruleset {
 
 fn load_json_file_and_strip_json_comments(path: &str) -> String {
     let json_string_with_comment = /* fs::read_to_string(path).unwrap() */path;
-    strip_json_comments(&json_string_with_comment, true)
+    strip_json_comments(json_string_with_comment, true)
 }
 
 /// Take a JSON string with comments and return the version without comments

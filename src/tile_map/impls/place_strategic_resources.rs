@@ -27,7 +27,7 @@ impl TileMap {
         };
 
         let [coast_list, flatland_list, jungle_flat_list, forest_flat_list, marsh_list, snow_flat_list, dry_grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, hills_list] =
-            self.generate_strategic_resource_plot_lists();
+            self.generate_strategic_resource_tile_lists_in_map();
 
         // Place Strategic resources.
         let resources_to_place = [
@@ -395,7 +395,8 @@ impl TileMap {
     /// If the map has too little ocean, it will place as much as can fit.
     /// Before calling this function, make sure `coast_list` is shuffled.
     ///
-    /// # Warning
+    /// # Notice
+    ///
     /// This operation will invalidate the Strategic Resource Impact Table for future operations,
     /// so it should always be called last, even after minor resource placements.
     fn place_oil_in_the_sea(&mut self, map_parameters: &MapParameters, coast_list: &[Tile]) {
@@ -422,25 +423,25 @@ impl TileMap {
 
     // function AssignStartingPlots:PlaceSmallQuantitiesOfStrategics
     /// Distributes small quantities of strategic resources.
-    /// Before calling this function, make sure `plot_list` is shuffled.
+    /// Before calling this function, make sure `tile_list` is shuffled.
     fn place_small_quantities_of_strategics(
         &mut self,
         map_parameters: &MapParameters,
         frequency: f64,
-        plot_list: &[Tile],
+        tile_list: &[Tile],
     ) {
-        if plot_list.is_empty() {
+        if tile_list.is_empty() {
             return;
         }
 
         let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] =
             get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
 
-        let num_to_place = (plot_list.len() as f64 / frequency).ceil() as u32;
+        let num_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
 
         let mut num_left_to_place = num_to_place;
 
-        for &tile in plot_list.iter() {
+        for &tile in tile_list.iter() {
             if num_left_to_place == 0 {
                 break;
             }
@@ -458,59 +459,33 @@ impl TileMap {
                     match feature {
                         Feature::Forest => {
                             let diceroll = self.random_number_generator.gen_range(0..4);
-                            match diceroll {
-                                0 => {
-                                    selected_resource = Some("Uranium");
-                                    selected_quantity = uran_amt;
-                                }
-                                1 => {
-                                    selected_resource = Some("Coal");
-                                    selected_quantity = coal_amt;
-                                }
-                                _ => {
-                                    selected_resource = Some("Iron");
-                                    selected_quantity = iron_amt;
-                                }
-                            }
+                            (selected_resource, selected_quantity) = match diceroll {
+                                0 => (Some("Uranium"), uran_amt),
+                                1 => (Some("Coal"), coal_amt),
+                                _ => (Some("Iron"), iron_amt),
+                            };
                         }
                         Feature::Jungle => {
                             let diceroll = self.random_number_generator.gen_range(0..4);
-                            match diceroll {
+                            (selected_resource, selected_quantity) = match diceroll {
                                 0 => {
                                     if terrain_type == TerrainType::Hill {
-                                        selected_resource = Some("Iron");
-                                        selected_quantity = iron_amt;
+                                        (Some("Iron"), iron_amt)
                                     } else {
-                                        selected_resource = Some("Oil");
-                                        selected_quantity = oil_amt;
+                                        (Some("Oil"), oil_amt)
                                     }
                                 }
-                                1 => {
-                                    selected_resource = Some("Coal");
-                                    selected_quantity = coal_amt;
-                                }
-                                _ => {
-                                    selected_resource = Some("Aluminum");
-                                    selected_quantity = alum_amt;
-                                }
-                            }
+                                1 => (Some("Coal"), coal_amt),
+                                _ => (Some("Aluminum"), alum_amt),
+                            };
                         }
                         Feature::Marsh => {
                             let diceroll = self.random_number_generator.gen_range(0..4);
-                            match diceroll {
-                                0 => {
-                                    selected_resource = Some("Iron");
-                                    selected_quantity = iron_amt;
-                                }
-                                1 => {
-                                    selected_resource = Some("Coal");
-                                    selected_quantity = coal_amt;
-                                }
-                                _ => {
-                                    selected_resource = Some("Oil");
-                                    selected_quantity = oil_amt;
-                                }
-                            }
+                            (selected_resource, selected_quantity) = match diceroll {
+                                0 => (Some("Iron"), iron_amt),
+                                1 => (Some("Coal"), coal_amt),
+                                _ => (Some("Oil"), oil_amt),
+                            };
                         }
                         _ => (),
                     }
@@ -518,88 +493,59 @@ impl TileMap {
                     match terrain_type {
                         TerrainType::Flatland => match base_terrain {
                             BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self) {
-                                    selected_resource = Some("Horses");
-                                    selected_quantity = horse_amt;
+                                (selected_resource, selected_quantity) = if tile.is_freshwater(self)
+                                {
+                                    (Some("Horses"), horse_amt)
                                 } else {
                                     let diceroll = self.random_number_generator.gen_range(0..5);
                                     if diceroll < 3 {
-                                        selected_resource = Some("Iron");
-                                        selected_quantity = iron_amt;
+                                        (Some("Iron"), iron_amt)
                                     } else {
-                                        selected_resource = Some("Horses");
-                                        selected_quantity = horse_amt;
+                                        (Some("Horses"), horse_amt)
                                     }
-                                }
+                                };
                             }
                             BaseTerrain::Desert => {
                                 let diceroll = self.random_number_generator.gen_range(0..3);
-                                match diceroll {
-                                    0 => {
-                                        selected_resource = Some("Iron");
-                                        selected_quantity = iron_amt;
-                                    }
-                                    1 => {
-                                        selected_resource = Some("Aluminum");
-                                        selected_quantity = alum_amt;
-                                    }
-                                    _ => {
-                                        selected_resource = Some("Oil");
-                                        selected_quantity = oil_amt;
-                                    }
-                                }
+                                (selected_resource, selected_quantity) = match diceroll {
+                                    0 => (Some("Iron"), iron_amt),
+                                    1 => (Some("Aluminum"), alum_amt),
+                                    _ => (Some("Oil"), oil_amt),
+                                };
                             }
                             BaseTerrain::Plain => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
-                                if diceroll < 2 {
-                                    selected_resource = Some("Iron");
-                                    selected_quantity = iron_amt;
+                                (selected_resource, selected_quantity) = if diceroll < 2 {
+                                    (Some("Iron"), iron_amt)
                                 } else {
-                                    selected_resource = Some("Horses");
-                                    selected_quantity = horse_amt;
-                                }
+                                    (Some("Horses"), horse_amt)
+                                };
                             }
                             _ => {
                                 let diceroll = self.random_number_generator.gen_range(0..4);
-                                match diceroll {
-                                    0 => {
-                                        selected_resource = Some("Iron");
-                                        selected_quantity = iron_amt;
-                                    }
-                                    1 => {
-                                        selected_resource = Some("Uranium");
-                                        selected_quantity = uran_amt;
-                                    }
-                                    _ => {
-                                        selected_resource = Some("Oil");
-                                        selected_quantity = oil_amt;
-                                    }
-                                }
+                                (selected_resource, selected_quantity) = match diceroll {
+                                    0 => (Some("Iron"), iron_amt),
+                                    1 => (Some("Uranium"), uran_amt),
+                                    _ => (Some("Oil"), oil_amt),
+                                };
                             }
                         },
                         TerrainType::Hill => match base_terrain {
                             BaseTerrain::Grassland | BaseTerrain::Plain => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
-                                if diceroll == 2 {
-                                    selected_resource = Some("Horses");
-                                    selected_quantity = horse_amt;
-                                } else if diceroll < 2 {
-                                    selected_resource = Some("Iron");
-                                    selected_quantity = iron_amt;
-                                } else {
-                                    selected_resource = Some("Coal");
-                                    selected_quantity = coal_amt;
-                                }
+                                (selected_resource, selected_quantity) = match diceroll {
+                                    2 => (Some("Horses"), horse_amt),
+                                    n if n < 2 => (Some("Iron"), iron_amt),
+                                    _ => (Some("Coal"), coal_amt),
+                                };
                             }
                             _ => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
-                                if diceroll < 2 {
-                                    selected_resource = Some("Iron");
-                                    selected_quantity = iron_amt;
+                                (selected_resource, selected_quantity) = if diceroll < 2 {
+                                    (Some("Iron"), iron_amt)
                                 } else {
-                                    selected_resource = Some("Coal");
-                                    selected_quantity = coal_amt;
-                                }
+                                    (Some("Coal"), coal_amt)
+                                };
                             }
                         },
                         _ => {
@@ -623,7 +569,7 @@ impl TileMap {
                         Resource::Resource(selected_resource.to_string()),
                         selected_quantity,
                     ));
-                    self.place_impact_and_ripples(tile, Layer::Strategic, Some(radius));
+                    self.place_impact_and_ripples(tile, Layer::Strategic, radius);
                     num_left_to_place -= 1;
                 }
             }
@@ -658,7 +604,7 @@ impl TileMap {
                     PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
 
                 let mut luxury_plot_lists =
-                    self.generate_luxury_plot_lists_at_city_site(city_state_starting_tile, 3);
+                    self.generate_luxury_tile_lists_at_city_site(city_state_starting_tile, 3);
 
                 let mut num_left_to_place = resource_amount;
 
@@ -688,10 +634,12 @@ impl TileMap {
     /// matches the provided resource name, and if so, adds the resource quantity to the total sum.
     /// Finally, it returns the total quantity of the specified resource.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `resource`: The name of the resource to look for (string type).
     ///
     /// # Returns
+    ///
     /// Returns the total quantity of the specified resource as `u32`.
     pub fn placed_resource_count(&self, resource: &str) -> u32 {
         self.resource_query
@@ -703,14 +651,15 @@ impl TileMap {
     }
 
     // AssignStartingPlots:GenerateGlobalResourcePlotLists
-    /// Generates a list of `Vec` of tiles that are available for placing strategic resources.
+    /// Generate the candidate tile lists for placing strategic resources on the entire map.
+    ///
     /// Each `Vec` is shuffled to ensure randomness.
     ///
     /// # Returns
-    /// A `Vec` of shuffled `Vec` of tiles, where each inner `Vec` represents a collection
-    /// of tiles that can be used to place strategic resources.
     ///
-    fn generate_strategic_resource_plot_lists(&mut self) -> [Vec<Tile>; 11] {
+    /// - `[Vec<Tile>; 11]`: An array of vectors of tiles, where each inner vector represents a list of candidate tiles matching a specific criteria.
+    ///   Each `Vec` is shuffled to ensure randomness.
+    fn generate_strategic_resource_tile_lists_in_map(&mut self) -> [Vec<Tile>; 11] {
         let mut coast_list = Vec::new();
         let mut flatland_list = Vec::new(); // very complex
         let mut jungle_flat_list = Vec::new();

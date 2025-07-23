@@ -192,14 +192,12 @@ impl Grid for SquareGrid {
 
         let origin = Square::new(0, 0);
 
-        let max_direction = edge_direction_array.into_iter().max_by_key(|&direction| {
+        edge_direction_array.into_iter().max_by_key(|&direction| {
             let unit_direction_vector = origin
                 .neighbor(self.layout.orientation, direction)
                 .into_inner();
             estimate_vector.dot(unit_direction_vector)
-        });
-
-        max_direction
+        })
     }
 }
 

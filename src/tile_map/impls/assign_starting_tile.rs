@@ -37,8 +37,9 @@ impl TileMap {
 
         self.place_city_states(map_parameters, ruleset);
 
-        /* -- Generate global plot lists for resource distribution.
-        self:GenerateGlobalResourcePlotLists() */
+        // We have replace this code with `TileMap::generate_bonus_resource_tile_lists_in_map`,
+        // `TileMap::generate_luxury_resource_tile_lists_in_map` and `TileMap::generate_strategic_resource_tile_lists_in_map`.
+        /* self:GenerateGlobalResourcePlotLists() */
 
         self.place_luxury_resources(map_parameters, ruleset);
 
@@ -71,109 +72,24 @@ impl TileMap {
         })
     }
 
-    // function AssignStartingPlots:ProcessResourceList
-    /// Placing bonus or strategic resources on the map based on the given parameters.
-    /// It iterates through the list of plots and places resources on eligible plots based on the
-    /// resource type, quantity, and radius.\
-    /// Before using this function, make sure `plot_list` has been shuffled.
-    ///
-    /// # Arguments
-    ///
-    /// * `map_parameters` - A reference to the map parameters.
-    /// * `frequency` - The frequency of resource placement.\
-    /// The num of tiles we will assign this resource is `(plot_list.len() as f64 / frequency).ceil() as u32`.
-    /// * `layer` - The layer on which the resource will be placed.
-    /// * `tile_list` - A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
-    /// * `resource_list_to_place` - A vector of resource to place, which contains the resource type,
-    /// quantity, minimum radius, and maximum radius for each resource.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if the layer is not [`Layer::Bonus`] or [`Layer::Strategic`]. That means if you use this function to place luxury resources, it will panic.
-    ///
-    /// # Notice
-    ///
-    /// Although in the original CIV5, this function has some code about placing luxury resources, but in fact, it is never used to place luxury resources. So, we forbid placing luxury resources in this function.
-    /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].
-    pub fn process_resource_list(
-        &mut self,
-        frequency: f64,
-        layer: Layer,
-        tile_list: &[Tile],
-        resource_list_to_place: &[ResourceToPlace],
-    ) {
-        debug_assert!(layer == Layer::Bonus || layer == Layer::Strategic,
-            "`process_resource_list` can only be used to place bonus or strategic resources, not luxury resources.
-            If you want to place luxury resources, please use `place_specific_number_of_resources` instead."
-        );
-
-        if tile_list.is_empty() {
-            return;
-        }
-
-        let resource_weight = resource_list_to_place
-            .iter()
-            .map(|resource| resource.weight)
-            .collect::<Vec<_>>();
-        let dist = WeightedIndex::new(resource_weight).unwrap();
-
-        let num_resources_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
-
-        let mut plot_list_iter = tile_list.iter().peekable();
-
-        // Main loop
-        for _ in 0..num_resources_to_place {
-            let current_resource_to_place =
-                &resource_list_to_place[dist.sample(&mut self.random_number_generator)];
-            let resource = &current_resource_to_place.resource;
-            let quantity = current_resource_to_place.quantity;
-            let min_radius = current_resource_to_place.min_radius;
-            let max_radius = current_resource_to_place.max_radius;
-            let radius = self
-                .random_number_generator
-                .gen_range(min_radius..=max_radius);
-            // First pass: Seek the first eligible 0 value on impact matrix
-            while let Some(&tile) = plot_list_iter.next() {
-                if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
-                    self.resource_query[tile.index()] =
-                        Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_impact_and_ripples(tile, layer, Some(radius));
-                    break;
-                }
-            }
-
-            // Completed first pass of plot_list, now change to seeking lowest value instead of zero value.
-            // If no eligible 0 value is found, second pass: Seek the lowest value (value < 98) on the impact matrix
-            if plot_list_iter.peek().is_none() {
-                let best_plot = tile_list
-                    .iter()
-                    .filter(|&&tile| {
-                        self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
-                    })
-                    .min_by_key(|tile| self.layer_data[layer][tile.index()]);
-                if let Some(&tile) = best_plot {
-                    self.resource_query[tile.index()] =
-                        Some((Resource::Resource(resource.to_string()), quantity));
-                    self.place_impact_and_ripples(tile, layer, Some(radius));
-                }
-            }
-        }
-    }
-
     // function AssignStartingPlots:AssignLuxuryRoles
-    /// Assigns luxury resources roles. Every luxury type has a role, the role should be one of the following:
-    /// * Special case. For example, Marble. We need to implement a dedicated placement function to handle it.
-    /// * Exclusively Assigned to a region. Each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
-    /// * Exclusively Assigned to a city state. These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
-    /// * Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
-    /// * Disabled. We will not place it on the map.
+    /// Assigns luxury resources roles.
+    ///
+    /// Every luxury type has a role, the role should be one of the following:
+    /// - Special case. For example, Marble. We need to implement a dedicated placement function to handle it.
+    /// - Exclusively Assigned to a region. Each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
+    /// - Exclusively Assigned to a city state. These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
+    /// - Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
+    /// - Disabled. We will not place it on the map.
     ///
     /// Assigns a Luxury resource according the rules below:
-    /// * first, assign to regions
-    /// * then, assign to city states
-    /// * then, radomly assign
-    /// * then, disable
+    /// - first, assign to regions
+    /// - then, assign to city states
+    /// - then, radomly assign
+    /// - then, disable
+    ///
     /// # Notice
+    ///
     /// Luxury roles must be assigned before placing City States.
     /// This is because civs who are forced to share their luxury type with other
     /// civs may get extra city states placed in their region to compensate. View [`TileMap::assign_city_states_to_regions_or_uninhabited_landmasses`] for more information.
@@ -189,12 +105,12 @@ impl TileMap {
             }
         });
 
-        let mut resource_assigned_to_regions = HashSet::new();
+        let mut luxury_assigned_to_regions = HashSet::new();
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(map_parameters, region_index);
             // TODO: Should be edited in the future
-            self.region_list[region_index].luxury_resource = resource.name().to_string();
-            resource_assigned_to_regions.insert(resource.name().to_string());
+            self.region_list[region_index].exclusive_luxury = resource.name().to_string();
+            luxury_assigned_to_regions.insert(resource.name().to_string());
             *self
                 .luxury_assign_to_region_count
                 .entry(resource.name().to_string())
@@ -230,12 +146,12 @@ impl TileMap {
             luxury_city_state_weights
                 .iter()
                 .filter(|(luxury_resource, _)| {
-                    !resource_assigned_to_regions.contains(luxury_resource.name())
+                    !luxury_assigned_to_regions.contains(luxury_resource.name())
                 })
                 .map(|(luxury_resource, weight)| (luxury_resource.name(), weight))
                 .unzip();
 
-        let mut resource_assigned_to_city_state = Vec::new();
+        let mut luxury_assigned_to_city_state = Vec::new();
         for _ in 0..3 {
             // Choose a random resource from the list.
             let dist: WeightedIndex<usize> =
@@ -243,13 +159,13 @@ impl TileMap {
             let index = dist.sample(&mut self.random_number_generator);
             let resource = resource_list[index];
             // Remove it from the list and assign it to the city state.
-            resource_assigned_to_city_state.push(resource.to_string());
+            luxury_assigned_to_city_state.push(resource.to_string());
             resource_weight_list.remove(index);
             resource_list.remove(index);
         }
 
         // Assign Marble to special casing.
-        let resource_assigned_to_special_case = vec!["Marble".to_string()];
+        let luxury_assigned_to_special_case = vec!["Marble".to_string()];
 
         // Assign appropriate amount to be Disabled, then assign the rest to be Random.
 
@@ -262,32 +178,31 @@ impl TileMap {
         let mut remaining_resource_list = luxury_city_state_weights
             .iter()
             .filter(|(luxury_resource, _)| {
-                !resource_assigned_to_regions.contains(luxury_resource.name())
-                    && !resource_assigned_to_city_state
-                        .contains(&luxury_resource.name().to_string())
+                !luxury_assigned_to_regions.contains(luxury_resource.name())
+                    && !luxury_assigned_to_city_state.contains(&luxury_resource.name().to_string())
             })
             .map(|(luxury_resource, _)| luxury_resource.name().to_string())
             .collect::<Vec<_>>();
 
         remaining_resource_list.shuffle(&mut self.random_number_generator);
 
-        let mut resource_not_being_used = Vec::new();
-        let mut resource_assigned_to_random = Vec::new();
+        let mut luxury_not_being_used = Vec::new();
+        let mut luxury_assigned_to_random = Vec::new();
 
         for resource in remaining_resource_list {
-            if resource_not_being_used.len() < num_disabled_luxury_resource {
-                resource_not_being_used.push(resource);
+            if luxury_not_being_used.len() < num_disabled_luxury_resource {
+                luxury_not_being_used.push(resource);
             } else {
-                resource_assigned_to_random.push(resource);
+                luxury_assigned_to_random.push(resource);
             }
         }
 
         self.luxury_resource_role = LuxuryResourceRole {
-            luxury_assigned_to_regions: resource_assigned_to_regions,
-            luxury_assigned_to_city_state: resource_assigned_to_city_state,
-            luxury_assigned_to_special_case: resource_assigned_to_special_case,
-            luxury_assigned_to_random: resource_assigned_to_random,
-            luxury_not_being_used: resource_not_being_used,
+            luxury_assigned_to_regions,
+            luxury_assigned_to_city_state,
+            luxury_assigned_to_special_case,
+            luxury_assigned_to_random,
+            _luxury_not_being_used: luxury_not_being_used,
         };
     }
 
@@ -295,6 +210,7 @@ impl TileMap {
     /// Assigns a luxury type to a region, ensuring no resource is assigned to more than 3 regions and no more than 8 resources are assigned to regions.
     ///
     /// # Why we need to ensure no resource is assigned to more than 3 regions and no more than 8 resources are assigned to regions?
+    ///
     /// Because in original CIV5, the maximum number of civilizations is 22, 3 * 8  = 24, it's enough for all civilizations.
     pub fn assign_luxury_to_region(
         &mut self,
@@ -637,9 +553,9 @@ impl TileMap {
             self.terrain_type_query[tile.index()] = TerrainType::Hill;
             self.feature_query[tile.index()] = None;
             self.natural_wonder_query[tile.index()] = None;
-            return true;
+            true
         } else {
-            return false;
+            false
         }
     }
 
@@ -665,9 +581,9 @@ impl TileMap {
                 self.resource_query[tile.index()] =
                     Some((Resource::Resource("Iron".to_owned()), 2));
             }
-            return true;
+            true
         } else {
-            return false;
+            false
         }
     }
 
@@ -675,9 +591,11 @@ impl TileMap {
     /// Attempts to place a Bonus Resource at the currently chosen tile.
     ///
     /// # Returns
+    ///
     /// Returns a tuple of two booleans:
-    /// * The first boolean is `true` if something was placed.
-    /// * The second boolean is `true` as well if [`Feature::Oasis`] was placed.
+    ///
+    /// - The first boolean is `true` if something was placed.
+    /// - The second boolean is `true` as well if [`Feature::Oasis`] was placed.
     pub fn attempt_to_place_bonus_resource_at_tile(
         &mut self,
         tile: Tile,
@@ -693,14 +611,14 @@ impl TileMap {
         {
             match terrain_type {
                 TerrainType::Water => {
-                    if base_terrain == BaseTerrain::Coast && feature == None {
+                    if base_terrain == BaseTerrain::Coast && feature.is_none() {
                         self.resource_query[tile.index()] =
                             Some((Resource::Resource("Fish".to_owned()), 1));
                         return (true, false);
                     }
                 }
                 TerrainType::Flatland => {
-                    if feature == None {
+                    if feature.is_none() {
                         match base_terrain {
                             BaseTerrain::Grassland => {
                                 self.resource_query[tile.index()] =
@@ -743,7 +661,7 @@ impl TileMap {
                 }
                 TerrainType::Mountain => (),
                 TerrainType::Hill => {
-                    if feature == None {
+                    if feature.is_none() {
                         self.resource_query[tile.index()] =
                             Some((Resource::Resource("Sheep".to_owned()), 1));
                         return (true, false);
@@ -773,41 +691,135 @@ impl TileMap {
             && tile.feature(self).is_none()
         {
             self.resource_query[tile.index()] = Some((Resource::Resource("Stone".to_owned()), 1));
-            return true;
+            true
         } else {
-            return false;
+            false
+        }
+    }
+
+    // function AssignStartingPlots:ProcessResourceList
+    /// Placing bonus or strategic resources on the map based on the given parameters.
+    ///
+    /// It iterates through the list of plots and places resources on eligible plots based on the
+    /// resource type, quantity, and radius.\
+    /// Before using this function, make sure `tile_list` has been shuffled.
+    ///
+    /// # Arguments
+    ///
+    /// - `frequency`: The frequency of resource placement.\
+    ///   The num of tiles we will assign this resource is `(plot_list.len() as f64 / frequency).ceil() as u32`.
+    /// - `layer`: The layer on which the resource will be placed.
+    /// - `tile_list`: A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
+    /// - `resource_list_to_place`: A vector of resource to place, which contains the resource type,
+    ///   quantity, minimum radius, and maximum radius for each resource.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the layer is not [`Layer::Bonus`] or [`Layer::Strategic`]. That means if you use this function to place luxury resources, it will panic.
+    ///
+    /// # Notice
+    ///
+    /// Although in the original CIV5, this function has some code about placing luxury resources, but in fact, it is never used to place luxury resources. So, we forbid placing luxury resources in this function.
+    /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].
+    pub fn process_resource_list(
+        &mut self,
+        frequency: f64,
+        layer: Layer,
+        tile_list: &[Tile],
+        resource_list_to_place: &[ResourceToPlace],
+    ) {
+        debug_assert!(layer == Layer::Bonus || layer == Layer::Strategic,
+            "`process_resource_list` can only be used to place bonus or strategic resources, not luxury resources.
+            If you want to place luxury resources, please use `place_specific_number_of_resources` instead."
+        );
+
+        if tile_list.is_empty() {
+            return;
+        }
+
+        let resource_weight = resource_list_to_place
+            .iter()
+            .map(|resource| resource.weight)
+            .collect::<Vec<_>>();
+        let dist = WeightedIndex::new(resource_weight).unwrap();
+
+        let num_resources_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
+
+        let mut plot_list_iter = tile_list.iter().peekable();
+
+        // Main loop
+        for _ in 0..num_resources_to_place {
+            let current_resource_to_place =
+                &resource_list_to_place[dist.sample(&mut self.random_number_generator)];
+            let resource = &current_resource_to_place.resource;
+            let quantity = current_resource_to_place.quantity;
+            let min_radius = current_resource_to_place.min_radius;
+            let max_radius = current_resource_to_place.max_radius;
+            let radius = self
+                .random_number_generator
+                .gen_range(min_radius..=max_radius);
+            // First pass: Seek the first eligible 0 value on impact matrix
+            for &tile in plot_list_iter.by_ref() {
+                if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
+                    self.resource_query[tile.index()] =
+                        Some((Resource::Resource(resource.to_string()), quantity));
+                    self.place_impact_and_ripples(tile, layer, radius);
+                    break;
+                }
+            }
+
+            // Completed first pass of plot_list, now change to seeking lowest value instead of zero value.
+            // If no eligible 0 value is found, second pass: Seek the lowest value (value < 98) on the impact matrix
+            if plot_list_iter.peek().is_none() {
+                let best_plot = tile_list
+                    .iter()
+                    .filter(|&&tile| {
+                        self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
+                    })
+                    .min_by_key(|tile| self.layer_data[layer][tile.index()]);
+                if let Some(&tile) = best_plot {
+                    self.resource_query[tile.index()] =
+                        Some((Resource::Resource(resource.to_string()), quantity));
+                    self.place_impact_and_ripples(tile, layer, radius);
+                }
+            }
         }
     }
 
     // function AssignStartingPlots:PlaceSpecificNumberOfResources
-    /// Places a specific number of resources on the map.\
+    /// Places a specific number of resources on the map.
+    ///
     /// Before calling this function, make sure `tile_list` has been shuffled.
     ///
-    /// # Parameters
-    /// - `quantity` is the number of every type resource that can be placed on the tile.
-    /// For example, when placing `Horses`, `quantity` is 2, which means that the tile has 2 `Horses`.\
-    /// In CIV5, when resource is bonus or luxury, `quantity` is always 1;
-    /// When resource is strategic, `quantity` is usually determined by [`ResourceSetting`].
-    /// - `amount` is the number of tiles intended to receive an assignment of this resource.
-    /// - `ratio` should be > 0 and <= 1 and is what determines when secondary and tertiary lists
-    /// come in to play.\
-    /// The num of tiles we will assign this resource is the minimum of `amount` and `(ratio * tile_list.len() as f64).ceil() as u32`.\
-    /// For instance, if we are assigning Sugar resources to Marsh, then if we are to assign 8 Sugar
-    /// resources (`amount = 8`), but there are only 4 Marsh plots in the list (`tile_list.len() = 4`):
-    ///     - `ratio = 1`, the num of tiles we will assign is 4, we would assign a Sugar to every single marsh plot, and then the function return an unplaced value of 4;
+    /// # Arguments
+    ///
+    /// - `quantity`: The number of every type resource that can be placed on the tile.\
+    ///   For example, when placing `Horses`, `quantity` is 2, which means that the tile has 2 `Horses`.\
+    ///   In CIV5, when resource is bonus or luxury, `quantity` is always 1;
+    ///   When resource is strategic, `quantity` is usually determined by [`ResourceSetting`].
+    /// - `amount`: The number of tiles intended to receive an assignment of this resource.
+    /// - `ratio`: Determines when secondary and tertiary lists come in to play, should be in (0, 1].\
+    ///   The num of tiles we will assign this resource is the minimum of `amount` and `(ratio * tile_list.len() as f64).ceil() as u32`.\
+    ///   For example, if we are assigning Sugar resources to Marsh, then if we are to assign 8 Sugar
+    ///   resources (`amount = 8`), but there are only 4 Marsh plots in the list (`tile_list.len() = 4`):
+    ///     - `ratio = 1`, the num of tiles we will assign is 4, we would assign a Sugar to every single marsh plot, and then the function return an unplaced value of 4.
     ///     - `ratio = 0.5`, the num of tiles we will assign is 2, we would assign only 2 Sugars to the 4 marsh plots, and the function return a value of 6.
     ///     - `ratio <= 0.25`, the num of tiles we will assign is 1, we would assign 1 Sugar and return 7, as the ratio results will be rounded up not down, to the nearest integer.
-    /// - `layer` is the layer we should tackle resource impact or ripple. If None, the resource can be placed on any tiles of `tile_list` that are not already assigned to a resource.
-    /// - `min_radius` and `max_radius` is related to `resource_impact` when we place resources on tiles.
+    /// - `layer`: The layer we should tackle resource impact or ripple. If None, the resource can be placed on any tiles of `tile_list` that are not already assigned to a resource.
+    /// - `min_radius` and `max_radius`: Related to `resource_impact` when we place resources on tiles.
     ///     - If `layer` is None, then `min_radius` and `max_radius` are ignored.
     ///     - If `layer` is not [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`], then `min_radius` and `max_radius` are ignored as well.
-    /// - `tile_list` is the list of tiles that are candidates to place the resource on.
+    /// - `tile_list`: The list of tiles that are candidates to place the resource on.
     ///
     /// # Returns
+    ///
     /// - The number of resources that were not placed.
+    ///   It is equal to `amount` minus the number of tiles that were assigned a resource.
     ///
     /// # Panics
+    ///
     /// - `max_radius` must be greater than or equal to `min_radius`. Otherwise, the function will panic.
+    #[allow(clippy::too_many_arguments)]
     pub fn place_specific_number_of_resources(
         &mut self,
         resource: Resource,
@@ -828,13 +840,10 @@ impl TileMap {
             return amount;
         }
 
-        let impact_table = match layer {
-            Some(Layer::Strategic)
-            | Some(Layer::Luxury)
-            | Some(Layer::Bonus)
-            | Some(Layer::Fish) => &self.layer_data[layer.unwrap()],
-            _ => &Vec::new(),
-        };
+        let has_impact = matches!(
+            layer,
+            Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
+        );
 
         // Store how many resources are left to place
         let mut num_left_to_place = amount;
@@ -850,40 +859,37 @@ impl TileMap {
         // `num_resources` is the minimum of `amount` and `num_candidate_tiles`.
         let num_resources = min(amount, num_candidate_tiles);
 
-        let mut tile_and_impact_radius = Vec::with_capacity(num_resources as usize);
-
         for _ in 1..=num_resources {
-            for &tile in tile_list.into_iter() {
-                if impact_table.is_empty() || impact_table.get(tile.index()) == Some(&0) {
+            for &tile in tile_list.iter() {
+                if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
+                    // Place resource on tile if it doesn't have a resource already
                     if tile.resource(self).is_none() {
                         self.resource_query[tile.index()] = Some((resource.clone(), quantity));
                         num_left_to_place -= 1;
                     }
-                    // Place resource if impact table is not empty
-                    if !impact_table.is_empty() {
+                    // Place impact and ripples if `has_impact` is true
+                    if has_impact {
                         let radius = self
                             .random_number_generator
                             .gen_range(min_radius..=max_radius);
-                        tile_and_impact_radius.push((tile, radius));
+                        self.place_impact_and_ripples(tile, layer.unwrap(), radius)
                     }
                     break;
                 }
             }
         }
 
-        tile_and_impact_radius
-            .into_iter()
-            .for_each(|(tile, radius)| {
-                self.place_impact_and_ripples(tile, layer.unwrap(), Some(radius))
-            });
-
         num_left_to_place
     }
 }
 
 /// The role of luxury resources. View [`TileMap::assign_luxury_roles`] for more information.
+#[derive(Default)]
 pub struct LuxuryResourceRole {
-    /// Exclusively Assigned to a region. Each region gets an individual Luxury type assigned to it. These types are limited to 8 in original CIV5.
+    /// Exclusively Assigned to regions. The length of this set is limited to 8 in original CIV5.
+    ///
+    /// In original CIV5, the same luxury resource can only be found in at most 3 regions on the map.
+    /// Because there are a maximum of 22 civilizations (each representing a region) in the game, so these luxury types are limited to 8 in original CIV5.
     pub luxury_assigned_to_regions: HashSet<String>,
     /// Exclusively Assigned to a city state. These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
     pub luxury_assigned_to_city_state: Vec<String>,
@@ -892,31 +898,19 @@ pub struct LuxuryResourceRole {
     /// Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
     pub luxury_assigned_to_random: Vec<String>,
     /// Disabled. We will not place it on the map.
-    pub luxury_not_being_used: Vec<String>,
-}
-
-impl Default for LuxuryResourceRole {
-    fn default() -> Self {
-        Self {
-            luxury_assigned_to_regions: HashSet::new(),
-            luxury_assigned_to_city_state: Vec::new(),
-            luxury_assigned_to_special_case: Vec::new(),
-            luxury_assigned_to_random: Vec::new(),
-            luxury_not_being_used: Vec::new(),
-        }
-    }
+    pub _luxury_not_being_used: Vec<String>,
 }
 
 pub struct ResourceToPlace {
-    /// `resource` is the name of the resource.
+    /// The name of the resource.
     pub resource: String,
-    /// `quantity` is the number of the resource will be placed on one tile.
+    /// The number of the resource will be placed on one tile.
     pub quantity: u32,
-    /// `weight` is used to determine the probability of placing the resource on a tile.
+    /// Determine the probability of placing the resource on a tile.
     pub weight: u32,
-    /// `min_radius` is related to resource_impact when we place resources on tiles.
+    /// Related to `resource_impact` when we place resources on tiles.
     pub min_radius: u32,
-    /// `max_radius` is related to resource_impact when we place resources on tiles.
+    /// Related to `resource_impact` when we place resources on tiles.
     pub max_radius: u32,
 }
 
@@ -925,6 +919,7 @@ pub struct ResourceToPlace {
 /// Determines the quantity per tile for each strategic resource's major deposit size.
 ///
 /// # Notice
+///
 /// In some maps, If we cannot place oil in the sea, we should increase the resource amounts on land to compensate.
 pub fn get_major_strategic_resource_quantity_values(
     resource_setting: ResourceSetting,

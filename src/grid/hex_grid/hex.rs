@@ -10,7 +10,7 @@ use glam::{IVec2, Mat2, Vec2};
 use crate::grid::direction::Direction;
 use crate::grid::offset_coordinate::OffsetCoordinate;
 
-pub const SQRT_3: f32 = 1.732_050_807_568_877_2_f32;
+pub const SQRT_3: f32 = 1.732_050_8_f32;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Hex(IVec2);
@@ -39,7 +39,6 @@ impl Hex {
     }
 
     /// Creates a new [`Hex`] from an [`OffsetCoordinate`].
-    ///
     pub const fn from_offset(
         offset_coordinate: OffsetCoordinate,
         orientation: HexOrientation,
@@ -542,7 +541,7 @@ mod tests {
     }
 
     pub fn equal_hex_array(name: &str, a: Vec<Hex>, b: Vec<Hex>) {
-        assert_eq!(a.len(), b.len(), "{}", format!("FAIL {}", name));
+        assert_eq!(a.len(), b.len(), "FAIL {}", name);
         for (x, y) in a.into_iter().zip(b.into_iter()) {
             equal_hex(name, x, y);
         }

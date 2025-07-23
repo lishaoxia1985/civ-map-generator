@@ -18,6 +18,7 @@ use crate::{
 impl TileMap {
     // function AssignStartingPlots:GenerateRegions(args)
     /// Generates regions for the map according civilization number and region divide method.
+    ///
     /// The number of regions is equal to the number of civilizations.
     pub fn generate_regions(&mut self, map_parameters: &MapParameters) {
         let grid = self.world_grid.grid;
@@ -34,18 +35,11 @@ impl TileMap {
                 self.divide_into_regions(civilization_num, landmass_region);
             }
             RegionDivideMethod::Continent => {
-                let mut landmass_ids: Vec<_> = self
+                let mut landmass_region_list: Vec<_> = self
                     .area_list
                     .iter()
                     .filter(|area| !area.is_water)
-                    .map(|area| area.id)
-                    .collect();
-
-                landmass_ids.sort_unstable();
-
-                let mut landmass_region_list: Vec<_> = landmass_ids
-                    .into_iter()
-                    .map(|landmass_id| Region::landmass_region(self, landmass_id))
+                    .map(|area| Region::landmass_region(self, area.id))
                     .collect();
 
                 landmass_region_list.sort_by_key(|region| region.fertility_sum);
@@ -55,27 +49,41 @@ impl TileMap {
                 // If less players than landmasses, we will ignore the extra landmasses.
                 let relevant_landmass_num = min(landmass_num, civilization_num);
 
-                // Create a new list containing the most fertile land areas by reversing the sorted list and selecting the top `relevant_land_areas_num` items.
+                // Create a new list containing the most fertile land areas by reversing the sorted list and selecting the top `relevant_landmass_num` items.
                 let best_landmass_region_list = landmass_region_list
                     .into_iter()
                     .rev() // Reverse the iterator so the most fertile regions (which are at the end of the sorted list) come first.
-                    .take(relevant_landmass_num as usize) // Take the top `relevant_land_areas_num` elements from the reversed list.
+                    .take(relevant_landmass_num as usize) // Take the top `relevant_landmass_num` elements from the reversed list.
                     .collect::<Vec<_>>();
 
                 let mut number_of_civs_on_landmass = vec![0; relevant_landmass_num as usize];
 
+                // Calculate how to distribute civilizations across regions based on fertility
+                // The goal is to place civilizations where the fertility per civ is highest
+
+                // First, create a list tracking each region's total fertility (initial average when 1 civ is placed)
+                let mut average_fertility_per_civ: Vec<f64> = best_landmass_region_list
+                    .iter()
+                    .map(|region| region.fertility_sum as f64)
+                    .collect();
+
+                // Distribute all civilizations one by one
                 for _ in 0..civilization_num {
-                    best_landmass_region_list
+                    // Find the most fertile region (where adding a civ would give highest fertility per civ)
+                    let (best_index, _) = average_fertility_per_civ
                         .iter()
                         .enumerate()
-                        .max_by(|&(index_a, region_a), &(index_b, region_b)| {
-                            let score_a = region_a.fertility_sum as f64
-                                / (number_of_civs_on_landmass[index_a] as f64 + 1.);
-                            let score_b = region_b.fertility_sum as f64
-                                / (number_of_civs_on_landmass[index_b] as f64 + 1.);
-                            score_a.total_cmp(&score_b)
-                        })
-                        .map(|(index, _)| number_of_civs_on_landmass[index] += 1);
+                        .max_by(|&(_, a), &(_, b)| a.total_cmp(b))
+                        .expect("Should always find a region - empty list checked earlier");
+
+                    // Place one civilization in this best region
+                    number_of_civs_on_landmass[best_index] += 1;
+
+                    // Update this region's fertility-per-civ value:
+                    // Divide total fertility by (current civ count + 1) to represent what the average would be if we add another civ
+                    average_fertility_per_civ[best_index] =
+                        best_landmass_region_list[best_index].fertility_sum as f64
+                            / (number_of_civs_on_landmass[best_index] as f64 + 1.);
                 }
 
                 for (index, region) in best_landmass_region_list.into_iter().enumerate() {
@@ -104,10 +112,11 @@ impl TileMap {
 
     // function AssignStartingPlots:DivideIntoRegions
     /// Divides the region into subdivisions and get a vec of the subdivisions region.
+    ///
     /// # Arguments
-    /// * `map_parameters` - The map parameters.
-    /// * `divisions_num` - The number of divisions to make. In origin code, this should <= 22.
-    /// * `region` - The region to divide.
+    ///
+    /// - `divisions_num`: The number of divisions to make. In origin code, this should <= 22.
+    /// - `region`: The region to divide.
     fn divide_into_regions(&mut self, divisions_num: u32, region: Region) {
         let grid = self.world_grid.grid;
 
@@ -594,7 +603,6 @@ impl Default for TerrainStatistic {
 
 #[derive(Debug)]
 /// Region is a rectangular area of tiles.
-/// In the edge rows and edge columns of a region, it is not allowed for all tiles' fertility to be 0.
 pub struct Region {
     /// The rectangle that defines the region.
     pub rectangle: Rectangle,
@@ -602,6 +610,8 @@ pub struct Region {
     /// When landmass_id is `None`, it means that we will consider all landmass in the region when we divide it into sub-regions or other operations.
     pub area_id: Option<usize>,
     /// List of fertility values for each tile in the region.
+    ///
+    /// In the edge rows and edge columns of a region, it is not allowed for all tiles' fertility to be 0.
     pub fertility_list: Vec<i32>,
     /// Total fertility value of all tiles in the region.
     pub fertility_sum: i32,
@@ -615,8 +625,12 @@ pub struct Region {
     pub starting_tile: Tile,
     /// The start location condition of the region.
     pub start_location_condition: StartLocationCondition,
-    /// The luxury resource of the region.
-    pub luxury_resource: String,
+    /// The exclusive luxury resource of the region.
+    ///
+    /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
+    ///
+    /// When we run [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
+    pub exclusive_luxury: String,
 }
 
 impl Region {
@@ -634,7 +648,7 @@ impl Region {
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
             start_location_condition: StartLocationCondition::default(),
-            luxury_resource: String::new(),
+            exclusive_luxury: String::new(),
         }
     }
 
@@ -646,7 +660,9 @@ impl Region {
     /// Get the region of the landmass according to the given `landmass_id`.
     ///
     /// # Notice
-    /// We don't need to run `remove_dead_rows_and_columns()` here because the method `obtain_landmass_boundaries()` already did it.
+    ///
+    /// We don't need to call [`Region::remove_dead_row_and_column()`] in this function,
+    /// because [`TileMap::obtain_landmass_boundaries()`] has already ensured that there are no dead rows and columns in the rectangle.
     fn landmass_region(tile_map: &TileMap, landmass_id: usize) -> Self {
         let rectangle = tile_map.obtain_landmass_boundaries(landmass_id);
 
@@ -837,8 +853,11 @@ impl Region {
     ///
     /// At first, the region is divided into two regions. Then, the second region is divided into two smaller regions.
     /// The fertility of each region is 1/3 of the original region's fertility.
+    ///
     /// # Notice
-    /// We don't need to run `remove_dead_rows_and_columns()` here because the `remove_dead_row_and_column()` function has been called in the `chop_into_two_regions` function.
+    ///
+    /// We don't need to call [`Region::remove_dead_row_and_column`] in this function,
+    /// because the function has been called in [`Region::chop_into_two_regions`] function.
     fn chop_into_three_regions(&self, grid: HexGrid) -> (Region, Region, Region) {
         let (first_section_region, remaining_region) = self.chop_into_two_regions(grid, 33.3);
 
@@ -1033,18 +1052,16 @@ impl Region {
             >= flatland_and_hill_num * 30 / 100
         {
             self.region_type = RegionType::Tundra;
-        } else if feature_num[Feature::Jungle] >= flatland_and_hill_num * 30 / 100 {
-            self.region_type = RegionType::Jungle;
-        } else if (feature_num[Feature::Jungle] >= flatland_and_hill_num * 20 / 100)
-            && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
-                >= flatland_and_hill_num * 35 / 100)
+        } else if feature_num[Feature::Jungle] >= flatland_and_hill_num * 30 / 100
+            || ((feature_num[Feature::Jungle] >= flatland_and_hill_num * 20 / 100)
+                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
+                    >= flatland_and_hill_num * 35 / 100))
         {
             self.region_type = RegionType::Jungle;
-        } else if feature_num[Feature::Forest] >= flatland_and_hill_num * 30 / 100 {
-            self.region_type = RegionType::Forest;
-        } else if (feature_num[Feature::Forest] >= flatland_and_hill_num * 20 / 100)
-            && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
-                >= flatland_and_hill_num * 35 / 100)
+        } else if feature_num[Feature::Forest] >= flatland_and_hill_num * 30 / 100
+            || ((feature_num[Feature::Forest] >= flatland_and_hill_num * 20 / 100)
+                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
+                    >= flatland_and_hill_num * 35 / 100))
         {
             self.region_type = RegionType::Forest;
         } else if base_terrain_num[BaseTerrain::Desert] >= flatland_and_hill_num * 25 / 100 {
@@ -1079,6 +1096,7 @@ impl Region {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 /// Region type.
+///
 /// Fields are defined in order of priority, except for [`RegionType::Undefined`].
 /// The priority is typically used to sort the regions.
 pub enum RegionType {
@@ -1093,7 +1111,7 @@ pub enum RegionType {
     Hybrid,    //-- 8.
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StartLocationCondition {
     /// Whether the start location is coastal land.
     pub along_ocean: bool,
@@ -1102,28 +1120,14 @@ pub struct StartLocationCondition {
     /// Whether the start location has a river.
     pub is_river: bool,
     /// Whether there is a river in 2-tile radius of the start location.
-    /// Notice: This is only check whether there is a river in 2-tile radius of the start location, not contain the start location itself.
+    /// NOTICE: This is only check whether there is a river in 2-tile radius of the start location, not contain the start location itself.
     pub near_river: bool,
     /// Whether there is a mountain in 2-tile radius of the start location.
     pub near_mountain: bool,
     /// The number of forest tiles in 2-tile radius of the start location.
-    /// Notice: This is only check the number of forest tiles in 2-tile radius of the start location, not contain the start location itself.
+    /// NOTICE: This is only check the number of forest tiles in 2-tile radius of the start location, not contain the start location itself.
     pub forest_count: i32,
     /// The number of jungle tiles in 2-tile radius of the start location.
-    /// Notice: This is only check the number of jungle tiles in 2-tile radius of the start location, not contain the start location itself.
+    /// NOTICE: This is only check the number of jungle tiles in 2-tile radius of the start location, not contain the start location itself.
     pub jungle_count: i32,
-}
-
-impl Default for StartLocationCondition {
-    fn default() -> Self {
-        Self {
-            along_ocean: false,
-            next_to_lake: false,
-            is_river: false,
-            near_river: false,
-            near_mountain: false,
-            forest_count: 0,
-            jungle_count: 0,
-        }
-    }
 }

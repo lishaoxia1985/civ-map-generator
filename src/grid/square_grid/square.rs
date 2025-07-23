@@ -24,7 +24,6 @@ impl Square {
     }
 
     /// Create a new [`Square`] from an [`OffsetCoordinate`].
-    ///
     pub const fn from_offset(offset_coordinate: OffsetCoordinate) -> Self {
         Self(offset_coordinate.into_inner())
     }
@@ -67,7 +66,7 @@ impl Square {
 
     /// Return a [`Vec<Square>`] containing all [`Square`] which are exactly at a given `distance` from `self`.
     /// If `distance` = 0 the [`Vec<Square>`] will be empty. \
-    /// /// The number of returned squares is equal to `4 * distance`.
+    /// The number of returned squares is equal to `4 * distance`.
     pub fn squares_at_distance(self, distance: u32) -> Vec<Self> {
         // If distance is 0, return an empty vector
         if distance == 0 {

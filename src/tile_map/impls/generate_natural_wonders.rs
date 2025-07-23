@@ -20,10 +20,12 @@ impl TileMap {
     /// Generate natural wonders on the map.
     ///
     /// This function is like to Civ6's natural wonder generation. We edit it to fit our game which is like Civ5.
+    ///
     /// # Notice
+    ///
     /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
     /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
-    /// so we should check if the tile is occupied by a civilization start location.
+    ///   so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
@@ -286,7 +288,7 @@ impl TileMap {
                                 }
                             }
 
-                            self.place_impact_and_ripples(tile, Layer::NaturalWonder, None);
+                            self.place_impact_and_ripples(tile, Layer::NaturalWonder, u32::MAX);
 
                             self.player_collision_data[tile.index()] = true;
 
@@ -333,11 +335,13 @@ impl TileMap {
     /// Generate natural wonders on the map.
     ///
     /// This function is likely to Civ6's natural wonder generation. SO we don't use this function for the current game which is more like Civ5.
+    ///
     /// # Notice
+    ///
     /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
-    /// so we don't need to check if the tile is occupied by a civilization start location.
-    /// -In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
-    /// so we should check if the tile is occupied by a civilization start location.
+    ///   so we don't need to check if the tile is occupied by a civilization start location.
+    /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
+    ///   so we should check if the tile is occupied by a civilization start location.
     pub fn generate_natural_wonders(&mut self, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
@@ -674,7 +678,7 @@ impl TileMap {
     }
 }
 
-/// Get how many natural wonders should be placed on the map based on the world size.
+/// Get the target number of natural wonders to place based on the world size type.
 fn get_world_natural_wonder_target_number(world_size_type: WorldSizeType) -> u32 {
     match world_size_type {
         WorldSizeType::Duel => 2,

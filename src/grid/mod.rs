@@ -183,8 +183,8 @@ pub trait Grid {
     ///
     /// # Arguments
     ///
-    /// * `center` - The center cell.
-    /// * `distance` - The distance from the center cell.
+    /// - `center`: The center cell.
+    /// - `distance`: The distance from the center cell.
     ///
     /// # Notice
     ///
@@ -228,12 +228,11 @@ impl Size {
 
 bitflags! {
     /// Bitflags representing how a grid/map wraps at its borders.
-    ///
-    /// - `WrapX`: Enable horizontal wrapping (left/right edges connect)
-    /// - `WrapY`: Enable vertical wrapping (top/bottom edges connect)
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct WrapFlags: u8 {
+        ///Enable horizontal wrapping (left/right edges connect)
         const WrapX = 0b0000_0001;
+        /// Enable vertical wrapping (top/bottom edges connect)
         const WrapY = 0b0000_0010;
     }
 }
@@ -295,7 +294,6 @@ pub trait GridSize: Grid {
 
     /// Get the default size of the grid based on its world size type.
     /// This is used to initialize the grid with a default size.
-    ///
     fn default_size(world_size_type: WorldSizeType) -> Size;
 }
 

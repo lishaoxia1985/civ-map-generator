@@ -172,21 +172,21 @@ impl Tile {
     /// This method will panic if the current tile is out of bounds for the given map size.
     pub fn neighbor_tile(&self, direction: Direction, grid: HexGrid) -> Option<Self> {
         grid.neighbor(self.to_cell(), direction)
-            .map(|neighbor_cell| Self::from_cell(neighbor_cell))
+            .map(Self::from_cell)
     }
 
     /// Returns an iterator over the tiles at the given distance from the current tile.
     ///
     pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_at_distance(self.to_cell(), distance)
-            .map(|cell| Self::from_cell(cell))
+            .map(Self::from_cell)
     }
 
     /// Returns an iterator over the tiles within the given distance from the current tile, including the current tile.
     ///
     pub fn tiles_in_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_within_distance(self.to_cell(), distance)
-            .map(|cell| Self::from_cell(cell))
+            .map(Self::from_cell)
     }
 
     pub fn pixel_position(&self, grid: HexGrid) -> Vec2 {
@@ -336,12 +336,12 @@ impl Tile {
     /// # Parameters
     /// - `tile_map`: A reference to `TileMap`, which contains the tile data.
     /// - `region`: An optional reference to `Region`, which represents the region where the city state is located.\
-    /// If `None`, the function considers the tile as a candidate regardless of its region.
-    /// That usually happens when we place a city state in a unhabitated area.
+    ///   If `None`, the function considers the tile as a candidate regardless of its region.
+    ///   That usually happens when we place a city state in a unhabitated area.
     /// - `force_it`: A boolean flag indicating whether to force the tile to be a candidate regardless of whether it is in the influence of another city state.\
-    /// If `true`, the function ignores whether the tile is in the influence of other city states.
+    ///   If `true`, the function ignores whether the tile is in the influence of other city states.
     /// - `ignore_collisions`: A boolean flag indicating whether to ignore the tile has been placed a city state, a civilization, or a natural wonder.\
-    /// If `true`, the function ignores the tile has been placed a city state, civilization, or natural wonder.
+    ///   If `true`, the function ignores the tile has been placed a city state, civilization, or natural wonder.
     pub fn can_be_city_state_starting_tile(
         &self,
         tile_map: &TileMap,
@@ -356,7 +356,7 @@ impl Tile {
             Some(self.area_id(tile_map)) == region.area_id
         }) && self.base_terrain(tile_map) != BaseTerrain::Snow
             && (tile_map.layer_data[Layer::CityState][self.index()] == 0 || force_it)
-            && (tile_map.player_collision_data[self.index()] == false || ignore_collisions)
+            && (!tile_map.player_collision_data[self.index()] || ignore_collisions)
     }
 }
 

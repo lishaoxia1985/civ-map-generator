@@ -53,7 +53,7 @@ impl TileMap {
             let latitude = tile.latitude(grid);
 
             /* **********start to add ice********** */
-            if tile.is_impassable(self, &ruleset) {
+            if tile.is_impassable(self, ruleset) {
                 continue;
             } else if tile.terrain_type(self) == TerrainType::Water {
                 if !tile.has_river(self)
@@ -63,24 +63,23 @@ impl TileMap {
                     && ruleset.features["Ice"]
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
+                    && latitude > 0.78
                 {
-                    if latitude > 0.78 {
-                        let mut score = self.random_number_generator.gen_range(0..100) as f64;
-                        score += latitude * 100.;
-                        if tile
-                            .neighbor_tiles(grid)
-                            .any(|tile| tile.terrain_type(self) != TerrainType::Water)
-                        {
-                            score /= 2.0;
-                        }
-                        let a = tile
-                            .neighbor_tiles(grid)
-                            .filter(|tile| tile.feature(self) == Some(Feature::Ice))
-                            .count();
-                        score += 10. * a as f64;
-                        if score > 130. {
-                            self.feature_query[tile.index()] = Some(Feature::Ice);
-                        }
+                    let mut score = self.random_number_generator.gen_range(0..100) as f64;
+                    score += latitude * 100.;
+                    if tile
+                        .neighbor_tiles(grid)
+                        .any(|tile| tile.terrain_type(self) != TerrainType::Water)
+                    {
+                        score /= 2.0;
+                    }
+                    let a = tile
+                        .neighbor_tiles(grid)
+                        .filter(|tile| tile.feature(self) == Some(Feature::Ice))
+                        .count();
+                    score += 10. * a as f64;
+                    if score > 130. {
+                        self.feature_query[tile.index()] = Some(Feature::Ice);
                     }
                 }
             }

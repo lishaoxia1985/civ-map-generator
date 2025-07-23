@@ -27,7 +27,8 @@ impl TileMap {
     /// 2. Assign the starting tiles to civilizations according to civilization's bias.
     ///
     /// # Notice
-    /// We have not implemented to create the team for the civilization.
+    ///
+    /// TODO: We have not implemented to create the team for the civilization.
     pub fn balance_and_assign_civilization_starting_tiles(
         &mut self,
         map_parameters: &MapParameters,
@@ -39,7 +40,7 @@ impl TileMap {
             .nations
             .iter()
             .filter(|(_, nation)| {
-                nation.city_state_type == ""
+                nation.city_state_type.is_empty()
                     && nation.name != "Barbarians"
                     && nation.name != "Spectator"
             })
@@ -85,11 +86,11 @@ impl TileMap {
         let mut _num_river_civs_remaining = 0;
         let mut civs_needing_river_start = Vec::new();
 
-        let mut num_priority_civs_remaining = 0;
+        let mut _num_priority_civs_remaining = 0;
         let mut civs_needing_region_priority = Vec::new();
 
-        let mut num_avoid_civs = 0;
-        let mut num_avoid_civs_remaining = 0;
+        let mut _num_avoid_civs = 0;
+        let mut _num_avoid_civs_remaining = 0;
         let mut civs_needing_region_avoid = Vec::new();
 
         // Store all the regions' indices that have not been assigned a civilization.
@@ -100,24 +101,20 @@ impl TileMap {
             let nation = &ruleset.nations[*civilization];
             if nation.along_ocean {
                 civs_needing_coastal_start.push(*civilization);
-            } else {
-                if nation.along_river {
-                    civs_needing_river_start.push(*civilization);
-                } else {
-                    if !nation.region_type_priority.is_empty() {
-                        num_priority_civs_remaining = num_priority_civs_remaining + 1;
-                        civs_needing_region_priority.push(*civilization);
-                    } else if !nation.avoid_region_type.is_empty() {
-                        num_avoid_civs = num_avoid_civs + 1;
-                        num_avoid_civs_remaining = num_avoid_civs_remaining + 1;
-                        civs_needing_region_avoid.push(*civilization);
-                    }
-                }
+            } else if nation.along_river {
+                civs_needing_river_start.push(*civilization);
+            } else if !nation.region_type_priority.is_empty() {
+                _num_priority_civs_remaining += 1;
+                civs_needing_region_priority.push(*civilization);
+            } else if !nation.avoid_region_type.is_empty() {
+                _num_avoid_civs += 1;
+                _num_avoid_civs_remaining += 1;
+                civs_needing_region_avoid.push(*civilization);
             }
         }
 
         // Handle Coastal Start Bias
-        if civs_needing_coastal_start.len() > 0 {
+        if !civs_needing_coastal_start.is_empty() {
             let mut regions_with_coastal_start: Vec<usize> = Vec::new();
             let mut regions_with_lake_start: Vec<usize> = Vec::new();
 
@@ -143,11 +140,11 @@ impl TileMap {
             if regions_with_coastal_start.len() + regions_with_lake_start.len() > 0 {
                 civs_needing_coastal_start.shuffle(&mut self.random_number_generator);
 
-                if regions_with_coastal_start.len() > 0 {
+                if !regions_with_coastal_start.is_empty() {
                     regions_with_coastal_start.shuffle(&mut self.random_number_generator);
                 }
 
-                if regions_with_lake_start.len() > 0 {
+                if !regions_with_lake_start.is_empty() {
                     regions_with_lake_start.shuffle(&mut self.random_number_generator);
                 }
 
@@ -185,7 +182,7 @@ impl TileMap {
         }
 
         // Handle River bias
-        if civs_needing_river_start.len() > 0 || num_coastal_civs_remaining > 0 {
+        if !civs_needing_river_start.is_empty() || num_coastal_civs_remaining > 0 {
             let mut regions_with_river_start = Vec::new();
             let mut regions_with_near_river_start = Vec::new();
 
@@ -208,11 +205,11 @@ impl TileMap {
             if regions_with_river_start.len() + regions_with_near_river_start.len() > 0 {
                 civs_needing_river_start.shuffle(&mut self.random_number_generator);
 
-                if regions_with_river_start.len() > 0 {
+                if !regions_with_river_start.is_empty() {
                     regions_with_river_start.shuffle(&mut self.random_number_generator);
                 }
 
-                if regions_with_near_river_start.len() > 0 {
+                if !regions_with_near_river_start.is_empty() {
                     regions_with_near_river_start.shuffle(&mut self.random_number_generator);
                 }
 
@@ -271,11 +268,11 @@ impl TileMap {
                 if fallbacks_with_river_start.len() + fallbacks_with_near_river_start.len() > 0 {
                     civs_needing_coastal_start.shuffle(&mut self.random_number_generator);
 
-                    if fallbacks_with_river_start.len() > 0 {
+                    if !fallbacks_with_river_start.is_empty() {
                         fallbacks_with_river_start.shuffle(&mut self.random_number_generator);
                     }
 
-                    if fallbacks_with_near_river_start.len() > 0 {
+                    if !fallbacks_with_near_river_start.is_empty() {
                         fallbacks_with_near_river_start.shuffle(&mut self.random_number_generator);
                     }
 
@@ -307,7 +304,7 @@ impl TileMap {
         }
 
         // Handle Region Priority
-        if civs_needing_region_priority.len() > 0 {
+        if !civs_needing_region_priority.is_empty() {
             let mut civs_needing_single_priority = Vec::new();
             let mut civs_needing_multi_priority = Vec::new();
             let mut civs_fallback_priority = Vec::new();
@@ -321,7 +318,7 @@ impl TileMap {
                 }
             }
 
-            if civs_needing_single_priority.len() > 0 {
+            if !civs_needing_single_priority.is_empty() {
                 // Sort civs_needing_single_priority by the first element of nation.region_type_priority
                 // Notice: region_type_priority always doesn't have 'RegionType::Undefined' as the element,
                 // so we don't need to tackle the case that the first element is 'RegionType::Undefined'.
@@ -340,7 +337,7 @@ impl TileMap {
                         }
                     }
 
-                    if candidate_regions.len() > 0 {
+                    if !candidate_regions.is_empty() {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
@@ -356,7 +353,7 @@ impl TileMap {
                 }
             }
 
-            if civs_needing_multi_priority.len() > 0 {
+            if !civs_needing_multi_priority.is_empty() {
                 // Sort `civs_needing_multi_priority` by the length of nation.region_type_priority
                 civs_needing_multi_priority.sort_by_key(|&civilization| {
                     let nation = &ruleset.nations[civilization];
@@ -375,7 +372,7 @@ impl TileMap {
                         }
                     }
 
-                    if candidate_regions.len() > 0 {
+                    if !candidate_regions.is_empty() {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
@@ -390,7 +387,7 @@ impl TileMap {
             }
 
             // Fallbacks are done (if needed) after multiple-region priority is handled. The list is pre-sorted.
-            if civs_fallback_priority.len() > 0 {
+            if !civs_fallback_priority.is_empty() {
                 for &civilization in civs_fallback_priority.iter() {
                     let region_type_priority =
                         ruleset.nations[civilization].region_type_priority[0];
@@ -411,7 +408,7 @@ impl TileMap {
         }
 
         // Handle Region Avoid
-        if civs_needing_region_avoid.len() > 0 {
+        if !civs_needing_region_avoid.is_empty() {
             // Sort `civs_needing_region_avoid` by the length of `nation.avoid_region_type`.
             civs_needing_region_avoid.sort_by_key(|civilization| {
                 let nation = &ruleset.nations[*civilization];
@@ -431,7 +428,7 @@ impl TileMap {
                     }
                 }
 
-                if candidate_regions.len() > 0 {
+                if !candidate_regions.is_empty() {
                     let region_index = *candidate_regions
                         .choose(&mut self.random_number_generator)
                         .unwrap();
@@ -595,7 +592,7 @@ impl TileMap {
     /// 1. Remove any feature Ice from 1 radius of the starting tile.
     /// 2. Add hills to the starting tile's 1 radius if it has not enough hammer.
     /// 3. Add a small `Horse` or `Iron` strategic resource to the starting tile's 2 radius if it has not enough hammer,
-    /// (it will contain forest in 1-2 radius when calculating the number of hammer).
+    ///    (it will contain forest in 1-2 radius when calculating the number of hammer).
     /// 4. If resource_setting is [`ResourceSetting::StrategicBalance`], call [`TileMap::add_strategic_balance_resources`] to add strategic resources to the starting tile's 1-3 radius.
     /// 5. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
     /// 6. Get information about the starting tile and its surroundings for placing the civilization.
@@ -717,7 +714,7 @@ impl TileMap {
                                 if feature == Some(Feature::Forest) {
                                     inner_forest += 1;
                                 }
-                                if feature == None {
+                                if feature.is_none() {
                                     num_native_two_food_first_ring += 1;
                                 }
                             }
@@ -765,7 +762,7 @@ impl TileMap {
                                 if feature == Some(Feature::Forest) {
                                     inner_forest += 1;
                                 }
-                                if feature == None {
+                                if feature.is_none() {
                                     num_native_two_food_first_ring += 1;
                                 }
                             }
@@ -826,13 +823,11 @@ impl TileMap {
                                 outer_two_food += 1;
                                 num_native_two_food_second_ring += 1;
                             }
+                        } else if feature == Some(Feature::Ice) {
+                            outer_bad_tiles += 1;
                         } else {
-                            if feature == Some(Feature::Ice) {
-                                outer_bad_tiles += 1;
-                            } else {
-                                outer_ocean += 1;
-                                outer_can_have_bonus += 1;
-                            }
+                            outer_ocean += 1;
+                            outer_can_have_bonus += 1;
                         }
                     }
                     _ => {
@@ -873,7 +868,7 @@ impl TileMap {
                                     if feature == Some(Feature::Forest) {
                                         outer_forest += 1;
                                     }
-                                    if feature == None {
+                                    if feature.is_none() {
                                         num_native_two_food_second_ring += 1;
                                     }
                                 }
@@ -921,7 +916,7 @@ impl TileMap {
                                     if feature == Some(Feature::Forest) {
                                         outer_forest += 1;
                                     }
-                                    if feature == None {
+                                    if feature.is_none() {
                                         num_native_two_food_second_ring += 1;
                                     }
                                 }
@@ -999,25 +994,23 @@ impl TileMap {
         let native_two_food_tiles =
             num_native_two_food_first_ring + num_native_two_food_second_ring;
 
-        if total_food_score < 4 && inner_food_score == 0 {
-            num_food_bonus_needed = 5;
+        num_food_bonus_needed = if total_food_score < 4 && inner_food_score == 0 {
+            5
         } else if total_food_score < 6 {
-            num_food_bonus_needed = 4;
-        } else if total_food_score < 8 {
-            num_food_bonus_needed = 3;
-        } else if total_food_score < 12 && inner_food_score < 5 {
-            num_food_bonus_needed = 3;
-        } else if total_food_score < 17 && inner_food_score < 9 {
-            num_food_bonus_needed = 2;
-        } else if native_two_food_tiles <= 1 {
-            num_food_bonus_needed = 2;
-        } else if total_food_score < 24 && inner_food_score < 11 {
-            num_food_bonus_needed = 1;
-        } else if native_two_food_tiles == 2 || num_native_two_food_first_ring == 0 {
-            num_food_bonus_needed = 1;
-        } else if total_food_score < 20 {
-            num_food_bonus_needed = 1;
-        }
+            4
+        } else if total_food_score < 8 || (total_food_score < 12 && inner_food_score < 5) {
+            3
+        } else if (total_food_score < 17 && inner_food_score < 9) || native_two_food_tiles <= 1 {
+            2
+        } else if total_food_score < 24 && inner_food_score < 11
+            || native_two_food_tiles == 2
+            || num_native_two_food_first_ring == 0
+            || total_food_score < 20
+        {
+            1
+        } else {
+            num_food_bonus_needed // or default value if needed
+        };
 
         // Check for Legendary Start resource option.
         if map_parameters.resource_setting == ResourceSetting::LegendaryStart {
@@ -1045,7 +1038,7 @@ impl TileMap {
             } else {
                 let conversion_tile = *tile_list.choose(&mut self.random_number_generator).unwrap();
                 self.base_terrain_query[conversion_tile.index()] = BaseTerrain::Grassland;
-                self.place_impact_and_ripples(conversion_tile, Layer::Strategic, Some(0));
+                self.place_impact_and_ripples(conversion_tile, Layer::Strategic, 0);
             }
         }
 
@@ -1078,7 +1071,7 @@ impl TileMap {
                     && first_ring_iter.peek().is_some()
                 {
                     // Add bonus to inner ring.
-                    while let Some(&tile) = first_ring_iter.next() {
+                    for &tile in first_ring_iter.by_ref() {
                         let (placed_bonus, placed_oasis) =
                             self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
@@ -1099,7 +1092,7 @@ impl TileMap {
                     && second_ring_iter.peek().is_some()
                 {
                     // Add bonus to second ring.
-                    while let Some(&tile) = second_ring_iter.next() {
+                    for &tile in second_ring_iter.by_ref() {
                         let (placed_bonus, placed_oasis) =
                             self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
@@ -1115,7 +1108,7 @@ impl TileMap {
                     }
                 } else if third_ring_iter.peek().is_some() {
                     // Add bonus to third ring.
-                    while let Some(&tile) = third_ring_iter.next() {
+                    for &tile in third_ring_iter.by_ref() {
                         let (placed_bonus, placed_oasis) =
                             self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
                         if placed_bonus {
@@ -1143,40 +1136,34 @@ impl TileMap {
         };
 
         if num_stone_needed > 0 {
-            // Store whether we have already placed a stone. If we have, we do not place another stone in the inner ring.
-            let mut inner_placed = false;
-
             // We shuffle the `neighbor_tiles` that was used earlier, instead of recreating a new one.
             neighbor_tile_list.shuffle(&mut self.random_number_generator);
 
             // We shuffle the `tiles_at_distance_two` that was used earlier, instead of recreating a new one.
             tile_at_distance_two_list.shuffle(&mut self.random_number_generator);
 
-            let mut first_ring_iter = neighbor_tile_list.iter().peekable();
-            let mut second_ring_iter = tile_at_distance_two_list.iter().peekable();
+            // At first we try to place the stone in the inner ring.
+            // The stone is placed in the inner ring at most once.
+            if num_stone_needed > 0 {
+                for tile in neighbor_tile_list.into_iter() {
+                    let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
+                    if placed_bonus {
+                        num_stone_needed -= 1;
+                        break;
+                    }
+                }
+            }
 
-            while num_stone_needed > 0 {
-                if !inner_placed && first_ring_iter.peek().is_some() {
-                    // Add bonus to inner ring.
-                    while let Some(&tile) = first_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
-                        if placed_bonus {
-                            inner_placed = true;
-                            num_stone_needed -= 1;
+            // And then if we still have stone to place, we will try to place all the remaining stones in the outer ring.
+            if num_stone_needed > 0 {
+                for tile in tile_at_distance_two_list.into_iter() {
+                    let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
+                    if placed_bonus {
+                        num_stone_needed -= 1;
+                        if num_stone_needed == 0 {
                             break;
                         }
                     }
-                } else if second_ring_iter.peek().is_some() {
-                    // Add bonus to second ring.
-                    while let Some(&tile) = second_ring_iter.next() {
-                        let placed_bonus = self.attempt_to_place_stone_at_grass_tile(tile);
-                        if placed_bonus {
-                            num_stone_needed -= 1;
-                            break;
-                        }
-                    }
-                } else {
-                    break;
                 }
             }
         }
@@ -1216,7 +1203,6 @@ impl TileMap {
         for ripple_radius in 1..=RADIUS {
             starting_tile
                 .tiles_at_distance(ripple_radius, grid)
-                .into_iter()
                 .for_each(|tile_at_distance| {
                     let terrain_type = tile_at_distance.terrain_type(self);
                     let base_terrain = tile_at_distance.base_terrain(self);
@@ -1228,12 +1214,12 @@ impl TileMap {
                             } else {
                                 iron_fallback.push(tile_at_distance);
                             }
-                            if base_terrain != BaseTerrain::Snow && feature == None {
+                            if base_terrain != BaseTerrain::Snow && feature.is_none() {
                                 horse_fallback.push(tile_at_distance);
                             }
                         }
                         TerrainType::Flatland => {
-                            if feature == None {
+                            if feature.is_none() {
                                 match base_terrain {
                                     BaseTerrain::Plain | BaseTerrain::Grassland => {
                                         if ripple_radius < 3 {
@@ -1294,7 +1280,7 @@ impl TileMap {
         let mut placed_horse = false;
         let mut placed_oil = false;
 
-        if iron_list.len() > 0 {
+        if !iron_list.is_empty() {
             iron_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
                 Resource::Resource("Iron".to_owned()),
@@ -1311,7 +1297,7 @@ impl TileMap {
             }
         }
 
-        if horse_list.len() > 0 {
+        if !horse_list.is_empty() {
             horse_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
                 Resource::Resource("Horses".to_owned()),
@@ -1328,7 +1314,7 @@ impl TileMap {
             }
         }
 
-        if oil_list.len() > 0 {
+        if !oil_list.is_empty() {
             oil_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
                 Resource::Resource("Oil".to_owned()),
@@ -1345,7 +1331,7 @@ impl TileMap {
             }
         }
 
-        if !placed_iron && iron_fallback.len() > 0 {
+        if !placed_iron && !iron_fallback.is_empty() {
             iron_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
                 Resource::Resource("Iron".to_owned()),
@@ -1359,7 +1345,7 @@ impl TileMap {
             );
         }
 
-        if !placed_horse && horse_fallback.len() > 0 {
+        if !placed_horse && !horse_fallback.is_empty() {
             horse_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
                 Resource::Resource("Horses".to_owned()),
@@ -1373,7 +1359,7 @@ impl TileMap {
             );
         }
 
-        if !placed_oil && oil_fallback.len() > 0 {
+        if !placed_oil && !oil_fallback.is_empty() {
             oil_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
                 Resource::Resource("Oil".to_owned()),
