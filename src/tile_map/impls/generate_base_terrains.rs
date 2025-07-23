@@ -113,7 +113,7 @@ impl TileMap {
                     let plains_height = plains_fractal.get_height(x, y);
 
                     let mut latitude = tile.latitude(grid);
-                    latitude += (128 - variation_fractal.get_height(x, y)) as f64 / (255.0 * 5.0);
+                    latitude += (128. - variation_fractal.get_height(x, y) as f64) / (255.0 * 5.0);
                     latitude = latitude.clamp(0., 1.);
 
                     if latitude >= snow_latitude {
