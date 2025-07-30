@@ -258,7 +258,7 @@ impl TileMap {
     ///
     /// # Panics
     ///
-    /// Panics on dev mode if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
+    /// Panics in debug mode if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
     fn place_impact_and_ripples_for_resource(&mut self, tile: Tile, layer: Layer, radius: u32) {
         debug_assert_ne!(
             layer,

@@ -62,7 +62,8 @@ impl Tile {
 
     /// Converts a tile to the corresponding offset coordinate based on grid parameters.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `grid`: A `HexGrid` that contains the map size information.
     ///
     /// # Returns
@@ -95,13 +96,16 @@ impl Tile {
     /// As the latitude value approaches `0.0`, the tile is closer to the equator,
     /// while a value approaching `1.0` indicates proximity to the poles.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `grid`: A `HexGrid` that contains the map size information.
     ///
     /// # Returns
+    ///
     /// A `f64` representing the latitude of the tile, with values ranging from `0.0` (equator) to `1.0` (poles).
     ///
     /// # Panics
+    ///
     /// This method will panic if the tile is out of bounds for the given map size.
     pub fn latitude(&self, grid: HexGrid) -> f64 {
         // We don't need to check if the index is valid here, as it has already been checked in `to_offset_coordinate`
@@ -160,15 +164,18 @@ impl Tile {
 
     /// Retrieves the neighboring tile from the current tile in the specified direction.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `direction`: The direction to locate the neighboring tile.
     /// - `grid`: The grid parameters that include layout and offset information.
     ///
     /// # Returns
-    /// An `Option<TileIndex>`. This is `Some` if the neighboring tile exists,
+    ///
+    /// An `Option<Tile>`. This is `Some` if the neighboring tile exists,
     /// or `None` if the neighboring tile is invalid.
     ///
     /// # Panics
+    ///
     /// This method will panic if the current tile is out of bounds for the given map size.
     pub fn neighbor_tile(&self, direction: Direction, grid: HexGrid) -> Option<Self> {
         grid.neighbor(self.to_cell(), direction)
@@ -203,10 +210,12 @@ impl Tile {
 
     /// Checks if there is a river on the current tile.
     ///
-    /// # Parameters
-    /// - `tile_map`: A reference to the TileMap containing river information.
-    /// - `map_parameters`: A reference to the map parameters, which include hex layout settings.
+    /// # Arguments
+    ///
+    /// - `tile_map`: A reference to the [`TileMap`] containing river information.
+    ///
     /// # Returns
+    ///
     /// - `bool`: Returns true if there is a river on the current tile, false otherwise.
     pub fn has_river(&self, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
@@ -217,12 +226,13 @@ impl Tile {
 
     /// Checks if there is a river on the current tile in the specified direction.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `direction`: The direction to check for the river.
-    /// - `tile_map`: A reference to the TileMap containing river information.
-    /// - `map_parameters`: A reference to the map parameters, which include hex layout settings.
+    /// - `tile_map`: A reference to the [`TileMap`] containing river information.
     ///
     /// # Returns
+    ///
     /// - `bool`: Returns true if there is a river in the specified direction, false otherwise.
     pub fn has_river_in_direction(&self, direction: Direction, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
@@ -256,6 +266,7 @@ impl Tile {
         self.terrain_type(tile_map) == TerrainType::Water
     }
 
+    /// Checks if the tile is impassable.
     pub fn is_impassable(&self, tile_map: &TileMap, ruleset: &Ruleset) -> bool {
         self.terrain_type(tile_map) == TerrainType::Mountain
             || self
@@ -281,7 +292,9 @@ impl Tile {
     /// Check if the tile is coastal land.
     ///
     /// A tile is considered `coastal land` if it is not `Water` and has at least one neighboring tile that is `Coast`.
+    ///
     /// # Notice
+    ///
     /// If the tile is not `Water` and has at least one neighboring tile that is `Lake`, but it has no neighboring tile that is `Coast`, it is not `coastal land`.
     pub fn is_coastal_land(&self, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
@@ -293,31 +306,35 @@ impl Tile {
 
     /// Checks if a tile can be a starting tile of civilization.
     ///
-    /// A tile is initially considered a starting tile if it is either `Flatland` or `Hill`, and then it must meet one of the following conditions:
+    /// A tile is considered a starting tile if it is either `Flatland` or `Hill`, and then it must meet one of the following conditions:
     /// 1. The tile is a coastal land.
-    /// 2. If `civilization_starting_tile_must_be_coastal_land` is `false`, An inland tile (whose distance to `Coast` is greater than 2) can be a starting tile as well.
+    /// 2. If `civ_require_coastal_land_start` is `false`, An inland tile (whose distance to `Coast` is greater than 2) can be a starting tile as well.
     ///
-    /// # Why Tiles with Distance 2 from Coast are Excluded:
-    /// Tiles with a distance of 2 from the coast are excluded because in the original game, the `Settler` unit can move 2 tiles per turn (ignoring terrain movement cost).
+    /// **Why Inland Tiles with Distance 2 from Coast are Excluded**
+    ///
+    /// Because in the original game, the `Settler` unit can move 2 tiles per turn (ignoring terrain movement cost).
     /// If such a tile were considered a starting tile, a `Settler` can move to the coastal land and build a city in just one turn, which is functionally equivalent to choosing a coastal land tile as the starting tile of civilization directly.
     ///
     /// # Notice
+    ///
     /// The tile with nature wonder can not be a starting tile of civilization.
-    /// Doesn't like CIV6, in original CIV5, we generate the nature wonder after generating the civilization starting tile, so in this function, we don't check the nature wonder.
+    /// But we don't check the nature wonder in this function, because we generate the nature wonder after generating the civilization starting tile.
+    /// That's like in original CIV5.
     /// City state starting tile is the same as well.
+    /// In CIV6, we should check the nature wonder in this function.
     pub fn can_be_civilization_starting_tile(
         &self,
         tile_map: &TileMap,
         map_parameters: &MapParameters,
     ) -> bool {
         // This variable is the maximum distance a Settler can move.
-        // It can be customized in the MapParameters in the future.
+        // TODO: It can be customized in the MapParameters in the future.
         const SETTLER_MOVEMENT: u32 = 2;
         matches!(
             self.terrain_type(tile_map),
             TerrainType::Flatland | TerrainType::Hill
         ) && (self.is_coastal_land(tile_map)
-            || (!map_parameters.civilization_starting_tile_must_be_coastal_land
+            || (!map_parameters.civ_require_coastal_land_start
                 && self
                     .tiles_in_distance(SETTLER_MOVEMENT, tile_map.world_grid.grid)
                     .all(|tile| tile.base_terrain(tile_map) != BaseTerrain::Coast)))
@@ -325,29 +342,20 @@ impl Tile {
 
     /// Checks if a tile can be a starting tile of city state.
     ///
-    /// A tile is initially considered a starting tile if it is either `Flatland` or `Hill`, and then it must meet all of the following conditions:
-    /// 1. The tile is not `Snow`.
-    /// 2. `force_it`:
-    /// - `true`, ignores whether the tile is in the influence of other city states.
-    /// - `false`, the tile must not be in the influence of other city states.
-    /// 3. `ignore_collisions`:
-    /// - `true`, ignores whether the tile has been placed a city state, a civilization, or a natural wonder.
-    /// - `false`, the tile must not have been placed a city state, civilization, or natural wonder.
-    /// # Parameters
+    /// A tile is considered a starting tile, it must meet all of the following conditions:
+    /// 1. It is either `Flatland` or `Hill`.
+    /// 2. It is not `Snow`.
+    ///
+    /// # Arguments
+    ///
     /// - `tile_map`: A reference to `TileMap`, which contains the tile data.
     /// - `region`: An optional reference to `Region`, which represents the region where the city state is located.\
     ///   If `None`, the function considers the tile as a candidate regardless of its region.
     ///   That usually happens when we place a city state in a unhabitated area.
-    /// - `force_it`: A boolean flag indicating whether to force the tile to be a candidate regardless of whether it is in the influence of another city state.\
-    ///   If `true`, the function ignores whether the tile is in the influence of other city states.
-    /// - `ignore_collisions`: A boolean flag indicating whether to ignore the tile has been placed a city state, a civilization, or a natural wonder.\
-    ///   If `true`, the function ignores the tile has been placed a city state, civilization, or natural wonder.
     pub fn can_be_city_state_starting_tile(
         &self,
         tile_map: &TileMap,
         region: Option<&Region>,
-        force_it: bool,
-        ignore_collisions: bool,
     ) -> bool {
         matches!(
             self.terrain_type(tile_map),
@@ -355,26 +363,25 @@ impl Tile {
         ) && region.map_or(true, |region| {
             Some(self.area_id(tile_map)) == region.area_id
         }) && self.base_terrain(tile_map) != BaseTerrain::Snow
-            && (tile_map.layer_data[Layer::CityState][self.index()] == 0 || force_it)
-            && (!tile_map.player_collision_data[self.index()] || ignore_collisions)
+            && (tile_map.layer_data[Layer::CityState][self.index()] == 0)
+            && (!tile_map.player_collision_data[self.index()])
     }
 }
 
-/// Returns the edge direction that corresponds to a given flow direction in a hexagonal grid,
-/// based on the specified layout orientation.
+/// Returns the edge direction that corresponds to a given flow direction in the grid.
 ///
-/// This function maps flow directions to their respective edge directions within a hexagonal
-/// layout, accounting for both pointy and flat orientations.
+/// # Arguments
 ///
-/// # Parameters
 /// - `flow_direction`: The direction of the river flow.
-/// - `map_parameters`: A reference to `MapParameters`, which contains the hexagonal layout orientation.
+/// - `grid`: The `HexGrid` that contains the layout and orientation information.
 ///
 /// # Returns
+///
 /// The corresponding edge direction refers to the direction of the river edge located on the current tile.
 /// For example, when hex is `HexOrientation::Pointy`, if the river is flowing North or South, the edge direction is East.
 ///
 /// # Panics
+///
 /// This function will panic if an invalid flow direction is provided.
 fn edge_direction_for_flow_direction(flow_direction: Direction, grid: HexGrid) -> Direction {
     match grid.layout.orientation {

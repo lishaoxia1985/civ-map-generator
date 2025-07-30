@@ -37,8 +37,10 @@ pub struct MapParameters {
     /// The number of city states.
     pub city_state_num: u32,
     pub region_divide_method: RegionDivideMethod,
-    /// If true, the civilization starting tile must be coastal land. Otherwise, it can be any hill/flatland tile.
-    pub civilization_starting_tile_must_be_coastal_land: bool,
+    /// Whether the civilization starting tile must be coastal land.
+    /// - If true, the civilization starting tile only can be coastal land.
+    /// - If false, the civilization starting tile can be any hill/flatland tile.
+    pub civ_require_coastal_land_start: bool,
     pub resource_setting: ResourceSetting,
 }
 
@@ -104,10 +106,12 @@ impl WorldGrid {
     /// Creates a new `WorldGrid` with the specified grid and world size.
     ///
     /// # Notice
+    ///
     /// Before calling this function, ensure that the grid's size matches the specified world size.
     /// This check is performed at runtime through `debug_assert!`, which only activates in debug mode.
     ///
     /// # Usage
+    ///
     /// This function should be used exclusively with the initialization syntax shown below.
     /// Direct initialization with the `new` function outside of this pattern is not supported:
     ///
@@ -262,7 +266,7 @@ impl Default for MapParameters {
             civilization_num: 4,
             city_state_num: 8,
             region_divide_method: RegionDivideMethod::Continent,
-            civilization_starting_tile_must_be_coastal_land: false,
+            civ_require_coastal_land_start: false,
             resource_setting: ResourceSetting::Standard,
         }
     }
@@ -299,7 +303,8 @@ pub struct Rectangle {
 impl Rectangle {
     /// Creates a new rectangle with the given origin, width, height, and grid.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `origin`: The origin of the rectangle in offset coordinates.
     ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
     ///   It can be any valid offset coordinate,
@@ -340,7 +345,8 @@ impl Rectangle {
 
     /// Creates a new rectangle from the given origin and top-left corner.
     ///
-    /// # Parameters
+    /// # Arguments
+    ///
     /// - `origin`: The origin of the rectangle in offset coordinates.
     ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
     ///   It can be any valid offset coordinate,

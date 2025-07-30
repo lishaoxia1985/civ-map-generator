@@ -31,7 +31,7 @@ impl TileMap {
         (0..self.region_list.len()).for_each(|region_index| {
             if ignore_landmass_id {
                 self.find_start_without_regard_to_area_id(map_parameters, region_index);
-            } else if map_parameters.civilization_starting_tile_must_be_coastal_land {
+            } else if map_parameters.civ_require_coastal_land_start {
                 self.find_coastal_land_start(map_parameters, region_index);
             } else {
                 self.find_start(map_parameters, region_index);
