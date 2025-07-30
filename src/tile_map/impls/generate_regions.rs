@@ -3,13 +3,11 @@ use std::cmp::min;
 use enum_map::{enum_map, EnumMap};
 use serde::{Deserialize, Serialize};
 
-use crate::component::map_component::base_terrain::BaseTerrain;
-use crate::component::map_component::feature::Feature;
-use crate::component::map_component::terrain_type::TerrainType;
-use crate::grid::hex_grid::HexGrid;
-use crate::grid::offset_coordinate::OffsetCoordinate;
-use crate::grid::WrapFlags;
 use crate::{
+    component::map_component::{
+        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
+    },
+    grid::{hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, WrapFlags},
     map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
     tile_map::{MapParameters, TileMap},

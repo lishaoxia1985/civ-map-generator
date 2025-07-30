@@ -14,7 +14,7 @@ civ_map_generator = {git = "https://github.com/lishaoxia1985/civ-map-generator.g
 
 ## How to add a map type
 
-[How to add a map type](./src/map/How%20to%20add%20a%20map%20type.MD)
+[How to add a map type](./src/map_generator/How%20to%20add%20a%20map%20type.MD)
 
 ## Example
 

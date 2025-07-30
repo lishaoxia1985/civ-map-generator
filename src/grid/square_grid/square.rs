@@ -230,7 +230,7 @@ impl SquareOrientation {
     /// |____________|____________|____________|
     /// ```
     ///
-    const ORTHOGONAL_EDGE: [Direction; 4] = [
+    pub const ORTHOGONAL_EDGE: [Direction; 4] = [
         Direction::East,
         Direction::South,
         Direction::West,
@@ -239,7 +239,7 @@ impl SquareOrientation {
 
     /// Orthogonal Square corner directions, the directions of the corners of a `Square` relative to its center.
     /// > See [`Self::ORTHOGONAL_EDGE`] for more information
-    const ORTHOGONAL_CORNER: [Direction; 4] = [
+    pub const ORTHOGONAL_CORNER: [Direction; 4] = [
         Direction::NorthEast,
         Direction::SouthEast,
         Direction::SouthWest,

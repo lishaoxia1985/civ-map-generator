@@ -1,14 +1,15 @@
 #![allow(dead_code)]
 
 use core::f32::consts::{FRAC_PI_3, FRAC_PI_6};
-use std::array;
-use std::cmp::{max, min};
-use std::ops::{Add, Sub};
+use std::{
+    array,
+    cmp::{max, min},
+    ops::{Add, Sub},
+};
 
 use glam::{IVec2, Mat2, Vec2};
 
-use crate::grid::direction::Direction;
-use crate::grid::offset_coordinate::OffsetCoordinate;
+use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 
 pub const SQRT_3: f32 = 1.732_050_8_f32;
 

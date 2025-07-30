@@ -1,7 +1,10 @@
 use glam::{IVec3, Vec2};
 use hex::{Hex, HexLayout, Offset};
 
-use crate::grid::{offset_coordinate::OffsetCoordinate, Cell, GridSize, WorldSizeType};
+use crate::grid::{
+    hex_grid::hex::HexOrientation, offset_coordinate::OffsetCoordinate, Cell, GridSize,
+    WorldSizeType,
+};
 
 use super::{direction::Direction, Grid, Size, WrapFlags};
 
@@ -17,8 +20,6 @@ pub struct HexGrid {
 
 impl HexGrid {
     pub fn new(size: Size, layout: HexLayout, offset: Offset, wrap_flags: WrapFlags) -> Self {
-        use crate::grid::hex_grid::hex::HexOrientation;
-
         match layout.orientation {
             HexOrientation::Pointy => {
                 if wrap_flags.contains(WrapFlags::WrapY) && size.height % 2 == 1 {

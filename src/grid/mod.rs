@@ -10,7 +10,7 @@ pub mod offset_coordinate;
 pub mod square_grid;
 
 /// Grid trait defines the interface for a grid structure.
-/// Grid uses [`OffsetCoordinate`] representing each unique position in the grid.
+/// Grid uses [`Cell`] representing each unique position in the grid.
 /// Grids implement this trait with their specific coordinate types,
 /// such as [`Hex`](hex_grid::hex::Hex) for hexagonal grids or [`Square`](square_grid::square::Square) for square grids.
 /// their specific coordinate types is used to calculate the neighbors of a given coordinate,
@@ -29,10 +29,13 @@ pub trait Grid {
     /// For a square grid, this would be `[Direction; 4]`.
     type DirectionArrayType;
 
+    /// Returns the array of directions for the edges of the grid.
     fn edge_direction_array(&self) -> Self::DirectionArrayType;
 
+    /// Returns the array of directions for the corners of the grid.
     fn corner_direction_array(&self) -> Self::DirectionArrayType;
 
+    /// Returns the size of the grid as a [`Size`] struct, which contains the width and height of the grid.
     fn size(&self) -> Size;
 
     /// Returns the width of the grid.
@@ -45,6 +48,7 @@ pub trait Grid {
         self.size().height
     }
 
+    /// Returns the flags that indicate how a grid/map wraps at its borders.
     fn wrap_flags(&self) -> WrapFlags;
 
     /// Returns if the grid is wrapped in the X direction.
@@ -63,8 +67,13 @@ pub trait Grid {
     /// When we show the map, we need to set camera to the center of the map.
     fn center(&self) -> Vec2;
 
-    /// Converts a `Cell` to an `OffsetCoordinate`. If the cell is out of bounds, it will panic.
+    /// Converts a `Cell` to an `OffsetCoordinate`.
     ///
+    /// `OffsetCoordinate` is a normalized coordinate that fits within the grid's bounds.
+    ///
+    /// # Panics
+    ///
+    /// If the cell is out of bounds, it will panic in debug mode.
     fn cell_to_offset(&self, cell: Cell) -> OffsetCoordinate {
         let width = self.size().width;
         let height = self.size().height;
@@ -86,8 +95,12 @@ pub trait Grid {
     /// Converts an `OffsetCoordinate`  to a `Cell`. If the coordinate is out of bounds, an error is returned.
     ///
     /// # Arguments
-    /// * `offset_coordinate` - The coordinate to convert
     ///
+    /// - `offset_coordinate` - The offset coordinate to convert.
+    ///
+    /// # Returns
+    ///
+    /// - `Result<Cell, String>`: The cell if the coordinate is valid, otherwise an error message.
     fn offset_to_cell(&self, offset_coordinate: OffsetCoordinate) -> Result<Cell, String> {
         self.normalize_offset(offset_coordinate)
             .map(|normalized_coordinate| {
@@ -100,7 +113,7 @@ pub trait Grid {
     ///
     /// # Returns
     ///
-    /// Returns a normalized `OffsetCoordinate` that fits within the grid's bounds.
+    /// Returns a normalized `OffsetCoordinate` that fits within the grid's bounds or an error message.
     /// The normalized `OffsetCoordinate` should meet the conditions:
     /// - x ∈ [0, width)
     /// - y ∈ [0, height)
@@ -136,7 +149,6 @@ pub trait Grid {
     }
 
     /// Checks if the given `OffsetCoordinate` is within the grid's bounds.
-    ///
     fn within_grid_bounds(&self, offset_coordinate: OffsetCoordinate) -> bool {
         offset_coordinate.0.x >= 0
             && offset_coordinate.0.x < self.width() as i32
@@ -237,7 +249,7 @@ bitflags! {
     }
 }
 
-/// Representing a cell or  tile in a grid, which is identified by a unique index.
+/// Representing a cell or tile in a grid, which is identified by a unique index.
 ///
 /// It is a wrapper around a `usize` index, which uniquely identifies the cell within the grid.
 /// The index is used to access the cell in a flat representation of the grid, such as a 1D array.

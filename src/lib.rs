@@ -1,3 +1,11 @@
+//! # Civilization Map Generator
+//!
+//! This crate provides a map generation algorithm for civilization-style games.
+//! The implementation is primarily based on Civilization V, with some
+//! references from Civilization VI.
+
+////////////////////////////////////////////////////////////////////////////////
+
 pub mod component;
 mod fractal;
 pub mod grid;

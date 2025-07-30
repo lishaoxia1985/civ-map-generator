@@ -7,11 +7,11 @@ use rand::{
     Rng,
 };
 
-use crate::grid::offset_coordinate::OffsetCoordinate;
 use crate::{
     component::map_component::{
         base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
     },
+    grid::offset_coordinate::OffsetCoordinate,
     map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
     ruleset::Ruleset,
     tile::Tile,
@@ -116,7 +116,7 @@ impl TileMap {
             let mut inland_tile_list = Vec::new();
 
             self.all_tiles().for_each(|tile| {
-                if tile.can_be_city_state_starting_tile(self, None, false, false) {
+                if tile.can_be_city_state_starting_tile(self, None) {
                     if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
                     } else {
@@ -168,8 +168,7 @@ impl TileMap {
     // function AssignStartingPlots:PlaceCityStateInRegion(city_state_number, region_number)
     /// Get the starting tile for a city state in a region.
     fn get_city_state_start_tile_in_region(&mut self, region_index: usize) -> Option<Tile> {
-        let candidate_tile_list =
-            self.get_candidate_city_state_tiles_in_region(region_index, false, false);
+        let candidate_tile_list = self.get_candidate_city_state_tiles_in_region(region_index);
 
         self.get_city_state_start_tile(&candidate_tile_list, false, false)
     }
@@ -187,12 +186,7 @@ impl TileMap {
     ///
     /// Returns an array of two vectors of tiles.
     /// The first vector is the coastal tiles, and the second vector is the inland tiles.
-    pub fn get_candidate_city_state_tiles_in_region(
-        &self,
-        region_index: usize,
-        force_it: bool,
-        ignore_collisions: bool,
-    ) -> [Vec<Tile>; 2] {
+    pub fn get_candidate_city_state_tiles_in_region(&self, region_index: usize) -> [Vec<Tile>; 2] {
         let grid = self.world_grid.grid;
 
         let region = &self.region_list[region_index];
@@ -240,12 +234,7 @@ impl TileMap {
         for tile in rectangle.all_tiles(grid) {
             if should_process_all_tiles {
                 // When the rectangle is small enough, we will process all the tiles.
-                if tile.can_be_city_state_starting_tile(
-                    self,
-                    Some(region),
-                    force_it,
-                    ignore_collisions,
-                ) {
+                if tile.can_be_city_state_starting_tile(self, Some(region)) {
                     if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
                     } else {
@@ -257,12 +246,7 @@ impl TileMap {
                 // That means tiles that are not in the center rectangle.
                 // That is because we often use the center rectangle to place civilizations.
                 if !center_rectangle.contains(tile, grid)
-                    && tile.can_be_city_state_starting_tile(
-                        self,
-                        Some(region),
-                        force_it,
-                        ignore_collisions,
-                    )
+                    && tile.can_be_city_state_starting_tile(self, Some(region))
                 {
                     if tile.is_coastal_land(self) {
                         coastal_tile_list.push(tile);
@@ -340,7 +324,7 @@ impl TileMap {
     ///    This parameter is defined by the const `MAX_REGIONS_PER_LUXURY_TYPE` variable in [`TileMap::assign_luxury_to_region`].
     ///    View [`TileMap::assign_luxury_to_region`] for more information.
     /// 4. Assign city states to low fertility regions.
-    fn assign_city_states_to_regions_or_uninhabited_landmasses(
+    pub fn assign_city_states_to_regions_or_uninhabited_landmasses(
         &mut self,
         map_parameters: &MapParameters,
     ) {

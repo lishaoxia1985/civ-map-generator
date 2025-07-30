@@ -1,6 +1,5 @@
 use super::Generator;
-use crate::map_parameters::MapParameters;
-use crate::{generate_common_methods, tile_map::TileMap};
+use crate::{generate_common_methods, map_parameters::MapParameters, tile_map::TileMap};
 
 pub struct Fractal(TileMap);
 
