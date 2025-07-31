@@ -1,10 +1,10 @@
+//! This module defines the [`Tile`] struct and its associated methods.
+//! It provides functionality to interact with tiles on a map, including retrieving
+//! their properties, neighbors, and coordinates in different formats.
+
 use glam::Vec2;
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        resource::Resource, terrain_type::TerrainType,
-    },
     grid::{
         direction::Direction,
         hex_grid::{
@@ -16,6 +16,10 @@ use crate::{
     },
     map_parameters::MapParameters,
     ruleset::Ruleset,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
+        resource::Resource, terrain_type::TerrainType,
+    },
     tile_map::{impls::generate_regions::Region, Layer, TileMap},
 };
 

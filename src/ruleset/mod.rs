@@ -1,3 +1,9 @@
+//! This module defines the [`Ruleset`] struct and its associated methods.
+//! It provides functionality to load and manage game rules from a ruleset *JSON* file, including beliefs,
+//! buildings, nations, policies, quests, specialists, technologies, terrain types,
+//! base terrains, features, natural wonders, tile improvements, tile resources,
+//! units, unit promotions, and unit types.
+
 use std::collections::HashMap;
 
 use serde::de::DeserializeOwned;

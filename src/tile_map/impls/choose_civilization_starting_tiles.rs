@@ -3,15 +3,13 @@ use std::collections::HashMap;
 use enum_map::{Enum, EnumMap};
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
-    },
     grid::{
         hex_grid::hex::{HexOrientation, Offset},
         offset_coordinate::OffsetCoordinate,
     },
     map_parameters::{MapParameters, Rectangle},
     tile::Tile,
+    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
     tile_map::{Layer, TileMap},
 };
 

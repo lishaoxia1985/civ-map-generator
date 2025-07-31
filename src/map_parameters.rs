@@ -1,3 +1,5 @@
+//! This module defines the [MapParameters] struct that contains all the parameters for generating maps.
+
 use core::debug_assert;
 use std::time::{SystemTime, UNIX_EPOCH};
 

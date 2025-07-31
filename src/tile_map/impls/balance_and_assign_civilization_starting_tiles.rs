@@ -3,12 +3,12 @@ use std::{cmp::max, collections::BTreeSet};
 use rand::seq::{index::sample, SliceRandom};
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    },
     tile_map::{Layer, TileMap},
 };
 
@@ -34,7 +34,7 @@ impl TileMap {
         map_parameters: &MapParameters,
         ruleset: &Ruleset,
     ) {
-        /***** That will implement in `map_parameters` file later *****/
+        /***** TODO: That will implement in `map_parameters` file later *****/
         // Take the civilization randomly as the starting civilization in the map.
         let mut civilization_list = ruleset
             .nations
@@ -59,7 +59,7 @@ impl TileMap {
         .into_iter()
         .map(|i| civilization_list[i])
         .collect();
-        /***** That will implement in `map_parameters` file later *****/
+        /***** TODO: That will implement in `map_parameters` file later *****/
 
         for region_index in 0..self.region_list.len() {
             let start_location_condition =
@@ -71,12 +71,12 @@ impl TileMap {
         // If disbable_start_bias is true, then the starting tile will be chosen randomly.
         if disable_start_bias {
             start_civilization_list.shuffle(&mut self.random_number_generator);
-            self.civilization_and_starting_tile = start_civilization_list
+            self.starting_tile_and_civilization = start_civilization_list
                 .iter()
                 .zip(self.region_list.iter())
-                .map(|(civilization, region)| (civilization.to_string(), region.starting_tile))
+                .map(|(civilization, region)| (region.starting_tile, civilization.to_string()))
                 .collect();
-            // todo!("Set the civilization to the team.");
+            // TODO: Set the civilization to the team in the future.
             return;
         }
 
@@ -171,9 +171,9 @@ impl TileMap {
                             .chain(regions_with_lake_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
-                        self.civilization_and_starting_tile.insert(
-                            civilization.to_string(),
+                        self.starting_tile_and_civilization.insert(
                             self.region_list[region_index].starting_tile,
+                            civilization.to_string(),
                         );
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
@@ -232,9 +232,9 @@ impl TileMap {
                             .chain(regions_with_near_river_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
-                        self.civilization_and_starting_tile.insert(
-                            civilization.to_string(),
+                        self.starting_tile_and_civilization.insert(
                             self.region_list[region_index].starting_tile,
+                            civilization.to_string(),
                         );
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
@@ -292,9 +292,9 @@ impl TileMap {
                                 .chain(fallbacks_with_near_river_start.iter()),
                         )
                         .for_each(|(civilization, &region_index)| {
-                            self.civilization_and_starting_tile.insert(
-                                civilization.to_string(),
+                            self.starting_tile_and_civilization.insert(
                                 self.region_list[region_index].starting_tile,
+                                civilization.to_string(),
                             );
                             // Remove region index that has been assigned from region index list
                             region_index_list.remove(&region_index);
@@ -341,9 +341,9 @@ impl TileMap {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
-                        self.civilization_and_starting_tile.insert(
-                            civilization.to_string(),
+                        self.starting_tile_and_civilization.insert(
                             self.region_list[region_index].starting_tile,
+                            civilization.to_string(),
                         );
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
@@ -376,9 +376,9 @@ impl TileMap {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
-                        self.civilization_and_starting_tile.insert(
-                            civilization.to_string(),
+                        self.starting_tile_and_civilization.insert(
                             self.region_list[region_index].starting_tile,
+                            civilization.to_string(),
                         );
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
@@ -396,9 +396,9 @@ impl TileMap {
                         &region_index_list,
                     );
                     if let Some(region_index) = region_index {
-                        self.civilization_and_starting_tile.insert(
-                            civilization.to_string(),
+                        self.starting_tile_and_civilization.insert(
                             self.region_list[region_index].starting_tile,
+                            civilization.to_string(),
                         );
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
@@ -432,9 +432,9 @@ impl TileMap {
                     let region_index = *candidate_regions
                         .choose(&mut self.random_number_generator)
                         .unwrap();
-                    self.civilization_and_starting_tile.insert(
-                        civilization.to_string(),
+                    self.starting_tile_and_civilization.insert(
                         self.region_list[region_index].starting_tile,
+                        civilization.to_string(),
                     );
                     // Remove region index that has been assigned from region index list
                     region_index_list.remove(&region_index);
@@ -443,26 +443,29 @@ impl TileMap {
         }
 
         // Assign remaining civs to start plots.
-        // Remove the civilization from the list if it has already been assigned a starting tile
-        // and retain the civilization in the list if it has not been assigned a starting tile.
-        start_civilization_list.retain(|civilization| {
-            !self
-                .civilization_and_starting_tile
-                .contains_key(*civilization)
-        });
+        // Get remaining civilizations that have not been assigned a starting tile.
+        let mut remaining_civilization_list: Vec<_> = start_civilization_list
+            .into_iter()
+            .filter(|civilization| {
+                !self
+                    .starting_tile_and_civilization
+                    .values()
+                    .any(|v| v == *civilization)
+            })
+            .collect();
 
-        start_civilization_list.shuffle(&mut self.random_number_generator);
+        remaining_civilization_list.shuffle(&mut self.random_number_generator);
 
-        start_civilization_list
+        remaining_civilization_list
             .iter()
             .zip(region_index_list.iter())
             .for_each(|(civilization, &region_index)| {
-                self.civilization_and_starting_tile.insert(
-                    civilization.to_string(),
+                self.starting_tile_and_civilization.insert(
                     self.region_list[region_index].starting_tile,
+                    civilization.to_string(),
                 );
             });
-        // todo!("Set the civilization to the team.");
+        // TODO: Set the civilization to the team in the future.
     }
 
     // function AssignStartingPlots:FindFallbackForUnmatchedRegionPriority
@@ -960,7 +963,7 @@ impl TileMap {
         let early_hammer_score =
             (2 * inner_forest) + outer_forest + inner_one_hammer + outer_one_hammer;
 
-        // If drastic shortage, attempt to add a hill to first ring.
+        // If drastic shortage of hammer, attempt to add a hill to first ring.
         if (outer_hammer_score < 8 && inner_hammer_score < 2) || inner_hammer_score == 0 {
             neighbor_tile_list.shuffle(&mut self.random_number_generator);
             for &tile in neighbor_tile_list.iter() {
@@ -973,6 +976,7 @@ impl TileMap {
             }
         }
 
+        // Add mandatory Iron, Horse, Oil to every start if Strategic Balance option is enabled.
         if map_parameters.resource_setting == ResourceSetting::StrategicBalance {
             self.add_strategic_balance_resources(map_parameters, region_index);
         }
@@ -1012,33 +1016,35 @@ impl TileMap {
             num_food_bonus_needed // or default value if needed
         };
 
-        // Check for Legendary Start resource option.
+        // If Legendary Start resource option is enabled, add more food bonuses needed.
         if map_parameters.resource_setting == ResourceSetting::LegendaryStart {
             num_food_bonus_needed += 2;
         }
 
+        // If there are no tiles yielding 2 food in the first and second ring,
+        // and `num_food_bonus_needed` is less than 3,
+        // we will convert a plains tile to grassland to ensure at least one 2-food tile.
+        // If there are no tiles to convert, we will set `num_food_bonus_needed` to 3 to compensate.
         if native_two_food_tiles == 0 && num_food_bonus_needed < 3 {
-            let mut tile_list = Vec::new();
-
-            for tile in neighbor_tile_list
+            // Find candidate tiles for conversion.
+            let tile_list: Vec<Tile> = neighbor_tile_list
                 .iter()
                 .chain(tile_at_distance_two_list.iter())
-            {
-                if tile.resource(self).is_none()
-                    && tile.terrain_type(self) == TerrainType::Flatland
-                    && tile.base_terrain(self) == BaseTerrain::Plain
-                    && tile.feature(self).is_none()
-                {
-                    tile_list.push(*tile);
-                }
-            }
+                .filter(|tile| {
+                    tile.resource(self).is_none()
+                        && tile.terrain_type(self) == TerrainType::Flatland
+                        && tile.base_terrain(self) == BaseTerrain::Plain
+                        && tile.feature(self).is_none()
+                })
+                .copied()
+                .collect();
 
-            if tile_list.is_empty() {
-                num_food_bonus_needed = 3;
-            } else {
-                let conversion_tile = *tile_list.choose(&mut self.random_number_generator).unwrap();
+            if let Some(&conversion_tile) = tile_list.choose(&mut self.random_number_generator) {
                 self.base_terrain_query[conversion_tile.index()] = BaseTerrain::Grassland;
+                // Forbid to place strategic resources on this tile
                 self.place_impact_and_ripples(conversion_tile, Layer::Strategic, 0);
+            } else {
+                num_food_bonus_needed = 3;
             }
         }
 
@@ -1180,12 +1186,18 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AddStrategicBalanceResources
-    /// Adds the required Strategic Resources to civilization starting tile's `1-RADIUS` radius if `resource_setting` is [`ResourceSetting::StrategicBalance`].
+    /// Adds 1 unit of Strategic Resources *Iron*, *Horses* and *Oil* to civilization starting tile's `1-RADIUS` radius if `resource_setting` is [`ResourceSetting::StrategicBalance`].
+    ///
+    /// `RADIUS` is default `3` by defined in original CIV5.
     fn add_strategic_balance_resources(
         &mut self,
         map_parameters: &MapParameters,
         region_index: usize,
     ) {
+        // `RADIUS` is relative to the tiles within the starting tile's `1-RADIUS` area.
+        // This is default `3` by defined in original CIV5.
+        const RADIUS: u32 = 3;
+
         let grid = self.world_grid.grid;
 
         let starting_tile = self.region_list[region_index].starting_tile;
@@ -1197,8 +1209,6 @@ impl TileMap {
         let mut iron_fallback = Vec::new();
         let mut horse_fallback = Vec::new();
         let mut oil_fallback = Vec::new();
-
-        const RADIUS: u32 = 3;
 
         for ripple_radius in 1..=RADIUS {
             starting_tile

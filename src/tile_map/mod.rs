@@ -1,25 +1,31 @@
-use std::cmp::max;
-use std::cmp::min;
-use std::collections::BTreeMap;
-
-use std::collections::HashMap;
-
-pub(crate) mod impls;
-
-use enum_map::{enum_map, Enum, EnumMap};
-use impls::generate_area_ids::Area;
-use impls::generate_area_ids::Landmass;
-use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
-use rand::{rngs::StdRng, SeedableRng};
+//! This module defines the [`TileMap`] struct and its associated methods.
+//! It provides functionality to manage and manipulate a map of tiles, including
+//! querying tile properties, placing resources, and managing layers of data.
+//! The map generating methods are defined in the [`impls`] module.
+//! The common methods for map generation are defined in this file.
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        resource::Resource, terrain_type::TerrainType,
-    },
     grid::direction::Direction,
     map_parameters::{MapParameters, WorldGrid},
     tile::Tile,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
+        resource::Resource, terrain_type::TerrainType,
+    },
+};
+use enum_map::{enum_map, Enum, EnumMap};
+use rand::{rngs::StdRng, SeedableRng};
+use std::{
+    cmp::{max, min},
+    collections::{BTreeMap, HashMap},
+};
+
+pub(crate) mod impls;
+
+use impls::{
+    assign_starting_tile::LuxuryResourceRole,
+    generate_area_ids::{Area, Landmass},
+    generate_regions::Region,
 };
 
 pub struct TileMap {
@@ -33,16 +39,19 @@ pub struct TileMap {
     pub natural_wonder_query: Vec<Option<NaturalWonder>>,
     pub resource_query: Vec<Option<(Resource, u32)>>,
     pub area_id_query: Vec<usize>,
-    pub landmass_id_query: Vec<usize>,
-    pub civilization_and_starting_tile: BTreeMap<String, Tile>,
-    pub city_state_and_starting_tile: BTreeMap<String, Tile>,
     /// List of areas in the map. The index is equal to the area id.
     pub area_list: Vec<Area>,
+    pub landmass_id_query: Vec<usize>,
     /// List of landmasses in the map. The index is equal to the landmass id.
     pub landmass_list: Vec<Landmass>,
+    /// Starting tile and placed civilization.
+    pub starting_tile_and_civilization: BTreeMap<Tile, String>,
+    /// Starting tile and placed city state.
+    pub starting_tile_and_city_state: BTreeMap<Tile, String>,
+    /// List of regions in the map. The index is equal to the region id.
     region_list: Vec<Region>,
     /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,
-    /// associated with a variant of the `Layer`, is added to the map.
+    /// associated with a variant of the [`Layer`], is added to the map.
     ///
     /// It is typically used to ensure that no other elements appear within a defined radius of the placed element,
     /// or that other elements are not too close to the placed element.
@@ -127,8 +136,8 @@ impl TileMap {
             region_list,
             layer_data,
             player_collision_data: vec![false; size],
-            civilization_and_starting_tile: BTreeMap::new(),
-            city_state_and_starting_tile: BTreeMap::new(),
+            starting_tile_and_civilization: BTreeMap::new(),
+            starting_tile_and_city_state: BTreeMap::new(),
             uninhabited_areas_coastal_land_tiles: Vec::new(),
             uninhabited_areas_inland_tiles: Vec::new(),
             city_state_region_assignments,
@@ -153,9 +162,15 @@ impl TileMap {
     ///
     /// - `tile`: the tile to place the impact and ripples on.
     /// - `layer`: the layer to place the impact and ripples on. It should be a variant of the [`Layer`] enum.
-    /// - `radius`: the radius of the ripple. The ripple will be placed on all tiles within this radius.
+    /// - `radius`: the radius of the ripple. The ripple will be placed on all tiles within this radius. When it is `0`, only the impact will be placed on the `tile`.
     ///     - When layer is [`Layer::Strategic`], [`Layer::Luxury`] or [`Layer::Bonus`], [`Layer::Fish`], this argument is used to determine the ripple radius.
     ///     - When layer is other variants, this argument is ignored (recommended to use [`u32::MAX`] as placeholder).
+    ///
+    /// # Notice
+    ///
+    /// You can place impact and ripples to forbid other elements to appear around a specific tile, even if you are not adding an element to this tile.
+    /// See [`TileMap::normalize_civilization_starting_tile`] for an example.
+    ///
     pub fn place_impact_and_ripples(&mut self, tile: Tile, layer: Layer, radius: u32) {
         match layer {
             Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish => {
@@ -165,12 +180,10 @@ impl TileMap {
                 self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 4);
 
                 self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 3);
-                // Strategic layer, should be at start point only.
+                // Strategic layer, should be at start point only. That means if we are placing a city state at current tile, forbid to place strategic resources on it.
                 self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
                 self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 3);
                 self.place_impact_and_ripples_for_resource(tile, Layer::Fish, 3);
-                // Natural Wonders layer, set a minimum distance of 5 tiles (4 ripples) away.
-                self.place_impact_and_ripples_for_resource(tile, Layer::NaturalWonder, 4);
                 self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 3);
             }
             Layer::NaturalWonder => {
@@ -205,7 +218,7 @@ impl TileMap {
 
         // Start points need to impact the resource layers.
         self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 3);
-        // Strategic layer, should be at start point only.
+        // Strategic layer, should be at start point only. That means if we are placing a civilization at current tile, forbid to place strategic resources on it.
         self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
         self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 3);
         self.place_impact_and_ripples_for_resource(tile, Layer::Fish, 3);

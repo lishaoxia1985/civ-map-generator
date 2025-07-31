@@ -3,9 +3,9 @@ use std::cmp::max;
 use rand::Rng;
 
 use crate::{
-    component::map_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
     fractal::{CvFractal, FractalFlags},
     map_parameters::Temperature,
+    tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
     tile_map::{MapParameters, TileMap},
 };
 

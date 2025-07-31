@@ -6,13 +6,13 @@ use rand::prelude::SliceRandom;
 use rand::Rng;
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        terrain_type::TerrainType,
-    },
     grid::{Grid, WorldSizeType},
     ruleset::{unique::Unique, Ruleset},
     tile::Tile,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
+        terrain_type::TerrainType,
+    },
     tile_map::{Layer, TileMap},
 };
 

@@ -1,3 +1,7 @@
+//! This module provides various grid implementations and utilities.
+//! It includes support for different grid types such as hexagonal and square grids,
+//! calculating distances, neighbors, and converting between grid coordinates and offset coordinates.
+
 use direction::Direction;
 use glam::Vec2;
 use offset_coordinate::OffsetCoordinate;
@@ -10,12 +14,12 @@ pub mod offset_coordinate;
 pub mod square_grid;
 
 /// Grid trait defines the interface for a grid structure.
+///
 /// Grid uses [`Cell`] representing each unique position in the grid.
 /// Grids implement this trait with their specific coordinate types,
 /// such as [`Hex`](hex_grid::hex::Hex) for hexagonal grids or [`Square`](square_grid::square::Square) for square grids.
 /// their specific coordinate types is used to calculate the neighbors of a given coordinate,
 /// distance between coordinates, and other grid-related operations.
-///
 pub trait Grid {
     /// The type of coordinate used in the grid.
     /// This type is used to calculate neighbors, distances, and other grid-related operations.
@@ -222,11 +226,14 @@ pub trait Grid {
 /// Represents the size of a grid or map with a specified width and height.
 #[derive(Clone, Copy)]
 pub struct Size {
+    /// The width of the grid or map.
     pub width: u32,
+    /// The height of the grid or map.
     pub height: u32,
 }
 
 impl Size {
+    /// Create a new `Size` with the specified width and height.
     pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }

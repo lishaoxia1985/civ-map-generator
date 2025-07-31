@@ -4,12 +4,10 @@ use enum_map::{enum_map, EnumMap};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
-    },
     grid::{hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, WrapFlags},
     map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
+    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
     tile_map::{MapParameters, TileMap},
 };
 

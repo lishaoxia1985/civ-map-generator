@@ -6,13 +6,13 @@ use std::{
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
     grid::WorldSizeType,
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    },
     tile_map::{Layer, TileMap},
 };
 

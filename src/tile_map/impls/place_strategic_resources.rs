@@ -1,11 +1,11 @@
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
     map_parameters::{MapParameters, ResourceSetting},
     tile::Tile,
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    },
     tile_map::{Layer, TileMap},
 };
 

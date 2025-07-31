@@ -1,10 +1,10 @@
 use rand::Rng;
 
 use crate::{
-    component::map_component::terrain_type::TerrainType,
     fractal::{CvFractal, FractalFlags},
     grid::WorldSizeType,
     map_parameters::{SeaLevel, WorldAge},
+    tile_component::terrain_type::TerrainType,
     tile_map::{MapParameters, TileMap},
 };
 

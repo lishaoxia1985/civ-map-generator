@@ -1,13 +1,13 @@
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    component::map_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
     grid::{
         direction::Direction,
         hex_grid::{hex::HexOrientation, HexGrid},
         Grid,
     },
     tile::Tile,
+    tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
     tile_map::TileMap,
 };
 

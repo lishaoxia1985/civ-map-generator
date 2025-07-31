@@ -8,13 +8,11 @@ use rand::{
 };
 
 use crate::{
-    component::map_component::{
-        base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
-    },
     grid::offset_coordinate::OffsetCoordinate,
     map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
     ruleset::Ruleset,
     tile::Tile,
+    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
     tile_map::{Layer, TileMap},
 };
 
@@ -155,8 +153,8 @@ impl TileMap {
     /// 2. Clear the ice feature from the coast tiles adjacent to the city state.
     /// 3. Place resource impacts and ripple on the city state tile and its around tiles.
     fn place_city_state(&mut self, city_state: &str, tile: Tile) {
-        self.city_state_and_starting_tile
-            .insert(city_state.to_string(), tile);
+        self.starting_tile_and_city_state
+            .insert(tile, city_state.to_string());
         // Removes Feature Ice from coasts adjacent to the city state's new location
         self.clear_ice_near_city_site(tile, 1);
 
@@ -540,7 +538,8 @@ impl TileMap {
 
     /// Normalizes each city state locations.
     pub fn normalize_city_state_locations(&mut self) {
-        for starting_tile in self.city_state_and_starting_tile.clone().into_values() {
+        let starting_tiles: Vec<_> = self.starting_tile_and_city_state.keys().cloned().collect();
+        for starting_tile in starting_tiles {
             self.normalize_city_state(starting_tile);
         }
     }
@@ -551,6 +550,10 @@ impl TileMap {
     /// This function will do as follows:
     /// 1. Add hills to city state location's 1 radius if it has not enough hammer.
     /// 2. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
+    ///
+    /// # Notice
+    ///
+    /// We don't place impact and ripples when we add bonus resources in this function.
     fn normalize_city_state(&mut self, tile: Tile) {
         let grid = self.world_grid.grid;
 
