@@ -75,14 +75,14 @@ pub struct TileMap {
     uninhabited_areas_coastal_land_tiles: Vec<Tile>,
     // These tile will be as candidates for starting tile for city states
     uninhabited_areas_inland_tiles: Vec<Tile>,
-    /// Store region index which city_state is assigned to,
+    /// Store region index which city state is assigned to,
     /// if it is `None`, city state will be assigned to uninhabited area.
     /// It's length is equal to the number of city states.
     city_state_region_assignments: Vec<Option<usize>>,
     /// City state starting tile and its region index.
     /// Its order is same as `city_state_region_assignments`,
-    /// that means `city_state_starting_tile[i]` is in the region `city_state_region_assignments[i]`.
-    /// If `city_state_region_assignments[i]` is `None`, then `city_state_starting_tile[i]` is in the uninhabited area.
+    /// that means `starting_tile_and_city_state[i]` is in the region `city_state_region_assignments[i]`.
+    /// If `city_state_region_assignments[i]` is `None`, then `starting_tile_and_city_state[i]` is in the uninhabited area.
     city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
     /// Determine every type of luxury resources are the role: assigned to region, city_state, special case, random, or unused.
     luxury_resource_role: LuxuryResourceRole,
@@ -192,11 +192,34 @@ impl TileMap {
                     Layer::NaturalWonder,
                     self.world_grid.size().height / 5,
                 );
-                self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
-                self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
-                self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 1);
-                self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 1);
-                self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
+                let natural_wonder = tile.natural_wonder(self);
+                if let Some(natural_wonder) = natural_wonder {
+                    match natural_wonder.name() {
+                        "Mount Fuji" => {
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 0);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 0);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 0);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
+                        }
+                        "Krakatoa" | "Great Barrier Reef" => {
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
+                            // The tile beneath natural wonders on water should block fish resources.
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Fish, 1);
+                        }
+                        _ => {
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 1);
+                            self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
+                        }
+                    }
+                }
             }
             Layer::Marble => {
                 self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
