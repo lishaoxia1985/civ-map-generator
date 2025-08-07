@@ -766,7 +766,7 @@ impl TileMap {
     /// - `city_site`: The tile representing the city site. This is the center of the radius.
     /// - `radius`: The radius within which to generate candidate tiles.
     ///   For example, if `radius` is 2, the function will consider tiles within a distance of 2 tiles from the city site, excluding the city site itself.
-    ///   In original CIV5 code, the max radius which city site can extend is 5. So `radius` should be in [1, 5].
+    ///   In original CIV5 code, the max radius which city site can extend is 5. So `radius` should be in `[1, 5]`.
     ///
     /// # Returns
     ///

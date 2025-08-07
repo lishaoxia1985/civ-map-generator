@@ -24,7 +24,8 @@ impl TileMap {
     /// This is because some city state placements are made as compensation for situations where
     /// multiple regions are assigned the same luxury resource type.
     pub fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
+        let city_states_assignment =
+            self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
         let mut city_state_list = ruleset
             .nations
@@ -47,11 +48,15 @@ impl TileMap {
         .map(|i| city_state_list[i])
         .collect();
 
-        let mut num_uninhabited_candidate_tiles = self.uninhabited_areas_coastal_land_tiles.len()
-            + self.uninhabited_areas_inland_tiles.len();
+        let mut num_uninhabited_candidate_tiles = city_states_assignment
+            .uninhabited_areas_coastal_land_tiles
+            .len()
+            + city_states_assignment.uninhabited_areas_inland_tiles.len();
 
-        let uninhabited_areas_coastal_tile_list = self.uninhabited_areas_coastal_land_tiles.clone();
-        let uninhabited_areas_inland_tile_list = self.uninhabited_areas_inland_tiles.clone();
+        let uninhabited_areas_coastal_tile_list =
+            city_states_assignment.uninhabited_areas_coastal_land_tiles;
+        let uninhabited_areas_inland_tile_list =
+            city_states_assignment.uninhabited_areas_inland_tiles;
 
         let candidate_tile_list = [
             uninhabited_areas_coastal_tile_list,
@@ -60,8 +65,7 @@ impl TileMap {
 
         let mut num_city_states_discarded = 0;
 
-        for index in 0..self.city_state_region_assignments.len() {
-            let region_index = self.city_state_region_assignments[index];
+        for region_index in city_states_assignment.region_index_assignment {
             if region_index.is_none() && num_uninhabited_candidate_tiles > 0 {
                 num_uninhabited_candidate_tiles -= 1;
                 let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
@@ -322,15 +326,22 @@ impl TileMap {
     ///    This parameter is defined by the const `MAX_REGIONS_PER_LUXURY_TYPE` variable in [`TileMap::assign_luxury_to_region`].
     ///    View [`TileMap::assign_luxury_to_region`] for more information.
     /// 4. Assign city states to low fertility regions.
-    pub fn assign_city_states_to_regions_or_uninhabited_landmasses(
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`CityStatesAssignment`], view its documentation for more information.
+    fn assign_city_states_to_regions_or_uninhabited_landmasses(
         &mut self,
         map_parameters: &MapParameters,
-    ) {
+    ) -> CityStatesAssignment {
         let mut num_city_states_unassigned = map_parameters.city_state_num;
 
         // Store region index which city state is assigned to
-        let mut city_state_region_assignments =
+        let mut region_index_assignment =
             Vec::with_capacity(map_parameters.city_state_num as usize);
+
+        let mut uninhabited_areas_coastal_land_tiles = Vec::new();
+        let mut uninhabited_areas_inland_tiles = Vec::new();
 
         /***** Assign the "Per Region" City States to their regions ******/
         let ratio = map_parameters.city_state_num as f64 / map_parameters.civilization_num as f64;
@@ -348,11 +359,11 @@ impl TileMap {
         // if num_city_states_per_region is 0, the code below will not be executed.
         for _ in 0..num_city_states_per_region {
             for region_index in 0..self.region_list.len() {
-                city_state_region_assignments.push(Some(region_index));
+                region_index_assignment.push(Some(region_index));
             }
         }
 
-        num_city_states_unassigned -= city_state_region_assignments.len() as u32;
+        num_city_states_unassigned -= region_index_assignment.len() as u32;
         /***** Assign the "Per Region" City States to their regions ******/
 
         /***** Assign city states to uninhabited landmasses ******/
@@ -384,9 +395,9 @@ impl TileMap {
                         } else {
                             num_uninhabited_landmass_tiles += 1;
                             if tile.is_coastal_land(self) {
-                                self.uninhabited_areas_coastal_land_tiles.push(tile)
+                                uninhabited_areas_coastal_land_tiles.push(tile)
                             } else {
-                                self.uninhabited_areas_inland_tiles.push(tile)
+                                uninhabited_areas_inland_tiles.push(tile)
                             }
                         }
                     } else {
@@ -427,9 +438,9 @@ impl TileMap {
                                     ) && tile.base_terrain(self) != BaseTerrain::Snow
                                 ); */
                                 if tile.is_coastal_land(self) {
-                                    self.uninhabited_areas_coastal_land_tiles.push(tile);
+                                    uninhabited_areas_coastal_land_tiles.push(tile);
                                 } else {
-                                    self.uninhabited_areas_inland_tiles.push(tile);
+                                    uninhabited_areas_inland_tiles.push(tile);
                                 }
                             });
                         }
@@ -451,7 +462,7 @@ impl TileMap {
             _num_city_states_uninhabited =
                 min(num_city_states_unassigned, min(max_by_ratio, max_by_method));
 
-            city_state_region_assignments.extend(vec![None; _num_city_states_uninhabited as usize]);
+            region_index_assignment.extend(vec![None; _num_city_states_uninhabited as usize]);
             num_city_states_unassigned -= _num_city_states_uninhabited;
         }
         /***** Assign city states to uninhabited landmasses ******/
@@ -487,7 +498,7 @@ impl TileMap {
                 for luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
                         if &&region.exclusive_luxury == luxury_resource {
-                            city_state_region_assignments.push(Some(region_index));
+                            region_index_assignment.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }
                     }
@@ -504,7 +515,7 @@ impl TileMap {
 
                 for _ in 0..num_assignments_per_region {
                     for region_index in 0..self.region_list.len() {
-                        city_state_region_assignments.push(Some(region_index));
+                        region_index_assignment.push(Some(region_index));
                     }
                 }
             }
@@ -527,13 +538,17 @@ impl TileMap {
                     .iter()
                     .take(num_city_states_unassigned as usize)
                 {
-                    city_state_region_assignments.push(Some(*region_index));
+                    region_index_assignment.push(Some(*region_index));
                 }
             }
         }
         /***** Assign city states to regions with low fertility ******/
 
-        self.city_state_region_assignments = city_state_region_assignments;
+        CityStatesAssignment {
+            region_index_assignment,
+            uninhabited_areas_coastal_land_tiles,
+            uninhabited_areas_inland_tiles,
+        }
     }
 
     /// Normalizes each city state locations.
@@ -936,4 +951,28 @@ impl TileMap {
             }
         }
     }
+}
+
+/// Represents the assignment of city states to regions and uninhabited landmasses.
+///
+/// This structure tracks where city states should be placed, either within
+/// regions or on uninhabited landmasses (both coastal and inland).
+#[derive(Debug)]
+struct CityStatesAssignment {
+    /// Region indices assigned to each city state will be placed in.
+    ///
+    /// - Length equals the number of city states to place
+    /// - `Some(index)` indicates assignment to a region
+    /// - `None` indicates assignment to an uninhabited landmass
+    region_index_assignment: Vec<Option<usize>>,
+    /// Available coastal tiles not belonging to any region.
+    ///
+    /// These tiles are candidates for placing city states in uninhabited
+    /// coastal areas. The tiles should be valid for city state placement.
+    uninhabited_areas_coastal_land_tiles: Vec<Tile>,
+    /// Available inland tiles not belonging to any region.
+    ///
+    /// These tiles are candidates for placing city states in uninhabited
+    /// inland areas. The tiles should be valid for city state placement.
+    uninhabited_areas_inland_tiles: Vec<Tile>,
 }

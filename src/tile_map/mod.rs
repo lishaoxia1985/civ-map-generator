@@ -1,8 +1,9 @@
 //! This module defines the [`TileMap`] struct and its associated methods.
 //! It provides functionality to manage and manipulate a map of tiles, including
 //! querying tile properties, placing resources, and managing layers of data.
-//! The map generating methods are defined in the [`impls`] module.
-//! The common methods for map generation are defined in this file.
+//! Its method contains 2 parts:
+//! 1. The common methods for map generation, included in the `mod.rs` file.
+//! 2. The map generating methods are defined in the [`impls`] module ( which is the submodule of this module).
 
 use crate::{
     grid::direction::Direction,
@@ -71,18 +72,8 @@ pub struct TileMap {
     /// Stores `impact` data only of start points, to avoid player collisions
     /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
     pub player_collision_data: Vec<bool>,
-    // These tile will be as candidates for starting tile for city states
-    uninhabited_areas_coastal_land_tiles: Vec<Tile>,
-    // These tile will be as candidates for starting tile for city states
-    uninhabited_areas_inland_tiles: Vec<Tile>,
-    /// Store region index which city state is assigned to,
-    /// if it is `None`, city state will be assigned to uninhabited area.
-    /// It's length is equal to the number of city states.
-    city_state_region_assignments: Vec<Option<usize>>,
     /// City state starting tile and its region index.
-    /// Its order is same as `city_state_region_assignments`,
-    /// that means `starting_tile_and_city_state[i]` is in the region `city_state_region_assignments[i]`.
-    /// If `city_state_region_assignments[i]` is `None`, then `starting_tile_and_city_state[i]` is in the uninhabited area.
+    /// If the second element is `None`, then the tile is in the uninhabited area.
     city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
     /// Determine every type of luxury resources are the role: assigned to region, city_state, special case, random, or unused.
     luxury_resource_role: LuxuryResourceRole,
@@ -118,8 +109,6 @@ impl TileMap {
 
         let region_list = Vec::with_capacity(map_parameters.civilization_num as usize);
 
-        let city_state_region_assignments = vec![None; map_parameters.city_state_num as usize];
-
         Self {
             random_number_generator,
             world_grid,
@@ -138,9 +127,6 @@ impl TileMap {
             player_collision_data: vec![false; size],
             starting_tile_and_civilization: BTreeMap::new(),
             starting_tile_and_city_state: BTreeMap::new(),
-            uninhabited_areas_coastal_land_tiles: Vec::new(),
-            uninhabited_areas_inland_tiles: Vec::new(),
-            city_state_region_assignments,
             city_state_starting_tile_and_region_index: Vec::new(),
             luxury_resource_role: LuxuryResourceRole::default(),
             luxury_assign_to_region_count: HashMap::new(),

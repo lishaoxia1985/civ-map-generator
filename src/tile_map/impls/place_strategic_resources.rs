@@ -593,9 +593,14 @@ impl TileMap {
             [3, 4, 13, 9, 10, 11],
         ];
 
-        for _ in 0..map_parameters.city_state_num {
-            let city_state_starting_tile = self.city_state_starting_tile_and_region_index[1].0;
+        // Get starting tiles of city states.
+        let starting_tiles = self
+            .starting_tile_and_city_state
+            .keys()
+            .copied()
+            .collect::<Vec<_>>();
 
+        for starting_tile in starting_tiles.into_iter() {
             let chosen_resource_index = self.random_number_generator.gen_range(0..4);
             if chosen_resource_index < 3 {
                 let strategic_resource = CANDIDATE_STRATEGIC_RESOURCES[chosen_resource_index];
@@ -604,7 +609,7 @@ impl TileMap {
                     PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
 
                 let mut luxury_plot_lists =
-                    self.generate_luxury_tile_lists_at_city_site(city_state_starting_tile, 3);
+                    self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
 
                 let mut num_left_to_place = resource_amount;
 
