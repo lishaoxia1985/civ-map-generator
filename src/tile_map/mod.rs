@@ -79,8 +79,9 @@ pub struct TileMap {
     luxury_resource_role: LuxuryResourceRole,
     /// The count of luxury resource types assigned to regions.
     ///
-    /// In CIV5, the maximum number of luxury resource types that can be assigned to regions is 8.
-    /// This value has a maximum length of 8. See [`TileMap::assign_luxury_to_region`] for more information.
+    /// Its key is the luxury resource type name, all keys are in the [`LuxuryResourceRole::luxury_assigned_to_regions`].
+    ///
+    /// It has a maximum length of 8. See [`TileMap::assign_luxury_to_region`] for more information.
     ///
     /// If a luxury resource type has been assigned to a region, it will be added to this count.
     ///

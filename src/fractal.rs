@@ -1,3 +1,5 @@
+//! This module provides functionality for generating and manipulating fractal maps which can be used in games like Civilization.
+
 use std::{
     cmp::{max, min},
     path::Path,
@@ -59,10 +61,9 @@ impl VoronoiSeed {
 }
 
 pub struct CvFractal {
-    /// The map/world grid is used in the game, differnt from [`CvFractal::fractal_grid`].
-    /// Its size is up to the map/world size.
-    grid: HexGrid,
-    /// The fractal grid, different from [`CvFractal::grid`], it is used to store the fractal's values.
+    /// Store the map/world size, equal to the grid size which is used in the game. The grid is different from [`CvFractal::fractal_grid`].
+    map_size: Size,
+    /// The fractal grid, different from the grid used in the game, it is used to store the fractal's values.
     /// Width resolution of the fractal grid is `1 << width_exp`, is a power of 2.
     /// Height resolution of the fractal grid is `1 << height_exp`, is a power of 2.
     fractal_grid: HexGrid,
@@ -74,8 +75,8 @@ pub struct CvFractal {
     /// It is an exponent related to the height of the source fractal,
     /// `height_exp = 7` means the height of the source fractal is `2^7`
     height_exp: u32,
-    /// Stores the 2D fractal array, the array size is `[fractal_width + 1][fractal_height + 1]`
-    /// NOTICE: The last column and last row are not part of the fractal, they are used to calculate the fractal values.
+    /// Stores the 2D fractal array, the array size is `[fractal_width + 1][fractal_height + 1]`.\
+    /// **NOTICE**: The last column and last row are not part of the fractal, they are only used to calculate the fractal values.
     fractal_array: Vec<Vec<u32>>,
 }
 
@@ -87,8 +88,8 @@ bitflags! {
         ///
         /// # Notice
         ///
-        /// When grid is wrapped in the X direction, it is not used in the X direction.
-        /// When grid is wrapped in the Y direction, it is not used in the Y direction.
+        /// When grid is wrapped in the X direction, ignored in the X direction.
+        /// When grid is wrapped in the Y direction, ignored in the Y direction.
         const Polar = 0b00000001;
         /// When flag is set, the value of the height is in `0..=99`, otherwise the value is in `0..=255`
         const Percent = 0b00000010;
@@ -118,6 +119,8 @@ impl CvFractal {
     ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
     ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
     fn new(grid: HexGrid, flags: FractalFlags, width_exp: u32, height_exp: u32) -> Self {
+        let map_size = grid.size;
+
         let fractal_width = 1 << width_exp;
         let fractal_height = 1 << height_exp;
 
@@ -130,7 +133,7 @@ impl CvFractal {
             vec![vec![0; (fractal_height + 1) as usize]; (fractal_width + 1) as usize];
 
         Self {
-            grid,
+            map_size,
             fractal_grid,
             fractal_array,
             flags,
@@ -509,18 +512,18 @@ impl CvFractal {
 
     pub fn get_height(&self, x: i32, y: i32) -> u32 {
         debug_assert!(
-            0 <= x && x < self.grid.width() as i32,
+            0 <= x && x < self.map_size.width as i32,
             "'x' is out of the range of the grid width"
         );
         debug_assert!(
-            0 <= y && y < self.grid.height() as i32,
+            0 <= y && y < self.map_size.height as i32,
             "'y' is out of the range of the grid height"
         );
 
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
-        let width_ratio = fractal_width as f64 / self.grid.width() as f64;
-        let height_ratio = fractal_height as f64 / self.grid.height() as f64;
+        let width_ratio = fractal_width as f64 / self.map_size.width as f64;
+        let height_ratio = fractal_height as f64 / self.map_size.height as f64;
 
         // Use bilinear interpolation to calculate the pixel value
         let src_x = (x as f64 + 0.5) * width_ratio - 0.5;
@@ -772,8 +775,8 @@ impl CvFractal {
 
     /// Get the noise map of the 2d Array which is used in the civ map. The map is saved as a gray image.
     pub fn write_to_file(&self, path: &Path) {
-        let width = self.grid.width();
-        let height = self.grid.height();
+        let width = self.map_size.width;
+        let height = self.map_size.height;
         let pixels: Vec<u8> = (0..height)
             .flat_map(|y| (0..width).map(move |x| self.get_height(x as i32, y as i32) as u8))
             .collect();
@@ -791,8 +794,8 @@ impl CvFractal {
     ///
     /// The function is same as [`CvFractal::write_to_file`], but it uses the image crate to resize the image.
     pub fn write_to_file_by_image(&self, path: &Path) {
-        let map_width = self.grid.size.width;
-        let map_height = self.grid.size.height;
+        let map_width = self.map_size.width;
+        let map_height = self.map_size.height;
         // get gray_image from `self.fractal_array`
         let fractal_width = self.fractal_grid.size.width;
         let fractal_height = self.fractal_grid.size.height;
