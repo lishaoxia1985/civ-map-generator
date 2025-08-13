@@ -80,8 +80,9 @@ pub struct TileMap {
     /// The count of luxury resource types assigned to regions.
     ///
     /// Its key is the luxury resource type name, all keys are in the [`LuxuryResourceRole::luxury_assigned_to_regions`].
+    /// Its value is the count of assigned luxury resource types, all values should <= [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`].
     ///
-    /// It has a maximum length of 8. See [`TileMap::assign_luxury_to_region`] for more information.
+    /// It has a maximum length of [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`]. See [`TileMap::assign_luxury_to_region`] for more information.
     ///
     /// If a luxury resource type has been assigned to a region, it will be added to this count.
     ///

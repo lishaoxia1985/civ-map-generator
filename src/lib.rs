@@ -6,9 +6,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-mod fractal;
+pub mod fractal;
 pub mod grid;
-mod map_generator;
+pub mod map_generator;
 pub mod map_parameters;
 pub mod ruleset;
 pub mod tile;

@@ -46,6 +46,80 @@ pub struct MapParameters {
     pub resource_setting: ResourceSetting,
 }
 
+impl MapParameters {
+    /// The maximum number of civilizations that can be placed on the map.
+    pub const MAX_CIVILIZATION_NUM: u32 = 22;
+
+    /// The maximum number of city states that can be placed on the map.
+    pub const MAX_CITY_STATE_NUM: u32 = 41;
+
+    /// The maximum number of regions that can share a regional-exclusive luxury resource.
+    ///
+    /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::impls::assign_starting_tile::LuxuryResourceRole::luxury_assigned_to_regions).
+    ///
+    /// For example, when set to 3, each regionally-exclusive luxury resource type will be
+    /// distributed to no more than 3 distinct regions in the game world.
+    pub const MAX_REGIONS_PER_EXCLUSIVE_LUXURY: u32 = 3;
+
+    /// The maximum number of distinct luxury resource types that can be exclusively assigned to regions.
+    ///
+    /// This is used to determine the maximum number of luxury resources that can be assigned to regions
+    /// based on the number of civilizations and the maximum number of regions per exclusive luxury.
+    ///
+    /// Because in original CIV5, the same regional luxury resource can only be found in at most 3 regions on the map.
+    /// And there are a maximum of 22 civilizations (each representing a region) in the game, 3 * 8  = 24, it's enough for all civilizations.
+    pub const NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS: usize =
+        Self::MAX_CIVILIZATION_NUM.div_ceil(Self::MAX_REGIONS_PER_EXCLUSIVE_LUXURY) as usize;
+
+    /// The maximum number of distinct luxury resource types that can be exclusively assigned to city states.
+    ///
+    /// This is used to limit the number of luxury resource types that can be exclusively assigned to city states.
+    ///
+    /// In original CIV5, this value is 3.
+    pub const NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES: usize = 3;
+}
+
+impl Default for MapParameters {
+    fn default() -> Self {
+        let world_size = WorldSizeType::Standard;
+        let grid = HexGrid {
+            size: HexGrid::default_size(world_size),
+            layout: HexLayout {
+                orientation: HexOrientation::Flat,
+                size: Vec2::new(8., 8.),
+                origin: Vec2::new(0., 0.),
+            },
+            wrap_flags: WrapFlags::WrapX,
+            offset: Offset::Odd,
+        };
+
+        let world_grid = WorldGrid::new(grid, world_size);
+
+        Self {
+            map_type: MapType::Fractal,
+            world_grid,
+            seed: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .try_into()
+                .unwrap(),
+            large_lake_num: 2,
+            lake_max_area_size: 9,
+            coast_expand_chance: vec![0.25, 0.25],
+            sea_level: SeaLevel::Normal,
+            world_age: WorldAge::Normal,
+            temperature: Temperature::Normal,
+            rainfall: Rainfall::Normal,
+            civilization_num: 4,
+            city_state_num: 8,
+            region_divide_method: RegionDivideMethod::Continent,
+            civ_require_coastal_land_start: false,
+            resource_setting: ResourceSetting::Standard,
+        }
+    }
+}
+
 /// Represents a game world composed of grids.
 ///
 /// Combines physical grid representation with logical world size classification
@@ -231,47 +305,6 @@ pub enum ResourceSetting {
     LegendaryStart,
     /// 5
     StrategicBalance,
-}
-
-impl Default for MapParameters {
-    fn default() -> Self {
-        let world_size = WorldSizeType::Standard;
-        let grid = HexGrid {
-            size: HexGrid::default_size(world_size),
-            layout: HexLayout {
-                orientation: HexOrientation::Flat,
-                size: Vec2::new(8., 8.),
-                origin: Vec2::new(0., 0.),
-            },
-            wrap_flags: WrapFlags::WrapX,
-            offset: Offset::Odd,
-        };
-
-        let world_grid = WorldGrid::new(grid, world_size);
-
-        Self {
-            map_type: MapType::Fractal,
-            world_grid,
-            seed: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .try_into()
-                .unwrap(),
-            large_lake_num: 2,
-            lake_max_area_size: 9,
-            coast_expand_chance: vec![0.25, 0.25],
-            sea_level: SeaLevel::Normal,
-            world_age: WorldAge::Normal,
-            temperature: Temperature::Normal,
-            rainfall: Rainfall::Normal,
-            civilization_num: 4,
-            city_state_num: 8,
-            region_divide_method: RegionDivideMethod::Continent,
-            civ_require_coastal_land_start: false,
-            resource_setting: ResourceSetting::Standard,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy)]

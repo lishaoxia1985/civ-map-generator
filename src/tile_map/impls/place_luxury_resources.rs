@@ -1240,13 +1240,15 @@ impl TileMap {
 }
 
 // TODO: This function will implement in file 'map_parameters.rs' in the future.
-fn get_region_luxury_target_numbers(world_size_type: WorldSizeType) -> [u32; 22] {
+fn get_region_luxury_target_numbers(
+    world_size_type: WorldSizeType,
+) -> [u32; MapParameters::MAX_CIVILIZATION_NUM as usize] {
     // This data was separated out to allow easy replacement in map scripts.
     // This table, indexed by civ-count, provides the target amount of luxuries to place in each region.
     // These vector's length is 22, which is the maximum number of civilizations in the game.
     // Max is one per region for all player counts at this size.
     match world_size_type {
-        WorldSizeType::Duel => [1; 22],
+        WorldSizeType::Duel => [1; MapParameters::MAX_CIVILIZATION_NUM as usize],
         WorldSizeType::Tiny => [
             0, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         ],

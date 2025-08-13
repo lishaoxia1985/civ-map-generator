@@ -119,87 +119,87 @@ impl TileMap {
         let mut stack = vec![(region, divisions_num)];
 
         while let Some((mut current_region, current_divisions_num)) = stack.pop() {
-            if current_divisions_num == 1 {
-                current_region.measure_terrain(self);
-                current_region.determine_region_type();
-                self.region_list.push(current_region);
-            } else {
-                match current_divisions_num {
-                    2 => {
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, 50.0);
-                        stack.push((first_section, 1));
-                        stack.push((second_section, 1));
-                    }
-                    3 => {
+            match current_divisions_num {
+                1 => {
+                    // If we have only one division, it does not need to be divided further. So we just add it to the region list.
+                    current_region.measure_terrain(self);
+                    current_region.determine_region_type();
+                    self.region_list.push(current_region);
+                }
+                2 => {
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, 50.0);
+                    stack.push((first_section, 1));
+                    stack.push((second_section, 1));
+                }
+                3 => {
+                    let (first_section, second_section, third_section) =
+                        current_region.chop_into_three_regions(grid);
+                    stack.push((first_section, 1));
+                    stack.push((second_section, 1));
+                    stack.push((third_section, 1));
+                }
+                5 => {
+                    let chop_percent = 3. / 5. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 3));
+                    stack.push((second_section, 2));
+                }
+                7 => {
+                    let chop_percent = 3. / 7. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 3));
+                    stack.push((second_section, 4));
+                }
+                11 => {
+                    let chop_percent = 3. / 11. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 3));
+                    stack.push((second_section, 8));
+                }
+                13 => {
+                    let chop_percent = 5. / 13. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 5));
+                    stack.push((second_section, 8));
+                }
+                17 => {
+                    let chop_percent = 9. / 17. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 9));
+                    stack.push((second_section, 8));
+                }
+                19 => {
+                    let chop_percent = 7. / 19. * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, 7));
+                    stack.push((second_section, 12));
+                }
+                _ => {
+                    if current_divisions_num % 3 == 0 {
+                        let subdivisions = current_divisions_num / 3;
                         let (first_section, second_section, third_section) =
                             current_region.chop_into_three_regions(grid);
-                        stack.push((first_section, 1));
-                        stack.push((second_section, 1));
-                        stack.push((third_section, 1));
-                    }
-                    5 => {
-                        let chop_percent = 3. / 5. * 100.0;
+                        stack.push((first_section, subdivisions));
+                        stack.push((second_section, subdivisions));
+                        stack.push((third_section, subdivisions));
+                    } else if current_divisions_num % 2 == 0 {
+                        let subdivisions = current_divisions_num / 2;
                         let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 3));
-                        stack.push((second_section, 2));
-                    }
-                    7 => {
-                        let chop_percent = 3. / 7. * 100.0;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 3));
-                        stack.push((second_section, 4));
-                    }
-                    11 => {
-                        let chop_percent = 3. / 11. * 100.0;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 3));
-                        stack.push((second_section, 8));
-                    }
-                    13 => {
-                        let chop_percent = 5. / 13. * 100.0;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 5));
-                        stack.push((second_section, 8));
-                    }
-                    17 => {
-                        let chop_percent = 9. / 17. * 100.0;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 9));
-                        stack.push((second_section, 8));
-                    }
-                    19 => {
-                        let chop_percent = 7. / 19. * 100.0;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, chop_percent);
-                        stack.push((first_section, 7));
-                        stack.push((second_section, 12));
-                    }
-                    _ => {
-                        if current_divisions_num % 3 == 0 {
-                            let subdivisions = current_divisions_num / 3;
-                            let (first_section, second_section, third_section) =
-                                current_region.chop_into_three_regions(grid);
-                            stack.push((first_section, subdivisions));
-                            stack.push((second_section, subdivisions));
-                            stack.push((third_section, subdivisions));
-                        } else if current_divisions_num % 2 == 0 {
-                            let subdivisions = current_divisions_num / 2;
-                            let (first_section, second_section) =
-                                current_region.chop_into_two_regions(grid, 50.0);
-                            stack.push((first_section, subdivisions));
-                            stack.push((second_section, subdivisions));
-                        } else {
-                            eprintln!(
-                                "Erroneous number of regional divisions: {}",
-                                current_divisions_num
-                            );
-                        }
+                            current_region.chop_into_two_regions(grid, 50.0);
+                        stack.push((first_section, subdivisions));
+                        stack.push((second_section, subdivisions));
+                    } else {
+                        eprintln!(
+                            "Erroneous number of regional divisions: {}",
+                            current_divisions_num
+                        );
                     }
                 }
             }

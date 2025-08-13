@@ -473,13 +473,15 @@ impl TileMap {
 
         if num_city_states_unassigned > 0 {
             let mut num_regions_shared_luxury = 0;
+            // Collect regional exclusive luxury resources which have been placed in `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY` different regions.
             let mut shared_luxury = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
             for (luxury_resource, &luxury_assign_to_region_count) in
                 self.luxury_assign_to_region_count.iter()
             {
-                if luxury_assign_to_region_count == 3 {
-                    num_regions_shared_luxury += 3;
+                if luxury_assign_to_region_count == MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
+                {
+                    num_regions_shared_luxury += MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY;
                     shared_luxury.push(luxury_resource);
                 }
             }
@@ -497,7 +499,7 @@ impl TileMap {
             if num_city_states_shared_luxury > 0 {
                 for luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
-                        if &&region.exclusive_luxury == luxury_resource {
+                        if region.exclusive_luxury.as_str() == luxury_resource.as_str() {
                             region_index_assignment.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }
@@ -965,11 +967,13 @@ struct CityStatesAssignment {
     /// - `Some(index)` indicates assignment to a region
     /// - `None` indicates assignment to an uninhabited landmass
     region_index_assignment: Vec<Option<usize>>,
+
     /// Available coastal tiles not belonging to any region.
     ///
     /// These tiles are candidates for placing city states in uninhabited
     /// coastal areas. The tiles should be valid for city state placement.
     uninhabited_areas_coastal_land_tiles: Vec<Tile>,
+
     /// Available inland tiles not belonging to any region.
     ///
     /// These tiles are candidates for placing city states in uninhabited

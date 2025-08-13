@@ -1,3 +1,5 @@
+//! This module defines the `Generator` trait for map generation and provides common methods for map generators.
+
 use crate::{map_parameters::MapParameters, ruleset::Ruleset, tile_map::TileMap};
 
 pub mod fractal;
