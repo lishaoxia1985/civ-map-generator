@@ -1,7 +1,11 @@
 [package]
 name = "civ_map_generator"
 version = "0.1.0"
+authors = ["lishaoxia1985 <lishaoxia1985@hotmail.com>"]
 edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "A civilization map generator"
+repository = "https://github.com/lishaoxia1985/civ-map-generator"
 
 [dependencies]
 serde = {version = "1.0", features = ["derive"]}
