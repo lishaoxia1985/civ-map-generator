@@ -2,16 +2,6 @@
 
 This is a civilization map generator. This algorithm is primarily based on the implementation in *Civilization V*, with some references from *Civilization VI*.
 
-## Usage
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-civ_map_generator = {git = "https://github.com/lishaoxia1985/civ-map-generator.git", branch = "master"}
-```
-
-
 ## How to add a map type
 
 [How to add a map type](./src/map_generator/How%20to%20add%20a%20map%20type.MD)

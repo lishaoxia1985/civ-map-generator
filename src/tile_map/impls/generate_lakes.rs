@@ -60,7 +60,9 @@ impl TileMap {
     }
 
     /// Transform the neighboring tiles of the given tile into lakes if possible.
+    ///
     /// # Notice
+    ///
     /// This function is only used in CIV6.
     fn add_more_lake(&mut self, tile: Tile) -> bool {
         let grid = self.world_grid.grid;

@@ -14,6 +14,7 @@ use crate::{
         resource::Resource, terrain_type::TerrainType,
     },
 };
+use arrayvec::ArrayVec;
 use enum_map::{enum_map, Enum, EnumMap};
 use rand::{rngs::StdRng, SeedableRng};
 use std::{
@@ -50,7 +51,7 @@ pub struct TileMap {
     /// Starting tile and placed city state.
     pub starting_tile_and_city_state: BTreeMap<Tile, String>,
     /// List of regions in the map. The index is equal to the region id.
-    region_list: Vec<Region>,
+    region_list: ArrayVec<Region, { MapParameters::MAX_CIVILIZATION_NUM as usize }>,
     /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,
     /// associated with a variant of the [`Layer`], is added to the map.
     ///
@@ -109,7 +110,7 @@ impl TileMap {
             _ => vec![0; size],
         };
 
-        let region_list = Vec::with_capacity(map_parameters.civilization_num as usize);
+        let region_list = ArrayVec::new();
 
         Self {
             random_number_generator,

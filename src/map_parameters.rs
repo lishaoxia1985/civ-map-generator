@@ -18,8 +18,17 @@ use crate::{
 };
 
 pub struct MapParameters {
+    /// The type of map to generate.
+    ///
+    /// This can be either [`MapType::Fractal`] or [`MapType::Pangaea`] or other custom map types.
     pub map_type: MapType,
+    /// The grid representing the world.
+    ///
+    /// This grid is used to generate the map and contains information about the layout, size, and other properties of the map.
     pub world_grid: WorldGrid,
+    /// The seed used to generate the map.
+    ///
+    /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
     pub seed: u64,
     pub large_lake_num: u32,
     /// The max area size of a lake.
@@ -35,8 +44,12 @@ pub struct MapParameters {
     pub temperature: Temperature,
     pub rainfall: Rainfall,
     /// The number of civilizations, excluding city states.
+    ///
+    /// This value must be in the range of [2, [`MapParameters::MAX_CIVILIZATION_NUM`]].
     pub civilization_num: u32,
     /// The number of city states.
+    ///
+    /// This value must be in the range of [0, [`MapParameters::MAX_CITY_STATE_NUM`]].
     pub city_state_num: u32,
     pub region_divide_method: RegionDivideMethod,
     /// Whether the civilization starting tile must be coastal land.

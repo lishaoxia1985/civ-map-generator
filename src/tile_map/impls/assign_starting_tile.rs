@@ -1,7 +1,6 @@
 use std::cmp::min;
 
-use std::collections::HashSet;
-
+use arrayvec::ArrayVec;
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
@@ -105,12 +104,12 @@ impl TileMap {
             }
         });
 
-        let mut luxury_assigned_to_regions = HashSet::new();
+        let mut luxury_assigned_to_regions = ArrayVec::new();
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(region_index, map_parameters);
             // TODO: Should be edited in the future
             self.region_list[region_index].exclusive_luxury = resource.name().to_string();
-            luxury_assigned_to_regions.insert(resource.name().to_string());
+            luxury_assigned_to_regions.push(resource.name().to_string());
             *self
                 .luxury_assign_to_region_count
                 .entry(resource.name().to_string())
@@ -140,28 +139,33 @@ impl TileMap {
             (Resource::Resource("Cocoa".to_string()), 10),
         ];
 
-        // Assign three of the remaining resources to be exclusive to City States.
-        // Get the list of resources and their weight that are not assigned to regions.
-        let (mut resource_list, mut resource_weight_list): (Vec<_>, Vec<usize>) =
-            luxury_city_state_weights
-                .iter()
-                .filter(|(luxury_resource, _)| {
-                    !luxury_assigned_to_regions.contains(luxury_resource.name())
-                })
-                .map(|(luxury_resource, weight)| (luxury_resource.name(), weight))
-                .unzip();
+        // Assign `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES` of the remaining resources to be exclusive to City States.
+        // Get the list of candidate resources and their weight that are not assigned to regions.
+        let mut luxury_candidates_and_weights: Vec<_> = luxury_city_state_weights
+            .iter()
+            .filter(|(luxury_resource, _)| {
+                !luxury_assigned_to_regions.contains(&luxury_resource.name().to_string())
+            })
+            .map(|(luxury_resource, weight)| (luxury_resource.name().to_string(), *weight))
+            .collect();
 
-        let mut luxury_assigned_to_city_state = Vec::new();
+        let mut luxury_assigned_to_city_state = ArrayVec::new();
+
         for _ in 0..MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES {
-            // Choose a random resource from the list.
-            let dist: WeightedIndex<usize> =
-                WeightedIndex::new(resource_weight_list.clone()).unwrap();
+            if luxury_candidates_and_weights.is_empty() {
+                break;
+            }
+
+            let dist = WeightedIndex::new(
+                luxury_candidates_and_weights
+                    .iter()
+                    .map(|(_, weight)| *weight),
+            )
+            .unwrap();
             let index = dist.sample(&mut self.random_number_generator);
-            let resource = resource_list[index];
-            // Remove it from the list and assign it to the city state.
-            luxury_assigned_to_city_state.push(resource.to_string());
-            resource_weight_list.remove(index);
-            resource_list.remove(index);
+
+            let (resource, _) = luxury_candidates_and_weights.swap_remove(index);
+            luxury_assigned_to_city_state.push(resource);
         }
 
         // Assign Marble to special casing.
@@ -178,7 +182,7 @@ impl TileMap {
         let mut remaining_resource_list = luxury_city_state_weights
             .iter()
             .filter(|(luxury_resource, _)| {
-                !luxury_assigned_to_regions.contains(luxury_resource.name())
+                !luxury_assigned_to_regions.contains(&luxury_resource.name().to_string())
                     && !luxury_assigned_to_city_state.contains(&luxury_resource.name().to_string())
             })
             .map(|(luxury_resource, _)| luxury_resource.name().to_string())
@@ -397,7 +401,7 @@ impl TileMap {
                         || self
                             .luxury_resource_role
                             .luxury_assigned_to_regions
-                            .contains(luxury_resource))
+                            .contains(&luxury_resource.to_string()))
             };
 
         let mut resource_list = Vec::new();
@@ -887,12 +891,14 @@ pub struct LuxuryResourceRole {
     ///
     /// In original CIV5, the same luxury resource can only be found in at most 3 regions on the map.
     /// Because there are a maximum of 22 civilizations (each representing a region) in the game, so these luxury types are limited to 8 in original CIV5.
-    pub luxury_assigned_to_regions: HashSet<String>,
+    pub luxury_assigned_to_regions:
+        ArrayVec<String, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS }>,
 
     /// Exclusively Assigned to a city state. The length of this set is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES`].
     ///
     /// These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
-    pub luxury_assigned_to_city_state: Vec<String>,
+    pub luxury_assigned_to_city_state:
+        ArrayVec<String, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES }>,
 
     /// Special case. For example, `Marble`. For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
     pub luxury_assigned_to_special_case: Vec<String>,

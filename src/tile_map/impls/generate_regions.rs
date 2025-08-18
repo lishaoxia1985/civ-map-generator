@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 
 use enum_map::{enum_map, EnumMap};
 use serde::{Deserialize, Serialize};
@@ -111,8 +111,13 @@ impl TileMap {
     ///
     /// # Arguments
     ///
-    /// - `divisions_num`: The number of divisions to make. In origin code, this should <= 22.
+    /// - `divisions_num`: The number of divisions to make.
     /// - `region`: The region to divide.
+    ///
+    /// # Notice
+    ///
+    /// Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
+    /// That means if [`MapParameters::MAX_CIVILIZATION_NUM`] is greater than 22, we don't need to rewrite this function.
     fn divide_into_regions(&mut self, divisions_num: u32, region: Region) {
         let grid = self.world_grid.grid;
 
@@ -181,26 +186,34 @@ impl TileMap {
                     stack.push((first_section, 7));
                     stack.push((second_section, 12));
                 }
+                current_divisions_num if current_divisions_num % 3 == 0 => {
+                    let subdivisions = current_divisions_num / 3;
+                    let (first_section, second_section, third_section) =
+                        current_region.chop_into_three_regions(grid);
+                    stack.push((first_section, subdivisions));
+                    stack.push((second_section, subdivisions));
+                    stack.push((third_section, subdivisions));
+                }
+                current_divisions_num if current_divisions_num % 2 == 0 => {
+                    let subdivisions = current_divisions_num / 2;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, 50.0);
+                    stack.push((first_section, subdivisions));
+                    stack.push((second_section, subdivisions));
+                }
                 _ => {
-                    if current_divisions_num % 3 == 0 {
-                        let subdivisions = current_divisions_num / 3;
-                        let (first_section, second_section, third_section) =
-                            current_region.chop_into_three_regions(grid);
-                        stack.push((first_section, subdivisions));
-                        stack.push((second_section, subdivisions));
-                        stack.push((third_section, subdivisions));
-                    } else if current_divisions_num % 2 == 0 {
-                        let subdivisions = current_divisions_num / 2;
-                        let (first_section, second_section) =
-                            current_region.chop_into_two_regions(grid, 50.0);
-                        stack.push((first_section, subdivisions));
-                        stack.push((second_section, subdivisions));
-                    } else {
-                        eprintln!(
-                            "Erroneous number of regional divisions: {}",
-                            current_divisions_num
-                        );
-                    }
+                    // We divide the region into two parts, one part has the largest power of 2 or 3 less than or equal to half of `current_divisions_num`, and the other part has the rest.
+                    let half_divisions = current_divisions_num / 2;
+                    let max_power_of_two = largest_power_of_two_less_or_equal(half_divisions);
+                    let max_power_of_three = largest_power_of_three_less_or_equal(half_divisions);
+                    let first_subdivisions = max(max_power_of_two, max_power_of_three);
+                    let second_subdivisions = current_divisions_num - first_subdivisions;
+                    let chop_percent =
+                        first_subdivisions as f32 / current_divisions_num as f32 * 100.0;
+                    let (first_section, second_section) =
+                        current_region.chop_into_two_regions(grid, chop_percent);
+                    stack.push((first_section, first_subdivisions));
+                    stack.push((second_section, second_subdivisions));
                 }
             }
         }
@@ -552,6 +565,66 @@ impl TileMap {
             .expect("No area found!") // Ensure that there's at least one area.
             .id
     }
+}
+
+/// Finds the largest power of 2 that is less than or equal to `a`.
+///
+/// # Arguments
+/// - `a`: The upper bound value (inclusive)
+///
+/// # Returns
+/// - The largest power of 2 ≤ `a`.
+///
+/// # Panics
+///
+/// This function will panic if `a` is 0.
+///
+/// # Examples
+///
+/// ```, ignored
+/// assert_eq!(largest_power_of_two_less_or_equal(5), 4);  // 4 is 2^2
+/// assert_eq!(largest_power_of_two_less_or_equal(8), 8);  // 8 is 2^3
+/// ```
+const fn largest_power_of_two_less_or_equal(a: u32) -> u32 {
+    if a == 0 {
+        panic!("a must not be zero");
+    }
+    1 << (32 - a.leading_zeros() - 1)
+}
+
+/// Finds the largest power of 3 that is less than or equal to `a`.
+///
+/// # Arguments
+///
+/// - `a`: The upper bound value (inclusive)
+///
+/// # Returns
+///
+/// - The largest power of 3 ≤ `a`, 1 if 1 ≤ a < 3.
+///
+/// # Panics
+///
+/// This function will panic if `a` is 0.
+///
+/// # Examples
+///
+/// ```, ignored
+/// assert_eq!(largest_power_of_three_less_or_equal(5), 3);  // 3 is 3^1
+/// assert_eq!(largest_power_of_three_less_or_equal(9), 9);  // 9 is 3^2
+/// ```
+const fn largest_power_of_three_less_or_equal(a: u32) -> u32 {
+    if a < 3 {
+        return if a >= 1 {
+            1
+        } else {
+            panic!("a must not be zero");
+        };
+    }
+    let mut power = 3;
+    while power * 3 <= a {
+        power *= 3;
+    }
+    power
 }
 
 /// The terrain statistic of the region.
