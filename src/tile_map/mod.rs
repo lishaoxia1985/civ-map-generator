@@ -6,7 +6,10 @@
 //! 2. The map generating methods are defined in the [`impls`] module ( which is the submodule of this module).
 
 use crate::{
-    grid::direction::Direction,
+    grid::{
+        direction::Direction,
+        hex_grid::{hex::HexOrientation, HexGrid},
+    },
     map_parameters::{MapParameters, WorldGrid},
     tile::Tile,
     tile_component::{
@@ -33,7 +36,7 @@ use impls::{
 pub struct TileMap {
     pub random_number_generator: StdRng,
     pub world_grid: WorldGrid,
-    pub river_list: Vec<Vec<(Tile, Direction)>>,
+    pub river_list: Vec<River>,
     // queries
     pub terrain_type_query: Vec<TerrainType>,
     pub base_terrain_query: Vec<BaseTerrain>,
@@ -404,4 +407,91 @@ pub enum Layer {
     NaturalWonder,
     Marble,
     Civilization,
+}
+
+/// Represents a river in the tile map.
+pub type River = Vec<RiverEdge>;
+
+/// Represents a river edge in the tile map.
+/// Multiple consecutive `RiverEdge` can be used to represent a river.
+///
+/// Usually, we use [`River`] to represent a river.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RiverEdge {
+    /// The position of the river edge in the tile map.
+    pub tile: Tile,
+    /// The flow direction of the river edge.
+    pub flow_direction: Direction,
+}
+
+impl RiverEdge {
+    /// Creates a new `RiverEdge` with the given tile and flow direction.
+    pub fn new(tile: Tile, flow_direction: Direction) -> Self {
+        Self {
+            tile,
+            flow_direction,
+        }
+    }
+
+    /// Get the start and end corner directions of the river edge.
+    ///
+    /// According to the flow direction, we can determine which corners of the tile the river edge starts and ends at.
+    ///
+    /// # Returns
+    ///
+    /// Returns an array containing the start and end corner directions of the current tile.
+    /// According to the start and end corners, we can draw the river edge on the current tile.
+    pub fn start_and_end_corner_directions(&self, grid: HexGrid) -> [Direction; 2] {
+        use {Direction::*, HexOrientation::*};
+
+        // Match on both orientation and flow direction simultaneously
+        match (grid.layout.orientation, self.flow_direction) {
+            // Pointy-top orientation cases
+            (Pointy, North) => [SouthEast, NorthEast], // North flow connects SE and NE corners
+            (Pointy, NorthEast) => [South, SouthEast], // NE flow connects S and SE corners
+            (Pointy, SouthEast) => [SouthWest, South], // SE flow connects SW and S corners
+            (Pointy, South) => [NorthEast, SouthEast], // South flow connects NE and SE corners
+            (Pointy, SouthWest) => [SouthEast, South], // SW flow connects SE and S corners
+            (Pointy, NorthWest) => [South, SouthWest], // NW flow connects S and SW corners
+
+            // Flat-top orientation cases
+            (Flat, NorthEast) => [SouthEast, East], // NE flow connects SE and E corners
+            (Flat, East) => [SouthWest, SouthEast], // E flow connects SW and SE corners
+            (Flat, SouthEast) => [NorthEast, East], // SE flow connects NE and E corners
+            (Flat, SouthWest) => [East, SouthEast], // SW flow connects E and SE corners
+            (Flat, West) => [SouthEast, SouthWest], // W flow connects SE and SW corners
+            (Flat, NorthWest) => [East, NorthEast], // NW flow connects E and NE corners
+
+            // Invalid combinations - directions that don't exist in certain orientations
+            (Pointy, East | West) | (Flat, North | South) => {
+                panic!("Invalid flow direction for this hex orientation")
+            }
+        }
+    }
+
+    /// Gets the edge direction corresponding to the given flow direction in the current tile.
+    ///
+    /// According to the flow direction, we can determine which edge of the tile the river edge belongs to.
+    ///
+    /// # Returns
+    ///
+    /// Returns the edge direction corresponding to the given flow direction in the current tile.
+    pub fn edge_direction(&self, grid: HexGrid) -> Direction {
+        use {Direction::*, HexOrientation::*};
+
+        match (grid.layout.orientation, self.flow_direction) {
+            // Pointy orientation cases
+            (Pointy, North | South) => East,
+            (Pointy, NorthEast | SouthWest) => SouthEast,
+            (Pointy, NorthWest | SouthEast) => SouthWest,
+
+            // Flat orientation cases
+            (Flat, NorthWest | SouthEast) => NorthEast,
+            (Flat, NorthEast | SouthWest) => SouthEast,
+            (Flat, East | West) => South,
+
+            // Invalid combinations
+            _ => panic!("Invalid flow direction for hex orientation"),
+        }
+    }
 }

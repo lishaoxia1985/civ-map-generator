@@ -255,11 +255,10 @@ impl Tile {
             }
         };
 
-        tile_map.river_list.iter().flatten().any(
-            |&(tile, flow_direction)| {
-                tile == check_tile // 1. Check whether there is a river in the current tile.
-                    && check_edge_direction == edge_direction_for_flow_direction(flow_direction, grid) // 2. Check whether the river edge in the direction of the current tile.
-            })
+        tile_map.river_list.iter().flatten().any(|river_edge| {
+            river_edge.tile == check_tile // 1. Check whether there is a river in the current tile.
+                    && check_edge_direction == river_edge.edge_direction(grid) // 2. Check whether the river edge in the direction of the current tile.
+        })
     }
 
     /// Checks if the tile is water.
