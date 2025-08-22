@@ -24,7 +24,7 @@ impl TileMap {
         match map_parameters.region_divide_method {
             RegionDivideMethod::Pangaea => {
                 // -- Identify the biggest landmass.
-                let biggest_landmass_id = self.get_biggest_area_id();
+                let biggest_landmass_id = self.get_biggest_land_area_id();
 
                 let landmass_region = Region::landmass_region(self, biggest_landmass_id);
 
@@ -556,8 +556,8 @@ impl TileMap {
         )
     }
 
-    /// Get the biggest AreaID.
-    fn get_biggest_area_id(&self) -> usize {
+    /// Get the biggest land area ID.
+    fn get_biggest_land_area_id(&self) -> usize {
         self.area_list
             .iter()
             .filter(|area| !area.is_water)

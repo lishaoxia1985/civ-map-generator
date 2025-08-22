@@ -1,6 +1,7 @@
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 
 use crate::{
+    grid::WorldSizeType,
     map_parameters::Rainfall,
     ruleset::Ruleset,
     tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
@@ -9,9 +10,6 @@ use crate::{
 
 impl TileMap {
     /// Add features to the tile map.
-    ///
-    /// # Notice
-    /// We have not implemented the feature `Atoll` generation yet.
     pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
         let rainfall = match map_parameters.rainfall {
@@ -220,5 +218,191 @@ impl TileMap {
                 /* **********the end of add forest********** */
             }
         }
+
+        /* **********start to add atolls********** */
+        self.add_atolls();
+        /* **********the end of add atolls********** */
+    }
+
+    fn add_atolls(&mut self) {
+        let grid = self.world_grid.grid;
+
+        let biggest_water_area_id = self.get_biggest_water_area_id();
+
+        let num_tiles = self.area_list[biggest_water_area_id].size;
+
+        // If the biggest water area is too small, we can't place any atolls.
+        if num_tiles as u32 <= grid.size.area() / 4 {
+            return;
+        }
+
+        let atoll_target = match self.world_grid.world_size_type {
+            WorldSizeType::Duel => 2,
+            WorldSizeType::Tiny => 4,
+            WorldSizeType::Small => 5,
+            WorldSizeType::Standard => 7,
+            WorldSizeType::Large => 9,
+            WorldSizeType::Huge => 12,
+        };
+
+        let atoll_number = atoll_target + self.random_number_generator.gen_range(0..atoll_target);
+
+        let mut alpha_list = Vec::new();
+        let mut beta_list = Vec::new();
+        let mut gamma_list = Vec::new();
+        let mut delta_list = Vec::new();
+        let mut epsilon_list = Vec::new();
+
+        for tile in self.all_tiles() {
+            if tile.base_terrain(self) == BaseTerrain::Coast
+                && tile.feature(self) != Some(Feature::Ice)
+            {
+                // Collect all neighboring tiles that satisfy these conditions:
+                // - Terrain: Hill or Flatland
+                // - Base terrain: Neither Tundra nor Snow
+                // - Feature: Not Ice
+                let neighbor_tile_list: Vec<_> = tile
+                    .neighbor_tiles(grid)
+                    .filter(|neighbor| {
+                        matches!(
+                            neighbor.terrain_type(self),
+                            TerrainType::Hill | TerrainType::Flatland
+                        ) && neighbor.base_terrain(self) != BaseTerrain::Tundra
+                            && neighbor.base_terrain(self) != BaseTerrain::Snow
+                            && neighbor.feature(self) != Some(Feature::Ice)
+                    })
+                    .collect();
+
+                // If there's exactly one valid neighbor, we can consider it as a candidate for an atoll.
+                if neighbor_tile_list.len() == 1 {
+                    let neighbor_tile = neighbor_tile_list[0];
+                    let area_id = neighbor_tile.area_id(self);
+                    let adjacent_land_area_size = self.area_list[area_id].size;
+                    match adjacent_land_area_size {
+                        76.. => continue,
+                        41..=75 => epsilon_list.push(tile),
+                        17..=40 => delta_list.push(tile),
+                        8..=16 => gamma_list.push(tile),
+                        3..=7 => beta_list.push(tile),
+                        1..=2 => alpha_list.push(tile),
+                        _ => unreachable!(),
+                    }
+                }
+            }
+        }
+
+        alpha_list.shuffle(&mut self.random_number_generator);
+        beta_list.shuffle(&mut self.random_number_generator);
+        gamma_list.shuffle(&mut self.random_number_generator);
+        delta_list.shuffle(&mut self.random_number_generator);
+        epsilon_list.shuffle(&mut self.random_number_generator);
+
+        // Determine maximum number able to be placed, per candidate category.
+        let mut max_alpha = alpha_list.len().div_ceil(4);
+        let mut max_beta = beta_list.len().div_ceil(5);
+        let mut max_gamma = gamma_list.len().div_ceil(4);
+        let mut max_delta = delta_list.len().div_ceil(3);
+        let mut max_epsilon = epsilon_list.len().div_ceil(4);
+
+        let mut alpha_list_iter = alpha_list.into_iter();
+        let mut beta_list_iter = beta_list.into_iter();
+        let mut gamma_list_iter = gamma_list.into_iter();
+        let mut delta_list_iter = delta_list.into_iter();
+        let mut epsilon_list_iter = epsilon_list.into_iter();
+
+        for _ in 0..atoll_number {
+            let diceroll = self.random_number_generator.gen_range(1..=100);
+            let tile;
+
+            match diceroll {
+                1..=40 if max_alpha > 0 => {
+                    tile = alpha_list_iter.next();
+                    max_alpha -= 1;
+                }
+                41..=65 => {
+                    if max_beta > 0 {
+                        tile = beta_list_iter.next();
+                        max_beta -= 1;
+                    } else if max_alpha > 0 {
+                        tile = alpha_list_iter.next();
+                        max_alpha -= 1;
+                    } else {
+                        // Unable to place this Atoll
+                        continue;
+                    }
+                }
+                66..=80 => {
+                    if max_gamma > 0 {
+                        tile = gamma_list_iter.next();
+                        max_gamma -= 1;
+                    } else if max_beta > 0 {
+                        tile = beta_list_iter.next();
+                        max_beta -= 1;
+                    } else if max_alpha > 0 {
+                        tile = alpha_list_iter.next();
+                        max_alpha -= 1;
+                    } else {
+                        // Unable to place this Atoll
+                        continue;
+                    }
+                }
+                81..=90 => {
+                    if max_delta > 0 {
+                        tile = delta_list_iter.next();
+                        max_delta -= 1;
+                    } else if max_gamma > 0 {
+                        tile = gamma_list_iter.next();
+                        max_gamma -= 1;
+                    } else if max_beta > 0 {
+                        tile = beta_list_iter.next();
+                        max_beta -= 1;
+                        // println!("- Beta site chosen");
+                    } else if max_alpha > 0 {
+                        tile = alpha_list_iter.next();
+                        max_alpha -= 1;
+                    } else {
+                        // Unable to place this Atoll
+                        continue;
+                    }
+                }
+                _ => {
+                    // This case should happen in 2 conditions:
+                    // 1. diceroll in [91..=100];
+                    // 2. diceroll in [1..=40] but max_alpha == 0
+                    if max_epsilon > 0 {
+                        tile = epsilon_list_iter.next();
+                        max_epsilon -= 1;
+                    } else if max_delta > 0 {
+                        tile = delta_list_iter.next();
+                        max_delta -= 1;
+                    } else if max_gamma > 0 {
+                        tile = gamma_list_iter.next();
+                        max_gamma -= 1;
+                    } else if max_beta > 0 {
+                        tile = beta_list_iter.next();
+                        max_beta -= 1;
+                    } else if max_alpha > 0 {
+                        tile = alpha_list_iter.next();
+                        max_alpha -= 1;
+                    } else {
+                        // Unable to place this Atoll
+                        continue;
+                    }
+                }
+            }
+            // Place the Atoll on the tile
+            if let Some(tile) = tile {
+                self.feature_query[tile.index()] = Some(Feature::Atoll);
+            }
+        }
+    }
+
+    fn get_biggest_water_area_id(&self) -> usize {
+        self.area_list
+            .iter()
+            .filter(|area| area.is_water)
+            .max_by_key(|area| area.size)
+            .expect("No area found!") // Ensure that there's at least one area.
+            .id
     }
 }

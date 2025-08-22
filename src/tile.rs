@@ -370,35 +370,3 @@ impl Tile {
             && (!tile_map.player_collision_data[self.index()])
     }
 }
-
-/// Returns the edge direction that corresponds to a given flow direction in the grid.
-///
-/// # Arguments
-///
-/// - `flow_direction`: The direction of the river flow.
-/// - `grid`: The `HexGrid` that contains the layout and orientation information.
-///
-/// # Returns
-///
-/// The corresponding edge direction refers to the direction of the river edge located on the current tile.
-/// For example, when hex is `HexOrientation::Pointy`, if the river is flowing North or South, the edge direction is East.
-///
-/// # Panics
-///
-/// This function will panic if an invalid flow direction is provided.
-fn edge_direction_for_flow_direction(flow_direction: Direction, grid: HexGrid) -> Direction {
-    match grid.layout.orientation {
-        HexOrientation::Pointy => match flow_direction {
-            Direction::North | Direction::South => Direction::East,
-            Direction::NorthEast | Direction::SouthWest => Direction::SouthEast,
-            Direction::NorthWest | Direction::SouthEast => Direction::SouthWest,
-            _ => panic!("Invalid flow direction"),
-        },
-        HexOrientation::Flat => match flow_direction {
-            Direction::NorthWest | Direction::SouthEast => Direction::NorthEast,
-            Direction::NorthEast | Direction::SouthWest => Direction::SouthEast,
-            Direction::East | Direction::West => Direction::South,
-            _ => panic!("Invalid flow direction"),
-        },
-    }
-}
