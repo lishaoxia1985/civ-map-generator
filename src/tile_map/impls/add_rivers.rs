@@ -464,7 +464,7 @@ impl TileMap {
                         // 1. If `this_flow_direction` is None, we can chooose 6 directions as the next flow direction.
                         // 2. If `this_flow_direction` is not None, we can choose at most 2 directions as the next flow direction.
                         //    The next flow direction should not be the opposite of the original flow direction.
-                        if this_flow_direction.map_or(true, |this_flow_direction: Direction| {
+                        if this_flow_direction.is_none_or(|this_flow_direction: Direction| {
                             next_flow_directions(this_flow_direction, grid)
                                 .contains(&flow_direction)
                                 && Some(flow_direction.opposite()) != original_flow_direction

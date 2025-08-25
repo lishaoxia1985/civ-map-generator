@@ -79,7 +79,6 @@
 		"improvement": "Fishing Boats",
 		"uniques": ["Generated on every [10] tiles <in [Featureless] [Coast] tiles>"]
 	},
-	/*
 	{
 		"name": "Bison",
 		"resourceType": "Bonus",
@@ -88,7 +87,6 @@
 		"improvement": "Camp",
 		"improvementStats": {"production": 1}
 	},
-	*/
 	
 	// Strategic resources
 	{

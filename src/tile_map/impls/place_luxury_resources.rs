@@ -3,6 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
+use enum_map::Enum;
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
@@ -48,7 +49,7 @@ impl TileMap {
             let region = &self.region_list[region_index];
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
             let starting_tile = self.region_list[region_index].starting_tile;
-            let exclusive_luxury = self.region_list[region_index].exclusive_luxury.to_owned();
+            let exclusive_luxury = self.region_list[region_index].exclusive_luxury.unwrap();
             // Determine number to place at the start location
             // `num_to_place` contains 2 parts:
             // Part 1. The basic number of luxuries to place at the start location according to `resource_setting`.
@@ -76,7 +77,7 @@ impl TileMap {
             }
 
             let priority_list_indices_of_luxury =
-                self.get_indices_for_luxury_type(&exclusive_luxury);
+                self.get_indices_for_luxury_type(exclusive_luxury);
             let mut luxury_plot_lists =
                 self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
@@ -89,7 +90,7 @@ impl TileMap {
                 }
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
-                    Resource::Resource(exclusive_luxury.to_owned()),
+                    exclusive_luxury,
                     1,
                     num_left_to_place,
                     0.5,
@@ -111,7 +112,7 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        Resource::Resource(exclusive_luxury.to_owned()),
+                        exclusive_luxury,
                         1,
                         num_left_to_place,
                         1.0,
@@ -131,7 +132,7 @@ impl TileMap {
                 //
                 // About the remainder of the civ exclusive luxury resources, it will be placed in the same region somewhere.(Please view Process 3)
                 *luxury_low_fert_compensation
-                    .entry(exclusive_luxury.to_owned())
+                    .entry(exclusive_luxury)
                     .or_insert(0) -= num_left_to_place as i32;
                 // Calculates the number of `num_to_place` (Part 2) resources placed at the civilization's start.
                 // NOTICE: Assumes that `num_to_place` (Part 1) resources have been fully placed at the civilization's start.
@@ -144,7 +145,7 @@ impl TileMap {
                 let mut randoms_to_place = 1;
                 let resource_assigned_to_random =
                     self.luxury_resource_role.luxury_assigned_to_random.clone();
-                for random_luxury in resource_assigned_to_random.iter() {
+                for &random_luxury in resource_assigned_to_random.iter() {
                     let priority_list_indices_of_luxury =
                         self.get_indices_for_luxury_type(random_luxury);
 
@@ -154,7 +155,7 @@ impl TileMap {
                         }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
-                            Resource::Resource(random_luxury.to_owned()),
+                            random_luxury,
                             1,
                             1,
                             1.0,
@@ -184,7 +185,8 @@ impl TileMap {
                 .luxury_resource_role
                 .luxury_assigned_to_city_state
                 .iter()
-                .filter(|luxury| allowed_luxuries.contains(luxury.as_str()))
+                .filter(|luxury| allowed_luxuries.contains(luxury))
+                .copied()
                 .collect();
 
             // Store the luxury types the city state can own and the weight of each luxury type.
@@ -195,18 +197,17 @@ impl TileMap {
             let mut luxury_for_city_state_and_weight = Vec::new();
 
             // Add the luxury types that can only be owned by city states and are allowed at this city state to the list.
-            city_state_luxury_types.iter().for_each(|luxury| {
-                luxury_for_city_state_and_weight.push((
-                    luxury.to_string(),
-                    75. / city_state_luxury_types.len() as f64,
-                ));
+            city_state_luxury_types.iter().for_each(|&luxury| {
+                luxury_for_city_state_and_weight
+                    .push((luxury, 75. / city_state_luxury_types.len() as f64));
             });
 
             let random_types_allowed: Vec<_> = self
                 .luxury_resource_role
                 .luxury_assigned_to_city_state
                 .iter()
-                .filter(|luxury| allowed_luxuries.contains(luxury.as_str()))
+                .filter(|luxury| allowed_luxuries.contains(luxury))
+                .copied()
                 .collect();
 
             let mut num_allowed = random_types_allowed.len();
@@ -215,17 +216,15 @@ impl TileMap {
             if let Some(region_index) = region_index {
                 // Adding the region type in to the mix with the random types.
                 num_allowed += 1;
-                let luxury = &self.region_list[region_index].exclusive_luxury;
-                if allowed_luxuries.contains(luxury.as_str()) {
-                    luxury_for_city_state_and_weight
-                        .push((luxury.to_string(), 25. / num_allowed as f64));
+                let luxury = self.region_list[region_index].exclusive_luxury.unwrap();
+                if allowed_luxuries.contains(&luxury) {
+                    luxury_for_city_state_and_weight.push((luxury, 25. / num_allowed as f64));
                 }
             }
 
             // Add the random luxury types that are allowed at this city state to the list.
-            random_types_allowed.iter().for_each(|luxury| {
-                luxury_for_city_state_and_weight
-                    .push((luxury.to_string(), 25. / num_allowed as f64));
+            random_types_allowed.iter().for_each(|&luxury| {
+                luxury_for_city_state_and_weight.push((luxury, 25. / num_allowed as f64));
             });
 
             if !luxury_for_city_state_and_weight.is_empty() {
@@ -235,11 +234,10 @@ impl TileMap {
                 // Choose luxury type.
                 let luxury_resource = luxury_for_city_state_and_weight
                     [dist.sample(&mut self.random_number_generator)]
-                .0
-                .to_owned();
+                .0;
                 // Place luxury.
                 let priority_list_indices_of_luxury =
-                    self.get_indices_for_luxury_type(&luxury_resource);
+                    self.get_indices_for_luxury_type(luxury_resource);
                 let mut luxury_plot_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
@@ -251,7 +249,7 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        Resource::Resource(luxury_resource.to_owned()),
+                        luxury_resource,
                         1,
                         num_left_to_place,
                         1.0,
@@ -274,16 +272,15 @@ impl TileMap {
         for (region_index, &current_region_low_fert_compensation) in
             region_low_fert_compensation.iter().enumerate()
         {
-            let luxury_resource = self.region_list[region_index].exclusive_luxury.clone();
+            let luxury_resource = self.region_list[region_index].exclusive_luxury.unwrap();
             let luxury_assign_to_region_count: u32 =
-                self.luxury_assign_to_region_count[&luxury_resource.to_string()];
-            let priority_list_indices_of_luxury =
-                self.get_indices_for_luxury_type(&luxury_resource);
+                self.luxury_assign_to_region_count[&luxury_resource];
+            let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury_resource);
 
             let mut luxury_plot_lists = self.generate_luxury_tile_lists_in_region(region_index);
 
             let current_luxury_low_fert_compensation = *luxury_low_fert_compensation
-                .entry(luxury_resource.to_string())
+                .entry(luxury_resource)
                 .or_insert(0);
 
             // Calibrate the number of luxuries per region based on the world size and the number of civilizations.
@@ -325,7 +322,7 @@ impl TileMap {
                 luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
 
                 num_left_to_place = self.place_specific_number_of_resources(
-                    Resource::Resource(luxury_resource.to_owned()),
+                    luxury_resource,
                     1,
                     num_left_to_place,
                     ratio,
@@ -367,11 +364,10 @@ impl TileMap {
             ];
 
             for i in 0..num_random_luxury_types {
-                let luxury_resource =
-                    self.luxury_resource_role.luxury_assigned_to_random[i].clone();
+                let luxury_resource = self.luxury_resource_role.luxury_assigned_to_random[i];
 
                 let priority_list_indices_of_luxury =
-                    self.get_indices_for_luxury_type(&luxury_resource);
+                    self.get_indices_for_luxury_type(luxury_resource);
 
                 // If calculated number of randoms is low, just place 3 of each radom luxury type.
                 if num_random_luxury_types * 3 > num_random_luxury_target as usize {
@@ -401,7 +397,7 @@ impl TileMap {
                     current_list[i].shuffle(&mut self.random_number_generator);
 
                     num_left_to_place = self.place_specific_number_of_resources(
-                        Resource::Resource(luxury_resource.to_string()),
+                        luxury_resource,
                         1,
                         num_left_to_place,
                         ratio,
@@ -431,21 +427,21 @@ impl TileMap {
                 let mut candidate_luxury_types = Vec::new();
 
                 // See if any Random types are eligible.
-                for luxury in self.luxury_resource_role.luxury_assigned_to_random.iter() {
-                    if allowed_luxuries.contains(luxury) {
-                        candidate_luxury_types.push(luxury.to_string());
+                for &luxury in self.luxury_resource_role.luxury_assigned_to_random.iter() {
+                    if allowed_luxuries.contains(&luxury) {
+                        candidate_luxury_types.push(luxury);
                     }
                 }
 
                 // Check to see if any Special Case luxuries are eligible. Disallow if Strategic Balance resource setting.
                 if map_parameters.resource_setting != ResourceSetting::StrategicBalance {
-                    for luxury in self
+                    for &luxury in self
                         .luxury_resource_role
                         .luxury_assigned_to_special_case
                         .iter()
                     {
-                        if allowed_luxuries.contains(luxury) {
-                            candidate_luxury_types.push(luxury.to_string());
+                        if allowed_luxuries.contains(&luxury) {
+                            candidate_luxury_types.push(luxury);
                         }
                     }
                 }
@@ -457,13 +453,13 @@ impl TileMap {
                         candidate_luxury_types.choose(&mut self.random_number_generator);
                 } else {
                     // No Random or Special Case luxuries available. See if any City State types are eligible.
-                    for luxury in self
+                    for &luxury in self
                         .luxury_resource_role
                         .luxury_assigned_to_city_state
                         .iter()
                     {
-                        if allowed_luxuries.contains(luxury) {
-                            candidate_luxury_types.push(luxury.to_string());
+                        if allowed_luxuries.contains(&luxury) {
+                            candidate_luxury_types.push(luxury);
                         }
                     }
 
@@ -472,10 +468,11 @@ impl TileMap {
                             candidate_luxury_types.choose(&mut self.random_number_generator);
                     } else {
                         // No City State luxuries available. Use a type from another region.
-                        let region_luxury = &self.region_list[region_index].exclusive_luxury;
-                        for luxury in self.luxury_resource_role.luxury_assigned_to_regions.iter() {
-                            if allowed_luxuries.contains(luxury) && luxury != region_luxury {
-                                candidate_luxury_types.push(luxury.to_string());
+                        let region_luxury =
+                            self.region_list[region_index].exclusive_luxury.unwrap();
+                        for &luxury in self.luxury_resource_role.luxury_assigned_to_regions.iter() {
+                            if allowed_luxuries.contains(&luxury) && luxury != region_luxury {
+                                candidate_luxury_types.push(luxury);
                             }
                         }
                         if !candidate_luxury_types.is_empty() {
@@ -485,7 +482,7 @@ impl TileMap {
                     }
                 }
 
-                if let Some(luxury) = use_this_luxury {
+                if let Some(&luxury) = use_this_luxury {
                     let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
                     let mut luxury_plot_lists =
@@ -499,7 +496,7 @@ impl TileMap {
                         }
                         luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                         num_left_to_place = self.place_specific_number_of_resources(
-                            Resource::Resource(luxury.to_string()),
+                            luxury,
                             1,
                             num_left_to_place,
                             1.,
@@ -525,12 +522,12 @@ impl TileMap {
                 .luxury_assigned_to_special_case
                 .clone();
             for luxury in luxury_list {
-                match luxury.as_str() {
-                    "Marble" => {
+                match luxury {
+                    Resource::Marble => {
                         self.place_marble(map_parameters);
                     }
                     _ => {
-                        panic!("{} is Special Case Luxury, you need to implement a custom placement method for it!", luxury);
+                        panic!("{} is Special Case Luxury, you need to implement a custom placement method for it!", luxury.as_str());
                     }
                 }
             }
@@ -539,8 +536,8 @@ impl TileMap {
     }
 
     fn place_marble(&mut self, map_parameters: &MapParameters) {
-        let luxury_resource = "Marble".to_string();
-        let marble_already_placed: u32 = self.placed_resource_count(&luxury_resource);
+        let luxury_resource = Resource::Marble;
+        let marble_already_placed: u32 = self.placed_resource_count(luxury_resource);
 
         let marble_target = match map_parameters.resource_setting {
             ResourceSetting::Sparse => (map_parameters.civilization_num as f32 * 0.5).ceil() as i32,
@@ -610,8 +607,7 @@ impl TileMap {
                 && self.layer_data[Layer::Luxury][tile.index()] == 0
             {
                 // Placing this resource in this plot.
-                self.resource_query[tile.index()] =
-                    Some((Resource::Resource(luxury_resource.to_string()), 1));
+                self.resource_query[tile.index()] = Some((luxury_resource, 1));
                 num_left_to_place -= 1;
                 // println!("Still need to place {} more units of Marble.", num_left_to_place);
                 self.place_impact_and_ripples(tile, Layer::Marble, u32::MAX);
@@ -1082,7 +1078,7 @@ impl TileMap {
         &self,
         city_site: Tile,
         radius: u32,
-    ) -> HashSet<String> {
+    ) -> HashSet<Resource> {
         let grid = self.world_grid.grid;
 
         let mut allowed_luxuries = HashSet::new();
@@ -1099,38 +1095,38 @@ impl TileMap {
                                 && feature != Some(Feature::Atoll)
                                 && feature != Some(Feature::Ice)
                             {
-                                allowed_luxuries.insert("Whales".to_string());
-                                allowed_luxuries.insert("Pearls".to_string());
+                                allowed_luxuries.insert(Resource::Whales);
+                                allowed_luxuries.insert(Resource::Pearls);
                             }
                         }
                         TerrainType::Flatland => {
                             if let Some(feature) = feature {
                                 match feature {
                                     Feature::Forest => {
-                                        allowed_luxuries.insert("Furs".to_string());
-                                        allowed_luxuries.insert("Dyes".to_string());
+                                        allowed_luxuries.insert(Resource::Furs);
+                                        allowed_luxuries.insert(Resource::Dyes);
                                         if base_terrain == BaseTerrain::Tundra {
-                                            allowed_luxuries.insert("Silver".to_string());
+                                            allowed_luxuries.insert(Resource::Silver);
                                         } else {
-                                            allowed_luxuries.insert("Spices".to_string());
-                                            allowed_luxuries.insert("Silk".to_string());
+                                            allowed_luxuries.insert(Resource::Spices);
+                                            allowed_luxuries.insert(Resource::Silk);
                                         }
                                     }
                                     Feature::Jungle => {
-                                        allowed_luxuries.insert("Gems".to_string());
-                                        allowed_luxuries.insert("Dyes".to_string());
-                                        allowed_luxuries.insert("Spices".to_string());
-                                        allowed_luxuries.insert("Silk".to_string());
-                                        allowed_luxuries.insert("Sugar".to_string());
-                                        allowed_luxuries.insert("Cocoa".to_string());
+                                        allowed_luxuries.insert(Resource::Gems);
+                                        allowed_luxuries.insert(Resource::Dyes);
+                                        allowed_luxuries.insert(Resource::Spices);
+                                        allowed_luxuries.insert(Resource::Silk);
+                                        allowed_luxuries.insert(Resource::Sugar);
+                                        allowed_luxuries.insert(Resource::Cocoa);
                                     }
                                     Feature::Marsh => {
-                                        allowed_luxuries.insert("Dyes".to_string());
-                                        allowed_luxuries.insert("Sugar".to_string());
+                                        allowed_luxuries.insert(Resource::Dyes);
+                                        allowed_luxuries.insert(Resource::Sugar);
                                     }
                                     Feature::Floodplain => {
-                                        allowed_luxuries.insert("Cotton".to_string());
-                                        allowed_luxuries.insert("Incense".to_string());
+                                        allowed_luxuries.insert(Resource::Cotton);
+                                        allowed_luxuries.insert(Resource::Incense);
                                     }
                                     _ => {}
                                 }
@@ -1138,31 +1134,31 @@ impl TileMap {
                                 match base_terrain {
                                     BaseTerrain::Grassland => {
                                         if tile.is_freshwater(self) {
-                                            allowed_luxuries.insert("Sugar".to_string());
-                                            allowed_luxuries.insert("Cotton".to_string());
-                                            allowed_luxuries.insert("Wine".to_string());
+                                            allowed_luxuries.insert(Resource::Sugar);
+                                            allowed_luxuries.insert(Resource::Cotton);
+                                            allowed_luxuries.insert(Resource::Wine);
                                         } else {
-                                            allowed_luxuries.insert("Marble".to_string());
-                                            allowed_luxuries.insert("Ivory".to_string());
-                                            allowed_luxuries.insert("Cotton".to_string());
-                                            allowed_luxuries.insert("Wine".to_string());
+                                            allowed_luxuries.insert(Resource::Marble);
+                                            allowed_luxuries.insert(Resource::Ivory);
+                                            allowed_luxuries.insert(Resource::Cotton);
+                                            allowed_luxuries.insert(Resource::Wine);
                                         }
                                     }
                                     BaseTerrain::Desert => {
-                                        allowed_luxuries.insert("Gold Ore".to_string());
-                                        allowed_luxuries.insert("Marble".to_string());
-                                        allowed_luxuries.insert("Incense".to_string());
+                                        allowed_luxuries.insert(Resource::GoldOre);
+                                        allowed_luxuries.insert(Resource::Marble);
+                                        allowed_luxuries.insert(Resource::Incense);
                                     }
                                     BaseTerrain::Plain => {
-                                        allowed_luxuries.insert("Marble".to_string());
-                                        allowed_luxuries.insert("Ivory".to_string());
-                                        allowed_luxuries.insert("Wine".to_string());
-                                        allowed_luxuries.insert("Incense".to_string());
+                                        allowed_luxuries.insert(Resource::Marble);
+                                        allowed_luxuries.insert(Resource::Ivory);
+                                        allowed_luxuries.insert(Resource::Wine);
+                                        allowed_luxuries.insert(Resource::Incense);
                                     }
                                     BaseTerrain::Tundra => {
-                                        allowed_luxuries.insert("Furs".to_string());
-                                        allowed_luxuries.insert("Silver".to_string());
-                                        allowed_luxuries.insert("Marble".to_string());
+                                        allowed_luxuries.insert(Resource::Furs);
+                                        allowed_luxuries.insert(Resource::Silver);
+                                        allowed_luxuries.insert(Resource::Marble);
                                     }
                                     _ => {}
                                 }
@@ -1171,11 +1167,11 @@ impl TileMap {
                         TerrainType::Mountain => {}
                         TerrainType::Hill => {
                             if base_terrain != BaseTerrain::Snow {
-                                allowed_luxuries.insert("Gold Ore".to_string());
-                                allowed_luxuries.insert("Silver".to_string());
-                                allowed_luxuries.insert("Gems".to_string());
+                                allowed_luxuries.insert(Resource::GoldOre);
+                                allowed_luxuries.insert(Resource::Silver);
+                                allowed_luxuries.insert(Resource::Gems);
                                 if feature.is_none() {
-                                    allowed_luxuries.insert("Marble".to_string());
+                                    allowed_luxuries.insert(Resource::Marble);
                                 }
                             }
                         }
@@ -1198,44 +1194,38 @@ impl TileMap {
     ///
     /// # Arguments
     /// - `resource`: The name of the luxury resource.
-    pub fn get_indices_for_luxury_type(&self, resource: &str) -> Vec<usize> {
+    pub fn get_indices_for_luxury_type(&self, resource: Resource) -> Vec<usize> {
         match resource {
-            "Whales" | "Pearls" => vec![0],
-            "Gold Ore" => vec![3, 9, 4],
-            "Silver" => vec![3, 4, 13, 11],
-            "Gems" => vec![5, 6, 3, 7],
-            "Marble" => vec![11, 9, 10, 3],
-            "Ivory" => vec![10, 11],
-            "Furs" => vec![13, 14],
-            "Dyes" => vec![8, 7, 1],
-            "Spices" => vec![7, 14, 1],
-            "Silk" => vec![14, 7],
-            "Sugar" => vec![1, 7, 2, 12],
-            "Cotton" => vec![2, 12, 11],
-            "Wine" => vec![10, 11, 12],
-            "Incense" => vec![9, 2, 10],
-            "Copper" => vec![3, 4, 11, 13],
-            "Salt" => vec![10, 9, 13, 8],
-            "Citrus" => vec![7, 5, 14, 2],
-            "Truffles" => vec![14, 7, 1, 4],
-            "Crab" => vec![0],
-            "Cocoa" => vec![7, 5, 14],
+            Resource::Whales | Resource::Pearls => vec![0],
+            Resource::GoldOre => vec![3, 9, 4],
+            Resource::Silver => vec![3, 4, 13, 11],
+            Resource::Gems => vec![5, 6, 3, 7],
+            Resource::Marble => vec![11, 9, 10, 3],
+            Resource::Ivory => vec![10, 11],
+            Resource::Furs => vec![13, 14],
+            Resource::Dyes => vec![8, 7, 1],
+            Resource::Spices => vec![7, 14, 1],
+            Resource::Silk => vec![14, 7],
+            Resource::Sugar => vec![1, 7, 2, 12],
+            Resource::Cotton => vec![2, 12, 11],
+            Resource::Wine => vec![10, 11, 12],
+            Resource::Incense => vec![9, 2, 10],
+            Resource::Copper => vec![3, 4, 11, 13],
+            Resource::Salt => vec![10, 9, 13, 8],
+            Resource::Citrus => vec![7, 5, 14, 2],
+            Resource::Truffles => vec![14, 7, 1, 4],
+            Resource::Crab => vec![0],
+            Resource::Cocoa => vec![7, 5, 14],
             _ => vec![],
         }
     }
 
     fn num_placed_luxury_resources(&self, ruleset: &Ruleset) -> u32 {
-        let luxury_resources: Vec<_> = ruleset
-            .tile_resources
-            .iter()
-            .filter(|(_, resource)| resource.resource_type == "Luxury")
-            .map(|(resource, _)| resource)
-            .collect();
-        let mut count = 0;
-        for resource in &luxury_resources {
-            count += self.placed_resource_count(resource);
-        }
-        count
+        (0..Resource::LENGTH)
+            .map(Resource::from_usize)
+            .filter(|res| ruleset.tile_resources[res.as_str()].resource_type == "Luxury")
+            .map(|res| self.placed_resource_count(res))
+            .sum()
     }
 }
 

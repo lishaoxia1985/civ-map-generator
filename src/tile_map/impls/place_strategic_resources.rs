@@ -32,14 +32,14 @@ impl TileMap {
         // Place Strategic resources.
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Oil".to_string(),
+                resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 65,
                 min_radius: 1,
                 max_radius: 1,
             },
             ResourceToPlace {
-                resource: "Uranium".to_string(),
+                resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 35,
                 min_radius: 0,
@@ -50,21 +50,21 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Oil".to_string(),
+                resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 40,
                 min_radius: 1,
                 max_radius: 2,
             },
             ResourceToPlace {
-                resource: "Aluminum".to_string(),
+                resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 15,
                 min_radius: 1,
                 max_radius: 2,
             },
             ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 45,
                 min_radius: 1,
@@ -80,21 +80,21 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Oil".to_string(),
+                resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 60,
                 min_radius: 1,
                 max_radius: 1,
             },
             ResourceToPlace {
-                resource: "Aluminum".to_string(),
+                resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 15,
                 min_radius: 2,
                 max_radius: 3,
             },
             ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 25,
                 min_radius: 2,
@@ -105,14 +105,14 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Oil".to_string(),
+                resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 65,
                 min_radius: 0,
                 max_radius: 1,
             },
             ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 35,
                 min_radius: 1,
@@ -128,21 +128,21 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 26,
                 min_radius: 0,
                 max_radius: 2,
             },
             ResourceToPlace {
-                resource: "Coal".to_string(),
+                resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 35,
                 min_radius: 1,
                 max_radius: 3,
             },
             ResourceToPlace {
-                resource: "Aluminum".to_string(),
+                resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 39,
                 min_radius: 2,
@@ -153,14 +153,14 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Coal".to_string(),
+                resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 30,
                 min_radius: 1,
                 max_radius: 2,
             },
             ResourceToPlace {
-                resource: "Uranium".to_string(),
+                resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 70,
                 min_radius: 1,
@@ -176,14 +176,14 @@ impl TileMap {
 
         let resources_to_place = [
             ResourceToPlace {
-                resource: "Coal".to_string(),
+                resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 30,
                 min_radius: 1,
                 max_radius: 2,
             },
             ResourceToPlace {
-                resource: "Uranium".to_string(),
+                resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 70,
                 min_radius: 1,
@@ -198,7 +198,7 @@ impl TileMap {
         );
 
         let resources_to_place = [ResourceToPlace {
-            resource: "Horses".to_string(),
+            resource: Resource::Horses,
             quantity: horse_amt,
             weight: 100,
             min_radius: 2,
@@ -212,7 +212,7 @@ impl TileMap {
         );
 
         let resources_to_place = [ResourceToPlace {
-            resource: "Horses".to_string(),
+            resource: Resource::Horses,
             quantity: horse_amt,
             weight: 100,
             min_radius: 1,
@@ -237,9 +237,9 @@ impl TileMap {
 
         // Check for low or missing Strategic resources.
         // If there are very few resources, add one more.
-        if self.placed_resource_count("Iron") < 8 {
+        if self.placed_resource_count(Resource::Iron) < 8 {
             let resources_to_place = [ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 100,
                 min_radius: 0,
@@ -253,10 +253,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Iron") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Iron) < 4 * map_parameters.civilization_num {
             // print("Map has very low iron, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Iron".to_string(),
+                resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 100,
                 min_radius: 0,
@@ -270,10 +270,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Horses") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.civilization_num {
             // print("Map has very low horse, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Horses".to_string(),
+                resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
                 min_radius: 0,
@@ -287,10 +287,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Horses") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.civilization_num {
             // print("Map has very low horse, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Horses".to_string(),
+                resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
                 min_radius: 0,
@@ -304,10 +304,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Coal") < 8 {
+        if self.placed_resource_count(Resource::Coal) < 8 {
             // print("Map has very low coal, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Coal".to_string(),
+                resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
                 min_radius: 0,
@@ -321,10 +321,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Coal") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Coal) < 4 * map_parameters.civilization_num {
             // print("Map has very low coal, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Coal".to_string(),
+                resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
                 min_radius: 0,
@@ -338,10 +338,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Oil") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Oil) < 4 * map_parameters.civilization_num {
             // print("Map has very low oil, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Oil".to_string(),
+                resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 100,
                 min_radius: 0,
@@ -355,10 +355,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Aluminum") < 4 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Aluminum) < 4 * map_parameters.civilization_num {
             // print("Map has very low aluminum, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Aluminum".to_string(),
+                resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 100,
                 min_radius: 0,
@@ -372,10 +372,10 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count("Uranium") < 2 * map_parameters.civilization_num {
+        if self.placed_resource_count(Resource::Uranium) < 2 * map_parameters.civilization_num {
             // print("Map has very low uranium, adding another.");
             let resources_to_place = vec![ResourceToPlace {
-                resource: "Uranium".to_string(),
+                resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 100,
                 min_radius: 0,
@@ -406,11 +406,11 @@ impl TileMap {
         } else {
             4
         };
-        let num_land_oil = self.placed_resource_count("Oil");
+        let num_land_oil = self.placed_resource_count(Resource::Oil);
 
         let num_to_place = ((num_land_oil as f64 / 2.) / sea_oil_amt as f64) as u32;
         self.place_specific_number_of_resources(
-            Resource::Resource("Oil".to_string()),
+            Resource::Oil,
             sea_oil_amt,
             num_to_place,
             0.2,
@@ -460,9 +460,9 @@ impl TileMap {
                         Feature::Forest => {
                             let diceroll = self.random_number_generator.gen_range(0..4);
                             (selected_resource, selected_quantity) = match diceroll {
-                                0 => (Some("Uranium"), uran_amt),
-                                1 => (Some("Coal"), coal_amt),
-                                _ => (Some("Iron"), iron_amt),
+                                0 => (Some(Resource::Uranium), uran_amt),
+                                1 => (Some(Resource::Coal), coal_amt),
+                                _ => (Some(Resource::Iron), iron_amt),
                             };
                         }
                         Feature::Jungle => {
@@ -470,21 +470,21 @@ impl TileMap {
                             (selected_resource, selected_quantity) = match diceroll {
                                 0 => {
                                     if terrain_type == TerrainType::Hill {
-                                        (Some("Iron"), iron_amt)
+                                        (Some(Resource::Iron), iron_amt)
                                     } else {
-                                        (Some("Oil"), oil_amt)
+                                        (Some(Resource::Oil), oil_amt)
                                     }
                                 }
-                                1 => (Some("Coal"), coal_amt),
-                                _ => (Some("Aluminum"), alum_amt),
+                                1 => (Some(Resource::Coal), coal_amt),
+                                _ => (Some(Resource::Aluminum), alum_amt),
                             };
                         }
                         Feature::Marsh => {
                             let diceroll = self.random_number_generator.gen_range(0..4);
                             (selected_resource, selected_quantity) = match diceroll {
-                                0 => (Some("Iron"), iron_amt),
-                                1 => (Some("Coal"), coal_amt),
-                                _ => (Some("Oil"), oil_amt),
+                                0 => (Some(Resource::Iron), iron_amt),
+                                1 => (Some(Resource::Coal), coal_amt),
+                                _ => (Some(Resource::Oil), oil_amt),
                             };
                         }
                         _ => (),
@@ -495,38 +495,38 @@ impl TileMap {
                             BaseTerrain::Grassland => {
                                 (selected_resource, selected_quantity) = if tile.is_freshwater(self)
                                 {
-                                    (Some("Horses"), horse_amt)
+                                    (Some(Resource::Horses), horse_amt)
                                 } else {
                                     let diceroll = self.random_number_generator.gen_range(0..5);
                                     if diceroll < 3 {
-                                        (Some("Iron"), iron_amt)
+                                        (Some(Resource::Iron), iron_amt)
                                     } else {
-                                        (Some("Horses"), horse_amt)
+                                        (Some(Resource::Horses), horse_amt)
                                     }
                                 };
                             }
                             BaseTerrain::Desert => {
                                 let diceroll = self.random_number_generator.gen_range(0..3);
                                 (selected_resource, selected_quantity) = match diceroll {
-                                    0 => (Some("Iron"), iron_amt),
-                                    1 => (Some("Aluminum"), alum_amt),
-                                    _ => (Some("Oil"), oil_amt),
+                                    0 => (Some(Resource::Iron), iron_amt),
+                                    1 => (Some(Resource::Aluminum), alum_amt),
+                                    _ => (Some(Resource::Oil), oil_amt),
                                 };
                             }
                             BaseTerrain::Plain => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
                                 (selected_resource, selected_quantity) = if diceroll < 2 {
-                                    (Some("Iron"), iron_amt)
+                                    (Some(Resource::Iron), iron_amt)
                                 } else {
-                                    (Some("Horses"), horse_amt)
+                                    (Some(Resource::Horses), horse_amt)
                                 };
                             }
                             _ => {
                                 let diceroll = self.random_number_generator.gen_range(0..4);
                                 (selected_resource, selected_quantity) = match diceroll {
-                                    0 => (Some("Iron"), iron_amt),
-                                    1 => (Some("Uranium"), uran_amt),
-                                    _ => (Some("Oil"), oil_amt),
+                                    0 => (Some(Resource::Iron), iron_amt),
+                                    1 => (Some(Resource::Uranium), uran_amt),
+                                    _ => (Some(Resource::Oil), oil_amt),
                                 };
                             }
                         },
@@ -534,17 +534,17 @@ impl TileMap {
                             BaseTerrain::Grassland | BaseTerrain::Plain => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
                                 (selected_resource, selected_quantity) = match diceroll {
-                                    2 => (Some("Horses"), horse_amt),
-                                    n if n < 2 => (Some("Iron"), iron_amt),
-                                    _ => (Some("Coal"), coal_amt),
+                                    2 => (Some(Resource::Horses), horse_amt),
+                                    n if n < 2 => (Some(Resource::Iron), iron_amt),
+                                    _ => (Some(Resource::Coal), coal_amt),
                                 };
                             }
                             _ => {
                                 let diceroll = self.random_number_generator.gen_range(0..5);
                                 (selected_resource, selected_quantity) = if diceroll < 2 {
-                                    (Some("Iron"), iron_amt)
+                                    (Some(Resource::Iron), iron_amt)
                                 } else {
-                                    (Some("Coal"), coal_amt)
+                                    (Some(Resource::Coal), coal_amt)
                                 };
                             }
                         },
@@ -565,10 +565,8 @@ impl TileMap {
                         radius = 1;
                     }
 
-                    self.resource_query[tile.index()] = Some((
-                        Resource::Resource(selected_resource.to_string()),
-                        selected_quantity,
-                    ));
+                    self.resource_query[tile.index()] =
+                        Some((selected_resource, selected_quantity));
                     self.place_impact_and_ripples(tile, Layer::Strategic, radius);
                     num_left_to_place -= 1;
                 }
@@ -586,7 +584,8 @@ impl TileMap {
             get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
         let candidate_resources_amount = [coal_amt, oil_amt, alum_amt];
 
-        const CANDIDATE_STRATEGIC_RESOURCES: [&str; 3] = ["Coal", "Oil", "Aluminum"];
+        const CANDIDATE_STRATEGIC_RESOURCES: [Resource; 3] =
+            [Resource::Coal, Resource::Oil, Resource::Aluminum];
         const PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES: [[usize; 6]; 3] = [
             [3, 4, 13, 11, 10, 9],
             [9, 1, 13, 14, 11, 10],
@@ -619,7 +618,7 @@ impl TileMap {
                     }
                     luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        Resource::Resource(strategic_resource.to_owned()),
+                        strategic_resource,
                         num_left_to_place,
                         1,
                         1.0,
@@ -646,11 +645,11 @@ impl TileMap {
     /// # Returns
     ///
     /// Returns the total quantity of the specified resource as `u32`.
-    pub fn placed_resource_count(&self, resource: &str) -> u32 {
+    pub fn placed_resource_count(&self, resource: Resource) -> u32 {
         self.resource_query
             .iter()
             .filter_map(|assignment_resource| assignment_resource.as_ref())
-            .filter(|(r, _)| r.name() == resource)
+            .filter(|(r, _)| *r == resource)
             .map(|(_, q)| *q)
             .sum()
     }
@@ -700,8 +699,7 @@ impl TileMap {
                         }
                     }
                     TerrainType::Flatland => {
-                        if feature.map_or(true, |f| matches!(f, Feature::Forest | Feature::Jungle))
-                        {
+                        if feature.is_none_or(|f| matches!(f, Feature::Forest | Feature::Jungle)) {
                             flatland_list.push(tile);
                         }
                         if let Some(feature) = feature {

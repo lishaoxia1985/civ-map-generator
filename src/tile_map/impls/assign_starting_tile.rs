@@ -61,7 +61,7 @@ impl TileMap {
         self.all_tiles().for_each(|tile| {
             if tile
                 .resource(self)
-                .map_or(false, |(resource, _)| resource.name() == "Sugar")
+                .is_some_and(|(resource, _)| resource == Resource::Sugar)
                 && tile.feature(self) == Some(Feature::Jungle)
             {
                 self.terrain_type_query[tile.index()] = TerrainType::Flatland;
@@ -107,46 +107,42 @@ impl TileMap {
         let mut luxury_assigned_to_regions = ArrayVec::new();
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(region_index, map_parameters);
-            // TODO: Should be edited in the future
-            self.region_list[region_index].exclusive_luxury = resource.name().to_string();
-            luxury_assigned_to_regions.push(resource.name().to_string());
+            self.region_list[region_index].exclusive_luxury = Some(resource);
+            luxury_assigned_to_regions.push(resource);
             *self
                 .luxury_assign_to_region_count
-                .entry(resource.name().to_string())
+                .entry(resource)
                 .or_insert(0) += 1;
         }
 
         let luxury_city_state_weights: Vec<(Resource, usize)> = vec![
-            (Resource::Resource("Whales".to_string()), 15),
-            (Resource::Resource("Pearls".to_string()), 15),
-            (Resource::Resource("Gold Ore".to_string()), 10),
-            (Resource::Resource("Silver".to_string()), 10),
-            (Resource::Resource("Gems".to_string()), 10),
-            (Resource::Resource("Ivory".to_string()), 10),
-            (Resource::Resource("Furs".to_string()), 15),
-            (Resource::Resource("Dyes".to_string()), 10),
-            (Resource::Resource("Spices".to_string()), 15),
-            (Resource::Resource("Silk".to_string()), 15),
-            (Resource::Resource("Sugar".to_string()), 10),
-            (Resource::Resource("Cotton".to_string()), 10),
-            (Resource::Resource("Wine".to_string()), 10),
-            (Resource::Resource("Incense".to_string()), 15),
-            (Resource::Resource("Copper".to_string()), 10),
-            (Resource::Resource("Salt".to_string()), 10),
-            (Resource::Resource("Citrus".to_string()), 15),
-            (Resource::Resource("Truffles".to_string()), 15),
-            (Resource::Resource("Crab".to_string()), 15),
-            (Resource::Resource("Cocoa".to_string()), 10),
+            (Resource::Whales, 15),
+            (Resource::Pearls, 15),
+            (Resource::GoldOre, 10),
+            (Resource::Silver, 10),
+            (Resource::Gems, 10),
+            (Resource::Ivory, 10),
+            (Resource::Furs, 15),
+            (Resource::Dyes, 10),
+            (Resource::Spices, 15),
+            (Resource::Silk, 15),
+            (Resource::Sugar, 10),
+            (Resource::Cotton, 10),
+            (Resource::Wine, 10),
+            (Resource::Incense, 15),
+            (Resource::Copper, 10),
+            (Resource::Salt, 10),
+            (Resource::Citrus, 15),
+            (Resource::Truffles, 15),
+            (Resource::Crab, 15),
+            (Resource::Cocoa, 10),
         ];
 
         // Assign `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES` of the remaining resources to be exclusive to City States.
         // Get the list of candidate resources and their weight that are not assigned to regions.
         let mut luxury_candidates_and_weights: Vec<_> = luxury_city_state_weights
             .iter()
-            .filter(|(luxury_resource, _)| {
-                !luxury_assigned_to_regions.contains(&luxury_resource.name().to_string())
-            })
-            .map(|(luxury_resource, weight)| (luxury_resource.name().to_string(), *weight))
+            .filter(|(luxury_resource, _)| !luxury_assigned_to_regions.contains(luxury_resource))
             .collect();
 
         let mut luxury_assigned_to_city_state = ArrayVec::new();
@@ -164,12 +160,12 @@ impl TileMap {
             .unwrap();
             let index = dist.sample(&mut self.random_number_generator);
 
-            let (resource, _) = luxury_candidates_and_weights.swap_remove(index);
+            let &(resource, _) = luxury_candidates_and_weights.swap_remove(index);
             luxury_assigned_to_city_state.push(resource);
         }
 
         // Assign Marble to special casing.
-        let luxury_assigned_to_special_case = vec!["Marble".to_string()];
+        let luxury_assigned_to_special_case = vec![Resource::Marble];
 
         // Assign appropriate amount to be Disabled, then assign the rest to be Random.
 
@@ -182,10 +178,10 @@ impl TileMap {
         let mut remaining_resource_list = luxury_city_state_weights
             .iter()
             .filter(|(luxury_resource, _)| {
-                !luxury_assigned_to_regions.contains(&luxury_resource.name().to_string())
-                    && !luxury_assigned_to_city_state.contains(&luxury_resource.name().to_string())
+                !luxury_assigned_to_regions.contains(luxury_resource)
+                    && !luxury_assigned_to_city_state.contains(luxury_resource)
             })
-            .map(|(luxury_resource, _)| luxury_resource.name().to_string())
+            .map(|(luxury_resource, _)| luxury_resource)
             .collect::<Vec<_>>();
 
         remaining_resource_list.shuffle(&mut self.random_number_generator);
@@ -193,7 +189,7 @@ impl TileMap {
         let mut luxury_not_being_used = Vec::new();
         let mut luxury_assigned_to_random = Vec::new();
 
-        for resource in remaining_resource_list {
+        for &resource in remaining_resource_list {
             if luxury_not_being_used.len() < num_disabled_luxury_resource {
                 luxury_not_being_used.push(resource);
             } else {
@@ -246,130 +242,130 @@ impl TileMap {
         ]; */
 
         let luxury_fallback_weights = vec![
-            (Resource::Resource("Whales".to_string()), 10),
-            (Resource::Resource("Pearls".to_string()), 10),
-            (Resource::Resource("Gold Ore".to_string()), 10),
-            (Resource::Resource("Silver".to_string()), 5),
-            (Resource::Resource("Gems".to_string()), 10),
-            (Resource::Resource("Ivory".to_string()), 5),
-            (Resource::Resource("Furs".to_string()), 10),
-            (Resource::Resource("Dyes".to_string()), 5),
-            (Resource::Resource("Spices".to_string()), 5),
-            (Resource::Resource("Silk".to_string()), 5),
-            (Resource::Resource("Sugar".to_string()), 5),
-            (Resource::Resource("Cotton".to_string()), 5),
-            (Resource::Resource("Wine".to_string()), 5),
-            (Resource::Resource("Incense".to_string()), 5),
-            (Resource::Resource("Copper".to_string()), 5),
-            (Resource::Resource("Salt".to_string()), 5),
-            (Resource::Resource("Citrus".to_string()), 5),
-            (Resource::Resource("Truffles".to_string()), 5),
-            (Resource::Resource("Crab".to_string()), 10),
-            (Resource::Resource("Cocoa".to_string()), 5),
+            (Resource::Whales, 10),
+            (Resource::Pearls, 10),
+            (Resource::GoldOre, 10),
+            (Resource::Silver, 5),
+            (Resource::Gems, 10),
+            (Resource::Ivory, 5),
+            (Resource::Furs, 10),
+            (Resource::Dyes, 5),
+            (Resource::Spices, 5),
+            (Resource::Silk, 5),
+            (Resource::Sugar, 5),
+            (Resource::Cotton, 5),
+            (Resource::Wine, 5),
+            (Resource::Incense, 5),
+            (Resource::Copper, 5),
+            (Resource::Salt, 5),
+            (Resource::Citrus, 5),
+            (Resource::Truffles, 5),
+            (Resource::Crab, 10),
+            (Resource::Cocoa, 5),
         ];
 
         let luxury_candidates = match region_type {
             RegionType::Undefined => luxury_fallback_weights.clone(),
             RegionType::Tundra => vec![
-                (Resource::Resource("Furs".to_string()), 40),
-                (Resource::Resource("Whales".to_string()), 35),
-                (Resource::Resource("Crab".to_string()), 30),
-                (Resource::Resource("Silver".to_string()), 25),
-                (Resource::Resource("Copper".to_string()), 15),
-                (Resource::Resource("Salt".to_string()), 15),
-                (Resource::Resource("Gems".to_string()), 5),
-                (Resource::Resource("Dyes".to_string()), 5),
+                (Resource::Furs, 40),
+                (Resource::Whales, 35),
+                (Resource::Crab, 30),
+                (Resource::Silver, 25),
+                (Resource::Copper, 15),
+                (Resource::Salt, 15),
+                (Resource::Gems, 5),
+                (Resource::Dyes, 5),
             ],
             RegionType::Jungle => vec![
-                (Resource::Resource("Cocoa".to_string()), 35),
-                (Resource::Resource("Citrus".to_string()), 35),
-                (Resource::Resource("Spices".to_string()), 30),
-                (Resource::Resource("Gems".to_string()), 20),
-                (Resource::Resource("Sugar".to_string()), 20),
-                (Resource::Resource("Pearls".to_string()), 20),
-                (Resource::Resource("Copper".to_string()), 5),
-                (Resource::Resource("Truffles".to_string()), 5),
-                (Resource::Resource("Crab".to_string()), 5),
-                (Resource::Resource("Silk".to_string()), 5),
-                (Resource::Resource("Dyes".to_string()), 5),
+                (Resource::Cocoa, 35),
+                (Resource::Citrus, 35),
+                (Resource::Spices, 30),
+                (Resource::Gems, 20),
+                (Resource::Sugar, 20),
+                (Resource::Pearls, 20),
+                (Resource::Copper, 5),
+                (Resource::Truffles, 5),
+                (Resource::Crab, 5),
+                (Resource::Silk, 5),
+                (Resource::Dyes, 5),
             ],
             RegionType::Forest => vec![
-                (Resource::Resource("Dyes".to_string()), 30),
-                (Resource::Resource("Silk".to_string()), 30),
-                (Resource::Resource("Truffles".to_string()), 30),
-                (Resource::Resource("Furs".to_string()), 10),
-                (Resource::Resource("Spices".to_string()), 10),
-                (Resource::Resource("Citrus".to_string()), 5),
-                (Resource::Resource("Salt".to_string()), 5),
-                (Resource::Resource("Copper".to_string()), 5),
-                (Resource::Resource("Cocoa".to_string()), 5),
-                (Resource::Resource("Crab".to_string()), 10),
-                (Resource::Resource("Whales".to_string()), 10),
-                (Resource::Resource("Pearls".to_string()), 10),
+                (Resource::Dyes, 30),
+                (Resource::Silk, 30),
+                (Resource::Truffles, 30),
+                (Resource::Furs, 10),
+                (Resource::Spices, 10),
+                (Resource::Citrus, 5),
+                (Resource::Salt, 5),
+                (Resource::Copper, 5),
+                (Resource::Cocoa, 5),
+                (Resource::Crab, 10),
+                (Resource::Whales, 10),
+                (Resource::Pearls, 10),
             ],
             RegionType::Desert => vec![
-                (Resource::Resource("Incense".to_string()), 35),
-                (Resource::Resource("Salt".to_string()), 15),
-                (Resource::Resource("Gold Ore".to_string()), 25),
-                (Resource::Resource("Copper".to_string()), 10),
-                (Resource::Resource("Cotton".to_string()), 15),
-                (Resource::Resource("Sugar".to_string()), 15),
-                (Resource::Resource("Pearls".to_string()), 5),
-                (Resource::Resource("Citrus".to_string()), 5),
+                (Resource::Incense, 35),
+                (Resource::Salt, 15),
+                (Resource::GoldOre, 25),
+                (Resource::Copper, 10),
+                (Resource::Cotton, 15),
+                (Resource::Sugar, 15),
+                (Resource::Pearls, 5),
+                (Resource::Citrus, 5),
             ],
             RegionType::Hill => vec![
-                (Resource::Resource("Gold Ore".to_string()), 30),
-                (Resource::Resource("Silver".to_string()), 30),
-                (Resource::Resource("Copper".to_string()), 30),
-                (Resource::Resource("Gems".to_string()), 15),
-                (Resource::Resource("Pearls".to_string()), 15),
-                (Resource::Resource("Salt".to_string()), 10),
-                (Resource::Resource("Crab".to_string()), 10),
-                (Resource::Resource("Whales".to_string()), 10),
+                (Resource::GoldOre, 30),
+                (Resource::Silver, 30),
+                (Resource::Copper, 30),
+                (Resource::Gems, 15),
+                (Resource::Pearls, 15),
+                (Resource::Salt, 10),
+                (Resource::Crab, 10),
+                (Resource::Whales, 10),
             ],
             RegionType::Plain => vec![
-                (Resource::Resource("Ivory".to_string()), 35),
-                (Resource::Resource("Wine".to_string()), 35),
-                (Resource::Resource("Salt".to_string()), 25),
-                (Resource::Resource("Incense".to_string()), 10),
-                (Resource::Resource("Spices".to_string()), 5),
-                (Resource::Resource("Whales".to_string()), 5),
-                (Resource::Resource("Pearls".to_string()), 5),
-                (Resource::Resource("Crab".to_string()), 5),
-                (Resource::Resource("Truffles".to_string()), 5),
-                (Resource::Resource("Gold Ore".to_string()), 5),
+                (Resource::Ivory, 35),
+                (Resource::Wine, 35),
+                (Resource::Salt, 25),
+                (Resource::Incense, 10),
+                (Resource::Spices, 5),
+                (Resource::Whales, 5),
+                (Resource::Pearls, 5),
+                (Resource::Crab, 5),
+                (Resource::Truffles, 5),
+                (Resource::GoldOre, 5),
             ],
             RegionType::Grassland => vec![
-                (Resource::Resource("Cotton".to_string()), 30),
-                (Resource::Resource("Silver".to_string()), 20),
-                (Resource::Resource("Sugar".to_string()), 20),
-                (Resource::Resource("Copper".to_string()), 20),
-                (Resource::Resource("Crab".to_string()), 20),
-                (Resource::Resource("Pearls".to_string()), 10),
-                (Resource::Resource("Whales".to_string()), 10),
-                (Resource::Resource("Cocoa".to_string()), 10),
-                (Resource::Resource("Truffles".to_string()), 5),
-                (Resource::Resource("Spices".to_string()), 5),
-                (Resource::Resource("Gems".to_string()), 5),
+                (Resource::Cotton, 30),
+                (Resource::Silver, 20),
+                (Resource::Sugar, 20),
+                (Resource::Copper, 20),
+                (Resource::Crab, 20),
+                (Resource::Pearls, 10),
+                (Resource::Whales, 10),
+                (Resource::Cocoa, 10),
+                (Resource::Truffles, 5),
+                (Resource::Spices, 5),
+                (Resource::Gems, 5),
             ],
             RegionType::Hybrid => vec![
-                (Resource::Resource("Ivory".to_string()), 15),
-                (Resource::Resource("Cotton".to_string()), 15),
-                (Resource::Resource("Wine".to_string()), 15),
-                (Resource::Resource("Silver".to_string()), 10),
-                (Resource::Resource("Salt".to_string()), 15),
-                (Resource::Resource("Copper".to_string()), 20),
-                (Resource::Resource("Whales".to_string()), 20),
-                (Resource::Resource("Pearls".to_string()), 20),
-                (Resource::Resource("Crab".to_string()), 20),
-                (Resource::Resource("Truffles".to_string()), 10),
-                (Resource::Resource("Cocoa".to_string()), 10),
-                (Resource::Resource("Spices".to_string()), 5),
-                (Resource::Resource("Sugar".to_string()), 5),
-                (Resource::Resource("Incense".to_string()), 5),
-                (Resource::Resource("Silk".to_string()), 5),
-                (Resource::Resource("Gems".to_string()), 5),
-                (Resource::Resource("Gold Ore".to_string()), 5),
+                (Resource::Ivory, 15),
+                (Resource::Cotton, 15),
+                (Resource::Wine, 15),
+                (Resource::Silver, 10),
+                (Resource::Salt, 15),
+                (Resource::Copper, 20),
+                (Resource::Whales, 20),
+                (Resource::Pearls, 20),
+                (Resource::Crab, 20),
+                (Resource::Truffles, 10),
+                (Resource::Cocoa, 10),
+                (Resource::Spices, 5),
+                (Resource::Sugar, 5),
+                (Resource::Incense, 5),
+                (Resource::Silk, 5),
+                (Resource::Gems, 5),
+                (Resource::GoldOre, 5),
             ],
         };
 
@@ -392,7 +388,7 @@ impl TileMap {
         //    - If num_assigned_luxury_types < `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can assign more luxury types to regions.
         //    - If num_assigned_luxury_types = `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can only assign luxury types to regions that are already assigned to regions.
         let is_eligible_luxury_resource =
-            |luxury_resource: &str,
+            |luxury_resource: Resource,
              luxury_assignment_count: u32,
              max_regions_per_luxury_type: u32| {
                 luxury_assignment_count < max_regions_per_luxury_type
@@ -401,16 +397,15 @@ impl TileMap {
                         || self
                             .luxury_resource_role
                             .luxury_assigned_to_regions
-                            .contains(&luxury_resource.to_string()))
+                            .contains(&luxury_resource))
             };
 
         let mut resource_list = Vec::new();
         let mut resource_weight_list = Vec::new();
-        for (luxury_resource, weight) in luxury_candidates.iter() {
-            let luxury_resource = luxury_resource.name();
+        for &(luxury_resource, weight) in luxury_candidates.iter() {
             let luxury_assign_to_region_count: u32 = *self
                 .luxury_assign_to_region_count
-                .get(luxury_resource)
+                .get(&luxury_resource)
                 .unwrap_or(&0);
 
             if is_eligible_luxury_resource(
@@ -420,9 +415,9 @@ impl TileMap {
             ) {
                 // This type still eligible.
                 // Water-based resources need to run a series of permission checks: coastal start in region, not a disallowed regions type, enough water, etc.
-                if luxury_resource == "Whales"
-                    || luxury_resource == "Pearls"
-                    || luxury_resource == "Crab"
+                if luxury_resource == Resource::Whales
+                    || luxury_resource == Resource::Pearls
+                    || luxury_resource == Resource::Crab
                 {
                     // The code below is commented is unnecessary in the current implementation,
                     // because `luxury_candidates` is already filtered to only include resources that are allowed in the region type.
@@ -462,11 +457,10 @@ impl TileMap {
             && region_type != RegionType::Undefined
             && max_regions_per_exclusive_luxury != MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
         {
-            for (luxury_resource, weight) in luxury_fallback_weights.iter() {
-                let luxury_resource = luxury_resource.name();
+            for &(luxury_resource, weight) in luxury_fallback_weights.iter() {
                 let luxury_assign_to_region_count: u32 = *self
                     .luxury_assign_to_region_count
-                    .get(luxury_resource)
+                    .get(&luxury_resource)
                     .unwrap_or(&0);
                 if is_eligible_luxury_resource(
                     luxury_resource,
@@ -475,19 +469,24 @@ impl TileMap {
                 ) {
                     // This type still eligible.
                     // Water-based resources need to run a series of permission checks: coastal start in region, not a disallowed regions type, enough water, etc.
-                    if luxury_resource == "Whales"
-                        || luxury_resource == "Pearls"
-                        || luxury_resource == "Crab"
+                    if luxury_resource == Resource::Whales
+                        || luxury_resource == Resource::Pearls
+                        || luxury_resource == Resource::Crab
                     {
                         // Diffent with the code commented above, this code is necessary here,
                         // because `luxury_fallback_weights` is not filtered according to the region type.
-                        if luxury_resource == "Whales" && region_type == RegionType::Jungle {
+                        if luxury_resource == Resource::Whales && region_type == RegionType::Jungle
+                        {
                             // Whales are not allowed in Jungle regions.
                             continue;
-                        } else if luxury_resource == "Pearls" && region_type == RegionType::Tundra {
+                        } else if luxury_resource == Resource::Pearls
+                            && region_type == RegionType::Tundra
+                        {
                             // Pearls are not allowed in Tundra regions.
                             continue;
-                        } else if luxury_resource == "Crab" && region_type == RegionType::Desert {
+                        } else if luxury_resource == Resource::Crab
+                            && region_type == RegionType::Desert
+                        {
                             // Crabs are not allowed in Desert regions.
                             // NOTE: In the original code, this check is not present. I think it is a bug.
                             continue;
@@ -513,11 +512,10 @@ impl TileMap {
         // If we get to here and still need to assign a luxury type, it means we have to force a water-based luxury in to this region, period.
         // This should be the rarest of the rare emergency assignment cases, unless modifications to the system have tightened things too far.
         if resource_list.is_empty() {
-            for (luxury_resource, weight) in luxury_candidates.iter() {
-                let luxury_resource = luxury_resource.name();
+            for &(luxury_resource, weight) in luxury_candidates.iter() {
                 let luxury_assign_to_region_count: u32 = *self
                     .luxury_assign_to_region_count
-                    .get(luxury_resource)
+                    .get(&luxury_resource)
                     .unwrap_or(&0);
                 if is_eligible_luxury_resource(
                     luxury_resource,
@@ -537,9 +535,8 @@ impl TileMap {
 
         // Choose a random luxury resource from the list.
         let dist: WeightedIndex<u32> = WeightedIndex::new(&resource_weight_list).unwrap();
-        let resource = resource_list[dist.sample(&mut self.random_number_generator)];
 
-        Resource::Resource(resource.to_string())
+        resource_list[dist.sample(&mut self.random_number_generator)]
     }
 
     // function AssignStartingPlots:AttemptToPlaceHillsAtPlot
@@ -572,15 +569,14 @@ impl TileMap {
                 tile.base_terrain(self),
                 BaseTerrain::Grassland | BaseTerrain::Plain
             ) {
-                let mut resource = Resource::Resource("Horses".to_owned());
+                let mut resource = Resource::Horses;
                 let diceroll = self.random_number_generator.gen_range(0..4);
                 if diceroll == 2 {
-                    resource = Resource::Resource("Iron".to_owned());
+                    resource = Resource::Iron;
                 }
                 self.resource_query[tile.index()] = Some((resource, 2));
             } else {
-                self.resource_query[tile.index()] =
-                    Some((Resource::Resource("Iron".to_owned()), 2));
+                self.resource_query[tile.index()] = Some((Resource::Iron, 2));
             }
             true
         } else {
@@ -613,8 +609,7 @@ impl TileMap {
             match terrain_type {
                 TerrainType::Water => {
                     if base_terrain == BaseTerrain::Coast && feature.is_none() {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Fish".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Fish, 1));
                         return (true, false);
                     }
                 }
@@ -622,14 +617,12 @@ impl TileMap {
                     if feature.is_none() {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                self.resource_query[tile.index()] =
-                                    Some((Resource::Resource("Cow".to_owned()), 1));
+                                self.resource_query[tile.index()] = Some((Resource::Cattle, 1));
                                 return (true, false);
                             }
                             BaseTerrain::Desert => {
                                 if tile.is_freshwater(self) {
-                                    self.resource_query[tile.index()] =
-                                        Some((Resource::Resource("Wheat".to_owned()), 1));
+                                    self.resource_query[tile.index()] = Some((Resource::Wheat, 1));
                                     return (true, false);
                                 } else if allow_oasis {
                                     self.feature_query[tile.index()] = Some(Feature::Oasis);
@@ -637,13 +630,11 @@ impl TileMap {
                                 }
                             }
                             BaseTerrain::Plain => {
-                                self.resource_query[tile.index()] =
-                                    Some((Resource::Resource("Wheat".to_owned()), 1));
+                                self.resource_query[tile.index()] = Some((Resource::Wheat, 1));
                                 return (true, false);
                             }
                             BaseTerrain::Tundra => {
-                                self.resource_query[tile.index()] =
-                                    Some((Resource::Resource("Deer".to_owned()), 1));
+                                self.resource_query[tile.index()] = Some((Resource::Deer, 1));
                                 return (true, false);
                             }
                             _ => {
@@ -651,28 +642,23 @@ impl TileMap {
                             }
                         }
                     } else if feature == Some(Feature::Forest) {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Deer".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Deer, 1));
                         return (true, false);
                     } else if feature == Some(Feature::Jungle) {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Bananas".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Bananas, 1));
                         return (true, false);
                     }
                 }
                 TerrainType::Mountain => (),
                 TerrainType::Hill => {
                     if feature.is_none() {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Sheep".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Sheep, 1));
                         return (true, false);
                     } else if feature == Some(Feature::Forest) {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Deer".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Deer, 1));
                         return (true, false);
                     } else if feature == Some(Feature::Jungle) {
-                        self.resource_query[tile.index()] =
-                            Some((Resource::Resource("Bananas".to_owned()), 1));
+                        self.resource_query[tile.index()] = Some((Resource::Bananas, 1));
                         return (true, false);
                     }
                 }
@@ -691,7 +677,7 @@ impl TileMap {
             && tile.base_terrain(self) == BaseTerrain::Grassland
             && tile.feature(self).is_none()
         {
-            self.resource_query[tile.index()] = Some((Resource::Resource("Stone".to_owned()), 1));
+            self.resource_query[tile.index()] = Some((Resource::Stone, 1));
             true
         } else {
             false
@@ -752,7 +738,7 @@ impl TileMap {
         for _ in 0..num_resources_to_place {
             let current_resource_to_place =
                 &resource_list_to_place[dist.sample(&mut self.random_number_generator)];
-            let resource = &current_resource_to_place.resource;
+            let resource = current_resource_to_place.resource;
             let quantity = current_resource_to_place.quantity;
             let min_radius = current_resource_to_place.min_radius;
             let max_radius = current_resource_to_place.max_radius;
@@ -762,8 +748,7 @@ impl TileMap {
             // First pass: Seek the first eligible 0 value on impact matrix
             for &tile in plot_list_iter.by_ref() {
                 if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
-                    self.resource_query[tile.index()] =
-                        Some((Resource::Resource(resource.to_string()), quantity));
+                    self.resource_query[tile.index()] = Some((resource, quantity));
                     self.place_impact_and_ripples(tile, layer, radius);
                     break;
                 }
@@ -779,8 +764,7 @@ impl TileMap {
                     })
                     .min_by_key(|tile| self.layer_data[layer][tile.index()]);
                 if let Some(&tile) = best_plot {
-                    self.resource_query[tile.index()] =
-                        Some((Resource::Resource(resource.to_string()), quantity));
+                    self.resource_query[tile.index()] = Some((resource, quantity));
                     self.place_impact_and_ripples(tile, layer, radius);
                 }
             }
@@ -865,7 +849,7 @@ impl TileMap {
                 if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
                     // Place resource on tile if it doesn't have a resource already
                     if tile.resource(self).is_none() {
-                        self.resource_query[tile.index()] = Some((resource.clone(), quantity));
+                        self.resource_query[tile.index()] = Some((resource, quantity));
                         num_left_to_place -= 1;
                     }
                     // Place impact and ripples if `has_impact` is true
@@ -892,27 +876,27 @@ pub struct LuxuryResourceRole {
     /// In original CIV5, the same luxury resource can only be found in at most 3 regions on the map.
     /// Because there are a maximum of 22 civilizations (each representing a region) in the game, so these luxury types are limited to 8 in original CIV5.
     pub luxury_assigned_to_regions:
-        ArrayVec<String, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS }>,
+        ArrayVec<Resource, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS }>,
 
     /// Exclusively Assigned to a city state. The length of this set is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES`].
     ///
     /// These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
     pub luxury_assigned_to_city_state:
-        ArrayVec<String, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES }>,
+        ArrayVec<Resource, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES }>,
 
     /// Special case. For example, `Marble`. For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
-    pub luxury_assigned_to_special_case: Vec<String>,
+    pub luxury_assigned_to_special_case: Vec<Resource>,
 
     /// Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
-    pub luxury_assigned_to_random: Vec<String>,
+    pub luxury_assigned_to_random: Vec<Resource>,
 
     /// Disabled. We will not place it on the map.
-    pub _luxury_not_being_used: Vec<String>,
+    pub _luxury_not_being_used: Vec<Resource>,
 }
 
 pub struct ResourceToPlace {
-    /// The name of the resource.
-    pub resource: String,
+    /// The resource will be placed on the tile.
+    pub resource: Resource,
     /// The number of the resource will be placed on one tile.
     pub quantity: u32,
     /// Determine the probability of placing the resource on a tile.

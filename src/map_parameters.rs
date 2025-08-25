@@ -465,6 +465,7 @@ impl Rectangle {
     }
 
     /// Returns an iterator over all tiles in current rectangle region of the map.
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn all_tiles(self, grid: HexGrid) -> impl Iterator<Item = Tile> {
         (self.south_y()..self.south_y() + self.height as i32).flat_map(move |y| {
             (self.west_x()..self.west_x() + self.width as i32).map(move |x| {

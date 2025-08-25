@@ -953,8 +953,8 @@ impl TileMap {
     /// - [`TileType::Food`] may be misleading, as this is the primary mechanism for biasing starting terrain.
     ///   It is not strictly equivalent to tile yield. That's because regions with different [`RegionType`] obtain food in various ways.
     //    Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support to compensate for food shortages.
-    ///    For example, in tundra regions I have tundra tiles set as Food, but grass are not.
-    ///    A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
+    ///   For example, in tundra regions I have tundra tiles set as Food, but grass are not.
+    ///   A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
     /// - [`TileType::Good`] act as a hedge, and are the main way of differentiating one candidate site from another,
     ///   so that among a group of plots of similar terrain, the best tends to get picked.
     /// - [`TileType::Production`] is used to identify tiles that yield production.

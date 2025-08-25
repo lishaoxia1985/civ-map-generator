@@ -1,13 +1,15 @@
 use std::cmp::{max, min};
 
-use enum_map::{enum_map, EnumMap};
+use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     grid::{hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, WrapFlags},
     map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
-    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
+    tile_component::{
+        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    },
     tile_map::{MapParameters, TileMap},
 };
 
@@ -629,7 +631,7 @@ const fn largest_power_of_three_less_or_equal(a: u32) -> u32 {
 
 /// The terrain statistic of the region.
 /// Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct TerrainStatistic {
     /// Each terrain type's number in the region.
     pub terrain_type_num: EnumMap<TerrainType, u32>,
@@ -643,31 +645,6 @@ pub struct TerrainStatistic {
     pub coastal_land_num: u32,
     /// The number of tiles which are land, not coastal land, but are next to coastal land in the region.
     pub next_to_coastal_land_num: u32,
-}
-
-impl Default for TerrainStatistic {
-    fn default() -> Self {
-        let terrain_type_num = enum_map! {
-            _ => 0,
-        };
-
-        let base_terrain_num = enum_map! {
-            _ => 0,
-        };
-
-        let feature_num = enum_map! {
-            _ => 0,
-        };
-
-        TerrainStatistic {
-            terrain_type_num,
-            base_terrain_num,
-            feature_num,
-            river_num: 0,
-            coastal_land_num: 0,
-            next_to_coastal_land_num: 0,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -698,8 +675,11 @@ pub struct Region {
     ///
     /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
     ///
-    /// When we run [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
-    pub exclusive_luxury: String,
+    /// # Notice
+    ///
+    /// Before reading this field, you must ensure that we have run [`TileMap::assign_luxury_roles`] to set this field.
+    /// And this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
+    pub exclusive_luxury: Option<Resource>,
 }
 
 impl Region {
@@ -717,7 +697,7 @@ impl Region {
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
             start_location_condition: StartLocationCondition::default(),
-            exclusive_luxury: String::new(),
+            exclusive_luxury: None,
         }
     }
 

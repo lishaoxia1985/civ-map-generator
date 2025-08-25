@@ -7,10 +7,7 @@ use glam::Vec2;
 use crate::{
     grid::{
         direction::Direction,
-        hex_grid::{
-            hex::{Hex, HexOrientation},
-            HexGrid,
-        },
+        hex_grid::{hex::Hex, HexGrid},
         offset_coordinate::OffsetCoordinate,
         Cell, Grid,
     },
@@ -139,13 +136,13 @@ impl Tile {
     /// Returns the natural wonder of the tile at the given index.
     #[inline]
     pub fn natural_wonder(&self, tile_map: &TileMap) -> Option<NaturalWonder> {
-        tile_map.natural_wonder_query[self.0].clone()
+        tile_map.natural_wonder_query[self.0]
     }
 
     /// Returns the resource of the tile at the given index.
     #[inline]
     pub fn resource(&self, tile_map: &TileMap) -> Option<(Resource, u32)> {
-        tile_map.resource_query[self.0].clone()
+        tile_map.resource_query[self.0]
     }
 
     /// Returns the area ID of the tile at the given index.
@@ -161,7 +158,7 @@ impl Tile {
     }
 
     /// Returns an iterator over the neighboring tiles of the current tile.
-    ///
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn neighbor_tiles(&self, grid: HexGrid) -> impl Iterator<Item = Self> {
         self.tiles_at_distance(1, grid)
     }
@@ -187,14 +184,14 @@ impl Tile {
     }
 
     /// Returns an iterator over the tiles at the given distance from the current tile.
-    ///
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_at_distance(self.to_cell(), distance)
             .map(Self::from_cell)
     }
 
     /// Returns an iterator over the tiles within the given distance from the current tile, including the current tile.
-    ///
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn tiles_in_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_within_distance(self.to_cell(), distance)
             .map(Self::from_cell)
@@ -274,10 +271,10 @@ impl Tile {
         self.terrain_type(tile_map) == TerrainType::Mountain
             || self
                 .feature(tile_map)
-                .map_or(false, |feature| feature.impassable(ruleset))
-            || self
-                .natural_wonder(tile_map)
-                .map_or(false, |natural_wonder| natural_wonder.impassable(ruleset))
+                .is_some_and(|feature| ruleset.features[feature.as_str()].impassable)
+            || self.natural_wonder(tile_map).is_some_and(|natural_wonder| {
+                ruleset.natural_wonders[natural_wonder.as_str()].impassable
+            })
     }
 
     /// Check if the tile is freshwater
@@ -363,9 +360,8 @@ impl Tile {
         matches!(
             self.terrain_type(tile_map),
             TerrainType::Flatland | TerrainType::Hill
-        ) && region.map_or(true, |region| {
-            Some(self.area_id(tile_map)) == region.area_id
-        }) && self.base_terrain(tile_map) != BaseTerrain::Snow
+        ) && region.is_none_or(|region| Some(self.area_id(tile_map)) == region.area_id)
+            && self.base_terrain(tile_map) != BaseTerrain::Snow
             && (tile_map.layer_data[Layer::CityState][self.index()] == 0)
             && (!tile_map.player_collision_data[self.index()])
     }

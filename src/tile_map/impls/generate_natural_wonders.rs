@@ -1,7 +1,8 @@
 use std::cmp::Reverse;
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 
+use enum_map::EnumMap;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
@@ -33,12 +34,11 @@ impl TileMap {
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
-        let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
+        // Collect the natural wonders and their possible tile locations
+        let mut natural_wonder_and_tile_list: EnumMap<NaturalWonder, Vec<Tile>> =
+            EnumMap::default();
 
-        // Replace HashMap with BTreeMap to ensure consistent order
-        let mut natural_wonder_and_tile = BTreeMap::new();
-
-        let mut landmass_id_and_size: Vec<_> = self
+        let mut land_area_id_and_size: Vec<_> = self
             .area_list
             .iter()
             .filter(|area| !area.is_water)
@@ -46,7 +46,7 @@ impl TileMap {
             .collect();
 
         // Sort by `area_size` in descending order
-        landmass_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
+        land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
         // When a natural wonder requires occupying 2 adjacent tiles,
         // we choose the current tile and one of its randomly selected adjacent tiles
@@ -62,11 +62,11 @@ impl TileMap {
             .expect("Failed to choose a random direction");
 
         for tile in self.all_tiles() {
-            for &natural_wonder_name in &natural_wonder_list {
-                let possible_natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
+            for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
+                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
-                match natural_wonder_name.as_str() {
-                    "Great Barrier Reef" => {
+                match natural_wonder {
+                    NaturalWonder::GreatBarrierReef => {
                         if let Some(neighbor_tile) =
                             tile.neighbor_tile(neighbor_tile_direction, grid)
                         {
@@ -96,22 +96,19 @@ impl TileMap {
                                     .count()
                                     >= 4
                             {
-                                natural_wonder_and_tile
-                                    .entry(natural_wonder_name)
-                                    .or_insert_with(Vec::new)
-                                    .push(tile);
+                                tile_list.push(tile);
                             }
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self) != possible_natural_wonder.is_fresh_water {
+                        if tile.is_freshwater(self) != natural_wonder_info.is_fresh_water {
                             continue;
                         };
 
-                        if !possible_natural_wonder
+                        if !natural_wonder_info
                             .occurs_on_type
                             .contains(&tile.terrain_type(self))
-                            || !possible_natural_wonder
+                            || !natural_wonder_info
                                 .occurs_on_base
                                 .contains(&tile.base_terrain(self))
                         {
@@ -119,7 +116,7 @@ impl TileMap {
                         }
 
                         let check_unique_conditions =
-                            possible_natural_wonder.uniques.iter().all(|unique| {
+                            natural_wonder_info.uniques.iter().all(|unique| {
                                 let unique = Unique::new(unique);
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {
@@ -151,43 +148,41 @@ impl TileMap {
                                         // index is the ranking of the current landmass among all landmasses sorted by size from highest to lowest.
                                         let index = unique.params[0].parse::<usize>().unwrap();
                                         // Check if the tile isn't on the landmass with the given index
-                                        !landmass_id_and_size
+                                        land_area_id_and_size
                                             .get(index)
-                                            .map_or(false, |&(id, _)| id == tile.area_id(self))
+                                            .is_none_or(|&(id, _)| id != tile.area_id(self))
                                     }
                                     "Must be on [] largest landmasses" => {
                                         // index is the ranking of the current landmass among all landmasses sorted by size from highest to lowest.
                                         let index = unique.params[0].parse::<usize>().unwrap();
                                         // Check if the tile is on the landmass with the given index
-                                        landmass_id_and_size
+                                        land_area_id_and_size
                                             .get(index)
-                                            .map_or(false, |&(id, _)| id == tile.area_id(self))
+                                            .is_some_and(|&(id, _)| id == tile.area_id(self))
                                     }
                                     _ => true,
                                 }
                             });
-                        // end check unique conditions
 
                         if check_unique_conditions {
-                            natural_wonder_and_tile
-                                .entry(natural_wonder_name)
-                                .or_insert_with(Vec::new)
-                                .push(tile);
+                            tile_list.push(tile);
                         }
                     }
                 }
             }
         }
 
-        // Get the natural wonders that can be placed
-        // NOTICE: Because `natural_wonder_and_tile` is BTreeMap, so the order of the keys is sorted.
-        let mut selected_natural_wonder_list: Vec<_> =
-            natural_wonder_and_tile.keys().cloned().collect();
+        // Collect the natural wonders that can be placed
+        let mut selected_natural_wonder_list: Vec<_> = natural_wonder_and_tile_list
+            .iter()
+            .filter(|(_, tiles)| !tiles.is_empty())
+            .map(|(natural_wonder, _)| natural_wonder)
+            .collect();
 
         // Sort the natural wonders by the number of tiles they can be placed
         // In CIV5, the natural wonders with lesser number of tiles will be placed first.
         selected_natural_wonder_list
-            .sort_by_key(|natural_wonder| natural_wonder_and_tile[natural_wonder].len());
+            .sort_by_key(|&natural_wonder| natural_wonder_and_tile_list[natural_wonder].len());
 
         // Store current how many natural wonders have been placed
         let mut j = 0;
@@ -197,23 +192,22 @@ impl TileMap {
         // start to place wonder
         selected_natural_wonder_list
             .into_iter()
-            .for_each(|natural_wonder_name| {
+            .for_each(|natural_wonder| {
                 if j < natural_wonder_target_number {
-                    let tiles = natural_wonder_and_tile
-                        .get_mut(natural_wonder_name)
-                        .unwrap();
+                    let tile_list = &mut natural_wonder_and_tile_list[natural_wonder];
 
-                    tiles.shuffle(&mut self.random_number_generator);
+                    tile_list.shuffle(&mut self.random_number_generator);
 
-                    for &tile in tiles.iter() {
+                    for &tile in tile_list.iter() {
                         if self.layer_data[Layer::NaturalWonder][tile.index()] == 0 {
-                            let natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
+                            let natural_wonder_info =
+                                &ruleset.natural_wonders[natural_wonder.as_str()];
 
                             // At first, we should remove feature from the tile
                             self.feature_query[tile.index()] = None;
 
-                            match natural_wonder_name.as_str() {
-                                "Great Barrier Reef" => {
+                            match natural_wonder {
+                                NaturalWonder::GreatBarrierReef => {
                                     // The neighbor tile absolutely exists because we have checked it before.
                                     let neighbor_tile = tile
                                         .neighbor_tile(neighbor_tile_direction, grid)
@@ -233,17 +227,14 @@ impl TileMap {
                                         self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
                                     });
                                     // place the natural wonder on the candidate position and its adjacent tile
-                                    self.natural_wonder_query[tile.index()] = Some(
-                                        NaturalWonder::NaturalWonder(natural_wonder_name.clone()),
-                                    );
-                                    self.natural_wonder_query[neighbor_tile.index()] = Some(
-                                        NaturalWonder::NaturalWonder(natural_wonder_name.clone()),
-                                    );
+                                    self.natural_wonder_query[tile.index()] = Some(natural_wonder);
+                                    self.natural_wonder_query[neighbor_tile.index()] =
+                                        Some(natural_wonder);
                                     // add the position of the placed natural wonder to the list of placed natural wonder positions
                                     placed_natural_wonder_tiles.push(tile);
                                     placed_natural_wonder_tiles.push(neighbor_tile);
                                 }
-                                "Rock of Gibraltar" => {
+                                NaturalWonder::RockOfGibraltar => {
                                     tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
                                         if neighbor_tile.terrain_type(self) == TerrainType::Water {
                                             self.base_terrain_query[neighbor_tile.index()] =
@@ -258,31 +249,27 @@ impl TileMap {
                                     // Edit the choice tile's base_terrain to match the natural wonder
                                     self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
                                     // place the natural wonder on the candidate position
-                                    self.natural_wonder_query[tile.index()] = Some(
-                                        NaturalWonder::NaturalWonder(natural_wonder_name.clone()),
-                                    );
+                                    self.natural_wonder_query[tile.index()] = Some(natural_wonder);
                                     // add the position of the placed natural wonder to the list of placed natural wonder positions
                                     placed_natural_wonder_tiles.push(tile);
                                 }
                                 _ => {
                                     // Edit the choice tile's terrain_type to match the natural wonder
                                     if let Some(turn_into_terrain_type) =
-                                        natural_wonder.turns_into_type
+                                        natural_wonder_info.turns_into_type
                                     {
                                         self.terrain_type_query[tile.index()] =
                                             turn_into_terrain_type;
                                     };
                                     // Edit the choice tile's base_terrain to match the natural wonder
                                     if let Some(turn_into_base_terrain) =
-                                        natural_wonder.turns_into_base
+                                        natural_wonder_info.turns_into_base
                                     {
                                         self.base_terrain_query[tile.index()] =
                                             turn_into_base_terrain;
                                     }
                                     // place the natural wonder on the candidate position
-                                    self.natural_wonder_query[tile.index()] = Some(
-                                        NaturalWonder::NaturalWonder(natural_wonder_name.clone()),
-                                    );
+                                    self.natural_wonder_query[tile.index()] = Some(natural_wonder);
                                     // add the position of the placed natural wonder to the list of placed natural wonder positions
                                     placed_natural_wonder_tiles.push(tile);
                                 }
@@ -349,12 +336,11 @@ impl TileMap {
         // Get the number of natural wonders to place based on the world size
         let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
 
-        let natural_wonder_list: Vec<_> = ruleset.natural_wonders.keys().collect();
+        // Collect the natural wonders and their possible tile locations with scores
+        let mut natural_wonder_and_tile_list_and_scores: EnumMap<NaturalWonder, Vec<(Tile, i32)>> =
+            EnumMap::default();
 
-        // Replace HashMap with BTreeMap to ensure consistent order
-        let mut natural_wonder_and_tile_and_score = BTreeMap::new();
-
-        let mut landmass_id_and_size: Vec<_> = self
+        let mut land_area_id_and_size: Vec<_> = self
             .area_list
             .iter()
             .filter(|area| !area.is_water)
@@ -362,7 +348,7 @@ impl TileMap {
             .collect();
 
         // Sort by `area_size` in descending order
-        landmass_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
+        land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
         // When a natural wonder requires occupying 2 adjacent tiles,
         // we choose the current tile and one of its randomly selected adjacent tiles
@@ -378,11 +364,13 @@ impl TileMap {
             .expect("Failed to choose a random direction");
 
         for tile in self.all_tiles() {
-            for &natural_wonder_name in &natural_wonder_list {
-                let possible_natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
+            for (natural_wonder, tile_list_and_scores) in
+                natural_wonder_and_tile_list_and_scores.iter_mut()
+            {
+                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
-                match natural_wonder_name.as_str() {
-                    "Great Barrier Reef" => {
+                match natural_wonder {
+                    NaturalWonder::GreatBarrierReef => {
                         if let Some(neighbor_tile) =
                             tile.neighbor_tile(neighbor_tile_direction, grid)
                         {
@@ -412,22 +400,19 @@ impl TileMap {
                                     .count()
                                     >= 4
                             {
-                                natural_wonder_and_tile_and_score
-                                    .entry(natural_wonder_name)
-                                    .or_insert_with(Vec::new)
-                                    .push((tile, 1));
+                                tile_list_and_scores.push((tile, 1));
                             }
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self) != possible_natural_wonder.is_fresh_water {
+                        if tile.is_freshwater(self) != natural_wonder_info.is_fresh_water {
                             continue;
                         };
 
-                        if !possible_natural_wonder
+                        if !natural_wonder_info
                             .occurs_on_type
                             .contains(&tile.terrain_type(self))
-                            || !possible_natural_wonder
+                            || !natural_wonder_info
                                 .occurs_on_base
                                 .contains(&tile.base_terrain(self))
                         {
@@ -435,7 +420,7 @@ impl TileMap {
                         }
 
                         let check_unique_conditions =
-                            possible_natural_wonder.uniques.iter().all(|unique| {
+                            natural_wonder_info.uniques.iter().all(|unique| {
                                 let unique = Unique::new(unique);
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {
@@ -467,28 +452,24 @@ impl TileMap {
                                         // index is the ranking of the current landmass among all landmasses sorted by size from highest to lowest.
                                         let index = unique.params[0].parse::<usize>().unwrap();
                                         // Check if the tile isn't on the landmass with the given index
-                                        !landmass_id_and_size
+                                        land_area_id_and_size
                                             .get(index)
-                                            .map_or(false, |&(id, _)| id == tile.area_id(self))
+                                            .is_none_or(|&(id, _)| id != tile.area_id(self))
                                     }
                                     "Must be on [] largest landmasses" => {
                                         // index is the ranking of the current landmass among all landmasses sorted by size from highest to lowest.
                                         let index = unique.params[0].parse::<usize>().unwrap();
                                         // Check if the tile is on the landmass with the given index
-                                        landmass_id_and_size
+                                        land_area_id_and_size
                                             .get(index)
-                                            .map_or(false, |&(id, _)| id == tile.area_id(self))
+                                            .is_some_and(|&(id, _)| id == tile.area_id(self))
                                     }
                                     _ => true,
                                 }
                             });
-                        // end check unique conditions
 
                         if check_unique_conditions {
-                            natural_wonder_and_tile_and_score
-                                .entry(natural_wonder_name)
-                                .or_insert_with(Vec::new)
-                                .push((tile, 1));
+                            tile_list_and_scores.push((tile, 1));
                         }
                     }
                 }
@@ -496,9 +477,11 @@ impl TileMap {
         }
 
         // Get the natural wonders that can be placed
-        // NOTICE: Because `natural_wonder_and_tile_and_score` is BTreeMap, so the order of the keys is sorted.
-        let mut selected_natural_wonder_list: Vec<_> =
-            natural_wonder_and_tile_and_score.keys().cloned().collect();
+        let mut selected_natural_wonder_list: Vec<_> = natural_wonder_and_tile_list_and_scores
+            .iter()
+            .filter(|(_, tile_and_score)| !tile_and_score.is_empty())
+            .map(|(natural_wonder, _)| natural_wonder)
+            .collect();
 
         // Shuffle the list that we can choose natural wonder randomly
         // NOTICE: It is different from CIV5.
@@ -512,16 +495,15 @@ impl TileMap {
         // start to place wonder
         selected_natural_wonder_list
             .into_iter()
-            .for_each(|natural_wonder_name| {
+            .for_each(|natural_wonder| {
                 if j < natural_wonder_target_number {
                     // For every natural wonder, give a score to the position where the natural wonder can place.
                     // The score is related to the min value of the distance from the position to all the placed natural wonders
                     // If no natural wonder has placed, we choose the random place where the current natural wonder can place for the current natural wonder
 
                     // the score method start
-                    let tile_and_score = natural_wonder_and_tile_and_score
-                        .get_mut(natural_wonder_name)
-                        .unwrap();
+                    let tile_and_score =
+                        &mut natural_wonder_and_tile_list_and_scores[natural_wonder];
                     for (tile_x, score) in tile_and_score.iter_mut() {
                         let closest_natural_wonder_dist = placed_natural_wonder_tiles
                             .iter()
@@ -544,13 +526,13 @@ impl TileMap {
                         .unwrap();
 
                     if !placed_natural_wonder_tiles.contains(&max_score_tile) {
-                        let natural_wonder = &ruleset.natural_wonders[natural_wonder_name];
+                        let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
                         // At first, we should remove feature from the tile
                         self.feature_query[max_score_tile.index()] = None;
 
-                        match natural_wonder_name.as_str() {
-                            "Great Barrier Reef" => {
+                        match natural_wonder {
+                            NaturalWonder::GreatBarrierReef => {
                                 // The neighbor tile absolutely exists because we have checked it before.
                                 let neighbor_tile = max_score_tile
                                     .neighbor_tile(neighbor_tile_direction, grid)
@@ -572,14 +554,14 @@ impl TileMap {
 
                                 // place the natural wonder on the candidate position and its adjacent tile
                                 self.natural_wonder_query[max_score_tile.index()] =
-                                    Some(NaturalWonder::NaturalWonder(natural_wonder_name.clone()));
+                                    Some(natural_wonder);
                                 self.natural_wonder_query[neighbor_tile.index()] =
-                                    Some(NaturalWonder::NaturalWonder(natural_wonder_name.clone()));
+                                    Some(natural_wonder);
                                 // add the position of the placed natural wonder to the list of placed natural wonder positions
                                 placed_natural_wonder_tiles.push(max_score_tile);
                                 placed_natural_wonder_tiles.push(neighbor_tile);
                             }
-                            "Rock of Gibraltar" => {
+                            NaturalWonder::RockOfGibraltar => {
                                 max_score_tile
                                     .neighbor_tiles(grid)
                                     .for_each(|neighbor_tile| {
@@ -599,26 +581,28 @@ impl TileMap {
                                     BaseTerrain::Grassland;
                                 // place the natural wonder on the candidate position
                                 self.natural_wonder_query[max_score_tile.index()] =
-                                    Some(NaturalWonder::NaturalWonder(natural_wonder_name.clone()));
+                                    Some(natural_wonder);
                                 // add the position of the placed natural wonder to the list of placed natural wonder positions
                                 placed_natural_wonder_tiles.push(max_score_tile);
                             }
                             _ => {
                                 // Edit the choice tile's terrain_type to match the natural wonder
-                                if let Some(turn_into_terrain_type) = natural_wonder.turns_into_type
+                                if let Some(turn_into_terrain_type) =
+                                    natural_wonder_info.turns_into_type
                                 {
                                     self.terrain_type_query[max_score_tile.index()] =
                                         turn_into_terrain_type;
                                 };
                                 // Edit the choice tile's base_terrain to match the natural wonder
-                                if let Some(turn_into_base_terrain) = natural_wonder.turns_into_base
+                                if let Some(turn_into_base_terrain) =
+                                    natural_wonder_info.turns_into_base
                                 {
                                     self.base_terrain_query[max_score_tile.index()] =
                                         turn_into_base_terrain;
                                 }
                                 // place the natural wonder on the candidate position
                                 self.natural_wonder_query[max_score_tile.index()] =
-                                    Some(NaturalWonder::NaturalWonder(natural_wonder_name.clone()));
+                                    Some(natural_wonder);
                                 // add the position of the placed natural wonder to the list of placed natural wonder positions
                                 placed_natural_wonder_tiles.push(max_score_tile);
                             }
@@ -670,9 +654,9 @@ impl TileMap {
             "Elevated" => matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill),
             "Land" => terrain_type != TerrainType::Water,
             _ => {
-                terrain_type.name() == filter
-                    || base_terrain.name() == filter
-                    || feature.map_or(false, |f| f.name() == filter)
+                terrain_type.as_str() == filter
+                    || base_terrain.as_str() == filter
+                    || feature.is_some_and(|f| f.as_str() == filter)
             }
         }
     }

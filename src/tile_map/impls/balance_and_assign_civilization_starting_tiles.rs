@@ -1293,7 +1293,7 @@ impl TileMap {
         if !iron_list.is_empty() {
             iron_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                Resource::Resource("Iron".to_owned()),
+                Resource::Iron,
                 iron_amt,
                 1,
                 1.0,
@@ -1310,7 +1310,7 @@ impl TileMap {
         if !horse_list.is_empty() {
             horse_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                Resource::Resource("Horses".to_owned()),
+                Resource::Horses,
                 horse_amt,
                 1,
                 1.0,
@@ -1327,7 +1327,7 @@ impl TileMap {
         if !oil_list.is_empty() {
             oil_list.shuffle(&mut self.random_number_generator);
             let num_left_to_place = self.place_specific_number_of_resources(
-                Resource::Resource("Oil".to_owned()),
+                Resource::Oil,
                 oil_amt,
                 1,
                 1.0,
@@ -1344,7 +1344,7 @@ impl TileMap {
         if !placed_iron && !iron_fallback.is_empty() {
             iron_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                Resource::Resource("Iron".to_owned()),
+                Resource::Iron,
                 iron_amt,
                 1,
                 1.0,
@@ -1358,7 +1358,7 @@ impl TileMap {
         if !placed_horse && !horse_fallback.is_empty() {
             horse_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                Resource::Resource("Horses".to_owned()),
+                Resource::Horses,
                 horse_amt,
                 1,
                 1.0,
@@ -1372,7 +1372,7 @@ impl TileMap {
         if !placed_oil && !oil_fallback.is_empty() {
             oil_fallback.shuffle(&mut self.random_number_generator);
             self.place_specific_number_of_resources(
-                Resource::Resource("Oil".to_owned()),
+                Resource::Oil,
                 oil_amt,
                 1,
                 1.0,

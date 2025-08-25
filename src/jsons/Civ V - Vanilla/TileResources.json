@@ -81,16 +81,14 @@
 		"improvementStats": {"food": 1},
 		"uniques": ["Generated on every [10] tiles <in [Featureless] [Coast] tiles>"]
 	},
-	/*
 	{
 		"name": "Bison",
 		"resourceType": "Bonus",
 		"canBeFoundOnBase": ["Plain","Grassland"],
 		"food": 1,
 		"improvement": "Camp",
-		"improvementStats": {"food": 1}
+		"improvementStats": {"production": 1}
 	},
-	*/
 	
 	// Strategic resources
 	{

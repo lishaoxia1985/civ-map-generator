@@ -232,7 +232,7 @@ impl TileMap {
         let num_tiles = self.area_list[biggest_water_area_id].size;
 
         // If the biggest water area is too small, we can't place any atolls.
-        if num_tiles as u32 <= grid.size.area() / 4 {
+        if num_tiles <= grid.size.area() / 4 {
             return;
         }
 

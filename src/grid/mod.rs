@@ -105,6 +105,7 @@ pub trait Grid {
     /// # Returns
     ///
     /// - `Result<Cell, String>`: The cell if the coordinate is valid, otherwise an error message.
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     fn offset_to_cell(&self, offset_coordinate: OffsetCoordinate) -> Result<Cell, String> {
         self.normalize_offset(offset_coordinate)
             .map(|normalized_coordinate| {
@@ -125,7 +126,7 @@ pub trait Grid {
     /// If the coordinate is out of bounds, an error is returned.
     /// - If the grid is not wrapped in the X direction, and `offset_coordinate`'s `x` is out of bounds, i.e., not in the range `[0, width)`, the function will return an error.
     /// - If the grid is not wrapped in the Y direction, and `offset_coordinate`'s `y` is out of bounds, i.e., not in the range `[0, height)`, the function will return an error.
-    ///
+    #[must_use = "this `Result` may be an `Err` variant, which should be handled"]
     fn normalize_offset(
         &self,
         offset_coordinate: OffsetCoordinate,
@@ -191,7 +192,7 @@ pub trait Grid {
     ///     grid.distance_to(center, *cell) == distance as i32
     /// }).collect::<Vec<_>>();
     /// ```
-    ///
+    #[must_use]
     fn cells_at_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
 
     /// Returns an iterator over all grid cells that are within a distance of `distance` from `center`.
@@ -213,7 +214,7 @@ pub trait Grid {
     /// let cells = grid.cells_within_distance(center, distance)
     /// .collect::<HashSet<_>>();
     /// ```
-    ///
+    #[must_use]
     fn cells_within_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
 
     /// Determine the direction of `dest` relative to `start`.

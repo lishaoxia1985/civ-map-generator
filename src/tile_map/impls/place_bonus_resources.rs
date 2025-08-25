@@ -30,7 +30,7 @@ impl TileMap {
         self.add_extra_bonuses_to_hills_regions(map_parameters);
 
         let resources_to_place = [ResourceToPlace {
-            resource: "Deer".to_string(),
+            resource: Resource::Deer,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -44,7 +44,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Wheat".to_string(),
+            resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
             min_radius: 0,
@@ -58,7 +58,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Deer".to_string(),
+            resource: Resource::Deer,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -72,7 +72,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Bananas".to_string(),
+            resource: Resource::Bananas,
             quantity: 1,
             weight: 100,
             min_radius: 0,
@@ -86,7 +86,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Wheat".to_string(),
+            resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
             min_radius: 2,
@@ -100,7 +100,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Bison".to_string(),
+            resource: Resource::Bison,
             quantity: 1,
             weight: 100,
             min_radius: 2,
@@ -114,7 +114,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Cow".to_string(),
+            resource: Resource::Cattle,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -128,7 +128,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Stone".to_string(),
+            resource: Resource::Stone,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -142,7 +142,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Bison".to_string(),
+            resource: Resource::Bison,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -156,7 +156,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Sheep".to_string(),
+            resource: Resource::Sheep,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -170,7 +170,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Stone".to_string(),
+            resource: Resource::Stone,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -184,7 +184,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Stone".to_string(),
+            resource: Resource::Stone,
             quantity: 1,
             weight: 100,
             min_radius: 1,
@@ -198,7 +198,7 @@ impl TileMap {
         );
 
         let resources_to_place = vec![ResourceToPlace {
-            resource: "Deer".to_string(),
+            resource: Resource::Deer,
             quantity: 1,
             weight: 100,
             min_radius: 3,
@@ -325,7 +325,7 @@ impl TileMap {
 
             if !dry_hills.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Sheep".to_string(),
+                    resource: Resource::Sheep,
                     quantity: 1,
                     weight: 100,
                     min_radius: 0,
@@ -341,7 +341,7 @@ impl TileMap {
 
             if !jungles.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Bananas".to_string(),
+                    resource: Resource::Bananas,
                     quantity: 1,
                     weight: 100,
                     min_radius: 1,
@@ -357,7 +357,7 @@ impl TileMap {
 
             if !flat_tundra.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Deer".to_string(),
+                    resource: Resource::Deer,
                     quantity: 1,
                     weight: 100,
                     min_radius: 0,
@@ -373,7 +373,7 @@ impl TileMap {
 
             if !flat_plains.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Wheat".to_string(),
+                    resource: Resource::Wheat,
                     quantity: 1,
                     weight: 100,
                     min_radius: 0,
@@ -389,7 +389,7 @@ impl TileMap {
 
             if !flat_grass.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Cow".to_string(),
+                    resource: Resource::Cattle,
                     quantity: 1,
                     weight: 100,
                     min_radius: 0,
@@ -405,7 +405,7 @@ impl TileMap {
 
             if !forests.is_empty() {
                 let resources_to_place = [ResourceToPlace {
-                    resource: "Deer".to_string(),
+                    resource: Resource::Deer,
                     quantity: 1,
                     weight: 100,
                     min_radius: 1,
@@ -431,14 +431,14 @@ impl TileMap {
         let grid = self.world_grid.grid;
 
         let bonus_type_associated_with_region_type = [
-            (RegionType::Tundra, "Deer"),
-            (RegionType::Jungle, "Bananas"),
-            (RegionType::Forest, "Deer"),
-            (RegionType::Desert, "Wheat"),
-            (RegionType::Hill, "Sheep"),
-            (RegionType::Plain, "Wheat"),
-            (RegionType::Grassland, "Cow"),
-            (RegionType::Hybrid, "Cow"),
+            (RegionType::Tundra, Resource::Deer),
+            (RegionType::Jungle, Resource::Bananas),
+            (RegionType::Forest, Resource::Deer),
+            (RegionType::Desert, Resource::Wheat),
+            (RegionType::Hill, Resource::Sheep),
+            (RegionType::Plain, Resource::Wheat),
+            (RegionType::Grassland, Resource::Cattle),
+            (RegionType::Hybrid, Resource::Cattle),
         ];
 
         let mut plot_list = Vec::new();
@@ -457,7 +457,7 @@ impl TileMap {
                 let base_terrain = tile.base_terrain(self);
                 let feature = tile.feature(self);
                 match chosen_bonus_resource {
-                    "Deer" => {
+                    Resource::Deer => {
                         if feature == Some(Feature::Forest)
                             || (terrain_type == TerrainType::Flatland
                                 && base_terrain == BaseTerrain::Tundra)
@@ -465,12 +465,12 @@ impl TileMap {
                             plot_list.push(tile);
                         }
                     }
-                    "Bananas" => {
+                    Resource::Bananas => {
                         if feature == Some(Feature::Jungle) {
                             plot_list.push(tile);
                         }
                     }
-                    "Wheat" => {
+                    Resource::Wheat => {
                         if terrain_type == TerrainType::Flatland
                             && ((base_terrain == BaseTerrain::Plain && feature.is_none())
                                 || feature == Some(Feature::Floodplain)
@@ -480,7 +480,7 @@ impl TileMap {
                             plot_list.push(tile);
                         }
                     }
-                    "Sheep" => {
+                    Resource::Sheep => {
                         if terrain_type == TerrainType::Hill
                             && feature.is_none()
                             && matches!(
@@ -491,7 +491,7 @@ impl TileMap {
                             plot_list.push(tile);
                         }
                     }
-                    "Cow" => {
+                    Resource::Cattle => {
                         if terrain_type == TerrainType::Flatland
                             && feature.is_none()
                             && base_terrain == BaseTerrain::Grassland
@@ -513,7 +513,7 @@ impl TileMap {
             if !plot_list.is_empty() {
                 plot_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
-                    Resource::Resource(chosen_bonus_resource.to_string()),
+                    chosen_bonus_resource,
                     1,
                     1,
                     1.,
@@ -523,9 +523,9 @@ impl TileMap {
                     &plot_list,
                 );
                 // Hills region, attempt to give them a second Sexy Sheep.
-                if plot_list.len() > 1 && chosen_bonus_resource == "Sheep" {
+                if plot_list.len() > 1 && chosen_bonus_resource == Resource::Sheep {
                     self.place_specific_number_of_resources(
-                        Resource::Resource(chosen_bonus_resource.to_string()),
+                        Resource::Sheep,
                         1,
                         1,
                         1.,
@@ -538,7 +538,7 @@ impl TileMap {
             } else if !fish_list.is_empty() {
                 fish_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
-                    Resource::Resource("Fish".to_string()),
+                    Resource::Fish,
                     1,
                     1,
                     1.,
@@ -574,8 +574,7 @@ impl TileMap {
                 if fish_radius > 5 {
                     fish_radius = 3;
                 }
-                self.resource_query[tile.index()] =
-                    Some((Resource::Resource("Fish".to_string()), 1));
+                self.resource_query[tile.index()] = Some((Resource::Fish, 1));
                 self.place_impact_and_ripples(tile, Layer::Fish, fish_radius);
                 num_left_to_place -= 1;
             }

@@ -476,7 +476,7 @@ impl TileMap {
             // Collect regional exclusive luxury resources which have been placed in `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY` different regions.
             let mut shared_luxury = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
-            for (luxury_resource, &luxury_assign_to_region_count) in
+            for (&luxury_resource, &luxury_assign_to_region_count) in
                 self.luxury_assign_to_region_count.iter()
             {
                 if luxury_assign_to_region_count == MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
@@ -497,9 +497,9 @@ impl TileMap {
             }
 
             if num_city_states_shared_luxury > 0 {
-                for luxury_resource in shared_luxury.iter() {
+                for &luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
-                        if region.exclusive_luxury.as_str() == luxury_resource.as_str() {
+                        if region.exclusive_luxury == Some(luxury_resource) {
                             region_index_assignment.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }

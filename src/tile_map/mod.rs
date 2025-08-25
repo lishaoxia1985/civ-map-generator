@@ -95,7 +95,7 @@ pub struct TileMap {
     /// This count is used to adjust the probability of assigning the same luxury resource to another region.
     /// The higher the count, the lower the chance of assigning that luxury resource to an additional region.
     /// This is achieved by reducing the weight of the resource as the count increases.
-    luxury_assign_to_region_count: HashMap<String, u32>,
+    luxury_assign_to_region_count: HashMap<Resource, u32>,
 }
 
 impl TileMap {
@@ -140,6 +140,7 @@ impl TileMap {
     }
 
     /// Returns an iterator over all tiles in the map.
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn all_tiles(&self) -> impl Iterator<Item = Tile> {
         let size = &self.world_grid.size();
         (0..((size.width * size.height) as usize)).map(Tile::new)
@@ -186,15 +187,15 @@ impl TileMap {
                 );
                 let natural_wonder = tile.natural_wonder(self);
                 if let Some(natural_wonder) = natural_wonder {
-                    match natural_wonder.name() {
-                        "Mount Fuji" => {
+                    match natural_wonder {
+                        NaturalWonder::MountFuji => {
                             self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 0);
                             self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 0);
                             self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 0);
                             self.place_impact_and_ripples_for_resource(tile, Layer::CityState, 0);
                             self.place_impact_and_ripples_for_resource(tile, Layer::Marble, 1);
                         }
-                        "Krakatoa" | "Great Barrier Reef" => {
+                        NaturalWonder::Krakatoa | NaturalWonder::GreatBarrierReef => {
                             self.place_impact_and_ripples_for_resource(tile, Layer::Strategic, 1);
                             self.place_impact_and_ripples_for_resource(tile, Layer::Luxury, 1);
                             self.place_impact_and_ripples_for_resource(tile, Layer::Bonus, 1);

@@ -152,9 +152,9 @@ impl CvFractal {
     ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
     ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
     ///         - Higher grain → Fewer iterations → More random noise\
-    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
-    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
     /// - `flags`: Bit flags controlling fractal generation behavior
     /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
     ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
@@ -203,9 +203,9 @@ impl CvFractal {
     ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
     ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
     ///         - Higher grain → Fewer iterations → More random noise\
-    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
-    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
     /// - `flags`: Bit flags controlling fractal generation behavior
     /// - `rift`: a reference to a [`CvFractal`] to control the rifts generation of the fractal
     /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
@@ -260,9 +260,9 @@ impl CvFractal {
     ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
     ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
     ///         - Higher grain → Fewer iterations → More random noise\
-    ///             When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
-    ///             When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
     /// - `img`: Optional image to use as a source for the fractal.
     ///   At first the fractal is divided into a grid of small squares,
     ///   the points where adjacent grid lines meet are called **the vertices of the grid**,
