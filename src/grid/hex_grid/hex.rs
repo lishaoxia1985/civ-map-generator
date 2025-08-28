@@ -234,7 +234,7 @@ impl DoubledCoordinate {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub struct HexLayout {
     pub orientation: HexOrientation,
     pub size: Vec2,
@@ -297,7 +297,7 @@ pub fn hex_linedraw(a: Hex, b: Hex) -> Vec<Hex> {
         .collect()
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Offset {
     Even = 1,
     Odd = -1,
@@ -312,7 +312,7 @@ pub struct ConversionMatrix {
     pub inverse_matrix: Mat2,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum HexOrientation {
     /// ⬢, [`Hex`] is pointy-topped
     Pointy,

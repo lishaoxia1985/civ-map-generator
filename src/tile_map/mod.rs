@@ -33,6 +33,7 @@ use impls::{
     generate_regions::Region,
 };
 
+#[derive(PartialEq, Debug)]
 pub struct TileMap {
     pub random_number_generator: StdRng,
     pub world_grid: WorldGrid,
@@ -84,7 +85,7 @@ pub struct TileMap {
     /// The count of luxury resource types assigned to regions.
     ///
     /// Its key is the luxury resource type name, all keys are in the [`LuxuryResourceRole::luxury_assigned_to_regions`].
-    /// Its value is the count of assigned luxury resource types, all values should <= [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`].
+    /// Its value is the count of assigned luxury resource types, all values should <= [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`].
     ///
     /// It has a maximum length of [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`]. See [`TileMap::assign_luxury_to_region`] for more information.
     ///

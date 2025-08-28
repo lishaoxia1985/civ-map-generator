@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use rand::{
     seq::{index::sample, SliceRandom},
@@ -370,7 +370,7 @@ impl TileMap {
         // Number of City States to be placed on landmasses uninhabited by civs
         let _num_city_states_uninhabited;
 
-        let mut land_area_id_and_tiles: HashMap<usize, Vec<_>> = HashMap::new();
+        let mut land_area_id_and_tiles: BTreeMap<usize, Vec<_>> = BTreeMap::new();
 
         let mut num_civ_landmass_tiles = 0;
         let mut num_uninhabited_landmass_tiles = 0;
@@ -454,10 +454,10 @@ impl TileMap {
                 (3. * uninhabited_ratio * map_parameters.city_state_num as f64) as u32;
             let max_by_method =
                 if let RegionDivideMethod::Pangaea = map_parameters.region_divide_method {
-                    (map_parameters.city_state_num as f64 / 4.).ceil()
+                    map_parameters.city_state_num.div_ceil(4)
                 } else {
-                    (map_parameters.city_state_num as f64 / 2.).ceil()
-                } as u32;
+                    map_parameters.city_state_num.div_ceil(2)
+                };
 
             _num_city_states_uninhabited =
                 min(num_city_states_unassigned, min(max_by_ratio, max_by_method));
@@ -473,15 +473,17 @@ impl TileMap {
 
         if num_city_states_unassigned > 0 {
             let mut num_regions_shared_luxury = 0;
-            // Collect regional exclusive luxury resources which have been placed in `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY` different regions.
+            // Collect regional exclusive luxury resources which have been placed in `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE` different regions.
             let mut shared_luxury = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
             for (&luxury_resource, &luxury_assign_to_region_count) in
                 self.luxury_assign_to_region_count.iter()
             {
-                if luxury_assign_to_region_count == MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
+                if luxury_assign_to_region_count
+                    == MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
                 {
-                    num_regions_shared_luxury += MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY;
+                    num_regions_shared_luxury +=
+                        MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE;
                     shared_luxury.push(luxury_resource);
                 }
             }
@@ -497,6 +499,9 @@ impl TileMap {
             }
 
             if num_city_states_shared_luxury > 0 {
+                // Sort the shared luxury resources by their string representation.
+                // That will make sure we get the same order every time.
+                shared_luxury.sort_by_key(|luxury| luxury.as_str());
                 for &luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
                         if region.exclusive_luxury == Some(luxury_resource) {

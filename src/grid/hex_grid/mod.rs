@@ -10,7 +10,7 @@ use super::{direction::Direction, Grid, Size, WrapFlags};
 
 pub mod hex;
 
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub struct HexGrid {
     pub size: Size,
     pub layout: HexLayout,

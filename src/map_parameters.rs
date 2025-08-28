@@ -66,13 +66,13 @@ impl MapParameters {
     /// The maximum number of city states that can be placed on the map.
     pub const MAX_CITY_STATE_NUM: u32 = 41;
 
-    /// The maximum number of regions that can share a regional-exclusive luxury resource.
+    /// The maximum number of regions that can share a regional-exclusive luxury resource type.
     ///
     /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::impls::assign_starting_tile::LuxuryResourceRole::luxury_assigned_to_regions).
     ///
     /// For example, when set to 3, each regionally-exclusive luxury resource type will be
     /// distributed to no more than 3 distinct regions in the game world.
-    pub const MAX_REGIONS_PER_EXCLUSIVE_LUXURY: u32 = 3;
+    pub const MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE: u32 = 3;
 
     /// The maximum number of distinct luxury resource types that can be exclusively assigned to regions.
     ///
@@ -82,7 +82,7 @@ impl MapParameters {
     /// Because in original CIV5, the same regional luxury resource can only be found in at most 3 regions on the map.
     /// And there are a maximum of 22 civilizations (each representing a region) in the game, 3 * 8  = 24, it's enough for all civilizations.
     pub const NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS: usize =
-        Self::MAX_CIVILIZATION_NUM.div_ceil(Self::MAX_REGIONS_PER_EXCLUSIVE_LUXURY) as usize;
+        Self::MAX_CIVILIZATION_NUM.div_ceil(Self::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE) as usize;
 
     /// The maximum number of distinct luxury resource types that can be exclusively assigned to city states.
     ///
@@ -184,8 +184,7 @@ impl Default for MapParameters {
 ///
 /// let world_grid = WorldGrid::new(grid, world_size_type);
 /// ```
-///
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub struct WorldGrid {
     pub grid: HexGrid,
     pub world_size_type: WorldSizeType,
@@ -320,7 +319,7 @@ pub enum ResourceSetting {
     StrategicBalance,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 /// Defines a rectangular region within a tile-based map coordinate system.
 ///
 /// Provides functionality to retrieve all tiles contained within the region.

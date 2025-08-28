@@ -4,6 +4,7 @@ use arrayvec::ArrayVec;
 use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
 
 use crate::{
+    grid::WorldSizeType,
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
@@ -76,7 +77,7 @@ impl TileMap {
     ///
     /// Every luxury type has a role, the role should be one of the following (tackle with special cases separately):
     /// - Special case. For example, Marble. We need to implement a dedicated placement function to handle it.
-    /// - Exclusively Assigned to regions. These luxury types only appear in no more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`] different regions.
+    /// - Exclusively Assigned to regions. These luxury types only appear in no more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] different regions.
     /// - Exclusively Assigned to city states. These luxury types are exclusive to city states. These types is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES`] in original CIV5.
     /// - Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
     /// - Disabled. We will not place it on the map.
@@ -168,11 +169,8 @@ impl TileMap {
         let luxury_assigned_to_special_case = vec![Resource::Marble];
 
         // Assign appropriate amount to be Disabled, then assign the rest to be Random.
-
-        // The amount of disabled resources should be determined by the map size.
-        // Please view `AssignStartingPlots:GetDisabledLuxuriesTargetNumber` for more information.
-        // TODO: Implement this as one field of the map_parameters in the map_parameters.rs file in the future.
-        let num_disabled_luxury_resource = 0;
+        let num_disabled_luxury_resource_type =
+            get_disabled_luxuries_target_number(map_parameters.world_grid.world_size_type);
 
         // Get the list of resources that are not assigned to regions or city states.
         let mut remaining_resource_list = luxury_city_state_weights
@@ -181,21 +179,17 @@ impl TileMap {
                 !luxury_assigned_to_regions.contains(luxury_resource)
                     && !luxury_assigned_to_city_state.contains(luxury_resource)
             })
-            .map(|(luxury_resource, _)| luxury_resource)
+            .map(|&(luxury_resource, _)| luxury_resource)
             .collect::<Vec<_>>();
 
         remaining_resource_list.shuffle(&mut self.random_number_generator);
 
-        let mut luxury_not_being_used = Vec::new();
-        let mut luxury_assigned_to_random = Vec::new();
-
-        for &resource in remaining_resource_list {
-            if luxury_not_being_used.len() < num_disabled_luxury_resource {
-                luxury_not_being_used.push(resource);
-            } else {
-                luxury_assigned_to_random.push(resource);
-            }
-        }
+        let luxury_assigned_to_random = remaining_resource_list.split_off(
+            num_disabled_luxury_resource_type.min(remaining_resource_list.len() as u32) as usize,
+        );
+        // skip shrink_to_fit if memory usage isn't critical
+        /* remaining_resource_list.shrink_to_fit(); */
+        let luxury_not_being_used = remaining_resource_list;
 
         self.luxury_resource_role = LuxuryResourceRole {
             luxury_assigned_to_regions,
@@ -207,9 +201,9 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AssignLuxuryToRegion
-    /// Assigns a luxury type to a region, ensuring no resource is assigned to more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`] regions and no more than [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] resources are assigned to regions.
+    /// Assigns a luxury type to a region, ensuring no resource is assigned to more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] regions and no more than [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] resources are assigned to regions.
     ///
-    /// View [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] and [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`] for more information.
+    /// View [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] and [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] for more information.
     pub fn assign_luxury_to_region(
         &mut self,
         region_index: usize,
@@ -371,7 +365,7 @@ impl TileMap {
 
         let max_regions_per_exclusive_luxury = match map_parameters.civilization_num as usize {
             n if n >= MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS * 3 / 2 => {
-                MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
+                MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
             }
             n if n > MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS => 2,
             _ => 1,
@@ -383,7 +377,7 @@ impl TileMap {
         // The luxury resource is eligible if:
         // 1. The luxury assignment count is less than the maximum regions per luxury type.
         //    Usually the maximum regions per luxury type is determined by the number of civilizations in the game.
-        //    When we use fallback options, the maximum regions per luxury type is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY` (3 in original CIV5).
+        //    When we use fallback options, the maximum regions per luxury type is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE` (3 in original CIV5).
         // 2. The number of assigned luxury types should <= `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS` (8 in original CIV5).
         //    - If num_assigned_luxury_types < `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can assign more luxury types to regions.
         //    - If num_assigned_luxury_types = `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can only assign luxury types to regions that are already assigned to regions.
@@ -450,12 +444,13 @@ impl TileMap {
             }
         }
 
-        // If options list is empty and region type isn't undefined and `max_regions_per_exclusive_luxury` isn't `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`, try to pick from fallback options.
-        // We don't need to run the code below when region type is undefined and `max_regions_per_exclusive_luxury` is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY`,
+        // If options list is empty and region type isn't undefined and `max_regions_per_exclusive_luxury` isn't `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`, try to pick from fallback options.
+        // We don't need to run the code below when region type is undefined and `max_regions_per_exclusive_luxury` is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`,
         // because in this situation `luxury_candidates` is equal to fallback options, and we have already run the same function code above.
         if resource_list.is_empty()
             && region_type != RegionType::Undefined
-            && max_regions_per_exclusive_luxury != MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY
+            && max_regions_per_exclusive_luxury
+                != MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
         {
             for &(luxury_resource, weight) in luxury_fallback_weights.iter() {
                 let luxury_assign_to_region_count: u32 = *self
@@ -465,7 +460,7 @@ impl TileMap {
                 if is_eligible_luxury_resource(
                     luxury_resource,
                     luxury_assign_to_region_count,
-                    MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY,
+                    MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE,
                 ) {
                     // This type still eligible.
                     // Water-based resources need to run a series of permission checks: coastal start in region, not a disallowed regions type, enough water, etc.
@@ -520,7 +515,7 @@ impl TileMap {
                 if is_eligible_luxury_resource(
                     luxury_resource,
                     luxury_assign_to_region_count,
-                    MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY,
+                    MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE,
                 ) {
                     resource_list.push(luxury_resource);
                     let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
@@ -868,8 +863,20 @@ impl TileMap {
     }
 }
 
+/// Determines the target number of disabled luxury resources which can not be placed on the map.
+fn get_disabled_luxuries_target_number(world_size_type: WorldSizeType) -> u32 {
+    match world_size_type {
+        WorldSizeType::Duel => 11,
+        WorldSizeType::Tiny => 8,
+        WorldSizeType::Small => 6,
+        WorldSizeType::Standard => 4,
+        WorldSizeType::Large => 2,
+        WorldSizeType::Huge => 1,
+    }
+}
+
 /// The role of luxury resources. View [`TileMap::assign_luxury_roles`] for more information.
-#[derive(Default)]
+#[derive(PartialEq, Eq, Default, Debug)]
 pub struct LuxuryResourceRole {
     /// Exclusively Assigned to regions. The length of this set is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`].
     ///

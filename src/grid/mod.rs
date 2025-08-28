@@ -225,7 +225,7 @@ pub trait Grid {
 }
 
 /// Represents the size of a grid or map with a specified width and height.
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Size {
     /// The width of the grid or map.
     pub width: u32,

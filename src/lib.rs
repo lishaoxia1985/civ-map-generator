@@ -27,3 +27,20 @@ pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMa
         MapType::Pangaea => Pangaea::generate(map_parameters, ruleset),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{generate_map, map_parameters::MapParameters, ruleset::Ruleset};
+
+    /// Tests for consistent map generation output when provided with the same random seed.
+    #[test]
+    fn test_generate_map() {
+        let map_parameters = MapParameters::default();
+        let ruleset = Ruleset::default();
+        for _ in 0..25 {
+            let map_a = generate_map(&map_parameters, &ruleset);
+            let map_b = generate_map(&map_parameters, &ruleset);
+            assert_eq!(map_a, map_b);
+        }
+    }
+}

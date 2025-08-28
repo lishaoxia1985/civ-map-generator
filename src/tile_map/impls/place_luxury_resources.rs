@@ -373,8 +373,7 @@ impl TileMap {
                 if num_random_luxury_types * 3 > num_random_luxury_target as usize {
                     num_this_luxury_to_place = 3;
                 } else if num_random_luxury_types > 8 {
-                    num_this_luxury_to_place =
-                        max(3, (num_random_luxury_target as f64 / 10.).ceil() as u32);
+                    num_this_luxury_to_place = max(3, num_random_luxury_target.div_ceil(10));
                 } else {
                     // num_random_luxury_types <= 8
                     let luxury_minimum = max(3, loop_target - i as u32);

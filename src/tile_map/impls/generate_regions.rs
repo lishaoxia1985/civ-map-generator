@@ -631,7 +631,7 @@ const fn largest_power_of_three_less_or_equal(a: u32) -> u32 {
 
 /// The terrain statistic of the region.
 /// Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
-#[derive(Default, Debug)]
+#[derive(PartialEq, Eq, Default, Debug)]
 pub struct TerrainStatistic {
     /// Each terrain type's number in the region.
     pub terrain_type_num: EnumMap<TerrainType, u32>,
@@ -647,7 +647,7 @@ pub struct TerrainStatistic {
     pub next_to_coastal_land_num: u32,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 /// Region is a rectangular area of tiles.
 pub struct Region {
     /// The rectangle that defines the region.
@@ -1160,7 +1160,7 @@ pub enum RegionType {
     Hybrid,    //-- 8.
 }
 
-#[derive(Debug, Default)]
+#[derive(PartialEq, Debug, Default)]
 pub struct StartLocationCondition {
     /// Whether the start location is coastal land.
     pub along_ocean: bool,
