@@ -100,7 +100,7 @@ impl TileMap {
                             neighbor_tile.terrain_type(self) != TerrainType::Water
                         })
                     {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
+                        tile.set_base_terrain(self, BaseTerrain::Coast);
                     }
                 }
                 TerrainType::Flatland | TerrainType::Hill | TerrainType::Mountain => {
@@ -108,7 +108,7 @@ impl TileMap {
                     let [x, y] = tile.to_offset(grid).to_array();
 
                     // Set default base terrain of all land tiles to `BaseTerrain::Grassland` because the default base terrain is `BaseTerrain::Ocean` in the tile map.
-                    self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
+                    tile.set_base_terrain(self, BaseTerrain::Grassland);
 
                     let deserts_height = deserts_fractal.get_height(x, y);
                     let plains_height = plains_fractal.get_height(x, y);
@@ -118,19 +118,19 @@ impl TileMap {
                     latitude = latitude.clamp(0., 1.);
 
                     if latitude >= snow_latitude {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Snow;
+                        tile.set_base_terrain(self, BaseTerrain::Snow);
                     } else if latitude >= tundra_latitude {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Tundra;
+                        tile.set_base_terrain(self, BaseTerrain::Tundra);
                     } else if latitude < grass_latitude {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
+                        tile.set_base_terrain(self, BaseTerrain::Grassland);
                     } else if deserts_height >= desert_bottom
                         && deserts_height <= desert_top
                         && latitude >= desert_bottom_latitude
                         && latitude < desert_top_latitude
                     {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Desert;
+                        tile.set_base_terrain(self, BaseTerrain::Desert);
                     } else if plains_height >= plains_bottom && plains_height <= plains_top {
-                        self.base_terrain_query[tile.index()] = BaseTerrain::Plain;
+                        tile.set_base_terrain(self, BaseTerrain::Plain);
                     }
                 }
             }
@@ -173,7 +173,7 @@ impl TileMap {
                 });
 
                 expansion_tile.into_iter().for_each(|tile| {
-                    self.base_terrain_query[tile.index()] = BaseTerrain::Coast;
+                    tile.set_base_terrain(self, BaseTerrain::Coast);
                 });
             });
     }

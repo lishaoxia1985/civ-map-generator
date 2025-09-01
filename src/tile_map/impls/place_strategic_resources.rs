@@ -565,8 +565,7 @@ impl TileMap {
                         radius = 1;
                     }
 
-                    self.resource_query[tile.index()] =
-                        Some((selected_resource, selected_quantity));
+                    tile.set_resource(self, selected_resource, selected_quantity);
                     self.place_impact_and_ripples(tile, Layer::Strategic, radius);
                     num_left_to_place -= 1;
                 }
@@ -646,7 +645,7 @@ impl TileMap {
     ///
     /// Returns the total quantity of the specified resource as `u32`.
     pub fn placed_resource_count(&self, resource: Resource) -> u32 {
-        self.resource_query
+        self.resource_list
             .iter()
             .filter_map(|assignment_resource| assignment_resource.as_ref())
             .filter(|(r, _)| *r == resource)

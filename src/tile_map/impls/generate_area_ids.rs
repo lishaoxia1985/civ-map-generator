@@ -29,7 +29,7 @@ impl TileMap {
 
         // Initialize the area_id_query with `UNINITIALIZED_AREA_ID`.
         // `UNINITIALIZED_AREA_ID` means that the tile is not part of any area.
-        self.area_id_query = vec![UNINITIALIZED_AREA_ID; size];
+        self.area_id_list = vec![UNINITIALIZED_AREA_ID; size];
 
         // Precompute tile properties to avoid borrowing `self` in the closure
         // `tile_impassable` is used to check if the tile is impassable or not.
@@ -90,7 +90,7 @@ impl TileMap {
                 self.area_list.push(area);
 
                 tiles_in_area.iter().for_each(|&tile| {
-                    self.area_id_query[tile.index()] = current_area_id;
+                    tile.set_area_id(self, current_area_id);
                 });
             }
         }
@@ -139,7 +139,7 @@ impl TileMap {
                     self.area_list[largest_neighbor_area_id].size += area_size;
 
                     for tile in &tiles_in_area {
-                        self.area_id_query[tile.index()] = largest_neighbor_area_id;
+                        tile.set_area_id(self, largest_neighbor_area_id);
                     }
                     // Skip the rest of the loop since we have already merged the area
                     continue;
@@ -163,7 +163,7 @@ impl TileMap {
             self.area_list.push(area);
 
             for tile in tiles_in_area {
-                self.area_id_query[tile.index()] = current_area_id;
+                tile.set_area_id(self, current_area_id);
             }
         }
     }
@@ -178,7 +178,7 @@ impl TileMap {
 
         // Initialize the landmass_id_query with `UNINITIALIZED_LANDMASS_ID`.
         // `UNINITIALIZED_LANDMASS_ID` means that the tile is not part of any landmass.
-        self.landmass_id_query = vec![UNINITIALIZED_LANDMASS_ID; size];
+        self.landmass_id_list = vec![UNINITIALIZED_LANDMASS_ID; size];
 
         // Precompute tile properties to avoid borrowing `self` in the closure
         // `tile_water` is used to check if the tile is water or not.
@@ -216,7 +216,7 @@ impl TileMap {
             self.landmass_list.push(landmass);
 
             tiles_in_landmass.iter().for_each(|&tile| {
-                self.landmass_id_query[tile.index()] = current_landmass_id;
+                tile.set_landmass_id(self, current_landmass_id);
             });
         }
     }

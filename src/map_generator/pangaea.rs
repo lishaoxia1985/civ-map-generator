@@ -162,26 +162,26 @@ impl Generator for Pangaea {
                     // Build islands in oceans along tectonic ridge lines
                     if mountain_height == mountain_100 {
                         // Isolated peak in the ocean
-                        tile_map.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                        tile.set_terrain_type(tile_map, TerrainType::Mountain);
                     } else if mountain_height == mountain_99 {
-                        tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
+                        tile.set_terrain_type(tile_map, TerrainType::Hill);
                     } else if (mountain_height == mountain_97) || (mountain_height == mountain_95) {
-                        tile_map.terrain_type_query[tile.index()] = TerrainType::Flatland;
+                        tile.set_terrain_type(tile_map, TerrainType::Flatland);
                     }
                 }
             } else if mountain_height >= mountain_threshold {
                 if hill_height >= pass_threshold {
-                    tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
+                    tile.set_terrain_type(tile_map, TerrainType::Hill);
                 } else {
-                    tile_map.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                    tile.set_terrain_type(tile_map, TerrainType::Mountain);
                 }
             } else if mountain_height >= hills_near_mountains
                 || (hill_height >= hills_bottom1 && hill_height <= hills_top1)
                 || (hill_height >= hills_bottom2 && hill_height <= hills_top2)
             {
-                tile_map.terrain_type_query[tile.index()] = TerrainType::Hill;
+                tile.set_terrain_type(tile_map, TerrainType::Hill);
             } else {
-                tile_map.terrain_type_query[tile.index()] = TerrainType::Flatland;
+                tile.set_terrain_type(tile_map, TerrainType::Flatland);
             };
         });
     }

@@ -75,7 +75,7 @@ impl TileMap {
                         .count();
                     score += 10. * a as f64;
                     if score > 130. {
-                        self.feature_query[tile.index()] = Some(Feature::Ice);
+                        tile.set_feature(self, Feature::Ice);
                     }
                 }
             }
@@ -91,7 +91,7 @@ impl TileMap {
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
                 {
-                    self.feature_query[tile.index()] = Some(Feature::Floodplain);
+                    tile.set_feature(self, Feature::Floodplain);
                     continue;
                 }
                 /* **********the end of add Floodplain********** */
@@ -106,7 +106,7 @@ impl TileMap {
                         <= oasis_max_percent
                     && self.random_number_generator.gen_range(0..4) == 1
                 {
-                    self.feature_query[tile.index()] = Some(Feature::Oasis);
+                    tile.set_feature(self, Feature::Oasis);
                     oasis_count += 1;
                     continue;
                 }
@@ -135,7 +135,7 @@ impl TileMap {
                         _ => score -= 200,
                     };
                     if self.random_number_generator.gen_range(0..300) <= score {
-                        self.feature_query[tile.index()] = Some(Feature::Marsh);
+                        tile.set_feature(self, Feature::Marsh);
                         marsh_count += 1;
                         continue;
                     }
@@ -167,18 +167,17 @@ impl TileMap {
                         _ => score -= 200,
                     };
                     if self.random_number_generator.gen_range(0..300) <= score {
-                        self.feature_query[tile.index()] = Some(Feature::Jungle);
-
+                        tile.set_feature(self, Feature::Jungle);
                         if tile.terrain_type(self) == TerrainType::Hill
                             && matches!(
                                 tile.base_terrain(self),
                                 BaseTerrain::Grassland | BaseTerrain::Plain
                             )
                         {
-                            self.base_terrain_query[tile.index()] = BaseTerrain::Plain;
+                            tile.set_base_terrain(self, BaseTerrain::Plain);
                         } else {
-                            self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-                            self.base_terrain_query[tile.index()] = BaseTerrain::Plain;
+                            tile.set_terrain_type(self, TerrainType::Flatland);
+                            tile.set_base_terrain(self, BaseTerrain::Plain);
                         }
 
                         jungle_count += 1;
@@ -210,7 +209,7 @@ impl TileMap {
                         _ => score -= 200,
                     };
                     if self.random_number_generator.gen_range(0..300) <= score {
-                        self.feature_query[tile.index()] = Some(Feature::Forest);
+                        tile.set_feature(self, Feature::Forest);
                         forest_count += 1;
                         continue;
                     }
@@ -392,7 +391,7 @@ impl TileMap {
             }
             // Place the Atoll on the tile
             if let Some(tile) = tile {
-                self.feature_query[tile.index()] = Some(Feature::Atoll);
+                tile.set_feature(self, Feature::Atoll);
             }
         }
     }

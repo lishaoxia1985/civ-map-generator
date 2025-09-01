@@ -36,19 +36,28 @@ use impls::{
 
 #[derive(PartialEq, Debug)]
 pub struct TileMap {
+    /// Random number generator for the map.
     pub random_number_generator: StdRng,
+    /// World grid of the map.
     pub world_grid: WorldGrid,
+    /// List of rivers in the map.
     pub river_list: Vec<River>,
-    // queries
-    pub terrain_type_query: Vec<TerrainType>,
-    pub base_terrain_query: Vec<BaseTerrain>,
-    pub feature_query: Vec<Option<Feature>>,
-    pub natural_wonder_query: Vec<Option<NaturalWonder>>,
-    pub resource_query: Vec<Option<(Resource, u32)>>,
-    pub area_id_query: Vec<usize>,
+    /// Terrain type of each tile. The index of the terrain type is equal to [`Tile::index()`].
+    pub terrain_type_list: Vec<TerrainType>,
+    /// Base terrain of each tile. The index of the base terrain is equal to [`Tile::index()`].
+    pub base_terrain_list: Vec<BaseTerrain>,
+    /// Feature of each tile. The index of the feature is equal to [`Tile::index()`].
+    pub feature_list: Vec<Option<Feature>>,
+    /// Natural wonder of each tile. The index of the natural wonder is equal to [`Tile::index()`].
+    pub natural_wonder_list: Vec<Option<NaturalWonder>>,
+    /// Resource of each tile. The index of the resource is equal to [`Tile::index()`].
+    pub resource_list: Vec<Option<(Resource, u32)>>,
+    /// Area ID of each tile. The index of the area ID is equal to [`Tile::index()`].
+    pub area_id_list: Vec<usize>,
+    /// Landmass ID of each tile. The index of the landmass ID is equal to [`Tile::index()`].
+    pub landmass_id_list: Vec<usize>,
     /// List of areas in the map. The index is equal to the area id.
     pub area_list: Vec<Area>,
-    pub landmass_id_query: Vec<usize>,
     /// List of landmasses in the map. The index is equal to the landmass id.
     pub landmass_list: Vec<Landmass>,
     /// Starting tile and placed civilization.
@@ -121,13 +130,13 @@ impl TileMap {
             random_number_generator,
             world_grid,
             river_list: Vec::new(),
-            terrain_type_query: vec![TerrainType::Water; size],
-            base_terrain_query: vec![BaseTerrain::Ocean; size],
-            feature_query: vec![None; size],
-            natural_wonder_query: vec![None; size],
-            resource_query: vec![None; size],
-            area_id_query: Vec::with_capacity(size),
-            landmass_id_query: Vec::with_capacity(size),
+            terrain_type_list: vec![TerrainType::Water; size],
+            base_terrain_list: vec![BaseTerrain::Ocean; size],
+            feature_list: vec![None; size],
+            natural_wonder_list: vec![None; size],
+            resource_list: vec![None; size],
+            area_id_list: Vec::with_capacity(size),
+            landmass_id_list: Vec::with_capacity(size),
             area_list: Vec::new(),
             landmass_list: Vec::new(),
             region_list,

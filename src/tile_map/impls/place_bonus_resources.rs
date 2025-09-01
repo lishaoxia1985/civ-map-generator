@@ -574,7 +574,7 @@ impl TileMap {
                 if fish_radius > 5 {
                     fish_radius = 3;
                 }
-                self.resource_query[tile.index()] = Some((Resource::Fish, 1));
+                tile.set_resource(self, Resource::Fish, 1);
                 self.place_impact_and_ripples(tile, Layer::Fish, fish_radius);
                 num_left_to_place -= 1;
             }

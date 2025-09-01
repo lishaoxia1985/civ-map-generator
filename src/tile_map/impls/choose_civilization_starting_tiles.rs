@@ -119,10 +119,10 @@ impl TileMap {
             let origin = region.rectangle.origin();
 
             let tile = Tile::from_offset(origin, grid);
-            self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-            self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
-            self.feature_query[tile.index()] = None;
-            self.natural_wonder_query[tile.index()] = None;
+            tile.set_terrain_type(self, TerrainType::Flatland);
+            tile.set_base_terrain(self, BaseTerrain::Grassland);
+            tile.clear_feature(self);
+            tile.clear_natural_wonder(self);
             self.region_list[region_index].starting_tile = tile;
             self.place_impact_and_ripples_for_civilization(tile);
             (false, true)
@@ -717,10 +717,10 @@ impl TileMap {
             let origin = region.rectangle.origin();
 
             let tile = Tile::from_offset(origin, grid);
-            self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-            self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
-            self.feature_query[tile.index()] = None;
-            self.natural_wonder_query[tile.index()] = None;
+            tile.set_terrain_type(self, TerrainType::Flatland);
+            tile.set_base_terrain(self, BaseTerrain::Grassland);
+            tile.clear_feature(self);
+            tile.clear_natural_wonder(self);
             self.region_list[region_index].starting_tile = tile;
             self.place_impact_and_ripples_for_civilization(tile);
             (false, true)

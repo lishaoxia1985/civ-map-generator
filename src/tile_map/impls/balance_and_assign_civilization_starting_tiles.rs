@@ -1017,7 +1017,7 @@ impl TileMap {
                 .collect();
 
             if let Some(&conversion_tile) = tile_list.choose(&mut self.random_number_generator) {
-                self.base_terrain_query[conversion_tile.index()] = BaseTerrain::Grassland;
+                conversion_tile.set_base_terrain(self, BaseTerrain::Grassland);
                 // Forbid to place strategic resources on this tile
                 self.place_impact_and_ripples(conversion_tile, Layer::Strategic, 0);
             } else {

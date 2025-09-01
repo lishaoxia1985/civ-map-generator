@@ -126,32 +126,32 @@ impl TileMap {
             let hill_height = hills_fractal.get_height(x, y);
 
             if height <= water_threshold {
-                self.terrain_type_query[tile.index()] = TerrainType::Water;
+                tile.set_terrain_type(self, TerrainType::Water);
                 // No hills or mountains here, but check for tectonic islands if that setting is active.
                 if tectonic_islands {
                     // Build islands in oceans along tectonic ridge lines
                     if mountain_height == mountain_100 {
                         // Isolated peak in the ocean
-                        self.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                        tile.set_terrain_type(self, TerrainType::Mountain);
                     } else if mountain_height == mountain_99 {
-                        self.terrain_type_query[tile.index()] = TerrainType::Hill;
+                        tile.set_terrain_type(self, TerrainType::Hill);
                     } else if (mountain_height == mountain_97) || (mountain_height == mountain_95) {
-                        self.terrain_type_query[tile.index()] = TerrainType::Flatland;
+                        tile.set_terrain_type(self, TerrainType::Flatland);
                     }
                 }
             } else if mountain_height >= mountain_threshold {
                 if hill_height >= pass_threshold {
-                    self.terrain_type_query[tile.index()] = TerrainType::Hill;
+                    tile.set_terrain_type(self, TerrainType::Hill);
                 } else {
-                    self.terrain_type_query[tile.index()] = TerrainType::Mountain;
+                    tile.set_terrain_type(self, TerrainType::Mountain);
                 }
             } else if mountain_height >= hills_near_mountains
                 || (hill_height >= hills_bottom1 && hill_height <= hills_top1)
                 || (hill_height >= hills_bottom2 && hill_height <= hills_top2)
             {
-                self.terrain_type_query[tile.index()] = TerrainType::Hill;
+                tile.set_terrain_type(self, TerrainType::Hill);
             } else {
-                self.terrain_type_query[tile.index()] = TerrainType::Flatland;
+                tile.set_terrain_type(self, TerrainType::Flatland);
             };
         });
     }

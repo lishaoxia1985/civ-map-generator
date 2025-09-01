@@ -118,43 +118,103 @@ impl Tile {
     /// Returns the terrain type of the tile at the given index.
     #[inline]
     pub fn terrain_type(&self, tile_map: &TileMap) -> TerrainType {
-        tile_map.terrain_type_query[self.0]
+        tile_map.terrain_type_list[self.0]
     }
 
     /// Returns the base terrain of the tile at the given index.
     #[inline]
     pub fn base_terrain(&self, tile_map: &TileMap) -> BaseTerrain {
-        tile_map.base_terrain_query[self.0]
+        tile_map.base_terrain_list[self.0]
     }
 
     /// Returns the feature of the tile at the given index.
     #[inline]
     pub fn feature(&self, tile_map: &TileMap) -> Option<Feature> {
-        tile_map.feature_query[self.0]
+        tile_map.feature_list[self.0]
     }
 
     /// Returns the natural wonder of the tile at the given index.
     #[inline]
     pub fn natural_wonder(&self, tile_map: &TileMap) -> Option<NaturalWonder> {
-        tile_map.natural_wonder_query[self.0]
+        tile_map.natural_wonder_list[self.0]
     }
 
     /// Returns the resource of the tile at the given index.
     #[inline]
     pub fn resource(&self, tile_map: &TileMap) -> Option<(Resource, u32)> {
-        tile_map.resource_query[self.0]
+        tile_map.resource_list[self.0]
     }
 
     /// Returns the area ID of the tile at the given index.
     #[inline]
     pub fn area_id(&self, tile_map: &TileMap) -> usize {
-        tile_map.area_id_query[self.0]
+        tile_map.area_id_list[self.0]
     }
 
     /// Returns the landmass ID of the tile at the given index.
     #[inline]
     pub fn landmass_id(&self, tile_map: &TileMap) -> usize {
-        tile_map.landmass_id_query[self.0]
+        tile_map.landmass_id_list[self.0]
+    }
+
+    /// Sets the terrain type of the tile at the given index.
+    #[inline]
+    pub fn set_terrain_type(&self, tile_map: &mut TileMap, terrain_type: TerrainType) {
+        tile_map.terrain_type_list[self.0] = terrain_type;
+    }
+
+    /// Sets the base terrain of the tile at the given index.
+    #[inline]
+    pub fn set_base_terrain(&self, tile_map: &mut TileMap, base_terrain: BaseTerrain) {
+        tile_map.base_terrain_list[self.0] = base_terrain;
+    }
+
+    /// Sets the feature of the tile at the given index.
+    #[inline]
+    pub fn set_feature(&self, tile_map: &mut TileMap, feature: Feature) {
+        tile_map.feature_list[self.0] = Some(feature);
+    }
+
+    /// Clears the feature of the tile at the given index.
+    #[inline]
+    pub fn clear_feature(&self, tile_map: &mut TileMap) {
+        tile_map.feature_list[self.0] = None;
+    }
+
+    /// Sets the natural wonder of the tile at the given index.
+    #[inline]
+    pub fn set_natural_wonder(&self, tile_map: &mut TileMap, natural_wonder: NaturalWonder) {
+        tile_map.natural_wonder_list[self.0] = Some(natural_wonder);
+    }
+
+    /// Clears the natural wonder of the tile at the given index.
+    #[inline]
+    pub fn clear_natural_wonder(&self, tile_map: &mut TileMap) {
+        tile_map.natural_wonder_list[self.0] = None;
+    }
+
+    /// Sets the resource of the tile at the given index.
+    #[inline]
+    pub fn set_resource(&self, tile_map: &mut TileMap, resource: Resource, quantity: u32) {
+        tile_map.resource_list[self.0] = Some((resource, quantity));
+    }
+
+    /// Clears the resource of the tile at the given index.
+    #[inline]
+    pub fn clear_resource(&self, tile_map: &mut TileMap) {
+        tile_map.resource_list[self.0] = None;
+    }
+
+    /// Sets the area ID of the tile at the given index.
+    #[inline]
+    pub fn set_area_id(&self, tile_map: &mut TileMap, area_id: usize) {
+        tile_map.area_id_list[self.0] = area_id;
+    }
+
+    /// Sets the landmass ID of the tile at the given index.
+    #[inline]
+    pub fn set_landmass_id(&self, tile_map: &mut TileMap, landmass_id: usize) {
+        tile_map.landmass_id_list[self.0] = landmass_id;
     }
 
     /// Returns an iterator over the neighboring tiles of the current tile.

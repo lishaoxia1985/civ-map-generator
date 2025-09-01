@@ -601,12 +601,12 @@ impl TileMap {
             if num_left_to_place == 0 {
                 break;
             }
-            if self.resource_query[tile.index()].is_none()
+            if tile.resource(self).is_none()
                 && self.layer_data[Layer::Marble][tile.index()] == 0
                 && self.layer_data[Layer::Luxury][tile.index()] == 0
             {
                 // Placing this resource in this plot.
-                self.resource_query[tile.index()] = Some((luxury_resource, 1));
+                tile.set_resource(self, luxury_resource, 1);
                 num_left_to_place -= 1;
                 // println!("Still need to place {} more units of Marble.", num_left_to_place);
                 self.place_impact_and_ripples(tile, Layer::Marble, u32::MAX);
@@ -922,7 +922,7 @@ impl TileMap {
                 .for_each(|tile_at_distance| {
                     let feature = tile_at_distance.feature(self);
                     if feature == Some(Feature::Ice) {
-                        self.feature_query[tile_at_distance.index()] = None;
+                        tile_at_distance.clear_feature(self);
                     }
                 })
         }

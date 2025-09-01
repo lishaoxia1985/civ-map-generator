@@ -26,7 +26,7 @@ impl TileMap {
 
         self.all_tiles().for_each(|tile| {
             if candidate_lake_area_ids.contains(&tile.landmass_id(self)) {
-                self.base_terrain_query[tile.index()] = BaseTerrain::Lake;
+                tile.set_base_terrain(self, BaseTerrain::Lake);
             }
         });
     }
@@ -52,9 +52,9 @@ impl TileMap {
                         num_large_lakes_added += 1;
                     }
                 }
-                self.terrain_type_query[tile.index()] = TerrainType::Water;
-                self.base_terrain_query[tile.index()] = BaseTerrain::Lake;
-                self.feature_query[tile.index()] = None;
+                tile.set_terrain_type(self, TerrainType::Water);
+                tile.set_base_terrain(self, BaseTerrain::Lake);
+                tile.clear_feature(self);
             }
         });
     }
@@ -86,9 +86,9 @@ impl TileMap {
         });
 
         lake_tiles.into_iter().for_each(|tile| {
-            self.terrain_type_query[tile.index()] = TerrainType::Water;
-            self.base_terrain_query[tile.index()] = BaseTerrain::Lake;
-            self.feature_query[tile.index()] = None;
+            tile.set_terrain_type(self, TerrainType::Water);
+            tile.set_base_terrain(self, BaseTerrain::Lake);
+            tile.clear_feature(self);
         });
 
         large_lake > 2

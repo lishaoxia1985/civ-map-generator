@@ -65,9 +65,9 @@ impl TileMap {
                 .is_some_and(|(resource, _)| resource == Resource::Sugar)
                 && tile.feature(self) == Some(Feature::Jungle)
             {
-                self.terrain_type_query[tile.index()] = TerrainType::Flatland;
-                self.base_terrain_query[tile.index()] = BaseTerrain::Grassland;
-                self.feature_query[tile.index()] = Some(Feature::Marsh);
+                tile.set_terrain_type(self, TerrainType::Flatland);
+                tile.set_base_terrain(self, BaseTerrain::Grassland);
+                tile.set_feature(self, Feature::Marsh);
             }
         })
     }
@@ -543,9 +543,9 @@ impl TileMap {
             && tile.feature(self) != Some(Feature::Forest)
             && !tile.has_river(self)
         {
-            self.terrain_type_query[tile.index()] = TerrainType::Hill;
-            self.feature_query[tile.index()] = None;
-            self.natural_wonder_query[tile.index()] = None;
+            tile.set_terrain_type(self, TerrainType::Hill);
+            tile.clear_feature(self);
+            tile.clear_natural_wonder(self);
             true
         } else {
             false
@@ -569,9 +569,9 @@ impl TileMap {
                 if diceroll == 2 {
                     resource = Resource::Iron;
                 }
-                self.resource_query[tile.index()] = Some((resource, 2));
+                tile.set_resource(self, resource, 2);
             } else {
-                self.resource_query[tile.index()] = Some((Resource::Iron, 2));
+                tile.set_resource(self, Resource::Iron, 2);
             }
             true
         } else {
@@ -604,7 +604,7 @@ impl TileMap {
             match terrain_type {
                 TerrainType::Water => {
                     if base_terrain == BaseTerrain::Coast && feature.is_none() {
-                        self.resource_query[tile.index()] = Some((Resource::Fish, 1));
+                        tile.set_resource(self, Resource::Fish, 1);
                         return (true, false);
                     }
                 }
@@ -612,24 +612,24 @@ impl TileMap {
                     if feature.is_none() {
                         match base_terrain {
                             BaseTerrain::Grassland => {
-                                self.resource_query[tile.index()] = Some((Resource::Cattle, 1));
+                                tile.set_resource(self, Resource::Cattle, 1);
                                 return (true, false);
                             }
                             BaseTerrain::Desert => {
                                 if tile.is_freshwater(self) {
-                                    self.resource_query[tile.index()] = Some((Resource::Wheat, 1));
+                                    tile.set_resource(self, Resource::Wheat, 1);
                                     return (true, false);
                                 } else if allow_oasis {
-                                    self.feature_query[tile.index()] = Some(Feature::Oasis);
+                                    tile.set_feature(self, Feature::Oasis);
                                     return (true, true);
                                 }
                             }
                             BaseTerrain::Plain => {
-                                self.resource_query[tile.index()] = Some((Resource::Wheat, 1));
+                                tile.set_resource(self, Resource::Wheat, 1);
                                 return (true, false);
                             }
                             BaseTerrain::Tundra => {
-                                self.resource_query[tile.index()] = Some((Resource::Deer, 1));
+                                tile.set_resource(self, Resource::Deer, 1);
                                 return (true, false);
                             }
                             _ => {
@@ -637,23 +637,23 @@ impl TileMap {
                             }
                         }
                     } else if feature == Some(Feature::Forest) {
-                        self.resource_query[tile.index()] = Some((Resource::Deer, 1));
+                        tile.set_resource(self, Resource::Deer, 1);
                         return (true, false);
                     } else if feature == Some(Feature::Jungle) {
-                        self.resource_query[tile.index()] = Some((Resource::Bananas, 1));
+                        tile.set_resource(self, Resource::Bananas, 1);
                         return (true, false);
                     }
                 }
                 TerrainType::Mountain => (),
                 TerrainType::Hill => {
                     if feature.is_none() {
-                        self.resource_query[tile.index()] = Some((Resource::Sheep, 1));
+                        tile.set_resource(self, Resource::Sheep, 1);
                         return (true, false);
                     } else if feature == Some(Feature::Forest) {
-                        self.resource_query[tile.index()] = Some((Resource::Deer, 1));
+                        tile.set_resource(self, Resource::Deer, 1);
                         return (true, false);
                     } else if feature == Some(Feature::Jungle) {
-                        self.resource_query[tile.index()] = Some((Resource::Bananas, 1));
+                        tile.set_resource(self, Resource::Bananas, 1);
                         return (true, false);
                     }
                 }
@@ -672,7 +672,7 @@ impl TileMap {
             && tile.base_terrain(self) == BaseTerrain::Grassland
             && tile.feature(self).is_none()
         {
-            self.resource_query[tile.index()] = Some((Resource::Stone, 1));
+            tile.set_resource(self, Resource::Stone, 1);
             true
         } else {
             false
@@ -743,7 +743,7 @@ impl TileMap {
             // First pass: Seek the first eligible 0 value on impact matrix
             for &tile in plot_list_iter.by_ref() {
                 if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
-                    self.resource_query[tile.index()] = Some((resource, quantity));
+                    tile.set_resource(self, resource, quantity);
                     self.place_impact_and_ripples(tile, layer, radius);
                     break;
                 }
@@ -759,7 +759,7 @@ impl TileMap {
                     })
                     .min_by_key(|tile| self.layer_data[layer][tile.index()]);
                 if let Some(&tile) = best_plot {
-                    self.resource_query[tile.index()] = Some((resource, quantity));
+                    tile.set_resource(self, resource, quantity);
                     self.place_impact_and_ripples(tile, layer, radius);
                 }
             }
@@ -844,7 +844,7 @@ impl TileMap {
                 if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
                     // Place resource on tile if it doesn't have a resource already
                     if tile.resource(self).is_none() {
-                        self.resource_query[tile.index()] = Some((resource, quantity));
+                        tile.set_resource(self, resource, quantity);
                         num_left_to_place -= 1;
                     }
                     // Place impact and ripples if `has_impact` is true
