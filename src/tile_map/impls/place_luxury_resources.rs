@@ -30,7 +30,7 @@ impl TileMap {
         let mut luxury_low_fert_compensation = HashMap::new();
         // Stores number of luxury compensation each region received because of low fertility.
         // The index of the vector corresponds to the index of the region, and the value is the number of compensation.
-        let mut region_low_fert_compensation = vec![0; map_parameters.civilization_num as usize];
+        let mut region_low_fert_compensation = vec![0; map_parameters.num_civilization as usize];
 
         /********** Process 1: Place Luxuries at civ start locations **********/
         // Determine basic number of luxuries to place at the start location according to `resource_setting`.
@@ -286,7 +286,7 @@ impl TileMap {
             // Calibrate the number of luxuries per region based on the world size and the number of civilizations.
             // The number of luxuries per region should be highest when the number of civilizations is closest to the "default" value for that map size.
             let target_list = get_region_luxury_target_numbers(world_size);
-            let mut target_num = ((target_list[map_parameters.civilization_num as usize] as f64
+            let mut target_num = ((target_list[map_parameters.num_civilization as usize] as f64
                 + 0.5 * current_luxury_low_fert_compensation as f64)
                 / luxury_assign_to_region_count as f64) as i32;
 
@@ -345,7 +345,7 @@ impl TileMap {
                 get_world_luxury_target_numbers(world_size, resource_setting);
             let extra_luxury = self
                 .random_number_generator
-                .gen_range(0..map_parameters.civilization_num);
+                .gen_range(0..map_parameters.num_civilization);
             let num_placed_luxuries = self.num_placed_luxury_resources(ruleset);
             let num_random_luxury_target = target_luxury + extra_luxury - num_placed_luxuries;
 
@@ -539,11 +539,11 @@ impl TileMap {
         let marble_already_placed: u32 = self.placed_resource_count(luxury_resource);
 
         let marble_target = match map_parameters.resource_setting {
-            ResourceSetting::Sparse => (map_parameters.civilization_num as f32 * 0.5).ceil() as i32,
+            ResourceSetting::Sparse => (map_parameters.num_civilization as f32 * 0.5).ceil() as i32,
             ResourceSetting::Abundant => {
-                (map_parameters.civilization_num as f32 * 0.9).ceil() as i32
+                (map_parameters.num_civilization as f32 * 0.9).ceil() as i32
             }
-            _ => (map_parameters.civilization_num as f32 * 0.75).ceil() as i32,
+            _ => (map_parameters.num_civilization as f32 * 0.75).ceil() as i32,
         };
 
         let mut marble_tile_list = Vec::new();

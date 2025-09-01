@@ -11,6 +11,7 @@ use crate::{
         hex_grid::{hex::HexOrientation, HexGrid},
     },
     map_parameters::{MapParameters, WorldGrid},
+    nation::Nation,
     tile::Tile,
     tile_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
@@ -51,9 +52,9 @@ pub struct TileMap {
     /// List of landmasses in the map. The index is equal to the landmass id.
     pub landmass_list: Vec<Landmass>,
     /// Starting tile and placed civilization.
-    pub starting_tile_and_civilization: BTreeMap<Tile, String>,
+    pub starting_tile_and_civilization: BTreeMap<Tile, Nation>,
     /// Starting tile and placed city state.
-    pub starting_tile_and_city_state: BTreeMap<Tile, String>,
+    pub starting_tile_and_city_state: BTreeMap<Tile, Nation>,
     /// List of regions in the map. The index is equal to the region id.
     region_list: ArrayVec<Region, { MapParameters::MAX_CIVILIZATION_NUM as usize }>,
     /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,

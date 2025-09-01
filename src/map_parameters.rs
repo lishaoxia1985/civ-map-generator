@@ -30,7 +30,7 @@ pub struct MapParameters {
     ///
     /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
     pub seed: u64,
-    pub large_lake_num: u32,
+    pub num_large_lake: u32,
     /// The max area size of a lake.
     pub lake_max_area_size: u32,
     /// Store the chance of each eligible plot to become a coast in each iteration.
@@ -46,11 +46,11 @@ pub struct MapParameters {
     /// The number of civilizations, excluding city states.
     ///
     /// This value must be in the range of [2, [`MapParameters::MAX_CIVILIZATION_NUM`]].
-    pub civilization_num: u32,
+    pub num_civilization: u32,
     /// The number of city states.
     ///
     /// This value must be in the range of [0, [`MapParameters::MAX_CITY_STATE_NUM`]].
-    pub city_state_num: u32,
+    pub num_city_state: u32,
     pub region_divide_method: RegionDivideMethod,
     /// Whether the civilization starting tile must be coastal land.
     /// - If true, the civilization starting tile only can be coastal land.
@@ -117,15 +117,15 @@ impl Default for MapParameters {
                 .as_millis()
                 .try_into()
                 .unwrap(),
-            large_lake_num: 2,
+            num_large_lake: 2,
             lake_max_area_size: 9,
             coast_expand_chance: vec![0.25, 0.25],
             sea_level: SeaLevel::Normal,
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,
             rainfall: Rainfall::Normal,
-            civilization_num: 4,
-            city_state_num: 8,
+            num_civilization: 4,
+            num_city_state: 8,
             region_divide_method: RegionDivideMethod::Continent,
             civ_require_coastal_land_start: false,
             resource_setting: ResourceSetting::Standard,

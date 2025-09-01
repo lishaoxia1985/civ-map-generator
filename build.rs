@@ -10,37 +10,55 @@ fn main() {
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Features.json");
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/NaturalWonders.json");
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/TileResources.json");
+    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Nations.json");
 
-    let dest_path = Path::new("src/tile_component");
+    /* Tile Component Rust File Generation */
+    let tile_component_path = Path::new("src/tile_component");
 
     create_enum_from_json(
         include_str!("src/jsons/Civ V - Gods & Kings/TerrainTypes.json"),
-        dest_path.join("terrain_type.rs").to_str().unwrap(),
+        tile_component_path
+            .join("terrain_type.rs")
+            .to_str()
+            .unwrap(),
         "TerrainType",
     );
 
     create_enum_from_json(
         include_str!("src/jsons/Civ V - Gods & Kings/BaseTerrains.json"),
-        dest_path.join("base_terrain.rs").to_str().unwrap(),
+        tile_component_path
+            .join("base_terrain.rs")
+            .to_str()
+            .unwrap(),
         "BaseTerrain",
     );
 
     create_enum_from_json(
         include_str!("src/jsons/Civ V - Gods & Kings/Features.json"),
-        dest_path.join("feature.rs").to_str().unwrap(),
+        tile_component_path.join("feature.rs").to_str().unwrap(),
         "Feature",
     );
 
     create_enum_from_json(
         include_str!("src/jsons/Civ V - Gods & Kings/NaturalWonders.json"),
-        dest_path.join("natural_wonder.rs").to_str().unwrap(),
+        tile_component_path
+            .join("natural_wonder.rs")
+            .to_str()
+            .unwrap(),
         "NaturalWonder",
     );
 
     create_enum_from_json(
         include_str!("src/jsons/Civ V - Gods & Kings/TileResources.json"),
-        dest_path.join("resource.rs").to_str().unwrap(),
+        tile_component_path.join("resource.rs").to_str().unwrap(),
         "Resource",
+    );
+    /* Tile Component Rust File Generation */
+
+    create_enum_from_json(
+        include_str!("src/jsons/Civ V - Gods & Kings/Nations.json"),
+        Path::new("src/nation.rs").to_str().unwrap(),
+        "Nation",
     );
 }
 

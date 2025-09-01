@@ -2,11 +2,10 @@ use std::cmp::min;
 
 use std::collections::{BTreeMap, HashSet};
 
-use rand::{
-    seq::{index::sample, SliceRandom},
-    Rng,
-};
+use enum_map::Enum;
+use rand::{seq::SliceRandom, Rng};
 
+use crate::nation::Nation;
 use crate::{
     grid::offset_coordinate::OffsetCoordinate,
     map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
@@ -27,26 +26,18 @@ impl TileMap {
         let city_states_assignment =
             self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
-        let mut city_state_list = ruleset
-            .nations
-            .iter()
-            .filter(|(_, nation)| !nation.city_state_type.is_empty())
-            .map(|(city_state, _)| city_state)
+        let city_state_list = (0..Nation::LENGTH)
+            .map(Nation::from_usize)
+            .filter(|&nation| !ruleset.nations[nation.as_str()].city_state_type.is_empty())
             .collect::<Vec<_>>();
 
-        // We get the civilization in the order.
-        // That make sure we get the same civilization list every time we run the game.
-        // We use `sort_unstable` instead of `sort` because there are no duplicate elements in the list.
-        city_state_list.sort_unstable();
-
-        let mut start_city_state_list: Vec<_> = sample(
-            &mut self.random_number_generator,
-            city_state_list.len(),
-            map_parameters.city_state_num as usize,
-        )
-        .into_iter()
-        .map(|i| city_state_list[i])
-        .collect();
+        let mut start_city_state_list: Vec<_> = city_state_list
+            .choose_multiple(
+                &mut self.random_number_generator,
+                map_parameters.num_city_state as usize,
+            )
+            .copied()
+            .collect();
 
         let mut num_uninhabited_candidate_tiles = city_states_assignment
             .uninhabited_areas_coastal_land_tiles
@@ -129,7 +120,7 @@ impl TileMap {
 
             let candidate_tile_list = [coastal_tile_list, inland_tile_list];
 
-            for city_state in start_city_state_list.iter() {
+            for &city_state in start_city_state_list.iter() {
                 let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
                 if let Some(tile) = tile {
                     self.place_city_state(city_state, tile);
@@ -156,9 +147,8 @@ impl TileMap {
     /// 1. Add the city state tile to the `city_state_and_starting_tile` map.
     /// 2. Clear the ice feature from the coast tiles adjacent to the city state.
     /// 3. Place resource impacts and ripple on the city state tile and its around tiles.
-    fn place_city_state(&mut self, city_state: &str, tile: Tile) {
-        self.starting_tile_and_city_state
-            .insert(tile, city_state.to_string());
+    fn place_city_state(&mut self, city_state: Nation, tile: Tile) {
+        self.starting_tile_and_city_state.insert(tile, city_state);
         // Removes Feature Ice from coasts adjacent to the city state's new location
         self.clear_ice_near_city_site(tile, 1);
 
@@ -334,17 +324,17 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) -> CityStatesAssignment {
-        let mut num_city_states_unassigned = map_parameters.city_state_num;
+        let mut num_city_states_unassigned = map_parameters.num_city_state;
 
         // Store region index which city state is assigned to
         let mut region_index_assignment =
-            Vec::with_capacity(map_parameters.city_state_num as usize);
+            Vec::with_capacity(map_parameters.num_city_state as usize);
 
         let mut uninhabited_areas_coastal_land_tiles = Vec::new();
         let mut uninhabited_areas_inland_tiles = Vec::new();
 
         /***** Assign the "Per Region" City States to their regions ******/
-        let ratio = map_parameters.city_state_num as f64 / map_parameters.civilization_num as f64;
+        let ratio = map_parameters.num_city_state as f64 / map_parameters.num_civilization as f64;
         let num_city_states_per_region = match ratio {
             r if r > 14.0 => 10,
             r if r > 11.0 => 8,
@@ -451,12 +441,12 @@ impl TileMap {
             let uninhabited_ratio = num_uninhabited_landmass_tiles as f64
                 / (num_civ_landmass_tiles + num_uninhabited_landmass_tiles) as f64;
             let max_by_ratio =
-                (3. * uninhabited_ratio * map_parameters.city_state_num as f64) as u32;
+                (3. * uninhabited_ratio * map_parameters.num_city_state as f64) as u32;
             let max_by_method =
                 if let RegionDivideMethod::Pangaea = map_parameters.region_divide_method {
-                    map_parameters.city_state_num.div_ceil(4)
+                    map_parameters.num_city_state.div_ceil(4)
                 } else {
-                    map_parameters.city_state_num.div_ceil(2)
+                    map_parameters.num_city_state.div_ceil(2)
                 };
 
             _num_city_states_uninhabited =

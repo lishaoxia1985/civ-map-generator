@@ -21,7 +21,7 @@ impl TileMap {
     pub fn generate_regions(&mut self, map_parameters: &MapParameters) {
         let grid = self.world_grid.grid;
 
-        let civilization_num = map_parameters.civilization_num;
+        let civilization_num = map_parameters.num_civilization;
 
         match map_parameters.region_divide_method {
             RegionDivideMethod::Pangaea => {

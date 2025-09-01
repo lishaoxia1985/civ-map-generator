@@ -1,9 +1,11 @@
 use std::{cmp::max, collections::BTreeSet};
 
-use rand::seq::{index::sample, SliceRandom};
+use enum_map::Enum;
+use rand::seq::SliceRandom;
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
+    nation::Nation,
     ruleset::Ruleset,
     tile::Tile,
     tile_component::{
@@ -34,32 +36,23 @@ impl TileMap {
         map_parameters: &MapParameters,
         ruleset: &Ruleset,
     ) {
-        /***** TODO: That will implement in `map_parameters` file later *****/
-        // Take the civilization randomly as the starting civilization in the map.
-        let mut civilization_list = ruleset
-            .nations
-            .iter()
-            .filter(|(_, nation)| {
-                nation.city_state_type.is_empty()
-                    && nation.name != "Barbarians"
-                    && nation.name != "Spectator"
+        let civilization_list = (0..Nation::LENGTH)
+            .map(Nation::from_usize)
+            .filter(|&nation| {
+                ruleset.nations[nation.as_str()].city_state_type.is_empty()
+                    && nation != Nation::Barbarians
+                    && nation != Nation::Spectator
             })
-            .map(|(civilization, _)| civilization)
             .collect::<Vec<_>>();
-        // We get the civilization in the order.
-        // That make sure we get the same civilization list every time we run the game.
-        // We use `sort_unstable` instead of `sort` because there are no duplicate elements in the list.
-        civilization_list.sort_unstable();
 
-        let mut start_civilization_list: Vec<_> = sample(
-            &mut self.random_number_generator,
-            civilization_list.len(),
-            map_parameters.civilization_num as usize,
-        )
-        .into_iter()
-        .map(|i| civilization_list[i])
-        .collect();
-        /***** TODO: That will implement in `map_parameters` file later *****/
+        // Take the civilization randomly as the starting civilization in the map.
+        let mut start_civilization_list: Vec<_> = civilization_list
+            .choose_multiple(
+                &mut self.random_number_generator,
+                map_parameters.num_civilization as usize,
+            )
+            .copied()
+            .collect();
 
         for region_index in 0..self.region_list.len() {
             let start_location_condition =
@@ -74,7 +67,7 @@ impl TileMap {
             self.starting_tile_and_civilization = start_civilization_list
                 .iter()
                 .zip(self.region_list.iter())
-                .map(|(civilization, region)| (region.starting_tile, civilization.to_string()))
+                .map(|(&civilization, region)| (region.starting_tile, civilization))
                 .collect();
             // TODO: Set the civilization to the team in the future.
             return;
@@ -97,19 +90,19 @@ impl TileMap {
         // If the region index has been assigned a civilization, then it will be removed from the list.
         let mut region_index_list = (0..self.region_list.len()).collect::<BTreeSet<_>>();
 
-        for civilization in start_civilization_list.iter() {
-            let nation = &ruleset.nations[*civilization];
-            if nation.along_ocean {
-                civs_needing_coastal_start.push(*civilization);
-            } else if nation.along_river {
-                civs_needing_river_start.push(*civilization);
-            } else if !nation.region_type_priority.is_empty() {
+        for &civilization in start_civilization_list.iter() {
+            let nation_info = &ruleset.nations[civilization.as_str()];
+            if nation_info.along_ocean {
+                civs_needing_coastal_start.push(civilization);
+            } else if nation_info.along_river {
+                civs_needing_river_start.push(civilization);
+            } else if !nation_info.region_type_priority.is_empty() {
                 _num_priority_civs_remaining += 1;
-                civs_needing_region_priority.push(*civilization);
-            } else if !nation.avoid_region_type.is_empty() {
+                civs_needing_region_priority.push(civilization);
+            } else if !nation_info.avoid_region_type.is_empty() {
                 _num_avoid_civs += 1;
                 _num_avoid_civs_remaining += 1;
-                civs_needing_region_avoid.push(*civilization);
+                civs_needing_region_avoid.push(civilization);
             }
         }
 
@@ -171,10 +164,8 @@ impl TileMap {
                             .chain(regions_with_lake_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
-                        self.starting_tile_and_civilization.insert(
-                            self.region_list[region_index].starting_tile,
-                            civilization.to_string(),
-                        );
+                        self.starting_tile_and_civilization
+                            .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     });
@@ -232,10 +223,8 @@ impl TileMap {
                             .chain(regions_with_near_river_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
-                        self.starting_tile_and_civilization.insert(
-                            self.region_list[region_index].starting_tile,
-                            civilization.to_string(),
-                        );
+                        self.starting_tile_and_civilization
+                            .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     });
@@ -292,10 +281,8 @@ impl TileMap {
                                 .chain(fallbacks_with_near_river_start.iter()),
                         )
                         .for_each(|(civilization, &region_index)| {
-                            self.starting_tile_and_civilization.insert(
-                                self.region_list[region_index].starting_tile,
-                                civilization.to_string(),
-                            );
+                            self.starting_tile_and_civilization
+                                .insert(self.region_list[region_index].starting_tile, civilization);
                             // Remove region index that has been assigned from region index list
                             region_index_list.remove(&region_index);
                         });
@@ -310,8 +297,8 @@ impl TileMap {
             let mut civs_fallback_priority = Vec::new();
 
             for &civilization in civs_needing_region_priority.iter() {
-                let nation = &ruleset.nations[civilization];
-                if nation.region_type_priority.len() == 1 {
+                let nation_info = &ruleset.nations[civilization.as_str()];
+                if nation_info.region_type_priority.len() == 1 {
                     civs_needing_single_priority.push(civilization);
                 } else {
                     civs_needing_multi_priority.push(civilization);
@@ -323,15 +310,15 @@ impl TileMap {
                 // Notice: region_type_priority always doesn't have 'RegionType::Undefined' as the element,
                 // so we don't need to tackle the case that the first element is 'RegionType::Undefined'.
                 civs_needing_single_priority.sort_by_key(|&civilization| {
-                    let nation = &ruleset.nations[civilization];
-                    nation.region_type_priority[0] as i32
+                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    nation_info.region_type_priority[0] as i32
                 });
 
                 for &civilization in civs_needing_single_priority.iter() {
                     let mut candidate_regions = Vec::new();
                     for &region_index in region_index_list.iter() {
                         let region_type_priority =
-                            ruleset.nations[civilization].region_type_priority[0];
+                            ruleset.nations[civilization.as_str()].region_type_priority[0];
                         if self.region_list[region_index].region_type == region_type_priority {
                             candidate_regions.push(region_index);
                         }
@@ -341,10 +328,8 @@ impl TileMap {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
-                        self.starting_tile_and_civilization.insert(
-                            self.region_list[region_index].starting_tile,
-                            civilization.to_string(),
-                        );
+                        self.starting_tile_and_civilization
+                            .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     } else {
@@ -356,15 +341,15 @@ impl TileMap {
             if !civs_needing_multi_priority.is_empty() {
                 // Sort `civs_needing_multi_priority` by the length of nation.region_type_priority
                 civs_needing_multi_priority.sort_by_key(|&civilization| {
-                    let nation = &ruleset.nations[civilization];
-                    nation.region_type_priority.len()
+                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    nation_info.region_type_priority.len()
                 });
 
                 for &civilization in civs_needing_multi_priority.iter() {
                     let mut candidate_regions = Vec::new();
                     for &region_index in region_index_list.iter() {
                         let region_type_priority_list =
-                            &ruleset.nations[civilization].region_type_priority;
+                            &ruleset.nations[civilization.as_str()].region_type_priority;
                         if region_type_priority_list
                             .contains(&self.region_list[region_index].region_type)
                         {
@@ -376,10 +361,8 @@ impl TileMap {
                         let region_index = *candidate_regions
                             .choose(&mut self.random_number_generator)
                             .unwrap();
-                        self.starting_tile_and_civilization.insert(
-                            self.region_list[region_index].starting_tile,
-                            civilization.to_string(),
-                        );
+                        self.starting_tile_and_civilization
+                            .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     }
@@ -390,16 +373,14 @@ impl TileMap {
             if !civs_fallback_priority.is_empty() {
                 for &civilization in civs_fallback_priority.iter() {
                     let region_type_priority =
-                        ruleset.nations[civilization].region_type_priority[0];
+                        ruleset.nations[civilization.as_str()].region_type_priority[0];
                     let region_index = self.find_fallback_for_unmatched_region_priority(
                         region_type_priority,
                         &region_index_list,
                     );
                     if let Some(region_index) = region_index {
-                        self.starting_tile_and_civilization.insert(
-                            self.region_list[region_index].starting_tile,
-                            civilization.to_string(),
-                        );
+                        self.starting_tile_and_civilization
+                            .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     }
@@ -411,16 +392,16 @@ impl TileMap {
         if !civs_needing_region_avoid.is_empty() {
             // Sort `civs_needing_region_avoid` by the length of `nation.avoid_region_type`.
             civs_needing_region_avoid.sort_by_key(|civilization| {
-                let nation = &ruleset.nations[*civilization];
-                nation.avoid_region_type.len()
+                let nation_info = &ruleset.nations[civilization.as_str()];
+                nation_info.avoid_region_type.len()
             });
 
             // process in reverse order, so most needs goes first.
-            for civilization in civs_needing_region_avoid.iter().rev() {
+            for &civilization in civs_needing_region_avoid.iter().rev() {
                 let mut candidate_regions = Vec::new();
                 for &region_index in region_index_list.iter() {
                     let region_type_priority_list =
-                        &ruleset.nations[*civilization].region_type_priority;
+                        &ruleset.nations[civilization.as_str()].region_type_priority;
                     if !region_type_priority_list
                         .contains(&self.region_list[region_index].region_type)
                     {
@@ -432,10 +413,8 @@ impl TileMap {
                     let region_index = *candidate_regions
                         .choose(&mut self.random_number_generator)
                         .unwrap();
-                    self.starting_tile_and_civilization.insert(
-                        self.region_list[region_index].starting_tile,
-                        civilization.to_string(),
-                    );
+                    self.starting_tile_and_civilization
+                        .insert(self.region_list[region_index].starting_tile, civilization);
                     // Remove region index that has been assigned from region index list
                     region_index_list.remove(&region_index);
                 }
@@ -450,7 +429,7 @@ impl TileMap {
                 !self
                     .starting_tile_and_civilization
                     .values()
-                    .any(|v| v == *civilization)
+                    .any(|v| v == civilization)
             })
             .collect();
 
@@ -459,11 +438,9 @@ impl TileMap {
         remaining_civilization_list
             .iter()
             .zip(region_index_list.iter())
-            .for_each(|(civilization, &region_index)| {
-                self.starting_tile_and_civilization.insert(
-                    self.region_list[region_index].starting_tile,
-                    civilization.to_string(),
-                );
+            .for_each(|(&civilization, &region_index)| {
+                self.starting_tile_and_civilization
+                    .insert(self.region_list[region_index].starting_tile, civilization);
             });
         // TODO: Set the civilization to the team in the future.
     }

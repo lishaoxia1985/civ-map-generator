@@ -6,7 +6,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Nation {
+pub struct NationInfo {
     pub name: String,
     #[serde(default)]
     pub leader_name: String,
@@ -59,7 +59,7 @@ pub struct Nation {
     pub city_state_type: String,
 }
 
-impl Name for Nation {
+impl Name for NationInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

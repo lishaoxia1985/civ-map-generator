@@ -34,8 +34,8 @@ pub mod unit_type;
 
 use crate::ruleset::{
     belief::Belief, building::Building, difficulty::Difficulty, era::Era,
-    global_unique::GlobalUnique, nation::Nation, policy::PolicyBranch, quest::Quest, ruin::Ruin,
-    specialist::Specialist, tech::TechColumn, tile_improvement::TileImprovement,
+    global_unique::GlobalUnique, nation::NationInfo, policy::PolicyBranch, quest::Quest,
+    ruin::Ruin, specialist::Specialist, tech::TechColumn, tile_improvement::TileImprovement,
     tile_resource::TileResource, unit::Unit, unit_promotion::UnitPromotion, unit_type::UnitType,
 };
 
@@ -58,7 +58,7 @@ pub struct Ruleset {
     pub difficulties: HashMap<String, Difficulty>,
     pub eras: HashMap<String, Era>,
     pub global_uniques: GlobalUnique,
-    pub nations: HashMap<String, Nation>,
+    pub nations: HashMap<String, NationInfo>,
     //pub policies: HashMap<String, Policy>,
     pub policy_branches: HashMap<String, PolicyBranch>,
     pub religions: Vec<String>,

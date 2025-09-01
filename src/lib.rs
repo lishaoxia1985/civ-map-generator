@@ -10,6 +10,7 @@ pub mod fractal;
 pub mod grid;
 pub mod map_generator;
 pub mod map_parameters;
+pub mod nation;
 pub mod ruleset;
 pub mod tile;
 pub mod tile_component;
