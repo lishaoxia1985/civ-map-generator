@@ -162,6 +162,18 @@ impl SquareLayout {
         }
     }
 
+    pub fn new_with_array(
+        orientation: SquareOrientation,
+        size: [f32; 2],
+        origin: [f32; 2],
+    ) -> Self {
+        Self {
+            orientation,
+            size: Vec2::new(size[0], size[1]),
+            origin: Vec2::new(origin[0], origin[1]),
+        }
+    }
+
     pub fn square_to_pixel(self, square: Square) -> Vec2 {
         match self.orientation {
             SquareOrientation::Orthogonal => self.origin + square.0.as_vec2() * self.size,

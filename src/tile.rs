@@ -2,8 +2,6 @@
 //! It provides functionality to interact with tiles on a map, including retrieving
 //! their properties, neighbors, and coordinates in different formats.
 
-use glam::Vec2;
-
 use crate::{
     grid::{
         direction::Direction,
@@ -257,16 +255,16 @@ impl Tile {
             .map(Self::from_cell)
     }
 
-    pub fn pixel_position(&self, grid: HexGrid) -> Vec2 {
+    pub fn pixel_position(&self, grid: HexGrid) -> [f32; 2] {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
-        grid.layout.hex_to_pixel(hex)
+        grid.layout.hex_to_pixel(hex).to_array()
     }
 
-    pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> Vec2 {
+    pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> [f32; 2] {
         // We donn't need to check if the tile is valid here, because the caller should have done that.
         let hex = self.to_hex_coordinate(grid);
-        grid.layout.corner(hex, direction)
+        grid.layout.corner(hex, direction).to_array()
     }
 
     /// Checks if there is a river on the current tile.

@@ -3,7 +3,6 @@
 //! calculating distances, neighbors, and converting between grid coordinates and offset coordinates.
 
 use direction::Direction;
-use glam::Vec2;
 use offset_coordinate::OffsetCoordinate;
 
 use bitflags::bitflags;
@@ -69,7 +68,7 @@ pub trait Grid {
     ///
     /// # Notice
     /// When we show the map, we need to set camera to the center of the map.
-    fn center(&self) -> Vec2;
+    fn center(&self) -> [f32; 2];
 
     /// Converts a `Cell` to an `OffsetCoordinate`.
     ///

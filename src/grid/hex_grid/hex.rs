@@ -249,6 +249,14 @@ impl HexLayout {
         }
     }
 
+    pub fn new_with_array(orientation: HexOrientation, size: [f32; 2], origin: [f32; 2]) -> Self {
+        Self {
+            orientation,
+            size: Vec2::new(size[0], size[1]),
+            origin: Vec2::new(origin[0], origin[1]),
+        }
+    }
+
     pub fn hex_to_pixel(self, hex: Hex) -> Vec2 {
         let m = self.orientation.conversion_matrix();
         let size: Vec2 = self.size;

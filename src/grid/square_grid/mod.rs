@@ -49,7 +49,7 @@ impl Grid for SquareGrid {
         self.wrap_flags
     }
 
-    fn center(&self) -> Vec2 {
+    fn center(&self) -> [f32; 2] {
         let width = self.size.width;
         let height = self.size.height;
 
@@ -61,10 +61,10 @@ impl Grid for SquareGrid {
             .square_to_pixel(Square::new(width as i32 - 1, height as i32 - 1))
             .to_array();
 
-        Vec2::new(
+        [
             (min_offset_x + max_offset_x) / 2.,
             (min_offset_y + max_offset_y) / 2.,
-        )
+        ]
     }
 
     fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell> {
