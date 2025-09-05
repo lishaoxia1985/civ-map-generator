@@ -8,35 +8,35 @@ use std::collections::HashMap;
 
 use serde::de::DeserializeOwned;
 
-use terrain::{
-    base_terrain_info::BaseTerrainInfo, feature_info::FeatureInfo,
-    natural_wonder_info::NaturalWonderInfo, terrain_type_info::TerrainTypeInfo,
-};
-
+pub mod base_terrain;
 pub mod belief;
 pub mod building;
 pub mod difficulty;
 pub mod era;
+pub mod feature;
 pub mod global_unique;
 pub mod nation;
+pub mod natural_wonder;
 pub mod policy;
 pub mod quest;
+pub mod resource;
 pub mod ruin;
 pub mod specialist;
 pub mod tech;
-pub mod terrain;
+pub mod terrain_type;
 pub mod tile_improvement;
-pub mod tile_resource;
 pub mod unique;
 pub mod unit;
 pub mod unit_promotion;
 pub mod unit_type;
 
 use crate::ruleset::{
-    belief::Belief, building::Building, difficulty::Difficulty, era::Era,
-    global_unique::GlobalUnique, nation::NationInfo, policy::PolicyBranch, quest::Quest,
-    ruin::Ruin, specialist::Specialist, tech::TechColumn, tile_improvement::TileImprovement,
-    tile_resource::TileResource, unit::Unit, unit_promotion::UnitPromotion, unit_type::UnitType,
+    base_terrain::BaseTerrainInfo, belief::Belief, building::Building, difficulty::Difficulty,
+    era::Era, feature::FeatureInfo, global_unique::GlobalUnique, nation::NationInfo,
+    natural_wonder::NaturalWonderInfo, policy::PolicyBranch, quest::Quest, resource::TileResource,
+    ruin::Ruin, specialist::Specialist, tech::TechColumn, terrain_type::TerrainTypeInfo,
+    tile_improvement::TileImprovement, unit::Unit, unit_promotion::UnitPromotion,
+    unit_type::UnitType,
 };
 
 use self::tech::Technology;
