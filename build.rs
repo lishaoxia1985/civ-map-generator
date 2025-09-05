@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
@@ -12,11 +12,16 @@ fn main() {
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/TileResources.json");
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Nations.json");
 
+    let json_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("jsons")
+        .join("Civ V - Gods & Kings");
+
     /* Tile Component Rust File Generation */
     let tile_component_path = Path::new("src/tile_component");
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/TerrainTypes.json"),
+        json_path.join("TerrainTypes.json").to_str().unwrap(),
         tile_component_path
             .join("terrain_type.rs")
             .to_str()
@@ -25,7 +30,7 @@ fn main() {
     );
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/BaseTerrains.json"),
+        json_path.join("BaseTerrains.json").to_str().unwrap(),
         tile_component_path
             .join("base_terrain.rs")
             .to_str()
@@ -34,13 +39,13 @@ fn main() {
     );
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/Features.json"),
+        json_path.join("Features.json").to_str().unwrap(),
         tile_component_path.join("feature.rs").to_str().unwrap(),
         "Feature",
     );
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/NaturalWonders.json"),
+        json_path.join("NaturalWonders.json").to_str().unwrap(),
         tile_component_path
             .join("natural_wonder.rs")
             .to_str()
@@ -49,14 +54,14 @@ fn main() {
     );
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/TileResources.json"),
+        json_path.join("Resources.json").to_str().unwrap(),
         tile_component_path.join("resource.rs").to_str().unwrap(),
         "Resource",
     );
     /* Tile Component Rust File Generation */
 
     create_enum_from_json(
-        include_str!("src/jsons/Civ V - Gods & Kings/Nations.json"),
+        json_path.join("Nations.json").to_str().unwrap(),
         Path::new("src/nation.rs").to_str().unwrap(),
         "Nation",
     );
@@ -66,7 +71,7 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
     let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
 
     let value_list: Vec<Value> = serde_json::from_str(&json_string_without_comment)
-        .expect("Invalid JSON format in BaseTerrains.json");
+        .unwrap_or_else(|_| panic!("{}'{}'", "Can't serde ", json_path));
 
     let names: Vec<&str> = value_list
         .iter()
@@ -130,8 +135,8 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
 }
 
 fn load_json_file_and_strip_json_comments(path: &str) -> String {
-    let json_string_with_comment = /* fs::read_to_string(path).unwrap() */path;
-    strip_json_comments(json_string_with_comment, true)
+    let json_string_with_comment = fs::read_to_string(path).unwrap();
+    strip_json_comments(&json_string_with_comment, true)
 }
 
 /// Take a JSON string with comments and return the version without comments
