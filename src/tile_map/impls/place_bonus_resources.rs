@@ -213,14 +213,19 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AddExtraBonusesToHillsRegions
+    /// Adds extra bonus resources to Hills regions to help offset their natural lack of food.
+    ///
+    /// Hills regions are very low on food, yet not deemed by the fertility measurements to be so.
+    /// Spreading some food bonus around in these regions will help bring them up closer to par.
     fn add_extra_bonuses_to_hills_regions(&mut self, map_parameters: &MapParameters) {
         // Identify Hills Regions, if any.
-        let mut hills_region_indices = Vec::new();
-        for (region_index, region) in self.region_list.iter().enumerate() {
-            if region.region_type == RegionType::Hill {
-                hills_region_indices.push(region_index);
-            }
-        }
+        let mut hills_region_indices: Vec<_> = self
+            .region_list
+            .iter()
+            .enumerate()
+            .filter(|(_, region)| region.region_type == RegionType::Hill)
+            .map(|(index, _)| index)
+            .collect();
 
         if hills_region_indices.is_empty() {
             return;
@@ -266,7 +271,7 @@ impl TileMap {
             let mut jungles = Vec::new();
             let mut flat_plains = Vec::new();
             let mut dry_hills = Vec::new();
-            let mut flat_grass = Vec::new();
+            let mut grass_flat_no_feature = Vec::new();
             let mut flat_tundra = Vec::new();
             for tile in rectangle.all_tiles(self.world_grid.grid) {
                 let terrain_type = tile.terrain_type(self);
@@ -303,7 +308,7 @@ impl TileMap {
                         } else if terrain_type == TerrainType::Flatland {
                             match base_terrain {
                                 BaseTerrain::Grassland => {
-                                    flat_grass.push(tile);
+                                    grass_flat_no_feature.push(tile);
                                 }
                                 BaseTerrain::Desert => {
                                     if tile.is_freshwater(self) {
@@ -387,7 +392,7 @@ impl TileMap {
                 );
             }
 
-            if !flat_grass.is_empty() {
+            if !grass_flat_no_feature.is_empty() {
                 let resources_to_place = [ResourceToPlace {
                     resource: Resource::Cattle,
                     quantity: 1,
@@ -398,7 +403,7 @@ impl TileMap {
                 self.process_resource_list(
                     20. / infertility_quotient,
                     Layer::Bonus,
-                    &flat_grass,
+                    &grass_flat_no_feature,
                     &resources_to_place,
                 );
             }
@@ -558,12 +563,15 @@ impl TileMap {
         }
 
         let num_fish_to_place = (coast_list.len() as f64 / frequency).ceil() as u32;
-        let mut coast_list_iter = coast_list.iter().peekable();
 
-        let mut num_left_to_place = num_fish_to_place;
+        // Keep track of how many fish have been placed.
+        let mut placed_count = 0;
 
-        while num_left_to_place > 0 && coast_list_iter.peek().is_some() {
-            let tile = *coast_list_iter.next().unwrap();
+        for &tile in coast_list {
+            if placed_count >= num_fish_to_place {
+                break;
+            }
+
             if self.layer_data[Layer::Fish][tile.index()] == 0 && tile.resource(self).is_none() {
                 // Probability distribution for the possible values of fish_radius: 0, 1, 2, 3, 4, 5
                 //
@@ -576,7 +584,7 @@ impl TileMap {
                 }
                 tile.set_resource(self, Resource::Fish, 1);
                 self.place_impact_and_ripples(tile, Layer::Fish, fish_radius);
-                num_left_to_place -= 1;
+                placed_count += 1;
             }
         }
     }

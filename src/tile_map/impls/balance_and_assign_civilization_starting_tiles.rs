@@ -99,7 +99,7 @@ impl TileMap {
             } else if !nation_info.region_type_priority.is_empty() {
                 _num_priority_civs_remaining += 1;
                 civs_needing_region_priority.push(civilization);
-            } else if !nation_info.avoid_region_type.is_empty() {
+            } else if !nation_info.region_type_avoid.is_empty() {
                 _num_avoid_civs += 1;
                 _num_avoid_civs_remaining += 1;
                 civs_needing_region_avoid.push(civilization);
@@ -393,7 +393,7 @@ impl TileMap {
             // Sort `civs_needing_region_avoid` by the length of `nation.avoid_region_type`.
             civs_needing_region_avoid.sort_by_key(|civilization| {
                 let nation_info = &ruleset.nations[civilization.as_str()];
-                nation_info.avoid_region_type.len()
+                nation_info.region_type_avoid.len()
             });
 
             // process in reverse order, so most needs goes first.

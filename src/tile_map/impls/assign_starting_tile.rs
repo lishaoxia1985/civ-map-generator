@@ -727,7 +727,7 @@ impl TileMap {
 
         let num_resources_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
 
-        let mut plot_list_iter = tile_list.iter().peekable();
+        let mut tile_list_iter = tile_list.iter();
 
         // Main loop
         for _ in 0..num_resources_to_place {
@@ -740,28 +740,27 @@ impl TileMap {
             let radius = self
                 .random_number_generator
                 .gen_range(min_radius..=max_radius);
+
             // First pass: Seek the first eligible 0 value on impact matrix
-            for &tile in plot_list_iter.by_ref() {
-                if self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none() {
-                    tile.set_resource(self, resource, quantity);
-                    self.place_impact_and_ripples(tile, layer, radius);
-                    break;
-                }
+            if let Some(&tile) = tile_list_iter.find(|tile| {
+                self.layer_data[layer][tile.index()] == 0 && tile.resource(self).is_none()
+            }) {
+                tile.set_resource(self, resource, quantity);
+                self.place_impact_and_ripples(tile, layer, radius);
+                continue;
             }
 
-            // Completed first pass of plot_list, now change to seeking lowest value instead of zero value.
+            // Completed first pass of tile_list, now change to seeking lowest value instead of zero value.
             // If no eligible 0 value is found, second pass: Seek the lowest value (value < 98) on the impact matrix
-            if plot_list_iter.peek().is_none() {
-                let best_plot = tile_list
-                    .iter()
-                    .filter(|&&tile| {
-                        self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
-                    })
-                    .min_by_key(|tile| self.layer_data[layer][tile.index()]);
-                if let Some(&tile) = best_plot {
-                    tile.set_resource(self, resource, quantity);
-                    self.place_impact_and_ripples(tile, layer, radius);
-                }
+            if let Some(&tile) = tile_list
+                .iter()
+                .filter(|tile| {
+                    self.layer_data[layer][tile.index()] < 98 && tile.resource(self).is_none()
+                })
+                .min_by_key(|tile| self.layer_data[layer][tile.index()])
+            {
+                tile.set_resource(self, resource, quantity);
+                self.place_impact_and_ripples(tile, layer, radius);
             }
         }
     }

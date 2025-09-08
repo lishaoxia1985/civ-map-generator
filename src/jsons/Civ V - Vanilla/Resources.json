@@ -3,6 +3,7 @@
 	{
 		"name": "Cattle",
 		"resourceType": "Bonus",
+		"canBeFoundOnType": ["Flatland"],
 		"canBeFoundOnBase": ["Grassland"],
 		"food": 1,
 		"improvement": "Pasture",
@@ -24,9 +25,9 @@
 	{
 		"name": "Deer",
 		"resourceType": "Bonus",
-		"canBeFoundOnType": ["Hill"],
-		"canBeFoundOnBase": ["Tundra"],
-		"canBeFoundOnFeature": ["Forest"],
+		"canBeFoundOnType": ["Flatland","Hill"],
+		"canBeFoundOnBase": ["Tundra","Grassland","Plain"],
+		"canBeFoundOnFeature": ["Forest"], // Deer can also be placed on `Flatland` with `Tundra` and no feature in the code, we have not added that in this json.
 		"food": 1,
 		"improvement": "Camp",
 		"improvementStats": {"production": 1},
@@ -40,6 +41,8 @@
 	{
 		"name": "Bananas",
 		"resourceType": "Bonus",
+		"canBeFoundOnType": ["Flatland", "Hill"],
+		"canBeFoundOnBase": ["Grassland", "Plain"],
 		"canBeFoundOnFeature": ["Jungle"],
 		"food": 1,
 		"improvement": "Plantation",
@@ -50,7 +53,8 @@
 	{
 		"name": "Wheat",
 		"resourceType": "Bonus",
-		"canBeFoundOnBase": ["Plain"],
+		"canBeFoundOnType": ["Flatland"],
+		"canBeFoundOnBase": ["Plain", "Desert"],
 		"canBeFoundOnFeature": ["Floodplain"], 
 		"food": 1,
 		"improvement": "Farm",
@@ -63,7 +67,7 @@
 	{
 		"name": "Stone",
 		"resourceType": "Bonus",
-		"canBeFoundOnType": ["Hill"],
+		"canBeFoundOnType": ["Flatland"],
 		"canBeFoundOnBase": ["Grassland","Desert","Tundra","Plain","Snow"],
 		"production": 1,
 		"improvement": "Quarry",
@@ -75,6 +79,7 @@
 	{
 		"name": "Fish",
 		"resourceType": "Bonus",
+		"canBeFoundOnType": ["Water"],
 		"canBeFoundOnBase": ["Coast"],
 		"food": 1,
 		"improvement": "Fishing Boats",
@@ -84,6 +89,7 @@
 	{
 		"name": "Bison",
 		"resourceType": "Bonus",
+		"canBeFoundOnType": ["Flatland"],
 		"canBeFoundOnBase": ["Plain","Grassland"],
 		"food": 1,
 		"improvement": "Camp",

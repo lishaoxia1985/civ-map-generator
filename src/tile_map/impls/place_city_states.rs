@@ -897,8 +897,13 @@ impl TileMap {
 
             // The following code is equivalent to the commented code above, but it is faster.
             // Process inner ring
-            if num_food_bonus_needed > 0 && inner_placed < 2 && inner_can_have_bonus > 0 {
+            if num_food_bonus_needed > 0 {
                 for tile in neighbor_tile_list.into_iter() {
+                    if num_food_bonus_needed == 0 || inner_placed >= 2 || inner_can_have_bonus == 0
+                    {
+                        break;
+                    }
+
                     let (placed_bonus, placed_oasis) =
                         self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
 
@@ -909,23 +914,20 @@ impl TileMap {
                         inner_placed += 1;
                         inner_can_have_bonus -= 1;
                         num_food_bonus_needed -= 1;
-
-                        if num_food_bonus_needed == 0
-                            || inner_placed >= 2
-                            || inner_can_have_bonus == 0
-                        {
-                            break;
-                        }
                     }
                 }
             }
 
             // Process outer ring if still needed
-            if num_food_bonus_needed > 0
-                && (inner_placed + outer_placed) < 4
-                && outer_can_have_bonus > 0
-            {
+            if num_food_bonus_needed > 0 {
                 for tile in tile_at_distance_two_list.into_iter() {
+                    if num_food_bonus_needed == 0
+                        || (inner_placed + outer_placed) >= 4
+                        || outer_can_have_bonus == 0
+                    {
+                        break;
+                    }
+
                     let (placed_bonus, placed_oasis) =
                         self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
 
@@ -936,13 +938,6 @@ impl TileMap {
                         outer_placed += 1;
                         outer_can_have_bonus -= 1;
                         num_food_bonus_needed -= 1;
-
-                        if num_food_bonus_needed == 0
-                            || (inner_placed + outer_placed) >= 4
-                            || outer_can_have_bonus == 0
-                        {
-                            break;
-                        }
                     }
                 }
             }

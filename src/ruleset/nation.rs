@@ -16,15 +16,11 @@ pub struct NationInfo {
     #[serde(default)]
     pub along_ocean: bool,
     #[serde(default)]
-    /// This field is only used in CityState `Venice`, we don't tackle it because I don't know what it means.
-    pub place_first_along_ocean: bool,
-    #[serde(default)]
-    /// Now this field is not used in the game, so we don't tackle it.
     pub along_river: bool,
     #[serde(default)]
     pub region_type_priority: Vec<RegionType>,
     #[serde(default)]
-    pub avoid_region_type: Vec<RegionType>,
+    pub region_type_avoid: Vec<RegionType>,
     #[serde(default)]
     pub preferred_victory_type: String,
     #[serde(default)]
