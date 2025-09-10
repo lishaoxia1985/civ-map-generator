@@ -899,7 +899,7 @@ impl TileMap {
             // Process inner ring
             if num_food_bonus_needed > 0 {
                 for tile in neighbor_tile_list.into_iter() {
-                    if num_food_bonus_needed == 0 || inner_placed >= 2 || inner_can_have_bonus == 0
+                    if num_food_bonus_needed == 0 || inner_can_have_bonus == 0 || inner_placed >= 2
                     {
                         break;
                     }
@@ -922,8 +922,8 @@ impl TileMap {
             if num_food_bonus_needed > 0 {
                 for tile in tile_at_distance_two_list.into_iter() {
                     if num_food_bonus_needed == 0
-                        || (inner_placed + outer_placed) >= 4
                         || outer_can_have_bonus == 0
+                        || (inner_placed + outer_placed) >= 4
                     {
                         break;
                     }

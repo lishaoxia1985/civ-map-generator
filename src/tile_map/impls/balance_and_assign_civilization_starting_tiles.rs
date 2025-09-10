@@ -1041,16 +1041,19 @@ impl TileMap {
                 starting_tile.tiles_at_distance(3, grid).collect();
             tile_at_distance_three_list.shuffle(&mut self.random_number_generator);
 
-            let mut first_ring_iter = neighbor_tile_list.iter().peekable();
+            // Permanent flag. (We don't want to place more than one Oasis per location).
+            // This is set to false after the first Oasis is placed.
+            let mut allow_oasis = true;
+
+            /* let mut first_ring_iter = neighbor_tile_list.iter().peekable();
             let mut second_ring_iter = tile_at_distance_two_list.iter().peekable();
             let mut third_ring_iter = tile_at_distance_three_list.iter().peekable();
 
-            let mut allow_oasis = true; // Permanent flag. (We don't want to place more than one Oasis per location).
             while num_food_bonus_needed > 0 {
-                if ((inner_placed < 2 && inner_can_have_bonus > 0)
-                    || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
-                        && inner_placed < 3
-                        && inner_can_have_bonus > 0))
+                if inner_can_have_bonus > 0
+                    && ((inner_placed < 2)
+                        || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
+                            && inner_placed < 3))
                     && first_ring_iter.peek().is_some()
                 {
                     // Add bonus to inner ring.
@@ -1068,10 +1071,10 @@ impl TileMap {
                             break;
                         }
                     }
-                } else if ((inner_placed + outer_placed < 5 && outer_can_have_bonus > 0)
-                    || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
-                        && inner_placed + outer_placed < 4
-                        && outer_can_have_bonus > 0))
+                } else if outer_can_have_bonus > 0
+                    && ((inner_placed + outer_placed < 5)
+                        || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
+                            && inner_placed + outer_placed < 4))
                     && second_ring_iter.peek().is_some()
                 {
                     // Add bonus to second ring.
@@ -1105,6 +1108,78 @@ impl TileMap {
                     }
                 } else {
                     break;
+                }
+            } */
+
+            // The following code is equivalent to the commented code above, but it is faster.
+            // At first we try to place the bonus resources in the inner ring.
+            if num_food_bonus_needed > 0 {
+                for &tile in neighbor_tile_list.iter() {
+                    if num_food_bonus_needed == 0
+                        || inner_can_have_bonus == 0
+                        || !((inner_placed < 2)
+                            || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
+                                && inner_placed < 3))
+                    {
+                        break;
+                    }
+
+                    let (placed_bonus, placed_oasis) =
+                        self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
+                    if placed_bonus {
+                        if allow_oasis && placed_oasis {
+                            // First oasis was placed on this pass, so change permission.
+                            allow_oasis = false;
+                        }
+                        inner_placed += 1;
+                        inner_can_have_bonus -= 1;
+                        num_food_bonus_needed -= 1;
+                    }
+                }
+            }
+
+            // If there are still bonus resources to place, try to place them on tiles at distance 2.
+            if num_food_bonus_needed > 0 {
+                for &tile in tile_at_distance_two_list.iter() {
+                    if num_food_bonus_needed == 0
+                        || outer_can_have_bonus == 0
+                        || !((inner_placed + outer_placed < 5)
+                            || (map_parameters.resource_setting == ResourceSetting::LegendaryStart
+                                && inner_placed + outer_placed < 4))
+                    {
+                        break;
+                    }
+
+                    let (placed_bonus, placed_oasis) =
+                        self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
+                    if placed_bonus {
+                        if allow_oasis && placed_oasis {
+                            // First oasis was placed on this pass, so change permission.
+                            allow_oasis = false;
+                        }
+                        outer_placed += 1;
+                        outer_can_have_bonus -= 1;
+                        num_food_bonus_needed -= 1;
+                    }
+                }
+            }
+
+            // If there are still bonus resources to place, try to place them on tiles at distance 3.
+            if num_food_bonus_needed > 0 {
+                for &tile in tile_at_distance_three_list.iter() {
+                    if num_food_bonus_needed == 0 {
+                        break;
+                    }
+
+                    let (placed_bonus, placed_oasis) =
+                        self.attempt_to_place_bonus_resource_at_tile(tile, allow_oasis);
+                    if placed_bonus {
+                        if allow_oasis && placed_oasis {
+                            // First oasis was placed on this pass, so change permission.
+                            allow_oasis = false;
+                        }
+                        num_food_bonus_needed -= 1;
+                    }
                 }
             }
         }
