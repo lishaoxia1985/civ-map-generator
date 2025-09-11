@@ -255,7 +255,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Iron) < 4 * map_parameters.num_civilization {
             // print("Map has very low iron, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 100,
@@ -272,7 +272,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.num_civilization {
             // print("Map has very low horse, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
@@ -289,7 +289,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.num_civilization {
             // print("Map has very low horse, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
@@ -306,7 +306,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Coal) < 8 {
             // print("Map has very low coal, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
@@ -323,7 +323,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Coal) < 4 * map_parameters.num_civilization {
             // print("Map has very low coal, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
@@ -340,7 +340,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Oil) < 4 * map_parameters.num_civilization {
             // print("Map has very low oil, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 100,
@@ -357,7 +357,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Aluminum) < 4 * map_parameters.num_civilization {
             // print("Map has very low aluminum, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 100,
@@ -374,7 +374,7 @@ impl TileMap {
 
         if self.placed_resource_count(Resource::Uranium) < 2 * map_parameters.num_civilization {
             // print("Map has very low uranium, adding another.");
-            let resources_to_place = vec![ResourceToPlace {
+            let resources_to_place = [ResourceToPlace {
                 resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 100,

@@ -43,7 +43,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
@@ -57,7 +57,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Deer,
             quantity: 1,
             weight: 100,
@@ -71,7 +71,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Bananas,
             quantity: 1,
             weight: 100,
@@ -85,7 +85,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
@@ -99,7 +99,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Bison,
             quantity: 1,
             weight: 100,
@@ -113,7 +113,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Cattle,
             quantity: 1,
             weight: 100,
@@ -127,7 +127,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
@@ -141,7 +141,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Bison,
             quantity: 1,
             weight: 100,
@@ -155,7 +155,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Sheep,
             quantity: 1,
             weight: 100,
@@ -169,7 +169,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
@@ -183,7 +183,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
@@ -197,7 +197,7 @@ impl TileMap {
             &resources_to_place,
         );
 
-        let resources_to_place = vec![ResourceToPlace {
+        let resources_to_place = [ResourceToPlace {
             resource: Resource::Deer,
             quantity: 1,
             weight: 100,
