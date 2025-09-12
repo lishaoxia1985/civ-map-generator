@@ -1,4 +1,5 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
+
 use regex::Regex;
 
 #[derive(Debug)]
@@ -10,8 +11,9 @@ pub struct Unique {
 
 impl Unique {
     pub fn new(unique: &str) -> Self {
-        static PARAMS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[(.+?)\]").unwrap());
-        static CONDITION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"<([^>]*)>").unwrap());
+        static PARAMS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[(.+?)\]").unwrap());
+        static CONDITION_REGEX: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"<([^>]*)>").unwrap());
 
         let unique_without_conditionals = CONDITION_REGEX.replace_all(unique, "");
         let unique_without_conditionals = unique_without_conditionals.trim();

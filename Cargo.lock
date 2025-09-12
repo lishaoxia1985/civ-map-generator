@@ -171,7 +171,6 @@ dependencies = [
  "enum-map",
  "glam",
  "image",
- "once_cell",
  "rand",
  "regex",
  "serde",
