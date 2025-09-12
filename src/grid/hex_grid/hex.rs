@@ -236,12 +236,16 @@ impl DoubledCoordinate {
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub struct HexLayout {
+    /// The orientation of the hexagonal layout, it can be `pointy` or `flat`.
     pub orientation: HexOrientation,
-    pub size: Vec2,
-    pub origin: Vec2,
+    /// The size of the hexagonal layout, its first element is the width and the second is the height.
+    pub size: [f32; 2],
+    /// The origin of the hexagonal layout, its first element is the x coordinate and the second is the y coordinate.
+    pub origin: [f32; 2],
 }
+
 impl HexLayout {
-    pub fn new(orientation: HexOrientation, size: Vec2, origin: Vec2) -> Self {
+    pub fn new(orientation: HexOrientation, size: [f32; 2], origin: [f32; 2]) -> Self {
         Self {
             orientation,
             size,
@@ -249,18 +253,10 @@ impl HexLayout {
         }
     }
 
-    pub fn new_with_array(orientation: HexOrientation, size: [f32; 2], origin: [f32; 2]) -> Self {
-        Self {
-            orientation,
-            size: Vec2::new(size[0], size[1]),
-            origin: Vec2::new(origin[0], origin[1]),
-        }
-    }
-
     pub fn hex_to_pixel(self, hex: Hex) -> Vec2 {
         let m = self.orientation.conversion_matrix();
-        let size: Vec2 = self.size;
-        let origin: Vec2 = self.origin;
+        let size = Vec2::from(self.size);
+        let origin = Vec2::from(self.origin);
         let mat2 = m.forward_matrix;
         let pixel_position = mat2 * (hex.0.as_vec2()) * size;
         pixel_position + origin
@@ -268,7 +264,8 @@ impl HexLayout {
 
     pub fn pixel_to_hex(self, pixel_position: Vec2) -> Hex {
         let m = self.orientation.conversion_matrix();
-        let (size, origin) = (self.size, self.origin);
+        let size = Vec2::from(self.size);
+        let origin = Vec2::from(self.origin);
         let pt = (pixel_position - origin) / size;
         let mat2 = m.inverse_matrix;
         let fractional_hex = mat2 * pt;
@@ -289,7 +286,7 @@ impl HexLayout {
     }
 
     fn corner_offset(self, direction: Direction) -> Vec2 {
-        let size: Vec2 = self.size;
+        let size: Vec2 = Vec2::from(self.size);
         let angle: f32 = self.orientation.corner_angle(direction);
         size * Vec2::from_angle(angle)
     }
@@ -651,14 +648,14 @@ mod tests {
         let h = Hex::new(3, 4);
         let flat: HexLayout = HexLayout {
             orientation: HexOrientation::Flat,
-            size: Vec2 { x: 10.0, y: 15.0 },
-            origin: Vec2 { x: 35.0, y: 71.0 },
+            size: [10.0, 15.0],
+            origin: [35.0, 71.0],
         };
         equal_hex("layout", h, flat.pixel_to_hex(flat.hex_to_pixel(h)));
         let pointy: HexLayout = HexLayout {
             orientation: HexOrientation::Pointy,
-            size: Vec2 { x: 10.0, y: 15.0 },
-            origin: Vec2 { x: 35.0, y: 71.0 },
+            size: [10.0, 15.0],
+            origin: [35.0, 71.0],
         };
         equal_hex("layout", h, pointy.pixel_to_hex(pointy.hex_to_pixel(h)));
     }

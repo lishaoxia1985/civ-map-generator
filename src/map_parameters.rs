@@ -3,8 +3,6 @@
 use core::debug_assert;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use glam::Vec2;
-
 use crate::{
     grid::{
         hex_grid::{
@@ -112,8 +110,8 @@ impl Default for MapParameters {
             size: HexGrid::default_size(world_size),
             layout: HexLayout {
                 orientation: HexOrientation::Flat,
-                size: Vec2::new(8., 8.),
-                origin: Vec2::new(0., 0.),
+                size: [8., 8.],
+                origin: [0., 0.],
             },
             wrap_flags: WrapFlags::WrapX,
             offset: Offset::Odd,
@@ -160,14 +158,13 @@ impl Default for MapParameters {
 /// ```rust
 /// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
 /// use civ_map_generator::map_parameters::*;
-/// use glam::Vec2;
 ///
 /// let grid = HexGrid::new(
 ///     Size { width: 80, height: 40 }, // Custom grid size
 ///     HexLayout {
 ///         orientation: HexOrientation::Flat,
-///         size: Vec2::new(8., 8.),
-///         origin: Vec2::new(0., 0.),
+///         size: [8., 8.],
+///         origin: [0., 0.],
 ///     }, // Hex layout
 ///     Offset::Odd, // Odd offset for hexagonal grid
 ///     WrapFlags::WrapX, // Wrap horizontally
@@ -181,15 +178,14 @@ impl Default for MapParameters {
 /// ```rust
 /// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
 /// use civ_map_generator::map_parameters::*;
-/// use glam::Vec2;
 ///
 /// let world_size_type = WorldSizeType::Standard;
 /// let mut grid = HexGrid::new(
 ///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
 ///     HexLayout {
 ///         orientation: HexOrientation::Flat,
-///         size: Vec2::new(8., 8.),
-///         origin: Vec2::new(0., 0.),
+///         size: [8., 8.],
+///         origin: [0., 0.],
 ///     }, // Hex layout
 ///     Offset::Odd, // Odd offset for hexagonal grid
 ///     WrapFlags::WrapX, // Wrap horizontally
@@ -219,15 +215,14 @@ impl WorldGrid {
     /// ```rust
     /// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
     /// use civ_map_generator::map_parameters::*;
-    /// use glam::Vec2;
     ///
     /// let world_size_type = WorldSizeType::Standard;
     /// let mut grid = HexGrid::new(
     ///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
     ///     HexLayout {
     ///         orientation: HexOrientation::Flat,
-    ///         size: Vec2::new(8., 8.),
-    ///         origin: Vec2::new(0., 0.),
+    ///         size: [8., 8.],
+    ///         origin: [0., 0.],
     ///     }, // Hex layout
     ///     Offset::Odd, // Odd offset for hexagonal grid
     ///     WrapFlags::WrapX, // Wrap horizontally

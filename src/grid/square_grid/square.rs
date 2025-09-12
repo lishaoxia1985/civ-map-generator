@@ -148,13 +148,16 @@ impl From<[i32; 2]> for Square {
 
 #[derive(Clone, Copy, Debug)]
 pub struct SquareLayout {
+    /// The orientation of the square layout, it can be only `orthogonal` currently.
     pub orientation: SquareOrientation,
-    pub size: Vec2,
-    pub origin: Vec2,
+    /// The size of the square layout. Its first element is the width and the second is the height.
+    pub size: [f32; 2],
+    /// The origin of the square layout. Its first element is the x-coordinate and the second is the y-coordinate.
+    pub origin: [f32; 2],
 }
 
 impl SquareLayout {
-    pub fn new(orientation: SquareOrientation, size: Vec2, origin: Vec2) -> Self {
+    pub fn new(orientation: SquareOrientation, size: [f32; 2], origin: [f32; 2]) -> Self {
         Self {
             orientation,
             size,
@@ -162,26 +165,16 @@ impl SquareLayout {
         }
     }
 
-    pub fn new_with_array(
-        orientation: SquareOrientation,
-        size: [f32; 2],
-        origin: [f32; 2],
-    ) -> Self {
-        Self {
-            orientation,
-            size: Vec2::new(size[0], size[1]),
-            origin: Vec2::new(origin[0], origin[1]),
-        }
-    }
-
     pub fn square_to_pixel(self, square: Square) -> Vec2 {
         match self.orientation {
-            SquareOrientation::Orthogonal => self.origin + square.0.as_vec2() * self.size,
+            SquareOrientation::Orthogonal => {
+                Vec2::from(self.origin) + square.0.as_vec2() * Vec2::from(self.size)
+            }
         }
     }
 
     pub fn pixel_to_square(self, pixel_position: Vec2) -> Square {
-        let pt = (pixel_position - self.origin) / self.size;
+        let pt: Vec2 = (pixel_position - Vec2::from(self.origin)) / Vec2::from(self.size);
         match self.orientation {
             SquareOrientation::Orthogonal => Square((pt + Vec2::new(0.5, 0.5)).floor().as_ivec2()),
         }
@@ -207,7 +200,7 @@ impl SquareLayout {
                 _ => panic!("Invalid direction"),
             },
         };
-        offset_value * self.size / 2.
+        offset_value * Vec2::from(self.size) / 2.
     }
 }
 
