@@ -16,7 +16,7 @@ impl TileMap {
             Rainfall::Arid => -4,
             Rainfall::Normal => 0,
             Rainfall::Wet => 4,
-            Rainfall::Random => self.random_number_generator.gen_range(0..11) - 5,
+            Rainfall::Random => self.random_number_generator.gen_range(-5..=5),
         };
 
         let equator_adjustment = 0;

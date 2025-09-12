@@ -24,38 +24,51 @@ pub struct MapParameters {
     pub map_type: MapType,
     /// The grid representing the world.
     ///
-    /// This grid is used to generate the map and contains information about the layout, size, and other properties of the map.
+    /// This grid is used to generate the map and contains information about the layout, size, the type of size, wrapping, and other properties of the map.
     pub world_grid: WorldGrid,
     /// The seed used to generate the map.
     ///
     /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
     pub seed: u64,
+    /// The number of large lakes to generate on the map.
+    /// The count excludes lakes formed during terrain type generation, only including those created in the lake-adding process.
+    ///
+    /// A `large lake` is defined as a contiguous lake area covering 4 or more tiles.
     pub num_large_lake: u32,
     /// The max area size of a lake.
-    pub lake_max_area_size: u32,
-    /// Store the chance of each eligible plot to become a coast in each iteration.
     ///
-    /// - Its 'length' is the number of iterations. if 'length' is 3, it means that the max coast length is 4 (3 + 1, because the water tiles adjacent to land must be coast).
-    /// - its 'element' is the chance for each eligible plot to become an expansion coast in each iteration. `0.0` means no chance, `1.0` means 100% chance.\
+    /// The water areas with size less than or equal to this value, which are surrounded by land, will be considered as lakes.
+    pub lake_max_area_size: u32,
+    /// Store the chance of each eligible tile to become a coast in each iteration.
+    ///
+    /// - Its 'length' is the number of iterations. The more iterations, the more coasts will be generated.
+    /// - its 'element' is the chance for each eligible tile to become an expansion coast in each iteration. `0.0` means no chance, `1.0` means 100% chance.\
     ///   If it is empty the coast will not expand, and then only the water tiles adjacent to land can become coast.
     pub coast_expand_chance: Vec<f64>,
+    /// The sea level of the map. It affect only terrain type generation.
     pub sea_level: SeaLevel,
+    /// The age of the world. It affect only terrain type generation.
     pub world_age: WorldAge,
+    /// The temperature of the map. It affect only base terrain generation.
     pub temperature: Temperature,
+    /// The rainfall of the map. It affect only feature generation.
     pub rainfall: Rainfall,
     /// The number of civilizations, excluding city states.
     ///
-    /// This value must be in the range of [2, [`MapParameters::MAX_CIVILIZATION_NUM`]].
+    /// This value must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_NUM`]]**.
     pub num_civilization: u32,
     /// The number of city states.
     ///
-    /// This value must be in the range of [0, [`MapParameters::MAX_CITY_STATE_NUM`]].
+    /// This value must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_NUM`]]**.
     pub num_city_state: u32,
+    /// The method used to divide the map into regions.
     pub region_divide_method: RegionDivideMethod,
     /// Whether the civilization starting tile must be coastal land.
+    ///
     /// - If true, the civilization starting tile only can be coastal land.
     /// - If false, the civilization starting tile can be any hill/flatland tile.
     pub civ_require_coastal_land_start: bool,
+    /// The resource setting of the map.
     pub resource_setting: ResourceSetting,
 }
 
@@ -258,32 +271,63 @@ pub enum MapType {
     Pangaea,
 }
 
+/// The sea level of the map. It affect only terrain type generation.
 pub enum SeaLevel {
+    /// Fewer water tiles will be generated on the map than [`SeaLevel::Normal`].
     Low,
+    /// The water tiles will be generated on the map as usual.
     Normal,
+    /// More water tiles will be generated on the map than [`SeaLevel::Normal`].
     High,
+    /// A random sea level between [`SeaLevel::Low`] and [`SeaLevel::High`].
     Random,
 }
 
+/// The age of the world. It affect only base terrain generation.
+///
+/// This value determines:
+/// - How many tectonic plates will be used to generate terrain types on the map.
+///   A simple Voronoi diagram to simulate tectonic plates is used to generate ridgelines of mountains and hills.
+///   The older the world, the less active the plates are.
+/// - The number of mountains and hills on the map.
+///   The older the world, the fewer mountains and hills on the map.
 pub enum WorldAge {
     /// 5 Billion Years
+    ///
+    /// Few plates will be used to generate terrain types on the map than [`WorldAge::Normal`].
+    /// There will be fewer mountains and hills on the map.
     Old,
     /// 4 Billion Years
+    ///
+    /// Plates will be used to generate terrain types on the map as usual.
+    /// There will be a normal number of mountains and hills on the map.
     Normal,
     /// 3 Billion Years
+    ///
+    /// More plates will be used to generate terrain types on the map than [`WorldAge::Normal`].
+    /// There will be more mountains and hills on the map.
     New,
 }
 
+/// The temperature of the map. It affect only base terrain generation.
 pub enum Temperature {
+    /// More tundra and snow, less desert.
     Cool,
+    /// The base terrain will be generated on the map as usual.
     Normal,
+    /// More desert, less tundra and snow.
     Hot,
 }
 
+/// The rainfall of the map. It affect only feature generation.
 pub enum Rainfall {
+    /// Less forest, jungle, and marsh.
     Arid,
+    /// The features will be generated on the map as usual.
     Normal,
+    /// More forest, jungle, and marsh.
     Wet,
+    /// Random rainfall.
     Random,
 }
 
@@ -296,12 +340,14 @@ pub enum RegionDivideMethod {
     /// Civs are assigned to continents. Any continents with more than one civ are divided.
     Continent,
     /// This method is primarily used for Archipelago or other maps with many small islands.
+    ///
     /// The entire map is treated as one large rectangular region.
     /// [`RegionDivideMethod::WholeMapRectangle`] is equivalent to [`variant@RegionDivideMethod::CustomRectangle`] when [`Rectangle`] encompasses the entire map area.
-    /// We will ignore the landmass ID when method is set to WholeMapRectangle.
+    /// We will ignore the area ID when method is set to WholeMapRectangle.
     WholeMapRectangle,
     /// Civs start within a custom-defined rectangle.
-    /// We will ignore the landmass ID when method is set to CustomRectangle.
+    ///
+    /// We will ignore the area ID when method is set to CustomRectangle.
     CustomRectangle(Rectangle),
 }
 

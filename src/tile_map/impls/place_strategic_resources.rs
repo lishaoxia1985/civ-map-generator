@@ -46,7 +46,7 @@ impl TileMap {
                 max_radius: 1,
             },
         ];
-        self.process_resource_list(9., Layer::Strategic, &marsh_list, &resources_to_place);
+        self.process_resource_list(9, Layer::Strategic, &marsh_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -72,7 +72,7 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            16.,
+            16,
             Layer::Strategic,
             &tundra_flat_no_feature,
             &resources_to_place,
@@ -101,7 +101,7 @@ impl TileMap {
                 max_radius: 3,
             },
         ];
-        self.process_resource_list(17., Layer::Strategic, &snow_flat_list, &resources_to_place);
+        self.process_resource_list(17, Layer::Strategic, &snow_flat_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -120,7 +120,7 @@ impl TileMap {
             },
         ];
         self.process_resource_list(
-            13.,
+            13,
             Layer::Strategic,
             &desert_flat_no_feature,
             &resources_to_place,
@@ -149,7 +149,7 @@ impl TileMap {
                 max_radius: 3,
             },
         ];
-        self.process_resource_list(22., Layer::Strategic, &hills_list, &resources_to_place);
+        self.process_resource_list(22, Layer::Strategic, &hills_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -167,12 +167,7 @@ impl TileMap {
                 max_radius: 2,
             },
         ];
-        self.process_resource_list(
-            33.,
-            Layer::Strategic,
-            &jungle_flat_list,
-            &resources_to_place,
-        );
+        self.process_resource_list(33, Layer::Strategic, &jungle_flat_list, &resources_to_place);
 
         let resources_to_place = [
             ResourceToPlace {
@@ -190,12 +185,7 @@ impl TileMap {
                 max_radius: 1,
             },
         ];
-        self.process_resource_list(
-            39.,
-            Layer::Strategic,
-            &forest_flat_list,
-            &resources_to_place,
-        );
+        self.process_resource_list(39, Layer::Strategic, &forest_flat_list, &resources_to_place);
 
         let resources_to_place = [ResourceToPlace {
             resource: Resource::Horses,
@@ -205,7 +195,7 @@ impl TileMap {
             max_radius: 5,
         }];
         self.process_resource_list(
-            33.,
+            33,
             Layer::Strategic,
             &dry_grass_flat_no_feature,
             &resources_to_place,
@@ -219,7 +209,7 @@ impl TileMap {
             max_radius: 4,
         }];
         self.process_resource_list(
-            33.,
+            33,
             Layer::Strategic,
             &plains_flat_no_feature,
             &resources_to_place,
@@ -229,7 +219,7 @@ impl TileMap {
 
         self.place_small_quantities_of_strategics(
             map_parameters,
-            23. * bonus_multiplier,
+            (23. * bonus_multiplier) as u32,
             &flatland_list,
         );
 
@@ -246,7 +236,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &hills_list,
                 &resources_to_place,
@@ -263,7 +253,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &flatland_list,
                 &resources_to_place,
@@ -280,7 +270,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &plains_flat_no_feature,
                 &resources_to_place,
@@ -297,7 +287,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &dry_grass_flat_no_feature,
                 &resources_to_place,
@@ -314,7 +304,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &hills_list,
                 &resources_to_place,
@@ -331,7 +321,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &flatland_list,
                 &resources_to_place,
@@ -348,7 +338,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &flatland_list,
                 &resources_to_place,
@@ -365,7 +355,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &hills_list,
                 &resources_to_place,
@@ -382,7 +372,7 @@ impl TileMap {
                 max_radius: 0,
             }];
             self.process_resource_list(
-                f64::MAX,
+                u32::MAX,
                 Layer::Strategic,
                 &flatland_list,
                 &resources_to_place,
@@ -424,10 +414,17 @@ impl TileMap {
     // function AssignStartingPlots:PlaceSmallQuantitiesOfStrategics
     /// Distributes small quantities of strategic resources.
     /// Before calling this function, make sure `tile_list` is shuffled.
+    ///
+    /// # Arguments
+    ///
+    /// - `frequency`: The frequency of the resource.
+    ///   It determines resource placement such that one resource is placed per every 'frequency' tiles, with at least one resource guaranteed even if there are fewer than 'frequency' tiles.
+    ///   For example, a frequency of 3 means that one resource is placed every 3 tiles, with at least one resource guaranteed.
+    /// - `tile_list`: The list of tiles candidate for placing small quantities of strategic resources.
     fn place_small_quantities_of_strategics(
         &mut self,
         map_parameters: &MapParameters,
-        frequency: f64,
+        frequency: u32,
         tile_list: &[Tile],
     ) {
         if tile_list.is_empty() {
@@ -437,7 +434,7 @@ impl TileMap {
         let [uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt] =
             get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
 
-        let num_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
+        let num_to_place = (tile_list.len() as u32).div_ceil(frequency);
 
         let mut num_left_to_place = num_to_place;
 

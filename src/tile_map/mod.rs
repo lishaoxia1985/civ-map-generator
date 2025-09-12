@@ -17,6 +17,7 @@ use crate::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         resource::Resource, terrain_type::TerrainType,
     },
+    tile_map::impls::generate_area_and_landmass::{Area, Landmass},
 };
 use arrayvec::ArrayVec;
 use enum_map::{enum_map, Enum, EnumMap};
@@ -28,11 +29,7 @@ use std::{
 
 pub(crate) mod impls;
 
-use impls::{
-    assign_starting_tile::LuxuryResourceRole,
-    generate_area_ids::{Area, Landmass},
-    generate_regions::Region,
-};
+use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
 
 #[derive(PartialEq, Debug)]
 pub struct TileMap {

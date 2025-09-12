@@ -251,7 +251,9 @@ impl TileMap {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Area {
+    /// Whether all tiles in the area are [`TerrainType::Water`].
     pub is_water: bool,
+    /// Whether all tiles in the area are [`TerrainType::Mountain`].
     pub is_mountain: bool,
     /// Area ID. The ID is equal to the index of the area in the [`TileMap::area_list`].
     pub id: usize,
@@ -267,12 +269,15 @@ pub struct Landmass {
     pub id: usize,
     /// Size of the landmass in tiles.
     pub size: u32,
+    /// The type of the landmass.
     pub landmass_type: LandmassType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Represents the type of landmass.
 pub enum LandmassType {
+    /// All tiles in the landmass are land, land includes [`TerrainType::Flatland`], [`TerrainType::Hill`] and [`TerrainType::Mountain`].
     Land,
+    /// All tiles in the landmass are [`TerrainType::Water`].
     Water,
 }

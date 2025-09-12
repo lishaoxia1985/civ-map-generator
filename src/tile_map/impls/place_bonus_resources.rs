@@ -25,7 +25,7 @@ impl TileMap {
         let [extra_deer_list, desert_wheat_list, banana_list, coast_list, hills_open_list, dry_grass_flat_no_feature, grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, forest_flat_that_are_not_tundra] =
             self.generate_bonus_resource_tile_lists_in_map();
 
-        self.place_fish(10. * bonus_multiplier, &coast_list);
+        self.place_fish((10. * bonus_multiplier) as u32, &coast_list);
         self.place_sexy_bonus_at_civ_starts();
         self.add_extra_bonuses_to_hills_regions(map_parameters);
 
@@ -37,7 +37,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            8. * bonus_multiplier,
+            (8. * bonus_multiplier) as u32,
             Layer::Bonus,
             &extra_deer_list,
             &resources_to_place,
@@ -51,7 +51,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            10.0 * bonus_multiplier,
+            (10.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &desert_wheat_list,
             &resources_to_place,
@@ -65,7 +65,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            12.0 * bonus_multiplier,
+            (12.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &tundra_flat_no_feature,
             &resources_to_place,
@@ -79,7 +79,7 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            14.0 * bonus_multiplier,
+            (14.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &banana_list,
             &resources_to_place,
@@ -93,7 +93,7 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            50.0 * bonus_multiplier,
+            (50.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &plains_flat_no_feature,
             &resources_to_place,
@@ -107,7 +107,7 @@ impl TileMap {
             max_radius: 3,
         }];
         self.process_resource_list(
-            60.0 * bonus_multiplier,
+            (60.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &plains_flat_no_feature,
             &resources_to_place,
@@ -121,7 +121,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            18.0 * bonus_multiplier,
+            (18.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &grass_flat_no_feature,
             &resources_to_place,
@@ -135,7 +135,7 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            30.0 * bonus_multiplier,
+            (30.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &dry_grass_flat_no_feature,
             &resources_to_place,
@@ -149,7 +149,7 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            50.0 * bonus_multiplier,
+            (50.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &dry_grass_flat_no_feature,
             &resources_to_place,
@@ -163,7 +163,7 @@ impl TileMap {
             max_radius: 1,
         }];
         self.process_resource_list(
-            13.0 * bonus_multiplier,
+            (13.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &hills_open_list,
             &resources_to_place,
@@ -177,7 +177,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            15.0 * bonus_multiplier,
+            (15.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &tundra_flat_no_feature,
             &resources_to_place,
@@ -191,7 +191,7 @@ impl TileMap {
             max_radius: 2,
         }];
         self.process_resource_list(
-            19.0 * bonus_multiplier,
+            (19.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &desert_flat_no_feature,
             &resources_to_place,
@@ -205,7 +205,7 @@ impl TileMap {
             max_radius: 4,
         }];
         self.process_resource_list(
-            25.0 * bonus_multiplier,
+            (25.0 * bonus_multiplier) as u32,
             Layer::Bonus,
             &forest_flat_that_are_not_tundra,
             &resources_to_place,
@@ -337,7 +337,7 @@ impl TileMap {
                     max_radius: 1,
                 }];
                 self.process_resource_list(
-                    9. / infertility_quotient,
+                    (9. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &dry_hills,
                     &resources_to_place,
@@ -353,7 +353,7 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    14. / infertility_quotient,
+                    (14. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &jungles,
                     &resources_to_place,
@@ -369,7 +369,7 @@ impl TileMap {
                     max_radius: 1,
                 }];
                 self.process_resource_list(
-                    14. / infertility_quotient,
+                    (14. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &flat_tundra,
                     &resources_to_place,
@@ -385,7 +385,7 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    18. / infertility_quotient,
+                    (18. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &flat_plains,
                     &resources_to_place,
@@ -401,7 +401,7 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    20. / infertility_quotient,
+                    (20. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &grass_flat_no_feature,
                     &resources_to_place,
@@ -417,7 +417,7 @@ impl TileMap {
                     max_radius: 2,
                 }];
                 self.process_resource_list(
-                    24. / infertility_quotient,
+                    (24. / infertility_quotient) as u32,
                     Layer::Bonus,
                     &forests,
                     &resources_to_place,
@@ -557,12 +557,20 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceFish
-    fn place_fish(&mut self, frequency: f64, coast_list: &[Tile]) {
+    /// Places fish on the map.
+    ///
+    /// # Arguments
+    ///
+    /// - `frequency`: The frequency of fish to place.
+    ///   It determines resource placement such that one resource is placed per every 'frequency' tiles, with at least one resource guaranteed even if there are fewer than 'frequency' tiles.
+    ///   For example, a frequency of 3 means that one resource is placed every 3 tiles, with at least one resource guaranteed.
+    /// - `coast_list`: The list of coast tiles candidate for fish placement.
+    fn place_fish(&mut self, frequency: u32, coast_list: &[Tile]) {
         if coast_list.is_empty() {
             return;
         }
 
-        let num_fish_to_place = (coast_list.len() as f64 / frequency).ceil() as u32;
+        let num_fish_to_place = (coast_list.len() as u32).div_ceil(frequency);
 
         // Keep track of how many fish have been placed.
         let mut placed_count = 0;

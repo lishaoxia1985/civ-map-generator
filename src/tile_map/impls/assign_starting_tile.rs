@@ -689,7 +689,8 @@ impl TileMap {
     /// # Arguments
     ///
     /// - `frequency`: The frequency of resource placement.\
-    ///   The num of tiles we will assign this resource is `(plot_list.len() as f64 / frequency).ceil() as u32`.
+    ///   It determines resource placement such that one resource is placed per every 'frequency' tiles, with at least one resource guaranteed even if there are fewer than 'frequency' tiles.
+    ///   For example, a frequency of 3 means that one resource is placed every 3 tiles, with at least one resource guaranteed.
     /// - `layer`: The layer on which the resource will be placed.
     /// - `tile_list`: A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
     /// - `resource_list_to_place`: A vector of resource to place, which contains the resource type,
@@ -705,7 +706,7 @@ impl TileMap {
     /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].
     pub fn process_resource_list(
         &mut self,
-        frequency: f64,
+        frequency: u32,
         layer: Layer,
         tile_list: &[Tile],
         resource_list_to_place: &[ResourceToPlace],
@@ -725,7 +726,7 @@ impl TileMap {
             .collect::<Vec<_>>();
         let dist = WeightedIndex::new(resource_weight).unwrap();
 
-        let num_resources_to_place = (tile_list.len() as f64 / frequency).ceil() as u32;
+        let num_resources_to_place = (tile_list.len() as u32).div_ceil(frequency);
 
         let mut tile_list_iter = tile_list.iter();
 
