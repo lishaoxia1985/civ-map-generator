@@ -261,6 +261,7 @@ impl WorldGrid {
     }
 }
 
+/// The type of map to generate.
 pub enum MapType {
     Fractal,
     Pangaea,
@@ -346,17 +347,18 @@ pub enum RegionDivideMethod {
     CustomRectangle(Rectangle),
 }
 
+/// The resource setting of the map.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ResourceSetting {
-    /// 1
+    /// Few resources will be placed on the map than [`ResourceSetting::Standard`].
     Sparse,
-    /// 2
+    /// Standard number of resources will be placed on the map.
     Standard,
-    /// 3
+    /// More resources will be placed on the map than [`ResourceSetting::Standard`].
     Abundant,
-    /// 4
+    /// More resources will be placed around the starting tile of each civilization.
     LegendaryStart,
-    /// 5
+    /// Every civilization will begin with a starting tile containing approximately the same amount of strategic resources.
     StrategicBalance,
 }
 
