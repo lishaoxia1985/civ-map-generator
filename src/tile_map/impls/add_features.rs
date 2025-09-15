@@ -1,4 +1,4 @@
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 
 use crate::{
     grid::WorldSizeType,
@@ -16,7 +16,7 @@ impl TileMap {
             Rainfall::Arid => -4,
             Rainfall::Normal => 0,
             Rainfall::Wet => 4,
-            Rainfall::Random => self.random_number_generator.gen_range(-5..=5),
+            Rainfall::Random => self.random_number_generator.random_range(-5..=5),
         };
 
         let equator_adjustment = 0;
@@ -61,7 +61,7 @@ impl TileMap {
                         .contains(&tile.base_terrain(self))
                     && latitude > 0.78
                 {
-                    let mut score = self.random_number_generator.gen_range(0..100) as f64;
+                    let mut score = self.random_number_generator.random_range(0..100) as f64;
                     score += latitude * 100.;
                     if tile
                         .neighbor_tiles(grid)
@@ -104,7 +104,7 @@ impl TileMap {
                         .contains(&tile.base_terrain(self))
                     && (oasis_count as f64 * 100. / num_land_plots as f64).ceil() as i32
                         <= oasis_max_percent
-                    && self.random_number_generator.gen_range(0..4) == 1
+                    && self.random_number_generator.random_range(0..4) == 1
                 {
                     tile.set_feature(self, Feature::Oasis);
                     oasis_count += 1;
@@ -134,7 +134,7 @@ impl TileMap {
                         4 => score -= 50,
                         _ => score -= 200,
                     };
-                    if self.random_number_generator.gen_range(0..300) <= score {
+                    if self.random_number_generator.random_range(0..300) <= score {
                         tile.set_feature(self, Feature::Marsh);
                         marsh_count += 1;
                         continue;
@@ -166,7 +166,7 @@ impl TileMap {
                         4 => score -= 50,
                         _ => score -= 200,
                     };
-                    if self.random_number_generator.gen_range(0..300) <= score {
+                    if self.random_number_generator.random_range(0..300) <= score {
                         tile.set_feature(self, Feature::Jungle);
                         if tile.terrain_type(self) == TerrainType::Hill
                             && matches!(
@@ -208,7 +208,7 @@ impl TileMap {
                         4 => score -= 50,
                         _ => score -= 200,
                     };
-                    if self.random_number_generator.gen_range(0..300) <= score {
+                    if self.random_number_generator.random_range(0..300) <= score {
                         tile.set_feature(self, Feature::Forest);
                         forest_count += 1;
                         continue;
@@ -244,7 +244,8 @@ impl TileMap {
             WorldSizeType::Huge => 12,
         };
 
-        let atoll_number = atoll_target + self.random_number_generator.gen_range(0..atoll_target);
+        let atoll_number =
+            atoll_target + self.random_number_generator.random_range(0..atoll_target);
 
         let mut alpha_list = Vec::new();
         let mut beta_list = Vec::new();
@@ -310,7 +311,7 @@ impl TileMap {
         let mut epsilon_list_iter = epsilon_list.into_iter();
 
         for _ in 0..atoll_number {
-            let diceroll = self.random_number_generator.gen_range(1..=100);
+            let diceroll = self.random_number_generator.random_range(1..=100);
             let tile;
 
             match diceroll {

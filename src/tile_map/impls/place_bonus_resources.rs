@@ -1,4 +1,4 @@
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 
 use crate::{
     map_parameters::{MapParameters, RegionDivideMethod, ResourceSetting},
@@ -22,8 +22,19 @@ impl TileMap {
             _ => 1.0,
         };
 
-        let [extra_deer_list, desert_wheat_list, banana_list, coast_list, hills_open_list, dry_grass_flat_no_feature, grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, forest_flat_that_are_not_tundra] =
-            self.generate_bonus_resource_tile_lists_in_map();
+        let [
+            extra_deer_list,
+            desert_wheat_list,
+            banana_list,
+            coast_list,
+            hills_open_list,
+            dry_grass_flat_no_feature,
+            grass_flat_no_feature,
+            plains_flat_no_feature,
+            tundra_flat_no_feature,
+            desert_flat_no_feature,
+            forest_flat_that_are_not_tundra,
+        ] = self.generate_bonus_resource_tile_lists_in_map();
 
         self.place_fish((10. * bonus_multiplier) as u32, &coast_list);
         self.place_sexy_bonus_at_civ_starts();
@@ -586,7 +597,7 @@ impl TileMap {
                 // The probability for 0, 1, and 2 is 1/7 each
                 // The probability for 3 is 2/7 (because when 3 or 6 is generated, fish_radius is set to 3)
                 // The probability for 4 and 5 is 1/7 each
-                let mut fish_radius = self.random_number_generator.gen_range(0..7);
+                let mut fish_radius = self.random_number_generator.random_range(0..7);
                 if fish_radius > 5 {
                     fish_radius = 3;
                 }
@@ -716,12 +727,12 @@ impl TileMap {
                             if feature.is_none() {
                                 hills_open_list.push(tile);
                             } /* else if feature == Some(Feature::Forest) {
-                                  region_hill_forest_tile_list.push(tile);
-                                  region_hill_covered_tile_list.push(tile);
-                              } else if feature == Some(Feature::Jungle) {
-                                  region_hill_jungle_tile_list.push(tile);
-                                  region_hill_covered_tile_list.push(tile);
-                              } */
+                            region_hill_forest_tile_list.push(tile);
+                            region_hill_covered_tile_list.push(tile);
+                            } else if feature == Some(Feature::Jungle) {
+                            region_hill_jungle_tile_list.push(tile);
+                            region_hill_covered_tile_list.push(tile);
+                            } */
                         }
                     }
                 }

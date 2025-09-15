@@ -28,8 +28,13 @@ impl TileMap {
         // Set default base terrain bands.
         // TODO: This should be moved to the map parameters and be configurable by the user in the future.
         // Notice: The number should be sorted in ascending order.
-        let [mut grass_latitude, desert_bottom_latitude, mut desert_top_latitude, mut tundra_latitude, mut snow_latitude] =
-            [0.1, 0.2, 0.5, 0.6, 0.75];
+        let [
+            mut grass_latitude,
+            desert_bottom_latitude,
+            mut desert_top_latitude,
+            mut tundra_latitude,
+            mut snow_latitude,
+        ] = [0.1, 0.2, 0.5, 0.6, 0.75];
 
         match map_parameters.temperature {
             Temperature::Cool => {
@@ -166,7 +171,7 @@ impl TileMap {
                         && tile.neighbor_tiles(grid).any(|neighbor_tile| {
                             neighbor_tile.base_terrain(self) == BaseTerrain::Coast
                         })
-                        && self.random_number_generator.gen_bool(chance)
+                        && self.random_number_generator.random_bool(chance)
                     {
                         expansion_tile.push(tile);
                     }

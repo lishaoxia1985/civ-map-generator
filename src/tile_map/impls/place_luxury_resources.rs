@@ -4,7 +4,11 @@ use std::{
 };
 
 use enum_map::Enum;
-use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
+use rand::{
+    Rng,
+    distr::{Distribution, weighted::WeightedIndex},
+    seq::{IndexedRandom, SliceRandom},
+};
 
 use crate::{
     grid::WorldSizeType,
@@ -345,7 +349,7 @@ impl TileMap {
                 get_world_luxury_target_numbers(world_size, resource_setting);
             let extra_luxury = self
                 .random_number_generator
-                .gen_range(0..map_parameters.num_civilization);
+                .random_range(0..map_parameters.num_civilization);
             let num_placed_luxuries = self.num_placed_luxury_resources(ruleset);
             let num_random_luxury_target = target_luxury + extra_luxury - num_placed_luxuries;
 
@@ -526,7 +530,10 @@ impl TileMap {
                         self.place_marble(map_parameters);
                     }
                     _ => {
-                        panic!("{} is Special Case Luxury, you need to implement a custom placement method for it!", luxury.as_str());
+                        panic!(
+                            "{} is Special Case Luxury, you need to implement a custom placement method for it!",
+                            luxury.as_str()
+                        );
                     }
                 }
             }

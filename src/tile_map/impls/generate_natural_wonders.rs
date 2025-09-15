@@ -4,11 +4,11 @@ use std::collections::HashSet;
 
 use enum_map::EnumMap;
 use rand::prelude::SliceRandom;
-use rand::Rng;
+use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
     grid::{Grid, WorldSizeType},
-    ruleset::{unique::Unique, Ruleset},
+    ruleset::{Ruleset, unique::Unique},
     tile::Tile,
     tile_component::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
@@ -513,7 +513,7 @@ impl TileMap {
                                 100 * closest_natural_wonder_dist
                             } else {
                                 1000 + (closest_natural_wonder_dist - 10)
-                            } + self.random_number_generator.gen_range(0..100);
+                            } + self.random_number_generator.random_range(0..100);
                             (tile_x, score)
                         })
                         .collect::<Vec<(Tile, i32)>>();

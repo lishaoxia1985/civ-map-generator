@@ -3,7 +3,7 @@ use rand::Rng;
 use crate::{
     tile::Tile,
     tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
-    tile_map::{impls::generate_area_and_landmass::LandmassType, MapParameters, TileMap},
+    tile_map::{MapParameters, TileMap, impls::generate_area_and_landmass::LandmassType},
 };
 
 impl TileMap {
@@ -34,7 +34,7 @@ impl TileMap {
 
         self.all_tiles().for_each(|tile| {
             if self.can_add_lake(tile)
-                && self.random_number_generator.gen_range(0..lake_plot_rand) == 0
+                && self.random_number_generator.random_range(0..lake_plot_rand) == 0
             {
                 if num_large_lakes_added < num_large_lake {
                     let add_more_lakes = self.add_more_lake(tile);
@@ -69,7 +69,10 @@ impl TileMap {
             // 1. Check if the tile can have a lake.
             // 2. Randomly decide whether to add a lake to the tile. Larger `large_lake`, less likely to add a lake.
             if self.can_add_lake(neighbor_tile)
-                && self.random_number_generator.gen_range(0..(large_lake + 4)) < 3
+                && self
+                    .random_number_generator
+                    .random_range(0..(large_lake + 4))
+                    < 3
             {
                 lake_tiles.push(neighbor_tile);
                 large_lake += 1;

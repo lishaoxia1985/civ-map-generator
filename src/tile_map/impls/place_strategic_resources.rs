@@ -1,4 +1,4 @@
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
@@ -9,7 +9,7 @@ use crate::{
     tile_map::{Layer, TileMap},
 };
 
-use super::assign_starting_tile::{get_major_strategic_resource_quantity_values, ResourceToPlace};
+use super::assign_starting_tile::{ResourceToPlace, get_major_strategic_resource_quantity_values};
 
 impl TileMap {
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
@@ -26,8 +26,19 @@ impl TileMap {
             _ => 1.0,
         };
 
-        let [coast_list, flatland_list, jungle_flat_list, forest_flat_list, marsh_list, snow_flat_list, dry_grass_flat_no_feature, plains_flat_no_feature, tundra_flat_no_feature, desert_flat_no_feature, hills_list] =
-            self.generate_strategic_resource_tile_lists_in_map();
+        let [
+            coast_list,
+            flatland_list,
+            jungle_flat_list,
+            forest_flat_list,
+            marsh_list,
+            snow_flat_list,
+            dry_grass_flat_no_feature,
+            plains_flat_no_feature,
+            tundra_flat_no_feature,
+            desert_flat_no_feature,
+            hills_list,
+        ] = self.generate_strategic_resource_tile_lists_in_map();
 
         // Place Strategic resources.
         let resources_to_place = [
@@ -455,7 +466,7 @@ impl TileMap {
                 if let Some(feature) = feature {
                     match feature {
                         Feature::Forest => {
-                            let diceroll = self.random_number_generator.gen_range(0..4);
+                            let diceroll = self.random_number_generator.random_range(0..4);
                             (selected_resource, selected_quantity) = match diceroll {
                                 0 => (Some(Resource::Uranium), uran_amt),
                                 1 => (Some(Resource::Coal), coal_amt),
@@ -463,7 +474,7 @@ impl TileMap {
                             };
                         }
                         Feature::Jungle => {
-                            let diceroll = self.random_number_generator.gen_range(0..4);
+                            let diceroll = self.random_number_generator.random_range(0..4);
                             (selected_resource, selected_quantity) = match diceroll {
                                 0 => {
                                     if terrain_type == TerrainType::Hill {
@@ -477,7 +488,7 @@ impl TileMap {
                             };
                         }
                         Feature::Marsh => {
-                            let diceroll = self.random_number_generator.gen_range(0..4);
+                            let diceroll = self.random_number_generator.random_range(0..4);
                             (selected_resource, selected_quantity) = match diceroll {
                                 0 => (Some(Resource::Iron), iron_amt),
                                 1 => (Some(Resource::Coal), coal_amt),
@@ -494,7 +505,7 @@ impl TileMap {
                                 {
                                     (Some(Resource::Horses), horse_amt)
                                 } else {
-                                    let diceroll = self.random_number_generator.gen_range(0..5);
+                                    let diceroll = self.random_number_generator.random_range(0..5);
                                     if diceroll < 3 {
                                         (Some(Resource::Iron), iron_amt)
                                     } else {
@@ -503,7 +514,7 @@ impl TileMap {
                                 };
                             }
                             BaseTerrain::Desert => {
-                                let diceroll = self.random_number_generator.gen_range(0..3);
+                                let diceroll = self.random_number_generator.random_range(0..3);
                                 (selected_resource, selected_quantity) = match diceroll {
                                     0 => (Some(Resource::Iron), iron_amt),
                                     1 => (Some(Resource::Aluminum), alum_amt),
@@ -511,7 +522,7 @@ impl TileMap {
                                 };
                             }
                             BaseTerrain::Plain => {
-                                let diceroll = self.random_number_generator.gen_range(0..5);
+                                let diceroll = self.random_number_generator.random_range(0..5);
                                 (selected_resource, selected_quantity) = if diceroll < 2 {
                                     (Some(Resource::Iron), iron_amt)
                                 } else {
@@ -519,7 +530,7 @@ impl TileMap {
                                 };
                             }
                             _ => {
-                                let diceroll = self.random_number_generator.gen_range(0..4);
+                                let diceroll = self.random_number_generator.random_range(0..4);
                                 (selected_resource, selected_quantity) = match diceroll {
                                     0 => (Some(Resource::Iron), iron_amt),
                                     1 => (Some(Resource::Uranium), uran_amt),
@@ -529,7 +540,7 @@ impl TileMap {
                         },
                         TerrainType::Hill => match base_terrain {
                             BaseTerrain::Grassland | BaseTerrain::Plain => {
-                                let diceroll = self.random_number_generator.gen_range(0..5);
+                                let diceroll = self.random_number_generator.random_range(0..5);
                                 (selected_resource, selected_quantity) = match diceroll {
                                     2 => (Some(Resource::Horses), horse_amt),
                                     n if n < 2 => (Some(Resource::Iron), iron_amt),
@@ -537,7 +548,7 @@ impl TileMap {
                                 };
                             }
                             _ => {
-                                let diceroll = self.random_number_generator.gen_range(0..5);
+                                let diceroll = self.random_number_generator.random_range(0..5);
                                 (selected_resource, selected_quantity) = if diceroll < 2 {
                                     (Some(Resource::Iron), iron_amt)
                                 } else {
@@ -557,7 +568,7 @@ impl TileMap {
                     // Probability of generating 0: 1/4
                     // Probability of generating 1: 2/4 (includes original 1 and 3 converted to 1)
                     // Probability of generating 2: 1/4
-                    let mut radius = self.random_number_generator.gen_range(0..4);
+                    let mut radius = self.random_number_generator.random_range(0..4);
                     if radius > 2 {
                         radius = 1;
                     }
@@ -576,8 +587,14 @@ impl TileMap {
     /// This function places small quantities of modern strategic resources (Oil, Aluminum, Coal) in city states.
     /// Mordern strategics contain Oil, Aluminum, Coal.
     fn add_modern_minor_strategics_to_city_states(&mut self, map_parameters: &MapParameters) {
-        let [_uran_amt, _horse_amt, oil_amt, _iron_amt, coal_amt, alum_amt] =
-            get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
+        let [
+            _uran_amt,
+            _horse_amt,
+            oil_amt,
+            _iron_amt,
+            coal_amt,
+            alum_amt,
+        ] = get_small_strategic_resource_quantity_values(map_parameters.resource_setting);
         let candidate_resources_amount = [coal_amt, oil_amt, alum_amt];
 
         const CANDIDATE_STRATEGIC_RESOURCES: [Resource; 3] =
@@ -596,7 +613,7 @@ impl TileMap {
             .collect::<Vec<_>>();
 
         for starting_tile in starting_tiles.into_iter() {
-            let chosen_resource_index = self.random_number_generator.gen_range(0..4);
+            let chosen_resource_index = self.random_number_generator.random_range(0..4);
             if chosen_resource_index < 3 {
                 let strategic_resource = CANDIDATE_STRATEGIC_RESOURCES[chosen_resource_index];
                 let resource_amount = candidate_resources_amount[chosen_resource_index];

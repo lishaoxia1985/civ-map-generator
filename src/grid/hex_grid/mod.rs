@@ -2,11 +2,11 @@ use glam::IVec3;
 use hex::{Hex, HexLayout, Offset};
 
 use crate::grid::{
-    hex_grid::hex::HexOrientation, offset_coordinate::OffsetCoordinate, Cell, GridSize,
-    WorldSizeType,
+    Cell, GridSize, WorldSizeType, hex_grid::hex::HexOrientation,
+    offset_coordinate::OffsetCoordinate,
 };
 
-use super::{direction::Direction, Grid, Size, WrapFlags};
+use super::{Grid, Size, WrapFlags, direction::Direction};
 
 pub mod hex;
 

@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use arrayvec::ArrayVec;
-use rand::{distributions::WeightedIndex, prelude::Distribution, seq::SliceRandom, Rng};
+use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::SliceRandom};
 
 use crate::{
     grid::WorldSizeType,
@@ -565,7 +565,7 @@ impl TileMap {
                 BaseTerrain::Grassland | BaseTerrain::Plain
             ) {
                 let mut resource = Resource::Horses;
-                let diceroll = self.random_number_generator.gen_range(0..4);
+                let diceroll = self.random_number_generator.random_range(0..4);
                 if diceroll == 2 {
                     resource = Resource::Iron;
                 }
@@ -740,7 +740,7 @@ impl TileMap {
             let max_radius = current_resource_to_place.max_radius;
             let radius = self
                 .random_number_generator
-                .gen_range(min_radius..=max_radius);
+                .random_range(min_radius..=max_radius);
 
             // First pass: Seek the first eligible 0 value on impact matrix
             if let Some(&tile) = tile_list_iter.find(|tile| {
@@ -851,7 +851,7 @@ impl TileMap {
                     if has_impact {
                         let radius = self
                             .random_number_generator
-                            .gen_range(min_radius..=max_radius);
+                            .random_range(min_radius..=max_radius);
                         self.place_impact_and_ripples(tile, layer.unwrap(), radius)
                     }
                     break;

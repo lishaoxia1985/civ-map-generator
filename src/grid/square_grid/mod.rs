@@ -1,8 +1,8 @@
 use crate::grid::{
+    Cell, Grid, GridSize, WorldSizeType,
     direction::Direction,
     offset_coordinate::OffsetCoordinate,
     square_grid::square::{Square, SquareLayout},
-    Cell, Grid, GridSize, WorldSizeType,
 };
 
 use super::{Size, WrapFlags};

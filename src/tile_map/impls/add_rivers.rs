@@ -1,10 +1,10 @@
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
     grid::{
-        direction::Direction,
-        hex_grid::{hex::HexOrientation, HexGrid},
         Grid,
+        direction::Direction,
+        hex_grid::{HexGrid, hex::HexOrientation},
     },
     tile::Tile,
     tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
@@ -44,7 +44,7 @@ impl TileMap {
                         // Land tiles that are not near the coast are the 2nd priority for river starting locations.
                         terrain_type != TerrainType::Water
                             && !tile.is_coastal_land(self)
-                            && self.random_number_generator.gen_range(0..8) == 0
+                            && self.random_number_generator.random_range(0..8) == 0
                     }
                     2 => {
                         // If there are still not enough rivers generated, the algorithm should run again using Mountain and Hill as the river starting locations.
@@ -560,7 +560,7 @@ impl TileMap {
             }
         });
 
-        sum += self.random_number_generator.gen_range(0..10);
+        sum += self.random_number_generator.random_range(0..10);
         sum
     }
 

@@ -8,14 +8,14 @@ use std::{
 use bitflags::bitflags;
 
 use image::{
-    imageops::{resize, FilterType},
     DynamicImage, GrayImage, ImageBuffer,
+    imageops::{FilterType, resize},
 };
-use rand::{rngs::StdRng, seq::SliceRandom, Rng};
+use rand::{Rng, rngs::StdRng, seq::IndexedRandom};
 
 use crate::grid::{
-    direction::Direction, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, Cell, Grid, Size,
-    WrapFlags,
+    Cell, Grid, Size, WrapFlags, direction::Direction, hex_grid::HexGrid,
+    offset_coordinate::OffsetCoordinate,
 };
 
 /// A seed for the Voronoi diagram in the fractal grid.
@@ -34,13 +34,13 @@ impl VoronoiSeed {
     /// Generates a random seed for the fractal.
     pub fn gen_random_seed(random: &mut StdRng, fractal_grid: HexGrid) -> Self {
         let offset_coordinate = OffsetCoordinate::from([
-            random.gen_range(0..fractal_grid.width()),
-            random.gen_range(0..fractal_grid.height()),
+            random.random_range(0..fractal_grid.width()),
+            random.random_range(0..fractal_grid.height()),
         ]);
 
         let cell = fractal_grid.offset_to_cell(offset_coordinate).unwrap();
 
-        let weakness = random.gen_range(0..6);
+        let weakness = random.random_range(0..6);
 
         let bias_direction = *fractal_grid
             .layout
@@ -49,7 +49,7 @@ impl VoronoiSeed {
             .choose(random)
             .unwrap();
 
-        let directional_bias_strength = random.gen_range(0..4);
+        let directional_bias_strength = random.random_range(0..4);
 
         VoronoiSeed {
             cell,
@@ -360,7 +360,7 @@ impl CvFractal {
             // Assign an initial value to each vertex by random number generator for later use in the diamond-square algorithm.
             for x in 0..hint_width as usize {
                 for y in 0..hint_height as usize {
-                    self.fractal_array[x << smooth][y << smooth] = random.gen_range(0..256);
+                    self.fractal_array[x << smooth][y << smooth] = random.random_range(0..256);
                     // Fractal Gen 1
                 }
             }
@@ -459,7 +459,7 @@ impl CvFractal {
                             sum += self.fractal_array[(x - 1) << pass][(y + 1) << pass] as i32;
                             sum += self.fractal_array[(x + 1) << pass][(y + 1) << pass] as i32;
                             sum >>= 2;
-                            sum += random.gen_range(-randness..randness);
+                            sum += random.random_range(-randness..randness);
                             sum = sum.clamp(0, 255);
                             self.fractal_array[x << pass][y << pass] = sum as u32;
                         }
@@ -468,7 +468,7 @@ impl CvFractal {
                             sum += self.fractal_array[(x - 1) << pass][y << pass] as i32;
                             sum += self.fractal_array[(x + 1) << pass][y << pass] as i32;
                             sum >>= 1;
-                            sum += random.gen_range(-randness..randness);
+                            sum += random.random_range(-randness..randness);
                             sum = sum.clamp(0, 255);
                             self.fractal_array[x << pass][y << pass] = sum as u32;
                         }
@@ -477,7 +477,7 @@ impl CvFractal {
                             sum += self.fractal_array[x << pass][(y - 1) << pass] as i32;
                             sum += self.fractal_array[x << pass][(y + 1) << pass] as i32;
                             sum >>= 1;
-                            sum += random.gen_range(-randness..randness);
+                            sum += random.random_range(-randness..randness);
                             sum = sum.clamp(0, 255);
                             self.fractal_array[x << pass][y << pass] = sum as u32;
                         }

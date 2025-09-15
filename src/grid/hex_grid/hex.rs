@@ -524,8 +524,8 @@ mod tests {
     use glam::{IVec2, Vec2};
 
     use super::{
-        hex_linedraw, Direction, DoubledCoordinate, Hex, HexLayout, HexOrientation, Offset,
-        OffsetCoordinate,
+        Direction, DoubledCoordinate, Hex, HexLayout, HexOrientation, Offset, OffsetCoordinate,
+        hex_linedraw,
     };
 
     pub fn equal_hex(name: &str, a: Hex, b: Hex) {

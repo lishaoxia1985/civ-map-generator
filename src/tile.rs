@@ -4,10 +4,10 @@
 
 use crate::{
     grid::{
-        direction::Direction,
-        hex_grid::{hex::Hex, HexGrid},
-        offset_coordinate::OffsetCoordinate,
         Cell, Grid,
+        direction::Direction,
+        hex_grid::{HexGrid, hex::Hex},
+        offset_coordinate::OffsetCoordinate,
     },
     map_parameters::MapParameters,
     ruleset::Ruleset,
@@ -15,7 +15,7 @@ use crate::{
         base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
         resource::Resource, terrain_type::TerrainType,
     },
-    tile_map::{impls::generate_regions::Region, Layer, TileMap},
+    tile_map::{Layer, TileMap, impls::generate_regions::Region},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -217,7 +217,7 @@ impl Tile {
 
     /// Returns an iterator over the neighboring tiles of the current tile.
     #[must_use = "iterators are lazy and do nothing unless consumed"]
-    pub fn neighbor_tiles(&self, grid: HexGrid) -> impl Iterator<Item = Self> {
+    pub fn neighbor_tiles(&self, grid: HexGrid) -> impl Iterator<Item = Self> + use<> {
         self.tiles_at_distance(1, grid)
     }
 
@@ -243,7 +243,11 @@ impl Tile {
 
     /// Returns an iterator over the tiles at the given distance from the current tile.
     #[must_use = "iterators are lazy and do nothing unless consumed"]
-    pub fn tiles_at_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
+    pub fn tiles_at_distance(
+        &self,
+        distance: u32,
+        grid: HexGrid,
+    ) -> impl Iterator<Item = Self> + use<> {
         grid.cells_at_distance(self.to_cell(), distance)
             .map(Self::from_cell)
     }

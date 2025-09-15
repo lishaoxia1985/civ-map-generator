@@ -411,10 +411,8 @@ impl TileMap {
             }
 
             // Add the fallback tile (best scored tile) from the Outer region to the fallback list.
-            if found_fallback {
-                if let Some(best_fallback_index) = best_fallback_index {
-                    fallback_tile_and_score.push((best_fallback_index, best_fallback_score));
-                }
+            if found_fallback && let Some(best_fallback_index) = best_fallback_index {
+                fallback_tile_and_score.push((best_fallback_index, best_fallback_score));
             }
         }
 
@@ -697,10 +695,8 @@ impl TileMap {
             }
 
             // Add the fallback plot (best scored plot) from the Outer region to the fallback list.
-            if found_fallback {
-                if let Some(best_fallback_index) = best_fallback_index {
-                    fallback_tile_and_score.push((best_fallback_index, best_fallback_score));
-                }
+            if found_fallback && let Some(best_fallback_index) = best_fallback_index {
+                fallback_tile_and_score.push((best_fallback_index, best_fallback_score));
             }
         }
 

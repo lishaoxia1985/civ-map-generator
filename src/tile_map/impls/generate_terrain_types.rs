@@ -50,7 +50,7 @@ impl TileMap {
             SeaLevel::High => sea_level_high,
             SeaLevel::Random => self
                 .random_number_generator
-                .gen_range(sea_level_low..=sea_level_high),
+                .random_range(sea_level_low..=sea_level_high),
         };
 
         let grain = match self.world_grid.world_size_type {
@@ -97,26 +97,39 @@ impl TileMap {
 
         let [water_threshold] = continents_fractal.get_height_from_percents([water_percent]);
 
-        let [pass_threshold, hills_bottom1, hills_top1, hills_bottom2, hills_top2] = hills_fractal
-            .get_height_from_percents([
-                hills_near_mountains,
-                hills_bottom1,
-                hills_top1,
-                hills_bottom2,
-                hills_top2,
-            ]);
+        let [
+            pass_threshold,
+            hills_bottom1,
+            hills_top1,
+            hills_bottom2,
+            hills_top2,
+        ] = hills_fractal.get_height_from_percents([
+            hills_near_mountains,
+            hills_bottom1,
+            hills_top1,
+            hills_bottom2,
+            hills_top2,
+        ]);
 
-        let [mountain_threshold, hills_near_mountains, _hills_clumps, mountain_100, mountain_99, _mountain_98, mountain_97, mountain_95] =
-            mountains_fractal.get_height_from_percents([
-                mountains,
-                hills_near_mountains,
-                hills_clumps,
-                100,
-                99,
-                98,
-                97,
-                95,
-            ]);
+        let [
+            mountain_threshold,
+            hills_near_mountains,
+            _hills_clumps,
+            mountain_100,
+            mountain_99,
+            _mountain_98,
+            mountain_97,
+            mountain_95,
+        ] = mountains_fractal.get_height_from_percents([
+            mountains,
+            hills_near_mountains,
+            hills_clumps,
+            100,
+            99,
+            98,
+            97,
+            95,
+        ]);
 
         self.all_tiles().for_each(|tile| {
             let [x, y] = tile.to_offset(grid).to_array();

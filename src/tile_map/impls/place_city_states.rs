@@ -3,7 +3,8 @@ use std::cmp::min;
 use std::collections::{BTreeMap, HashSet};
 
 use enum_map::Enum;
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::IndexedRandom;
+use rand::{Rng, seq::SliceRandom};
 
 use crate::nation::Nation;
 use crate::{
@@ -73,7 +74,7 @@ impl TileMap {
                 // Place city state on a random region
                 let region_index = self
                     .random_number_generator
-                    .gen_range(0..self.region_list.len());
+                    .random_range(0..self.region_list.len());
                 let tile = self.get_city_state_start_tile_in_region(region_index);
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();

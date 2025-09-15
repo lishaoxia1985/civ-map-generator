@@ -296,9 +296,9 @@ pub trait GridSize: Grid {
             // When area < duel_area, show warning
             area if area < duel_area => {
                 eprintln!(
-                "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is {} in the original CIV5 game.",
-                width, height, area, duel_area
-            );
+                    "The map size is too small. The provided dimensions are {}x{}, which gives an area of {}. The minimum area is {} in the original CIV5 game.",
+                    width, height, area, duel_area
+                );
                 WorldSizeType::Duel
             }
             // Compare with each threshold

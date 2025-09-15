@@ -5,12 +5,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
     grid::{
+        Grid, GridSize, Size, WorldSizeType, WrapFlags,
         hex_grid::{
-            hex::{HexLayout, HexOrientation, Offset},
             HexGrid,
+            hex::{HexLayout, HexOrientation, Offset},
         },
         offset_coordinate::OffsetCoordinate,
-        Grid, GridSize, Size, WorldSizeType, WrapFlags,
     },
     tile::Tile,
 };

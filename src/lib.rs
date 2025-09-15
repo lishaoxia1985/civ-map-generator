@@ -16,7 +16,7 @@ pub mod tile;
 pub mod tile_component;
 pub mod tile_map;
 
-use map_generator::{fractal::Fractal, pangaea::Pangaea, Generator};
+use map_generator::{Generator, fractal::Fractal, pangaea::Pangaea};
 use map_parameters::{MapParameters, MapType};
 use ruleset::Ruleset;
 use tile_map::TileMap;

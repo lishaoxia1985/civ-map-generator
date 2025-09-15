@@ -4,7 +4,7 @@ use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    grid::{hex_grid::HexGrid, offset_coordinate::OffsetCoordinate, WrapFlags},
+    grid::{WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
     map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
     tile_component::{

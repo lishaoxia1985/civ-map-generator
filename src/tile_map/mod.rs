@@ -8,7 +8,7 @@
 use crate::{
     grid::{
         direction::Direction,
-        hex_grid::{hex::HexOrientation, HexGrid},
+        hex_grid::{HexGrid, hex::HexOrientation},
     },
     map_parameters::{MapParameters, WorldGrid},
     nation::Nation,
@@ -20,8 +20,8 @@ use crate::{
     tile_map::impls::generate_area_and_landmass::{Area, Landmass},
 };
 use arrayvec::ArrayVec;
-use enum_map::{enum_map, Enum, EnumMap};
-use rand::{rngs::StdRng, SeedableRng};
+use enum_map::{Enum, EnumMap, enum_map};
+use rand::{SeedableRng, rngs::StdRng};
 use std::{
     cmp::{max, min},
     collections::{BTreeMap, HashMap},
@@ -149,7 +149,7 @@ impl TileMap {
 
     /// Returns an iterator over all tiles in the map.
     #[must_use = "iterators are lazy and do nothing unless consumed"]
-    pub fn all_tiles(&self) -> impl Iterator<Item = Tile> {
+    pub fn all_tiles(&self) -> impl Iterator<Item = Tile> + use<> {
         let size = &self.world_grid.size();
         (0..((size.width * size.height) as usize)).map(Tile::new)
     }

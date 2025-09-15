@@ -1,7 +1,7 @@
 use std::{cmp::max, collections::BTreeSet};
 
 use enum_map::Enum;
-use rand::seq::SliceRandom;
+use rand::seq::{IndexedRandom, SliceRandom};
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
