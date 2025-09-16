@@ -1,11 +1,16 @@
 [package]
 name = "civ_map_generator"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["lishaoxia1985 <lishaoxia1985@hotmail.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A civilization map generator"
+documentation = "https://docs.rs/civ_map_generator"
 repository = "https://github.com/lishaoxia1985/civ-map-generator"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--document-private-items"]
 
 [dependencies]
 serde = {version = "1.0", features = ["derive"]}

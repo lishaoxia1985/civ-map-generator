@@ -5,6 +5,10 @@ use std::path::Path;
 use serde_json::Value;
 
 fn main() {
+    if std::env::var("DOCS_RS").is_ok() {
+        return;
+    }
+
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/TerrainTypes.json");
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/BaseTerrains.json");
     println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Features.json");
