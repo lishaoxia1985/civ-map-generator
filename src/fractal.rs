@@ -324,8 +324,8 @@ impl CvFractal {
             };
 
         if let Some(img) = img {
-            // Resize image if needed with informative message
-            let hint_img = if hint_width != img.width() || hint_height != img.height() {
+            // Resize the image to the hint size if necessary, and convert it to grayscale.
+            let gray_hint_img = if hint_width != img.width() || hint_height != img.height() {
                 eprintln!(
                     "Image size {}x{} doesn't match hint size {}x{}.
                     We will resize the image to the hint size.
@@ -337,17 +337,15 @@ impl CvFractal {
                     hint_height
                 );
                 img.resize_exact(hint_width, hint_height, FilterType::Triangle)
+                    .to_luma8()
             } else {
                 eprintln!(
                     "Image size matches hint size: {}x{}",
                     img.width(),
                     img.height()
                 );
-                img.clone()
+                img.to_luma8()
             };
-
-            // Convert to grayscale and create hint array
-            let gray_hint_img = hint_img.to_luma8();
 
             // Assign an initial value to each vertex by `gray_hint_img` for later use in the diamond-square algorithm.
             for x in 0..hint_width as usize {
