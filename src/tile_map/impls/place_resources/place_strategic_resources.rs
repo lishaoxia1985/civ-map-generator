@@ -3,13 +3,12 @@ use rand::{Rng, seq::SliceRandom};
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
+    tile_component::*,
+    tile_map::{
+        Layer, TileMap, get_major_strategic_resource_quantity_values,
+        impls::place_resources::ResourceToPlace,
     },
-    tile_map::{Layer, TileMap},
 };
-
-use super::assign_starting_tile::{ResourceToPlace, get_major_strategic_resource_quantity_values};
 
 impl TileMap {
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {

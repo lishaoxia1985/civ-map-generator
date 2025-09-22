@@ -7,7 +7,7 @@ use crate::{
         hex_grid::{HexGrid, hex::HexOrientation},
     },
     tile::Tile,
-    tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
+    tile_component::{BaseTerrain, TerrainType},
     tile_map::{River, RiverEdge, TileMap},
 };
 

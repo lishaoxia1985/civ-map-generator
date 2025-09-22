@@ -1,8 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 
-use crate::{
-    ruleset::Ruleset, tile::Tile, tile_component::terrain_type::TerrainType, tile_map::TileMap,
-};
+use crate::{ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap};
 
 pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
 pub const UNINITIALIZED_LANDMASS_ID: usize = usize::MAX;

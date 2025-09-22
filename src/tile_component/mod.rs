@@ -1,8 +1,14 @@
 //! This module contains the components of the tile in the map.
 //! For example, it includes the tile's TerrainType, BaseTerrain, NationWonder, Resource, and so on.
 
-pub mod base_terrain;
-pub mod feature;
-pub mod natural_wonder;
-pub mod resource;
-pub mod terrain_type;
+mod base_terrain;
+mod feature;
+mod natural_wonder;
+mod resource;
+mod terrain_type;
+
+pub use base_terrain::*;
+pub use feature::*;
+pub use natural_wonder::*;
+pub use resource::*;
+pub use terrain_type::*;

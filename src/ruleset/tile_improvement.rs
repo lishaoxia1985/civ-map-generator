@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{
-    base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType,
-};
+use crate::tile_component::{BaseTerrain, Feature, TerrainType};
 
 use super::Name;
 

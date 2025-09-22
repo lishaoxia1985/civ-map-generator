@@ -4,7 +4,7 @@ use crate::{
     grid::WorldSizeType,
     map_parameters::Rainfall,
     ruleset::Ruleset,
-    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
+    tile_component::{BaseTerrain, Feature, TerrainType},
     tile_map::{MapParameters, TileMap},
 };
 

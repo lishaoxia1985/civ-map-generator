@@ -1,23 +1,21 @@
 use std::{cmp::max, collections::BTreeSet};
 
 use enum_map::Enum;
-use rand::seq::{IndexedRandom, SliceRandom};
+use rand::{
+    Rng,
+    seq::{IndexedRandom, SliceRandom},
+};
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     nation::Nation,
     ruleset::Ruleset,
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
-    tile_map::{Layer, TileMap},
+    tile_component::{BaseTerrain, Feature, Resource, TerrainType},
+    tile_map::{Layer, TileMap, get_major_strategic_resource_quantity_values},
 };
 
-use super::{
-    assign_starting_tile::get_major_strategic_resource_quantity_values,
-    generate_regions::{RegionType, StartLocationCondition},
-};
+use super::generate_regions::{RegionType, StartLocationCondition};
 
 impl TileMap {
     // function AssignStartingPlots:BalanceAndAssign
@@ -1433,6 +1431,49 @@ impl TileMap {
                 0,
                 &oil_fallback,
             );
+        }
+    }
+
+    // function AssignStartingPlots:AttemptToPlaceSmallStrategicAtPlot
+    /// Attempts to place a Small `Horses` or `Iron` Resource at the currently chosen tile.
+    /// If successful, it returns `true`, otherwise it returns `false`.
+    fn attempt_to_place_small_strategic_at_tile(&mut self, tile: Tile) -> bool {
+        if tile.resource(self).is_none()
+            && tile.terrain_type(self) == TerrainType::Flatland
+            && tile.feature(self).is_none()
+        {
+            if matches!(
+                tile.base_terrain(self),
+                BaseTerrain::Grassland | BaseTerrain::Plain
+            ) {
+                let mut resource = Resource::Horses;
+                let diceroll = self.random_number_generator.random_range(0..4);
+                if diceroll == 2 {
+                    resource = Resource::Iron;
+                }
+                tile.set_resource(self, resource, 2);
+            } else {
+                tile.set_resource(self, Resource::Iron, 2);
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    // function AssignStartingPlots:AttemptToPlaceStoneAtGrassPlot
+    /// Attempts to place a stone at a grass plot.
+    /// Returns `true` if Stone is placed. Otherwise returns `false`.
+    fn attempt_to_place_stone_at_grass_tile(&mut self, tile: Tile) -> bool {
+        if tile.resource(self).is_none()
+            && tile.terrain_type(self) == TerrainType::Flatland
+            && tile.base_terrain(self) == BaseTerrain::Grassland
+            && tile.feature(self).is_none()
+        {
+            tile.set_resource(self, Resource::Stone, 1);
+            true
+        } else {
+            false
         }
     }
 }

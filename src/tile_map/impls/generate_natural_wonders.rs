@@ -10,10 +10,7 @@ use crate::{
     grid::{Grid, WorldSizeType},
     ruleset::{Ruleset, unique::Unique},
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        terrain_type::TerrainType,
-    },
+    tile_component::*,
     tile_map::{Layer, TileMap},
 };
 

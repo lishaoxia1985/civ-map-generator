@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::{
     tile::Tile,
-    tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType},
+    tile_component::{BaseTerrain, TerrainType},
     tile_map::{MapParameters, TileMap, impls::generate_area_and_landmass::LandmassType},
 };
 

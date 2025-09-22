@@ -11,11 +11,8 @@ use crate::{
     },
     map_parameters::MapParameters,
     ruleset::Ruleset,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        resource::Resource, terrain_type::TerrainType,
-    },
-    tile_map::{Layer, TileMap, impls::generate_regions::Region},
+    tile_component::{BaseTerrain, Feature, NaturalWonder, Resource, TerrainType},
+    tile_map::{Layer, Region, TileMap},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

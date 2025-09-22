@@ -7,9 +7,7 @@ use crate::{
     grid::{WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
     map_parameters::{Rectangle, RegionDivideMethod},
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
+    tile_component::*,
     tile_map::{MapParameters, TileMap},
 };
 

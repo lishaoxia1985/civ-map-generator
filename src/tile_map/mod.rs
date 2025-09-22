@@ -10,26 +10,22 @@ use crate::{
         direction::Direction,
         hex_grid::{HexGrid, hex::HexOrientation},
     },
-    map_parameters::{MapParameters, WorldGrid},
+    map_parameters::{MapParameters, ResourceSetting, WorldGrid},
     nation::Nation,
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, natural_wonder::NaturalWonder,
-        resource::Resource, terrain_type::TerrainType,
-    },
-    tile_map::impls::generate_area_and_landmass::{Area, Landmass},
+    tile_component::*,
 };
 use arrayvec::ArrayVec;
 use enum_map::{Enum, EnumMap, enum_map};
-use rand::{SeedableRng, rngs::StdRng};
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use std::{
     cmp::{max, min},
     collections::{BTreeMap, HashMap},
 };
 
-pub(crate) mod impls;
+mod impls;
 
-use impls::{assign_starting_tile::LuxuryResourceRole, generate_regions::Region};
+pub(crate) use impls::*;
 
 #[derive(PartialEq, Debug)]
 pub struct TileMap {
@@ -362,6 +358,246 @@ impl TileMap {
             }
         }
     }
+
+    // function AssignStartingPlots:AttemptToPlaceHillsAtPlot
+    /// Attempts to place a Hill at the currently chosen tile.
+    /// If successful, it returns `true`, otherwise it returns `false`.
+    pub fn attempt_to_place_hill_at_tile(&mut self, tile: Tile) -> bool {
+        if tile.resource(self).is_none()
+            && tile.terrain_type(self) != TerrainType::Water
+            && tile.feature(self) != Some(Feature::Forest)
+            && !tile.has_river(self)
+        {
+            tile.set_terrain_type(self, TerrainType::Hill);
+            tile.clear_feature(self);
+            tile.clear_natural_wonder(self);
+            true
+        } else {
+            false
+        }
+    }
+
+    // function AssignStartingPlots:AttemptToPlaceBonusResourceAtPlot
+    /// Attempts to place a Bonus Resource at the currently chosen tile.
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple of two booleans:
+    ///
+    /// - The first boolean is `true` if something was placed.
+    /// - The second boolean is `true` as well if [`Feature::Oasis`] was placed.
+    pub fn attempt_to_place_bonus_resource_at_tile(
+        &mut self,
+        tile: Tile,
+        allow_oasis: bool,
+    ) -> (bool, bool) {
+        let terrain_type = tile.terrain_type(self);
+        let base_terrain = tile.base_terrain(self);
+        let feature = tile.feature(self);
+
+        if tile.resource(self).is_none()
+            && base_terrain != BaseTerrain::Snow
+            && feature != Some(Feature::Oasis)
+        {
+            match terrain_type {
+                TerrainType::Water => {
+                    if base_terrain == BaseTerrain::Coast && feature.is_none() {
+                        tile.set_resource(self, Resource::Fish, 1);
+                        return (true, false);
+                    }
+                }
+                TerrainType::Flatland => {
+                    if feature.is_none() {
+                        match base_terrain {
+                            BaseTerrain::Grassland => {
+                                tile.set_resource(self, Resource::Cattle, 1);
+                                return (true, false);
+                            }
+                            BaseTerrain::Desert => {
+                                if tile.is_freshwater(self) {
+                                    tile.set_resource(self, Resource::Wheat, 1);
+                                    return (true, false);
+                                } else if allow_oasis {
+                                    tile.set_feature(self, Feature::Oasis);
+                                    return (true, true);
+                                }
+                            }
+                            BaseTerrain::Plain => {
+                                tile.set_resource(self, Resource::Wheat, 1);
+                                return (true, false);
+                            }
+                            BaseTerrain::Tundra => {
+                                tile.set_resource(self, Resource::Deer, 1);
+                                return (true, false);
+                            }
+                            _ => {
+                                unreachable!()
+                            }
+                        }
+                    } else if feature == Some(Feature::Forest) {
+                        tile.set_resource(self, Resource::Deer, 1);
+                        return (true, false);
+                    } else if feature == Some(Feature::Jungle) {
+                        tile.set_resource(self, Resource::Bananas, 1);
+                        return (true, false);
+                    }
+                }
+                TerrainType::Mountain => (),
+                TerrainType::Hill => {
+                    if feature.is_none() {
+                        tile.set_resource(self, Resource::Sheep, 1);
+                        return (true, false);
+                    } else if feature == Some(Feature::Forest) {
+                        tile.set_resource(self, Resource::Deer, 1);
+                        return (true, false);
+                    } else if feature == Some(Feature::Jungle) {
+                        tile.set_resource(self, Resource::Bananas, 1);
+                        return (true, false);
+                    }
+                }
+            }
+        }
+        // Nothing placed.
+        (false, false)
+    }
+
+    // function AssignStartingPlots:PlaceSpecificNumberOfResources
+    /// Places a specific number of resources on the map.
+    ///
+    /// Before calling this function, make sure `tile_list` has been shuffled.
+    ///
+    /// # Arguments
+    ///
+    /// - `quantity`: The number of every type resource that can be placed on the tile.\
+    ///   For example, when placing `Horses`, `quantity` is 2, which means that the tile has 2 `Horses`.\
+    ///   In CIV5, when resource is bonus or luxury, `quantity` is always 1;
+    ///   When resource is strategic, `quantity` is usually determined by [`ResourceSetting`].
+    /// - `amount`: The number of tiles intended to receive an assignment of this resource.
+    /// - `ratio`: Determines when secondary and tertiary lists come in to play, should be in (0, 1].\
+    ///   The num of tiles we will assign this resource is the minimum of `amount` and `(ratio * tile_list.len() as f64).ceil() as u32`.\
+    ///   For example, if we are assigning Sugar resources to Marsh, then if we are to assign 8 Sugar
+    ///   resources (`amount = 8`), but there are only 4 Marsh plots in the list (`tile_list.len() = 4`):
+    ///     - `ratio = 1`, the num of tiles we will assign is 4, we would assign a Sugar to every single marsh plot, and then the function return an unplaced value of 4.
+    ///     - `ratio = 0.5`, the num of tiles we will assign is 2, we would assign only 2 Sugars to the 4 marsh plots, and the function return a value of 6.
+    ///     - `ratio <= 0.25`, the num of tiles we will assign is 1, we would assign 1 Sugar and return 7, as the ratio results will be rounded up not down, to the nearest integer.
+    /// - `layer`: The layer we should tackle resource impact or ripple. If None, the resource can be placed on any tiles of `tile_list` that are not already assigned to a resource.
+    /// - `min_radius` and `max_radius`: Related to `resource_impact` when we place resources on tiles.
+    ///     - If `layer` is None, then `min_radius` and `max_radius` are ignored.
+    ///     - If `layer` is not [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`], then `min_radius` and `max_radius` are ignored as well.
+    /// - `tile_list`: The list of tiles that are candidates to place the resource on.
+    ///
+    /// # Returns
+    ///
+    /// - The number of resources that were not placed.
+    ///   It is equal to `amount` minus the number of tiles that were assigned a resource.
+    ///
+    /// # Panics
+    ///
+    /// - `max_radius` must be greater than or equal to `min_radius`. Otherwise, the function will panic.
+    #[allow(clippy::too_many_arguments)]
+    pub fn place_specific_number_of_resources(
+        &mut self,
+        resource: Resource,
+        quantity: u32,
+        amount: u32,
+        ratio: f64,
+        layer: Option<Layer>,
+        min_radius: u32,
+        max_radius: u32,
+        tile_list: &[Tile],
+    ) -> u32 {
+        debug_assert!(
+            max_radius >= min_radius,
+            "'max_radius' must be greater than or equal to 'min_radius'!"
+        );
+
+        if tile_list.is_empty() {
+            return amount;
+        }
+
+        let has_impact = matches!(
+            layer,
+            Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
+        );
+
+        // Store how many resources are left to place
+        let mut num_left_to_place = amount;
+
+        // Calculate how many tiles is the candidates to place the resource on based on the ratio.
+        // That means only a certain number of tiles in the `tile_list` will be assigned
+        // If `ratio` is 1, then all tiles will be the candidates for assignment.
+        // If `ratio` is less than 1, then the number of tiles to be the candidates is calculated
+        let num_candidate_tiles = (ratio * tile_list.len() as f64).ceil() as u32;
+
+        // `amount` is the number of tiles intended to receive an assignment of this resource.
+        // `num_resources` is the maximum number of tiles that can receive an assignment of this resource.
+        // `num_resources` is the minimum of `amount` and `num_candidate_tiles`.
+        let num_resources = min(amount, num_candidate_tiles);
+
+        for _ in 1..=num_resources {
+            for &tile in tile_list.iter() {
+                if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
+                    // Place resource on tile if it doesn't have a resource already
+                    if tile.resource(self).is_none() {
+                        tile.set_resource(self, resource, quantity);
+                        num_left_to_place -= 1;
+                    }
+                    // Place impact and ripples if `has_impact` is true
+                    if has_impact {
+                        let radius = self
+                            .random_number_generator
+                            .random_range(min_radius..=max_radius);
+                        self.place_impact_and_ripples(tile, layer.unwrap(), radius)
+                    }
+                    break;
+                }
+            }
+        }
+
+        num_left_to_place
+    }
+
+    // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
+    /// Clear [`Feature::Ice`] from the map within a given radius of the city site.
+    ///
+    /// # Notice
+    ///
+    /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
+    /// We have extracted the `generate luxury plot lists at city site` into a separate method.
+    /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_tile_lists_at_city_site`].
+    pub fn clear_ice_near_city_site(&mut self, city_site: Tile, radius: u32) {
+        let grid = self.world_grid.grid;
+
+        for ripple_radius in 1..=radius {
+            city_site
+                .tiles_at_distance(ripple_radius, grid)
+                .for_each(|tile_at_distance| {
+                    let feature = tile_at_distance.feature(self);
+                    if feature == Some(Feature::Ice) {
+                        tile_at_distance.clear_feature(self);
+                    }
+                })
+        }
+    }
+}
+
+// function AssignStartingPlots:GetMajorStrategicResourceQuantityValues
+// TODO: This function should be implemented in future.
+/// Determines the quantity per tile for each strategic resource's major deposit size.
+///
+/// # Notice
+///
+/// In some maps, If we cannot place oil in the sea, we should increase the resource amounts on land to compensate.
+pub fn get_major_strategic_resource_quantity_values(
+    resource_setting: ResourceSetting,
+) -> (u32, u32, u32, u32, u32, u32) {
+    let (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt) = match resource_setting {
+        ResourceSetting::Sparse => (2, 4, 5, 4, 5, 5),
+        ResourceSetting::Abundant => (4, 6, 9, 9, 10, 10),
+        _ => (4, 4, 7, 6, 7, 8), // Default
+    };
+
+    (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt)
 }
 
 /// The `Layer` enum represents a layer associated with an element added to the map.

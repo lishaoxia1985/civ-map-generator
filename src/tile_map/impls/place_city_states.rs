@@ -12,7 +12,7 @@ use crate::{
     map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
     ruleset::Ruleset,
     tile::Tile,
-    tile_component::{base_terrain::BaseTerrain, feature::Feature, terrain_type::TerrainType},
+    tile_component::{BaseTerrain, Feature, TerrainType},
     tile_map::{Layer, TileMap},
 };
 
@@ -179,7 +179,7 @@ impl TileMap {
     ///
     /// Returns an array of two vectors of tiles.
     /// The first vector is the coastal tiles, and the second vector is the inland tiles.
-    pub fn get_candidate_city_state_tiles_in_region(&self, region_index: usize) -> [Vec<Tile>; 2] {
+    fn get_candidate_city_state_tiles_in_region(&self, region_index: usize) -> [Vec<Tile>; 2] {
         let grid = self.world_grid.grid;
 
         let region = &self.region_list[region_index];

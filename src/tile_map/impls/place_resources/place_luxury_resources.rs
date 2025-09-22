@@ -15,9 +15,7 @@ use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
-    tile_component::{
-        base_terrain::BaseTerrain, feature::Feature, resource::Resource, terrain_type::TerrainType,
-    },
+    tile_component::*,
     tile_map::{Layer, TileMap},
 };
 
@@ -912,29 +910,6 @@ impl TileMap {
         ]
     }
 
-    // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
-    /// Clear [`Feature::Ice`] from the map within a given radius of the city site.
-    ///
-    /// # Notice
-    ///
-    /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
-    /// We have extracted the `generate luxury plot lists at city site` into a separate method.
-    /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_tile_lists_at_city_site`].
-    pub fn clear_ice_near_city_site(&mut self, city_site: Tile, radius: u32) {
-        let grid = self.world_grid.grid;
-
-        for ripple_radius in 1..=radius {
-            city_site
-                .tiles_at_distance(ripple_radius, grid)
-                .for_each(|tile_at_distance| {
-                    let feature = tile_at_distance.feature(self);
-                    if feature == Some(Feature::Ice) {
-                        tile_at_distance.clear_feature(self);
-                    }
-                })
-        }
-    }
-
     // function AssignStartingPlots:GenerateLuxuryPlotListsInRegion
     /// Generate the candidate tile lists for placing luxury resources in a region.
     ///
@@ -1200,7 +1175,7 @@ impl TileMap {
     ///
     /// # Arguments
     /// - `resource`: The name of the luxury resource.
-    pub fn get_indices_for_luxury_type(&self, resource: Resource) -> Vec<usize> {
+    fn get_indices_for_luxury_type(&self, resource: Resource) -> Vec<usize> {
         match resource {
             Resource::Whales | Resource::Pearls => vec![0],
             Resource::GoldOre => vec![3, 9, 4],

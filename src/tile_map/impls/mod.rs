@@ -1,15 +1,31 @@
-pub(crate) mod add_features;
-pub(crate) mod add_rivers;
-pub(crate) mod assign_starting_tile;
-pub(crate) mod balance_and_assign_civilization_starting_tiles;
-pub(crate) mod choose_civilization_starting_tiles;
-pub(crate) mod generate_area_and_landmass;
-pub(crate) mod generate_base_terrains;
-pub(crate) mod generate_lakes;
-pub(crate) mod generate_natural_wonders;
-pub(crate) mod generate_regions;
-pub(crate) mod generate_terrain_types;
-pub(crate) mod place_bonus_resources;
-pub(crate) mod place_city_states;
-pub(crate) mod place_luxury_resources;
-pub(crate) mod place_strategic_resources;
+#![allow(unused_imports)]
+
+mod add_features;
+mod add_rivers;
+mod assign_luxury_roles;
+mod balance_and_assign_civilization_starting_tiles;
+mod choose_civilization_starting_tiles;
+mod fix_sugar_jungles;
+mod generate_area_and_landmass;
+mod generate_base_terrains;
+mod generate_lakes;
+mod generate_natural_wonders;
+mod generate_regions;
+mod generate_terrain_types;
+mod place_city_states;
+mod place_resources;
+
+pub(crate) use add_features::*;
+pub(crate) use add_rivers::*;
+pub(crate) use assign_luxury_roles::*;
+pub(crate) use balance_and_assign_civilization_starting_tiles::*;
+pub(crate) use choose_civilization_starting_tiles::*;
+pub(crate) use fix_sugar_jungles::*;
+pub(crate) use generate_area_and_landmass::*;
+pub(crate) use generate_base_terrains::*;
+pub(crate) use generate_lakes::*;
+pub(crate) use generate_natural_wonders::*;
+pub(crate) use generate_regions::*;
+pub(crate) use generate_terrain_types::*;
+pub(crate) use place_city_states::*;
+pub(crate) use place_resources::*;

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{base_terrain::BaseTerrain, terrain_type::TerrainType};
+use crate::tile_component::{BaseTerrain, TerrainType};
 
 use super::Name;
 
