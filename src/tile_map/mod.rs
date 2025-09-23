@@ -66,15 +66,27 @@ pub struct TileMap {
     /// or that other elements are not too close to the placed element.
     ///
     /// The element may be a starting tile of civilization, a city-state, a natural wonder, a marble, a resource, ...\
-    /// The impact and ripple values represent the influence of distance from the added element.
-    /// The value is within the range `[0, 99]`.
+    ///
+    /// According to different [`Layer`], values in `layer_data` can be one mode of the following:
+    /// - **Mode 1: Binary Placement Control**: `0`, `1` and `99`. When you only concerned about whether the tile can be placed with an element or not.
+    ///   - `0` means no element is placed in current tile.
+    ///   - `1` means the element is in influence range of the added element.
+    ///     It is usually used to forbid placing other elements in the influence range.
+    ///   - `99` (typically) means an element is placed in the current tile.
+    ///     Even we don't place an element in current tile, we can also set it to `99` to forbid placing the elements in current tile.
+    /// - **Mode 2: Distance-Based Gradient**: In the range `[0, 99]`. When you want to know how far the tile is from the added element.
+    ///   - `99` means an element is placed in current tile, or the element can't be placed in current tile.
+    ///   - `0` means no element is placed in current tile.
+    ///   - Any value in (0, 99) means no element is placed in current tile, but the tile is in the influence range of the added element.
+    ///     The larger the value, the closer the tile is to the added element.
     ///
     /// # Examples about impact and ripple values
+    ///
     /// For example, When the `layer` is [`Layer::Civilization`], `layer_data[Layer::Civilization]` stores the "impact and ripple" data
     /// of the starting tile of civilization. About the values of tiles in `layer_data[Layer::Civilization]`:
-    /// - `value = 0` means no influence from existing impacts in current tile.
+    /// - `value = 0` means no influence from existing impacts in current tile and current tile does not have a starting tile.
     /// - `value = 99` means an "impact" occurred in current tile, and current tile is a starting tile.
-    /// - Values in (0, 99) represent "ripples", indicating that current tile is near a starting tile.
+    /// - Values in (0, 99) represent "ripples", indicating that current tile is within the influence range of an existing starting tile.
     ///   The larger values, the closer the tile is to the starting tile.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
     /// Stores `impact` data only of start points, to avoid player collisions
@@ -291,6 +303,12 @@ impl TileMap {
     /// # Panics
     ///
     /// Panics in debug mode if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
+    ///
+    /// # Notice
+    ///
+    /// Different with the original code, we use the same impact value `(99)` for all layers, but the behavior is the same.
+    ///
+    /// Different from the original code, [Layer::Fish]'s implementation varies, but the behavior is the same.
     fn place_impact_and_ripples_for_resource(&mut self, tile: Tile, layer: Layer, radius: u32) {
         debug_assert_ne!(
             layer,
@@ -300,11 +318,9 @@ impl TileMap {
 
         let grid = self.world_grid.grid;
 
-        let impact_value = if layer == Layer::Fish || layer == Layer::Marble {
-            1
-        } else {
-            99
-        };
+        // Different with the original code, we use the same impact value for all layers, but the behavior is the same.
+        // In the original code, when layer is Fish or Marble, the impact value is 1. When layer is other, the impact value is 99.
+        let impact_value = 99;
 
         self.layer_data[layer][tile.index()] = impact_value;
 
@@ -323,23 +339,13 @@ impl TileMap {
                         // The current tile's ripple value.
                         let mut current_value = self.layer_data[layer][tile_at_distance.index()];
                         match layer {
-                            Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::NaturalWonder => {
+                            // Different from the original code, Layer::Fish's implementation is the same as other resource layers, but the behavior is the same.
+                            Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::NaturalWonder | Layer::Fish => {
                                 if current_value != 0 {
                                     // First choose the greater of the two, existing value or current ripple.
                                     let stronger_value = max(current_value, ripple_value);
                                     // Now increase it by 2 to reflect that multiple civs are in range of this plot.
                                     let overlap_value = min(50, stronger_value + 2);
-                                    current_value = overlap_value;
-                                } else {
-                                    current_value = ripple_value;
-                                }
-                            }
-                            Layer::Fish => {
-                                if current_value != 0 {
-                                    // First choose the greater of the two, existing value or current ripple.
-                                    let stronger_value = max(current_value, ripple_value);
-                                    // Now increase it by 1 to reflect that multiple civs are in range of this plot.
-                                    let overlap_value = min(10, stronger_value + 1);
                                     current_value = overlap_value;
                                 } else {
                                     current_value = ripple_value;
