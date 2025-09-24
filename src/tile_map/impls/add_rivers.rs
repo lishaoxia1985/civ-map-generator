@@ -145,10 +145,8 @@ impl TileMap {
             return;
         }
 
-        // Create a new river and add it to the river list
-        self.river_list.push(River::new());
-        // Get the new river ID which is the index of the new river in the river list
-        let river_id = self.river_list.len() - 1;
+        // Create a new river
+        let mut river = River::new();
 
         let mut start_tile = start_tile;
         let mut original_flow_direction = original_flow_direction;
@@ -157,297 +155,271 @@ impl TileMap {
         loop {
             let mut river_tile;
             if let Some(this_flow_direction) = this_flow_direction {
-                match grid.layout.orientation {
-                    HexOrientation::Pointy => match this_flow_direction {
-                        Direction::East | Direction::West => unreachable!(),
-                        Direction::North => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::NorthEast, grid)
+                match (grid.layout.orientation, this_flow_direction) {
+                    /********** Pointy Hex Orientation And Flow Direction **********/
+                    (HexOrientation::Pointy, Direction::East | Direction::West) => unreachable!(),
+                    (HexOrientation::Pointy, Direction::North) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::NorthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile.has_river_in_direction(Direction::SouthEast, self)
+                                || neighbor_tile.has_river_in_direction(Direction::SouthWest, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthEast, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthWest, self)
-                                {
-                                    break;
-                                } else {
-                                    river_tile = neighbor_tile;
-                                }
-                            } else {
                                 break;
+                            } else {
+                                river_tile = neighbor_tile;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::NorthEast => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::East, grid)
+                    }
+                    (HexOrientation::Pointy, Direction::NorthEast) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) = river_tile.neighbor_tile(Direction::East, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::East, self)
+                                || neighbor_tile.has_river_in_direction(Direction::SouthWest, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::East, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthWest, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::SouthEast => {
-                            if let Some(neighbor_tile) =
-                                start_tile.neighbor_tile(Direction::East, grid)
+                    }
+                    (HexOrientation::Pointy, Direction::SouthEast) => {
+                        if let Some(neighbor_tile) = start_tile.neighbor_tile(Direction::East, grid)
+                        {
+                            river_tile = neighbor_tile
+                        } else {
+                            break;
+                        };
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::SouthEast, self)
                             {
-                                river_tile = neighbor_tile
-                            } else {
-                                break;
-                            };
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthEast, grid)
-                            {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
-                            if let Some(neighbor_tile2) =
-                                river_tile.neighbor_tile(Direction::SouthWest, grid)
-                            {
-                                if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2.has_river_in_direction(Direction::East, self)
-                                {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
+                        } else {
+                            break;
                         }
-                        Direction::South => {
-                            if let Some(neighbor_tile) =
-                                start_tile.neighbor_tile(Direction::SouthWest, grid)
+                        if let Some(neighbor_tile2) =
+                            river_tile.neighbor_tile(Direction::SouthWest, grid)
+                        {
+                            if neighbor_tile2.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile2.has_river_in_direction(Direction::East, self)
                             {
-                                river_tile = neighbor_tile
-                            } else {
-                                break;
-                            };
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthEast, grid)
-                            {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
-                            if let Some(neighbor_tile2) =
-                                river_tile.neighbor_tile(Direction::East, grid)
-                            {
-                                if neighbor_tile2.has_river_in_direction(Direction::SouthWest, self)
-                                {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
+                        } else {
+                            break;
                         }
-                        Direction::SouthWest => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthWest, grid)
+                    }
+                    (HexOrientation::Pointy, Direction::South) => {
+                        if let Some(neighbor_tile) =
+                            start_tile.neighbor_tile(Direction::SouthWest, grid)
+                        {
+                            river_tile = neighbor_tile
+                        } else {
+                            break;
+                        };
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::SouthEast, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(Direction::East, self)
-                                    || river_tile.has_river_in_direction(Direction::SouthWest, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::NorthWest => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::West, grid)
-                            {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(Direction::East, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                } else {
-                                    river_tile = neighbor_tile;
-                                }
-                            } else {
+                        if let Some(neighbor_tile2) =
+                            river_tile.neighbor_tile(Direction::East, grid)
+                        {
+                            if neighbor_tile2.has_river_in_direction(Direction::SouthWest, self) {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                    },
-                    HexOrientation::Flat => match this_flow_direction {
-                        Direction::North | Direction::South => unreachable!(),
-                        Direction::NorthEast => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::NorthEast, grid)
+                    }
+                    (HexOrientation::Pointy, Direction::SouthWest) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthWest, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile.has_river_in_direction(Direction::East, self)
+                                || river_tile.has_river_in_direction(Direction::SouthWest, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::NorthEast, self)
-                                    || neighbor_tile.has_river_in_direction(Direction::South, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::East => {
-                            if let Some(neighbor_tile) =
-                                start_tile.neighbor_tile(Direction::NorthEast, grid)
+                    }
+                    (HexOrientation::Pointy, Direction::NorthWest) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) = river_tile.neighbor_tile(Direction::West, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile.has_river_in_direction(Direction::East, self)
+                                || neighbor_tile.has_river_in_direction(Direction::SouthEast, self)
                             {
-                                river_tile = neighbor_tile
-                            } else {
                                 break;
-                            };
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthEast, grid)
-                            {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                }
                             } else {
-                                break;
+                                river_tile = neighbor_tile;
                             }
-                            if let Some(neighbor_tile2) =
-                                river_tile.neighbor_tile(Direction::South, grid)
-                            {
-                                if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2
-                                        .has_river_in_direction(Direction::NorthEast, self)
-                                {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
+                        } else {
+                            break;
                         }
-                        Direction::SouthEast => {
-                            if let Some(neighbor_tile) =
-                                start_tile.neighbor_tile(Direction::South, grid)
+                    }
+                    /********** End Pointy Hex Orientation And Flow Direction **********/
+                    /********** Flat Hex Orientation And Flow Direction **********/
+                    (HexOrientation::Flat, Direction::North | Direction::South) => unreachable!(),
+                    (HexOrientation::Flat, Direction::NorthEast) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::NorthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::NorthEast, self)
+                                || neighbor_tile.has_river_in_direction(Direction::South, self)
                             {
-                                river_tile = neighbor_tile
-                            } else {
-                                break;
-                            };
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthEast, grid)
-                            {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
-                            if let Some(neighbor_tile2) =
-                                river_tile.neighbor_tile(Direction::NorthEast, grid)
-                            {
-                                if neighbor_tile2.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile2.has_river_in_direction(Direction::South, self)
-                                {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
+                        } else {
+                            break;
                         }
-                        Direction::SouthWest => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::South, grid)
+                    }
+                    (HexOrientation::Flat, Direction::East) => {
+                        if let Some(neighbor_tile) =
+                            start_tile.neighbor_tile(Direction::NorthEast, grid)
+                        {
+                            river_tile = neighbor_tile
+                        } else {
+                            break;
+                        };
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::SouthEast, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || river_tile.has_river_in_direction(Direction::South, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::NorthEast, self)
-                                {
-                                    break;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::West => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::SouthWest, grid)
+                        if let Some(neighbor_tile2) =
+                            river_tile.neighbor_tile(Direction::South, grid)
+                        {
+                            if neighbor_tile2.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile2.has_river_in_direction(Direction::NorthEast, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::NorthEast, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                } else {
-                                    river_tile = neighbor_tile;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                        Direction::NorthWest => {
-                            river_tile = start_tile;
-                            self.river_list[river_id]
-                                .push(RiverEdge::new(river_tile, this_flow_direction));
-                            if let Some(neighbor_tile) =
-                                river_tile.neighbor_tile(Direction::North, grid)
+                    }
+                    (HexOrientation::Flat, Direction::SouthEast) => {
+                        if let Some(neighbor_tile) =
+                            start_tile.neighbor_tile(Direction::South, grid)
+                        {
+                            river_tile = neighbor_tile
+                        } else {
+                            break;
+                        };
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthEast, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::SouthEast, self)
                             {
-                                if neighbor_tile.terrain_type(self) == TerrainType::Water
-                                    || neighbor_tile.has_river_in_direction(Direction::South, self)
-                                    || neighbor_tile
-                                        .has_river_in_direction(Direction::SouthEast, self)
-                                {
-                                    break;
-                                } else {
-                                    river_tile = neighbor_tile;
-                                }
-                            } else {
                                 break;
                             }
+                        } else {
+                            break;
                         }
-                    },
+                        if let Some(neighbor_tile2) =
+                            river_tile.neighbor_tile(Direction::NorthEast, grid)
+                        {
+                            if neighbor_tile2.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile2.has_river_in_direction(Direction::South, self)
+                            {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    (HexOrientation::Flat, Direction::SouthWest) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::South, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || river_tile.has_river_in_direction(Direction::South, self)
+                                || neighbor_tile.has_river_in_direction(Direction::NorthEast, self)
+                            {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    (HexOrientation::Flat, Direction::West) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::SouthWest, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile.has_river_in_direction(Direction::NorthEast, self)
+                                || neighbor_tile.has_river_in_direction(Direction::SouthEast, self)
+                            {
+                                break;
+                            } else {
+                                river_tile = neighbor_tile;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    (HexOrientation::Flat, Direction::NorthWest) => {
+                        river_tile = start_tile;
+                        river.push(RiverEdge::new(river_tile, this_flow_direction));
+                        if let Some(neighbor_tile) =
+                            river_tile.neighbor_tile(Direction::North, grid)
+                        {
+                            if neighbor_tile.terrain_type(self) == TerrainType::Water
+                                || neighbor_tile.has_river_in_direction(Direction::South, self)
+                                || neighbor_tile.has_river_in_direction(Direction::SouthEast, self)
+                            {
+                                break;
+                            } else {
+                                river_tile = neighbor_tile;
+                            }
+                        } else {
+                            break;
+                        }
+                    } /********** End Flat Hex Orientation And Flow Direction **********/
                 }
             } else {
                 river_tile = start_tile;
@@ -519,9 +491,9 @@ impl TileMap {
             }
         }
         /************ Do river End ************/
-        // Remove the river if it is empty
-        if self.river_list[river_id].is_empty() {
-            self.river_list.pop();
+        // If the river has any river edge, add it to the river list of the map.
+        if !river.is_empty() {
+            self.river_list.push(river);
         }
     }
 
@@ -600,12 +572,10 @@ impl TileMap {
         // An inland corner requires all neighbors in edge directions [0..3] to exist and not be water
         tile_list.retain(|&tile| {
             grid.edge_direction_array()[0..3].iter().all(|&direction| {
-                let neighbor_tile = tile.neighbor_tile(direction, grid);
-                if let Some(neighbor_tile) = neighbor_tile {
-                    neighbor_tile.terrain_type(self) != TerrainType::Water
-                } else {
-                    false
-                }
+                tile.neighbor_tile(direction, grid)
+                    .is_some_and(|neighbor_tile| {
+                        neighbor_tile.terrain_type(self) != TerrainType::Water
+                    })
             })
         });
 
