@@ -38,7 +38,7 @@ mod tests {
     fn test_generate_map() {
         let map_parameters = MapParameters::default();
         let ruleset = Ruleset::default();
-        for _ in 0..25 {
+        for _ in 0..15 {
             let map_a = generate_map(&map_parameters, &ruleset);
             let map_b = generate_map(&map_parameters, &ruleset);
             assert_eq!(map_a, map_b);

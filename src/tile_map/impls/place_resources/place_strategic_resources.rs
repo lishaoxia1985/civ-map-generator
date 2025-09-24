@@ -11,6 +11,7 @@ use crate::{
 };
 
 impl TileMap {
+    /// Places strategic resources on the map.
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
         // Adjust amounts, if applicable, based on Resource Setting.
         let (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt) =

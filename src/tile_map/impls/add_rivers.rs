@@ -4,7 +4,7 @@ use crate::{
     grid::{
         Grid,
         direction::Direction,
-        hex_grid::{HexGrid, hex::HexOrientation},
+        hex_grid::{HexGrid, HexOrientation},
     },
     tile::Tile,
     tile_component::{BaseTerrain, TerrainType},
@@ -12,13 +12,14 @@ use crate::{
 };
 
 impl TileMap {
+    /// Adds rivers to the map.
     pub fn add_rivers(&mut self) {
         let grid = self.world_grid.grid;
 
         let river_source_range_default = 4;
         let sea_water_range_default = 3;
-        // tiles_per_river_edge specifies the number of tiles required before a river edge can appear.
-        // When tiles_per_river_edge is set to 12, it indicates that for every 12 tiles, there can be 1 river edge.
+        // `TILES_PER_RIVER_EDGE` specifies the number of tiles required before a river edge can appear.
+        // When `TILES_PER_RIVER_EDGE` is set to 12, it indicates that for every 12 tiles, there can be 1 river edge.
         const TILES_PER_RIVER_EDGE: u32 = 12;
 
         (0..4).for_each(|index| {

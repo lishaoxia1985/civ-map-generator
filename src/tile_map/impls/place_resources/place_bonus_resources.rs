@@ -11,6 +11,7 @@ use crate::{
 };
 
 impl TileMap {
+    /// Places bonus resources on the map.
     pub fn place_bonus_resources(&mut self, map_parameters: &MapParameters) {
         // Adjust appearance rate per Resource Setting chosen by user.
         let bonus_multiplier = match map_parameters.resource_setting {

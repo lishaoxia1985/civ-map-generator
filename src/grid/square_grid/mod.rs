@@ -1,13 +1,12 @@
 use crate::grid::{
-    Cell, Grid, GridSize, WorldSizeType,
-    direction::Direction,
-    offset_coordinate::OffsetCoordinate,
-    square_grid::square::{Square, SquareLayout},
+    Cell, Grid, GridSize, WorldSizeType, direction::Direction, offset_coordinate::OffsetCoordinate,
 };
 
 use super::{Size, WrapFlags};
 
-pub mod square;
+mod square;
+
+pub use square::*;
 
 #[derive(Clone, Copy)]
 pub struct SquareGrid {

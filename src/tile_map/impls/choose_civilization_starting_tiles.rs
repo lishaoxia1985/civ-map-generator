@@ -4,7 +4,7 @@ use enum_map::{Enum, EnumMap};
 
 use crate::{
     grid::{
-        hex_grid::hex::{HexOrientation, Offset},
+        hex_grid::{HexOrientation, Offset},
         offset_coordinate::OffsetCoordinate,
     },
     map_parameters::{MapParameters, Rectangle},

@@ -6,10 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     grid::{
         Grid, GridSize, Size, WorldSizeType, WrapFlags,
-        hex_grid::{
-            HexGrid,
-            hex::{HexLayout, HexOrientation, Offset},
-        },
+        hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
         offset_coordinate::OffsetCoordinate,
     },
     tile::Tile,
@@ -64,7 +61,7 @@ pub struct MapParameters {
     /// Whether the civilization starting tile must be coastal land.
     ///
     /// - If true, the civilization starting tile only can be coastal land.
-    /// - If false, the civilization starting tile can be any hill/flatland tile.
+    /// - If false, the civilization starting tile can be any hill/flatland tile (including coastal land tiles).
     pub civ_require_coastal_land_start: bool,
     /// The resource setting of the map.
     pub resource_setting: ResourceSetting,
@@ -156,7 +153,7 @@ impl Default for MapParameters {
 /// 1. [`WorldGrid::from_grid`] constructor - Creates from a custom-sized grid,
 ///    automatically determining the [`WorldSizeType`] based on grid dimensions:
 /// ```rust
-/// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
+/// use civ_map_generator::grid::{*,hex_grid::*};
 /// use civ_map_generator::map_parameters::*;
 ///
 /// let grid = HexGrid::new(
@@ -176,7 +173,7 @@ impl Default for MapParameters {
 /// 2. Explicit [`WorldSizeType`] specification - Creates with default grid dimensions
 ///    for a standardized world size:
 /// ```rust
-/// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
+/// use civ_map_generator::grid::{*,hex_grid::*};
 /// use civ_map_generator::map_parameters::*;
 ///
 /// let world_size_type = WorldSizeType::Standard;
@@ -213,7 +210,7 @@ impl WorldGrid {
     /// Direct initialization with the `new` function outside of this pattern is not supported:
     ///
     /// ```rust
-    /// use civ_map_generator::grid::{*,hex_grid::*, hex_grid::hex::*};
+    /// use civ_map_generator::grid::{*,hex_grid::*};
     /// use civ_map_generator::map_parameters::*;
     ///
     /// let world_size_type = WorldSizeType::Standard;

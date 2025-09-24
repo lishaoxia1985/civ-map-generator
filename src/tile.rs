@@ -6,7 +6,7 @@ use crate::{
     grid::{
         Cell, Grid,
         direction::Direction,
-        hex_grid::{HexGrid, hex::Hex},
+        hex_grid::{Hex, HexGrid},
         offset_coordinate::OffsetCoordinate,
     },
     map_parameters::MapParameters,

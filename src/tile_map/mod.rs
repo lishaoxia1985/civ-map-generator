@@ -6,10 +6,7 @@
 //! 2. The map generating methods are defined in the [`impls`] module ( which is the submodule of this module).
 
 use crate::{
-    grid::{
-        direction::Direction,
-        hex_grid::{HexGrid, hex::HexOrientation},
-    },
+    grid::{direction::Direction, hex_grid::*},
     map_parameters::{MapParameters, ResourceSetting, WorldGrid},
     nation::Nation,
     tile::Tile,

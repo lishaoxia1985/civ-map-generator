@@ -22,6 +22,7 @@ use crate::{
 impl TileMap {
     // function AssignStartingPlots:PlaceLuxuries
     /// Place Luxury Resources on the map.
+    ///
     /// Before running this function, [`TileMap::assign_luxury_roles`] function must be run.
     pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let world_size = self.world_grid.world_size_type;

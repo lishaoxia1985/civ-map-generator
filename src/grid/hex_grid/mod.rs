@@ -1,14 +1,12 @@
 use glam::IVec3;
-use hex::{Hex, HexLayout, Offset};
 
-use crate::grid::{
-    Cell, GridSize, WorldSizeType, hex_grid::hex::HexOrientation,
-    offset_coordinate::OffsetCoordinate,
-};
+use crate::grid::{Cell, GridSize, WorldSizeType, offset_coordinate::OffsetCoordinate};
 
 use super::{Grid, Size, WrapFlags, direction::Direction};
 
-pub mod hex;
+mod hex;
+
+pub use hex::*;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub struct HexGrid {
