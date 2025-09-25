@@ -379,7 +379,7 @@ impl TileMap {
                     num_this_luxury_to_place = max(3, num_random_luxury_target.div_ceil(10));
                 } else {
                     // num_random_luxury_types <= 8
-                    let luxury_minimum = max(3, loop_target - i as u32);
+                    let luxury_minimum = max(3, loop_target.saturating_sub(i as u32));
                     let luxury_share_of_remaining = (num_random_luxury_target as f64
                         * random_luxury_ratios_table[num_random_luxury_types - 1][i])
                         .ceil() as u32;
