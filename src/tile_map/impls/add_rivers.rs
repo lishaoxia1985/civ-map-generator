@@ -96,16 +96,10 @@ impl TileMap {
     /// # Arguments
     ///
     /// - `start_tile`: The tile where the river starts.
-    /// - `original_flow_direction`: The original flow direction of the river.\
-    ///   This is the original flow direction at the start of the river.
-    ///
-    /// # Notice
-    ///
-    /// TODO: In original CIV5, the end of the river is water or the edge of the map.
-    /// In this function, we have not implemented that the river flows the edge of the map yet.
-    /// That because when we implement it, we should concern the map parameters.
-    /// For example, hex is Flat or Pointy, map is wrapx or not, map is wrapy or not, etc.
-    /// In original CIV5, we only need to consider the case where the map is WrapX and the hex is pointy.
+    /// - `original_flow_direction`: The original flow direction at the start of the river.
+    ///   - `None`: Algorithm automatically determines initial flow direction (default)
+    ///   - `Some(Direction)`: Forces specific starting flow direction (must be a valid direction
+    ///     from [`Grid::corner_direction_array()`])
     fn do_river(&mut self, start_tile: Tile, original_flow_direction: Option<Direction>) {
         let grid = self.world_grid.grid;
         // This array contains the list of tuples.
@@ -150,7 +144,7 @@ impl TileMap {
 
         let mut start_tile = start_tile;
         let mut original_flow_direction = original_flow_direction;
-        let mut this_flow_direction = None;
+        let mut this_flow_direction = original_flow_direction;
 
         loop {
             let mut river_tile;
@@ -429,19 +423,29 @@ impl TileMap {
                 break;
             }
 
+            // Get all next possible flow directions of the river.
+            let next_possible_flow_directions: Vec<Direction> =
+                if let Some(this_flow_direction) = this_flow_direction {
+                    // If `this_flow_direction` is Some, we can choose at most 2 directions as the next flow direction.
+                    // The next flow direction should not be the opposite of the original flow direction.
+                    next_flow_directions(this_flow_direction, grid)
+                        .into_iter()
+                        .filter(|&flow_direction| {
+                            Some(flow_direction.opposite()) != original_flow_direction
+                        })
+                        .collect()
+                } else {
+                    // If `this_flow_direction` is None, we can choose 6 directions as the next flow direction.
+                    grid.corner_direction_array().to_vec()
+                };
+
             // Get next possible flow direction and relative neighbor tile iterator to calculate the best flow direction.
-            let next_flow_direction_and_neighbor_tile_iter =
+            // NOTICE: When the river flows to the edge of the map, relative neighbor tile may not exist.
+            let next_possible_flow_direction_and_neighbor_tile_iter =
                 flow_direction_and_neighbor_tile_direction
                     .into_iter()
                     .filter_map(|(flow_direction, direction)| {
-                        // 1. If `this_flow_direction` is None, we can chooose 6 directions as the next flow direction.
-                        // 2. If `this_flow_direction` is not None, we can choose at most 2 directions as the next flow direction.
-                        //    The next flow direction should not be the opposite of the original flow direction.
-                        if this_flow_direction.is_none_or(|this_flow_direction: Direction| {
-                            next_flow_directions(this_flow_direction, grid)
-                                .contains(&flow_direction)
-                                && Some(flow_direction.opposite()) != original_flow_direction
-                        }) {
+                        if next_possible_flow_directions.contains(&flow_direction) {
                             river_tile
                                 .neighbor_tile(direction, grid)
                                 .map(|neighbor_tile| (flow_direction, neighbor_tile))
@@ -450,16 +454,17 @@ impl TileMap {
                         }
                     });
 
+            /********** Get the best flow direction **********/
             // We always choose flow direction with the lowest value.
             let mut best_flow_direction = None;
-
             let mut best_value = i32::MAX;
-            next_flow_direction_and_neighbor_tile_iter.for_each(
+
+            next_possible_flow_direction_and_neighbor_tile_iter.for_each(
                 |(flow_direction, neighbor_tile)| {
                     let mut value = self.river_value_at_tile(neighbor_tile);
                     // That will make `flow_direction` equal to `original_flow_direction` is more likely to be preferred.
                     if Some(flow_direction) == original_flow_direction {
-                        value = (value * 3) / 4;
+                        value = value * 3 / 4;
                     }
                     if value < best_value {
                         best_value = value;
@@ -467,20 +472,29 @@ impl TileMap {
                     }
                 },
             );
+            /********** End get the best flow direction **********/
 
-            /* Tackle with the situation when river flows to the edge of map */
-
-            // That will run when best_flow_direction is None.
-            // When the river flows to the edge of the map, `flow_direction_and_neighbor_tile` will be empty,
-            //  in this case, best_flow_direction will be None.
-
-            /* TODO: This code handles the situation when the river flows to the edge of the map,
-            but we have not implemented this part yet, so we will ignore it here.
-            When we implement it, we should concern the map parameters.
-            For example, hex is Flat or Pointy, map is wrapx or not, map is wrapy or not, etc.
-            */
-
-            /* End tackle with the situation when river flows to the edge of map */
+            /********** Tackle with the situation when river flows to the edge of map **********/
+            // When the river flows to the edge of the map,
+            // in this case, `flow_direction_and_neighbor_tile` may be empty,
+            // we can't choose any direction as `best_flow_direction` according to the algorithm above.
+            // And then we should tackle with this situation.
+            if best_flow_direction.is_none()
+                && let Some(original_flow_direction) = original_flow_direction
+            {
+                if next_possible_flow_directions.contains(&original_flow_direction) {
+                    // If `original_flow_direction` is in `next_possible_flow_directions`,
+                    // we choose `original_flow_direction` as `best_flow_direction`.
+                    best_flow_direction = Some(original_flow_direction);
+                } else {
+                    // If `original_flow_direction` is not in `next_possible_flow_directions`,,
+                    // we randomly choose one direction from `next_possible_flow_directions` as `best_flow_direction`.
+                    best_flow_direction = next_possible_flow_directions
+                        .choose(&mut self.random_number_generator)
+                        .copied();
+                }
+            }
+            /********** End tackle with the situation when river flows to the edge of map **********/
 
             if best_flow_direction.is_some() {
                 original_flow_direction = original_flow_direction.or(best_flow_direction);

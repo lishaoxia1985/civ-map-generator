@@ -23,8 +23,6 @@ This project introduces several key innovations:
    This project only supports to generate fractal and pangaea map. we will add more map generation algorithm in the future.
 2. **No support to square grid**  
    This project only supports hex grid. We will add support to square grid in the future.
-3. **The algorithm to add rivers is not perfect**  
-   The algorithm to add rivers is not perfect. We should tackle with the situation when river flows to the edge of map.
 
 ## Future Plans
 
@@ -32,9 +30,7 @@ This project introduces several key innovations:
    We will add more map generation algorithm in the future.
 2. **support to square grid**  
    We will add support to square grid in the future.
-3. **Improve the algorithm to add rivers**  
-   We will improve the algorithm to add rivers in the future.
-4. **Optimize the JSON file as ruleset information**  
+3. **Optimize the JSON file as ruleset information**  
    We will optimize the JSON file as ruleset information in the future. In folder `src/jsons`, only a litter files are used as ruleset information to generate map. And Some map parameters are hard-coded in the code. We will optimize it in the future.
 
 ## Reference project
