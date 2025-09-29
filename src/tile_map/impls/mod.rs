@@ -14,6 +14,7 @@ mod generate_regions;
 mod generate_terrain_types;
 mod place_city_states;
 mod place_resources;
+mod shift_terrain_types;
 
 pub(crate) use add_features::*;
 pub(crate) use add_rivers::*;
@@ -29,3 +30,4 @@ pub(crate) use generate_regions::*;
 pub(crate) use generate_terrain_types::*;
 pub(crate) use place_city_states::*;
 pub(crate) use place_resources::*;
+pub(crate) use shift_terrain_types::*;

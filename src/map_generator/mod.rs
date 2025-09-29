@@ -19,6 +19,10 @@ pub trait Generator {
         self.tile_map_mut().generate_terrain_types(map_parameters);
     }
 
+    fn shift_terrain_types(&mut self) {
+        self.tile_map_mut().shift_terrain_types();
+    }
+
     fn recalculate_areas(&mut self, ruleset: &Ruleset) {
         self.tile_map_mut().recalculate_areas(ruleset);
     }
@@ -109,6 +113,8 @@ pub trait Generator {
 
         /********** Process 1: Generate Terrain Types, Base Terrains, Features and add Rivers **********/
         map.generate_terrain_types(map_parameters);
+
+        map.shift_terrain_types();
 
         map.recalculate_areas(ruleset);
 
