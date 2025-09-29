@@ -116,8 +116,11 @@ impl TileMap {
     ///
     /// # Notice
     ///
-    /// Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
-    /// That means if [`MapParameters::MAX_CIVILIZATION_NUM`] is greater than 22, we don't need to rewrite this function.
+    /// - Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
+    ///   That means if [`MapParameters::MAX_CIVILIZATION_NUM`] is greater than 22, we don't need to rewrite this function.
+    /// - In the original CIV5, the `chop_percent` values are intentionally set slightly lower than needed. This design choice helps ensure that the final results average out closer to the intended target.\
+    ///   In our implementation, we use exact values for `chop_percent`, and use a special algorithm in [`Region::chop_into_two_regions`] to achieve more accurate results.
+    ///   Please refer to [`Region::chop_into_two_regions`] for more details.
     fn divide_into_regions(&mut self, divisions_num: u32, region: Region) {
         let grid = self.world_grid.grid;
 
@@ -682,6 +685,11 @@ pub struct Region {
 
 impl Region {
     fn new(rectangle: Rectangle, landmass_id: Option<usize>, fertility_list: Vec<i32>) -> Self {
+        debug_assert!(
+            fertility_list.len() == rectangle.width() as usize * rectangle.height() as usize,
+            "The length of fertility_list must be equal to the area of the rectangle."
+        );
+
         let fertility_sum = fertility_list.iter().sum();
         let tile_count = fertility_list.len() as i32;
 
@@ -730,12 +738,11 @@ impl Region {
     // function AssignStartingPlots:ChopIntoTwoRegions
     /// Divide the region into two smaller regions.
     ///
-    /// At first, we check if the region is taller or wider. If it is taller, we divide it into two regions horizontally. If it is wider, we divide it vertically.
+    /// At first, we check if the region is taller or wider. If it is taller, we divide it into two top and bottom regions.
+    /// If it is wider, we divide it into two left and right regions.
     /// The first region will have a fertility sum that is `chop_percent` percent of the total fertility sum of the region.
     /// The second region will have the remaining fertility sum.
     fn chop_into_two_regions(&self, grid: HexGrid, chop_percent: f32) -> (Region, Region) {
-        let taller = self.rectangle.height() > self.rectangle.width();
-
         // Now divide the region.
         let target_fertility = (self.fertility_sum as f32 * chop_percent / 100.) as i32;
 
@@ -750,28 +757,26 @@ impl Region {
         let second_region_width;
         let second_region_height;
 
-        let mut first_region_fertility_sum = 0;
-        // We don't need to calculate the fertility of the second region,
-        // because it will be automatically calculated when we create 'second_region'.
-        /* let mut second_region_fertility_sum = 0; */
-        let mut first_region_fertility_list = Vec::new();
-        let mut second_region_fertility_list = Vec::new();
+        let first_region_fertility_list;
+        let second_region_fertility_list;
 
-        if taller {
+        let mut first_region_fertility_sum = 0;
+
+        // Decide whether to divide the top/bottom or left/right region.
+        if self.rectangle.height() > self.rectangle.width() {
             first_region_width = self.rectangle.width();
             second_region_west_x = self.rectangle.west_x();
             second_region_width = self.rectangle.width();
 
-            let rect_y = (0..self.rectangle.height())
+            let mut current_row_fertility = 0;
+
+            let mut rect_y = (0..self.rectangle.height())
                 .find(|&y| {
                     // Calculate the fertility of the current row
-                    let current_row_fertility: i32 = (0..self.rectangle.width())
+                    current_row_fertility = (0..self.rectangle.width())
                         .map(|x| {
                             let fert_index = y * self.rectangle.width() + x;
-                            let tile_fertility = self.fertility_list[fert_index as usize];
-                            // Record this plot's fertility in a new fertility table. (Needed for further subdivisions).
-                            first_region_fertility_list.push(tile_fertility);
-                            tile_fertility
+                            self.fertility_list[fert_index as usize]
                         })
                         .sum();
 
@@ -781,38 +786,38 @@ impl Region {
                     // Check if the total fertility of the first region has reached the target fertility
                     first_region_fertility_sum >= target_fertility
                 })
-                .expect("No suitable row found for chop_into_two_regions");
+                .expect("No suitable row found for `chop_into_two_regions`");
+
+            // Decide whether to include the current row in the first region or the second region
+            // based on which choice gets us closer to the target fertility.
+            if (first_region_fertility_sum - target_fertility)
+                > (target_fertility - (first_region_fertility_sum - current_row_fertility))
+            {
+                rect_y -= 1;
+                // Although `first_region_fertility_sum` changes, but we don't need to use it anymore. So we comment out the code that updates it.
+                // first_region_fertility_sum -= current_row_fertility;
+            };
 
             first_region_height = rect_y + 1;
             second_region_south_y = self.rectangle.south_y() + first_region_height as i32;
             second_region_height = self.rectangle.height() - first_region_height;
 
-            second_region_fertility_list
-                .reserve((second_region_width * second_region_height) as usize);
-
-            for rect_y in first_region_height..self.rectangle.height() {
-                for rect_x in 0..self.rectangle.width() {
-                    let fert_index = rect_y * self.rectangle.width() + rect_x;
-                    let tile_fertility = self.fertility_list[fert_index as usize];
-
-                    // Record this plot in a new fertility table. (Needed for further subdivisions).
-                    second_region_fertility_list.push(tile_fertility);
-
-                    // We don't need to calculate the fertility of the second region,
-                    // because it will be automatically calculated when we create 'second_region'.
-                    // Add this plot's fertility to the region total so far
-                    /* second_region_fertility_sum += tile_fertility; */
-                }
-            }
+            let (first, second) = self
+                .fertility_list
+                .split_at(first_region_width as usize * first_region_height as usize);
+            first_region_fertility_list = first.to_vec();
+            second_region_fertility_list = second.to_vec();
         } else {
             first_region_height = self.rectangle.height();
             second_region_south_y = self.rectangle.south_y();
             second_region_height = self.rectangle.height();
 
-            let rect_x = (0..self.rectangle.width())
+            let mut current_column_fertility = 0;
+
+            let mut rect_x = (0..self.rectangle.width())
                 .find(|&x| {
                     // Calculate the fertility of the current column
-                    let current_column_fertility: i32 = (0..self.rectangle.height())
+                    current_column_fertility = (0..self.rectangle.height())
                         .map(|y| {
                             let fert_index = y * self.rectangle.width() + x;
                             self.fertility_list[fert_index as usize]
@@ -825,41 +830,41 @@ impl Region {
                     // Check if the total fertility of the first region has reached the target fertility
                     first_region_fertility_sum >= target_fertility
                 })
-                .expect("No suitable column found for chop_into_two_regions");
+                .expect("No suitable column found for `chop_into_two_regions`");
+
+            // Decide whether to include the current column in the first region or the second region
+            // based on which choice gets us closer to the target fertility.
+            if (first_region_fertility_sum - target_fertility)
+                > (target_fertility - (first_region_fertility_sum - current_column_fertility))
+            {
+                rect_x -= 1;
+                // Although `first_region_fertility_sum` changes, but we don't need to use it anymore. So we comment out the code that updates it.
+                // first_region_fertility
+            }
 
             first_region_width = rect_x + 1;
             second_region_west_x = self.rectangle.west_x() + first_region_width as i32;
             second_region_width = self.rectangle.width() - first_region_width;
 
-            second_region_fertility_list
-                .reserve((second_region_width * second_region_height) as usize);
+            // Divide first region (0..first_region_width)
+            first_region_fertility_list = (0..self.rectangle.height())
+                .flat_map(|rect_y| {
+                    (0..first_region_width).map(move |rect_x| {
+                        let fert_index = rect_y * self.rectangle.width() + rect_x;
+                        self.fertility_list[fert_index as usize]
+                    })
+                })
+                .collect::<Vec<_>>();
 
-            // Process the second region
-            for rect_y in 0..self.rectangle.height() {
-                for rect_x in first_region_width..self.rectangle.width() {
-                    let fert_index = rect_y * self.rectangle.width() + rect_x;
-                    let tile_fertility = self.fertility_list[fert_index as usize];
-
-                    // Record this plot in a new fertility table. (Needed for further subdivisions).
-                    second_region_fertility_list.push(tile_fertility);
-
-                    // We don't need to calculate the fertility of the second region,
-                    // because it will be automatically calculated when we create 'second_region'.
-                    // Add this plot's fertility to the region total so far
-                    /* second_region_fertility_sum += tile_fertility; */
-                }
-            }
-
-            // Process the first region
-            for rect_y in 0..self.rectangle.height() {
-                for rect_x in 0..first_region_width {
-                    let fert_index = rect_y * self.rectangle.width() + rect_x;
-                    let tile_fertility = self.fertility_list[fert_index as usize];
-
-                    // Record this plot in a new fertility table. (Needed for further subdivisions).
-                    first_region_fertility_list.push(tile_fertility);
-                }
-            }
+            // Divide second region (first_region_width..width)
+            second_region_fertility_list = (0..self.rectangle.height())
+                .flat_map(|rect_y| {
+                    (first_region_width..self.rectangle.width()).map(move |rect_x| {
+                        let fert_index = rect_y * self.rectangle.width() + rect_x;
+                        self.fertility_list[fert_index as usize]
+                    })
+                })
+                .collect::<Vec<_>>();
         }
 
         let first_region_rectangle = Rectangle::new(
