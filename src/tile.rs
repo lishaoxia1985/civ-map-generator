@@ -78,7 +78,7 @@ impl Tile {
     ///
     /// # Panics
     /// This method will panic if the tile is out of bounds for the given map size.
-    pub fn to_hex_coordinate(&self, grid: HexGrid) -> Hex {
+    pub fn to_hex(&self, grid: HexGrid) -> Hex {
         let offset_coordinate = self.to_offset(grid);
         Hex::from_offset(offset_coordinate, grid.layout.orientation, grid.offset)
     }
@@ -254,18 +254,6 @@ impl Tile {
     pub fn tiles_in_distance(&self, distance: u32, grid: HexGrid) -> impl Iterator<Item = Self> {
         grid.cells_within_distance(self.to_cell(), distance)
             .map(Self::from_cell)
-    }
-
-    pub fn pixel_position(&self, grid: HexGrid) -> [f32; 2] {
-        // We donn't need to check if the tile is valid here, because the caller should have done that.
-        let hex = self.to_hex_coordinate(grid);
-        grid.layout.hex_to_pixel(hex).to_array()
-    }
-
-    pub fn corner_position(&self, direction: Direction, grid: HexGrid) -> [f32; 2] {
-        // We donn't need to check if the tile is valid here, because the caller should have done that.
-        let hex = self.to_hex_coordinate(grid);
-        grid.layout.corner(hex, direction).to_array()
     }
 
     /// Checks if there is a river on the current tile.

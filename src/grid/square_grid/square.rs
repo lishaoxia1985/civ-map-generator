@@ -1,7 +1,4 @@
-use std::{
-    array,
-    ops::{Add, Sub},
-};
+use std::ops::{Add, Sub};
 
 use glam::{IVec2, Vec2};
 
@@ -165,6 +162,7 @@ impl SquareLayout {
         }
     }
 
+    /// Returns the pixel coordinates of the center of the given square coordinates.
     pub fn square_to_pixel(self, square: Square) -> Vec2 {
         match self.orientation {
             SquareOrientation::Orthogonal => {
@@ -173,23 +171,31 @@ impl SquareLayout {
         }
     }
 
-    pub fn pixel_to_square(self, pixel_position: Vec2) -> Square {
-        let pt: Vec2 = (pixel_position - Vec2::from(self.origin)) / Vec2::from(self.size);
+    /// Returns the square coordinates that contains the given pixel position.
+    pub fn pixel_to_square(self, pixel_position: [f32; 2]) -> Square {
+        let pt: Vec2 =
+            (Vec2::from(pixel_position) - Vec2::from(self.origin)) / Vec2::from(self.size);
         match self.orientation {
             SquareOrientation::Orthogonal => Square((pt + Vec2::new(0.5, 0.5)).floor().as_ivec2()),
         }
     }
 
-    pub fn corner(self, square: Square, direction: Direction) -> Vec2 {
+    /// Returns the corner pixel coordinates of the given square coordinates according to corner direction.
+    pub fn corner(self, square: Square, direction: Direction) -> [f32; 2] {
         let center = self.square_to_pixel(square);
-        center + self.corner_offset(direction)
+        (center + self.corner_offset(direction)).to_array()
     }
 
-    pub fn all_corners(self, square: Square) -> [Vec2; 4] {
-        let corner_array = self.orientation.corner_direction();
-        array::from_fn(|i| self.corner(square, corner_array[i]))
+    /// Retrieves all 4 corner pixel coordinates of the given square coordinates.
+    ///
+    /// The returned array is ordered and usually used to draw a square.
+    pub fn all_corners(self, square: Square) -> [[f32; 2]; 4] {
+        self.orientation
+            .corner_direction()
+            .map(|direction| self.corner(square, direction))
     }
 
+    #[inline(always)]
     fn corner_offset(self, direction: Direction) -> Vec2 {
         let offset_value = match self.orientation {
             SquareOrientation::Orthogonal => match direction {

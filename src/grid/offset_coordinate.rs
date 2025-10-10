@@ -27,7 +27,7 @@ use glam::IVec2;
 ///
 /// By convention, we typically store coordinates normalized to `x ∈ [0, width)` and `y ∈ [0, height)`.
 /// If you want to convert a grid coordinate to a normalized offset coordinate, see [`Grid::normalize_offset`](crate::grid::Grid::normalize_offset).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct OffsetCoordinate(pub IVec2);
 
 impl OffsetCoordinate {

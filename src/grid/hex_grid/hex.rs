@@ -2,7 +2,6 @@
 
 use core::f32::consts::{FRAC_PI_3, FRAC_PI_6};
 use std::{
-    array,
     cmp::{max, min},
     ops::{Add, Sub},
 };
@@ -182,6 +181,7 @@ impl Hex {
     }
 
     /// Rounds floating point coordinates to [`Hex`].
+    #[inline(always)]
     pub fn round(fractional_hex: Vec2) -> Self {
         let mut rounded = fractional_hex.round();
 
@@ -253,6 +253,7 @@ impl HexLayout {
         }
     }
 
+    /// Returns the pixel coordinates of the center of the given hexagonal coordinates.
     pub fn hex_to_pixel(self, hex: Hex) -> Vec2 {
         let m = self.orientation.conversion_matrix();
         let size = Vec2::from(self.size);
@@ -262,29 +263,34 @@ impl HexLayout {
         pixel_position + origin
     }
 
-    pub fn pixel_to_hex(self, pixel_position: Vec2) -> Hex {
+    /// Returns the hexagonal coordinates that contains the given pixel position.
+    pub fn pixel_to_hex(self, pixel_position: [f32; 2]) -> Hex {
         let m = self.orientation.conversion_matrix();
         let size = Vec2::from(self.size);
         let origin = Vec2::from(self.origin);
-        let pt = (pixel_position - origin) / size;
+        let pt = (Vec2::from(pixel_position) - origin) / size;
         let mat2 = m.inverse_matrix;
         let fractional_hex = mat2 * pt;
         Hex::round(fractional_hex)
     }
 
-    /// Get the corner pixel coordinates of the given hexagonal coordinates according to corner direction
-    pub fn corner(self, hex: Hex, direction: Direction) -> Vec2 {
+    /// Returns the corner pixel coordinates of the given hexagonal coordinates according to corner direction.
+    pub fn corner(self, hex: Hex, direction: Direction) -> [f32; 2] {
         let center: Vec2 = self.hex_to_pixel(hex);
         let offset: Vec2 = self.corner_offset(direction);
-        center + offset
+        (center + offset).to_array()
     }
 
-    /// Retrieves all 6 corner pixel coordinates of the given hexagonal coordinates
-    pub fn all_corners(self, hex: Hex) -> [Vec2; 6] {
-        let corner_array = self.orientation.corner_direction();
-        array::from_fn(|i| self.corner(hex, corner_array[i]))
+    /// Retrieves all 6 corner pixel coordinates of the given hexagonal coordinates.
+    ///
+    /// The returned array is ordered and usually used to draw a hexagon.
+    pub fn all_corners(self, hex: Hex) -> [[f32; 2]; 6] {
+        self.orientation
+            .corner_direction()
+            .map(|direction| self.corner(hex, direction))
     }
 
+    #[inline(always)]
     fn corner_offset(self, direction: Direction) -> Vec2 {
         let size: Vec2 = Vec2::from(self.size);
         let angle: f32 = self.orientation.corner_angle(direction);
@@ -651,13 +657,21 @@ mod tests {
             size: [10.0, 15.0],
             origin: [35.0, 71.0],
         };
-        equal_hex("layout", h, flat.pixel_to_hex(flat.hex_to_pixel(h)));
+        equal_hex(
+            "layout",
+            h,
+            flat.pixel_to_hex(flat.hex_to_pixel(h).to_array()),
+        );
         let pointy: HexLayout = HexLayout {
             orientation: HexOrientation::Pointy,
             size: [10.0, 15.0],
             origin: [35.0, 71.0],
         };
-        equal_hex("layout", h, pointy.pixel_to_hex(pointy.hex_to_pixel(h)));
+        equal_hex(
+            "layout",
+            h,
+            pointy.pixel_to_hex(pointy.hex_to_pixel(h).to_array()),
+        );
     }
 
     #[test]
