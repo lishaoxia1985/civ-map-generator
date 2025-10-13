@@ -210,6 +210,7 @@ impl SquareLayout {
     }
 }
 
+#[repr(u8)]
 #[derive(Clone, Copy, Debug)]
 pub enum SquareOrientation {
     /// 🔳
@@ -260,45 +261,51 @@ impl SquareOrientation {
     #[inline]
     /// Get the index of the direction of the [`Square`] corner in the array of all the corner direction
     /// # Panics
-    /// Panics if the direction is not a valid corner direction for the hexagon orientation
-    pub fn corner_index(self, direction: Direction) -> usize {
-        self.corner_direction()
-            .iter()
-            .position(|&x| x == direction)
-            .expect("The direction is not a valid corner direction for the hexagon orientation")
+    /// Panics if the direction is not a valid corner direction for the square orientation
+    pub const fn corner_index(self, direction: Direction) -> usize {
+        match (self, direction) {
+            (SquareOrientation::Orthogonal, Direction::NorthEast) => 0,
+            (SquareOrientation::Orthogonal, Direction::SouthEast) => 1,
+            (SquareOrientation::Orthogonal, Direction::SouthWest) => 2,
+            (SquareOrientation::Orthogonal, Direction::NorthWest) => 3,
+            _ => panic!("The direction is not a valid corner direction for the square orientation"),
+        }
     }
 
     #[inline]
     /// Get the index of the direction of the `Square` edge in the array of all the edge direction
     /// # Panics
-    /// Panics if the direction is not a valid edge direction for the hexagon orientation
-    pub fn edge_index(self, direction: Direction) -> usize {
-        self.edge_direction()
-            .iter()
-            .position(|&x| x == direction)
-            .expect("The direction is not a valid edge direction for the hexagon orientation")
+    /// Panics if the direction is not a valid edge direction for the square orientation
+    pub const fn edge_index(self, direction: Direction) -> usize {
+        match (self, direction) {
+            (SquareOrientation::Orthogonal, Direction::East) => 0,
+            (SquareOrientation::Orthogonal, Direction::South) => 1,
+            (SquareOrientation::Orthogonal, Direction::West) => 2,
+            (SquareOrientation::Orthogonal, Direction::North) => 3,
+            _ => panic!("The direction is not a valid edge direction for the square orientation"),
+        }
     }
 
     /// Returns the next corner direction in clockwise order
-    pub fn corner_clockwise(self, corner_direction: Direction) -> Direction {
+    pub const fn corner_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 1) % 4]
     }
 
     /// Returns the next edge direction in clockwise order
-    pub fn edge_clockwise(self, edge_direction: Direction) -> Direction {
+    pub const fn edge_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 1) % 4]
     }
 
     /// Returns the next corner direction in counter clockwise order
-    pub fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
+    pub const fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 3) % 4]
     }
 
     /// Returns the next edge direction in counter clockwise order
-    pub fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
+    pub const fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 3) % 4]
     }

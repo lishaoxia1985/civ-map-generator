@@ -172,14 +172,6 @@ impl Hex {
         hex_list
     }
 
-    pub fn hex_rotate_left(self) -> Self {
-        Self(-IVec2::new(self.z(), self.0.x))
-    }
-
-    pub fn hex_rotate_right(self) -> Self {
-        Self(-IVec2::new(self.0.y, self.z()))
-    }
-
     /// Rounds floating point coordinates to [`Hex`].
     #[inline(always)]
     pub fn round(fractional_hex: Vec2) -> Self {
@@ -298,16 +290,6 @@ impl HexLayout {
     }
 }
 
-pub fn hex_linedraw(a: Hex, b: Hex) -> Vec<Hex> {
-    let n: i32 = a.distance_to(b);
-    let a_nudge = a.0.as_vec2() + Vec2::new(1e-06, 1e-06);
-    let b_nudge = b.0.as_vec2() + Vec2::new(1e-06, 1e-06);
-    let step: f32 = 1.0 / max(n, 1) as f32;
-    (0..=n)
-        .map(|i| Hex::round(a_nudge.lerp(b_nudge, step * i as f32)))
-        .collect()
-}
-
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Offset {
     Even = 1,
@@ -323,6 +305,7 @@ pub struct ConversionMatrix {
     pub inverse_matrix: Mat2,
 }
 
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum HexOrientation {
     /// ⬢, [`Hex`] is pointy-topped
@@ -419,44 +402,76 @@ impl HexOrientation {
     /// Get the index of the direction of the [`Hex`] corner in the array of all the corner direction
     /// # Panics
     /// Panics if the direction is not a valid corner direction for the hexagon orientation
-    pub fn corner_index(self, direction: Direction) -> usize {
-        self.corner_direction()
-            .iter()
-            .position(|&x| x == direction)
-            .expect("The direction is not a valid corner direction for the hexagon orientation")
+    pub const fn corner_index(self, direction: Direction) -> usize {
+        match (self, direction) {
+            (HexOrientation::Pointy, Direction::NorthEast) => 0,
+            (HexOrientation::Pointy, Direction::SouthEast) => 1,
+            (HexOrientation::Pointy, Direction::South) => 2,
+            (HexOrientation::Pointy, Direction::SouthWest) => 3,
+            (HexOrientation::Pointy, Direction::NorthWest) => 4,
+            (HexOrientation::Pointy, Direction::North) => 5,
+            (HexOrientation::Pointy, Direction::East | Direction::West) => {
+                panic!("The direction is not a valid corner direction for the hexagon orientation")
+            }
+            (HexOrientation::Flat, Direction::East) => 0,
+            (HexOrientation::Flat, Direction::SouthEast) => 1,
+            (HexOrientation::Flat, Direction::SouthWest) => 2,
+            (HexOrientation::Flat, Direction::West) => 3,
+            (HexOrientation::Flat, Direction::NorthWest) => 4,
+            (HexOrientation::Flat, Direction::NorthEast) => 5,
+            (HexOrientation::Flat, Direction::North | Direction::South) => {
+                panic!("The direction is not a valid corner direction for the hexagon orientation")
+            }
+        }
     }
 
     #[inline]
     /// Get the index of the direction of the `Hex` edge in the array of all the edge direction
     /// # Panics
     /// Panics if the direction is not a valid edge direction for the hexagon orientation
-    pub fn edge_index(self, direction: Direction) -> usize {
-        self.edge_direction()
-            .iter()
-            .position(|&x| x == direction)
-            .expect("The direction is not a valid edge direction for the hexagon orientation")
+    pub const fn edge_index(self, direction: Direction) -> usize {
+        match (self, direction) {
+            (HexOrientation::Pointy, Direction::East) => 0,
+            (HexOrientation::Pointy, Direction::SouthEast) => 1,
+            (HexOrientation::Pointy, Direction::SouthWest) => 2,
+            (HexOrientation::Pointy, Direction::West) => 3,
+            (HexOrientation::Pointy, Direction::NorthWest) => 4,
+            (HexOrientation::Pointy, Direction::NorthEast) => 5,
+            (HexOrientation::Pointy, Direction::North | Direction::South) => {
+                panic!("The direction is not a valid edge direction for the hexagon orientation")
+            }
+            (HexOrientation::Flat, Direction::NorthEast) => 0,
+            (HexOrientation::Flat, Direction::SouthEast) => 1,
+            (HexOrientation::Flat, Direction::South) => 2,
+            (HexOrientation::Flat, Direction::SouthWest) => 3,
+            (HexOrientation::Flat, Direction::NorthWest) => 4,
+            (HexOrientation::Flat, Direction::North) => 5,
+            (HexOrientation::Flat, Direction::East | Direction::West) => {
+                panic!("The direction is not a valid edge direction for the hexagon orientation")
+            }
+        }
     }
 
     /// Returns the next corner direction in clockwise order
-    pub fn corner_clockwise(self, corner_direction: Direction) -> Direction {
+    pub const fn corner_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 1) % 6]
     }
 
     /// Returns the next edge direction in clockwise order
-    pub fn edge_clockwise(self, edge_direction: Direction) -> Direction {
+    pub const fn edge_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 1) % 6]
     }
 
     /// Returns the next corner direction in counter clockwise order
-    pub fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
+    pub const fn corner_counter_clockwise(self, corner_direction: Direction) -> Direction {
         let corner_index = self.corner_index(corner_direction);
         self.corner_direction()[(corner_index + 5) % 6]
     }
 
     /// Returns the next edge direction in counter clockwise order
-    pub fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
+    pub const fn edge_counter_clockwise(self, edge_direction: Direction) -> Direction {
         let edge_index = self.edge_index(edge_direction);
         self.edge_direction()[(edge_index + 5) % 6]
     }
@@ -531,7 +546,6 @@ mod tests {
 
     use super::{
         Direction, DoubledCoordinate, Hex, HexLayout, HexOrientation, Offset, OffsetCoordinate,
-        hex_linedraw,
     };
 
     pub fn equal_hex(name: &str, a: Hex, b: Hex) {
@@ -592,24 +606,6 @@ mod tests {
     }
 
     #[test]
-    pub fn test_hex_rotate_right() {
-        equal_hex(
-            "hex_rotate_right",
-            Hex::new(1, -3).hex_rotate_right(),
-            Hex::new(3, -2),
-        );
-    }
-
-    #[test]
-    pub fn test_hex_rotate_left() {
-        equal_hex(
-            "hex_rotate_left",
-            Hex::new(1, -3).hex_rotate_left(),
-            Hex::new(-2, -1),
-        );
-    }
-
-    #[test]
     pub fn test_hex_round() {
         let a = Vec2::ZERO;
         let b = Vec2::new(1.0, -1.0);
@@ -630,22 +626,6 @@ mod tests {
             "hex_round 5",
             Hex::round(c),
             Hex::round(a * 0.3 + b * 0.3 + c * 0.4),
-        );
-    }
-
-    #[test]
-    pub fn test_hex_linedraw() {
-        equal_hex_array(
-            "hex_linedraw",
-            vec![
-                Hex(IVec2::ZERO),
-                Hex::new(0, -1),
-                Hex::new(0, -2),
-                Hex::new(1, -3),
-                Hex::new(1, -4),
-                Hex::new(1, -5),
-            ],
-            hex_linedraw(Hex(IVec2::ZERO), Hex::new(1, -5)),
         );
     }
 

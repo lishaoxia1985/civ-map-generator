@@ -50,18 +50,26 @@ impl Grid for SquareGrid {
         let width = self.size.width;
         let height = self.size.height;
 
-        let [min_offset_x, min_offset_y] =
-            self.layout.square_to_pixel(Square::new(0, 0)).to_array();
+        let min_offset = self.layout.square_to_pixel(Square::new(0, 0));
 
-        let [max_offset_x, max_offset_y] = self
+        let max_offset = self
             .layout
-            .square_to_pixel(Square::new(width as i32 - 1, height as i32 - 1))
-            .to_array();
+            .square_to_pixel(Square::new(width as i32 - 1, height as i32 - 1));
 
-        [
-            (min_offset_x + max_offset_x) / 2.,
-            (min_offset_y + max_offset_y) / 2.,
-        ]
+        ((min_offset + max_offset) / 2.0).into()
+    }
+
+    fn left_bottom(&self) -> [f32; 2] {
+        self.layout.square_to_pixel(Square::new(0, 0)).to_array()
+    }
+
+    fn right_top(&self) -> [f32; 2] {
+        let width = self.size.width;
+        let height = self.size.height;
+
+        self.layout
+            .square_to_pixel(Square::new(width as i32 - 1, height as i32 - 1))
+            .to_array()
     }
 
     fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell> {

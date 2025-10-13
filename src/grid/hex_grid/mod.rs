@@ -1,4 +1,4 @@
-use glam::IVec3;
+use glam::{IVec3, Vec2};
 
 use crate::grid::{Cell, GridSize, WorldSizeType, offset_coordinate::OffsetCoordinate};
 
@@ -65,19 +65,19 @@ impl Grid for HexGrid {
         let width = self.size.width;
         let height = self.size.height;
 
-        let bottom_left_offset_coordinates = [
+        let left_bottom_offset_coordinates = [
             OffsetCoordinate::new(0, 0),
             OffsetCoordinate::new(1, 0),
             OffsetCoordinate::new(0, 1),
         ];
 
-        let (min_offset_x, min_offset_y) = bottom_left_offset_coordinates.into_iter().fold(
-            (0.0_f32, 0.0_f32),
-            |(min_offset_x, min_offset_y), offset_coordinate| {
+        let min_offset = left_bottom_offset_coordinates.into_iter().fold(
+            Vec2::splat(0.0),
+            |min_offset, offset_coordinate| {
                 let hex = Hex::from_offset(offset_coordinate, self.layout.orientation, self.offset);
 
-                let [offset_x, offset_y] = self.layout.hex_to_pixel(hex).to_array();
-                (min_offset_x.min(offset_x), min_offset_y.min(offset_y))
+                let offset = self.layout.hex_to_pixel(hex);
+                offset.min(min_offset)
             },
         );
 
@@ -87,20 +87,38 @@ impl Grid for HexGrid {
             OffsetCoordinate::from([width - 1, height - 2]),
         ];
 
-        let (max_offset_x, max_offset_y) = top_right_offset_coordinates.into_iter().fold(
-            (0.0_f32, 0.0_f32),
-            |(max_offset_x, max_offset_y), offset_coordinate| {
+        let max_offset = top_right_offset_coordinates.into_iter().fold(
+            Vec2::splat(0.0),
+            |max_offset, offset_coordinate| {
                 let hex = Hex::from_offset(offset_coordinate, self.layout.orientation, self.offset);
 
-                let [offset_x, offset_y] = self.layout.hex_to_pixel(hex).to_array();
-                (max_offset_x.max(offset_x), max_offset_y.max(offset_y))
+                let offset = self.layout.hex_to_pixel(hex);
+                offset.max(max_offset)
             },
         );
 
-        [
-            (min_offset_x + max_offset_x) / 2.,
-            (min_offset_y + max_offset_y) / 2.,
-        ]
+        ((min_offset + max_offset) / 2.0).into()
+    }
+
+    fn left_bottom(&self) -> [f32; 2] {
+        let left_bottom_offset_coordinate = OffsetCoordinate::new(0, 0);
+        let hex = Hex::from_offset(
+            left_bottom_offset_coordinate,
+            self.layout.orientation,
+            self.offset,
+        );
+        self.layout.hex_to_pixel(hex).to_array()
+    }
+
+    fn right_top(&self) -> [f32; 2] {
+        let right_top_offset_coordinate =
+            OffsetCoordinate::from([self.size.width - 1, self.size.height - 1]);
+        let hex = Hex::from_offset(
+            right_top_offset_coordinate,
+            self.layout.orientation,
+            self.offset,
+        );
+        self.layout.hex_to_pixel(hex).to_array()
     }
 
     fn grid_coordinate_to_cell(&self, grid_coordinate: Hex) -> Option<Cell> {

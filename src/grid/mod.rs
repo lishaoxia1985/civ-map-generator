@@ -66,9 +66,25 @@ pub trait Grid {
 
     /// Get the center of the grid in pixel coordinates.
     ///
+    /// That is often used to center the camera on the grid.
+    /// But in the game, the camera is not exactly at the center of the map.
+    /// So you might want to adjust the camera position slightly.
+    ///
     /// # Notice
-    /// When we show the map, we need to set camera to the center of the map.
+    ///
+    /// For wrapped grids, returns the hypothetical unwrapped center position
+    /// (since wrapped grids have no true center).
     fn center(&self) -> [f32; 2];
+
+    /// Get the left-bottom position of the grid in pixel coordinates.
+    ///
+    /// That is often used to limit the camera position.
+    fn left_bottom(&self) -> [f32; 2];
+
+    /// Get the right-top position of the grid in pixel coordinates.
+    ///
+    /// That is often used to limit the camera position.
+    fn right_top(&self) -> [f32; 2];
 
     /// Converts a `Cell` to an `OffsetCoordinate`.
     ///
