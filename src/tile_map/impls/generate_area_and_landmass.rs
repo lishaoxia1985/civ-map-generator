@@ -17,33 +17,26 @@ impl TileMap {
     fn calculate_areas(&mut self, ruleset: &Ruleset) {
         const MIN_AREA_SIZE: u32 = 7;
 
-        self.area_list.clear();
-
         let grid = self.world_grid.grid;
         let height = grid.size.height;
         let width = grid.size.width;
 
         let size = (height * width) as usize;
 
-        // Initialize the area_id_query with `UNINITIALIZED_AREA_ID`.
+        // Define the area id for each tile and initialize it to `UNINITIALIZED_AREA_ID`.
         // `UNINITIALIZED_AREA_ID` means that the tile is not part of any area.
-        self.area_id_list = vec![UNINITIALIZED_AREA_ID; size];
+        let mut area_id_list = vec![UNINITIALIZED_AREA_ID; size];
+        // Define area list and initialize it to an empty vector.
+        // Each area's ID is its index in the vector.
+        let mut area_list = Vec::new();
 
-        // Precompute tile properties to avoid borrowing `self` in the closure
-        // `tile_impassable` is used to check if the tile is impassable or not.
-        // `tile_water` is used to check if the tile is water or not.
-        let (tile_impassable, tile_water): (Vec<bool>, Vec<bool>) = self
-            .all_tiles()
-            .map(|tile| (tile.is_impassable(self, ruleset), tile.is_water(self)))
-            .unzip();
-
+        // Check if the current tile has the same impassable state and water state as the before tile.
+        // And then check their common neighbors to see if they have the same impassable state and same water state as the before tile.
+        // If they do, add the current tile to the area.
         let check_tile = |tile: Tile, before_tile: Tile| {
-            let tile_idx = tile.index();
-            let before_idx = before_tile.index();
-
             // Check if both tiles have the same terrain properties
-            if tile_impassable[tile_idx] != tile_impassable[before_idx]
-                || tile_water[tile_idx] != tile_water[before_idx]
+            if tile.is_impassable(self, ruleset) != before_tile.is_impassable(self, ruleset)
+                || tile.is_water(self) != before_tile.is_water(self)
             {
                 return false;
             }
@@ -59,22 +52,21 @@ impl TileMap {
 
             // Verify all common neighbors maintain the same properties
             common_neighbors_iter.all(|&neighbor| {
-                let n_idx = neighbor.index();
-                tile_impassable[n_idx] == tile_impassable[before_idx]
-                    && tile_water[n_idx] == tile_water[before_idx]
+                neighbor.is_impassable(self, ruleset) == before_tile.is_impassable(self, ruleset)
+                    && tile.is_water(self) == before_tile.is_water(self)
             })
         };
 
         // First iterate, wide area
         for tile in self.all_tiles() {
             // If the tile is already part of an area, skip it.
-            if tile.area_id(self) != UNINITIALIZED_AREA_ID {
+            if area_id_list[tile.index()] != UNINITIALIZED_AREA_ID {
                 continue;
             }
 
             let tiles_in_area = self.generate_tile_in_area_or_landmass(tile, check_tile);
 
-            let current_area_id = self.area_list.len();
+            let current_area_id = area_list.len();
             let area_size = tiles_in_area.len() as u32;
 
             if area_size >= MIN_AREA_SIZE {
@@ -85,27 +77,25 @@ impl TileMap {
                     size: area_size,
                 };
 
-                self.area_list.push(area);
+                area_list.push(area);
 
                 tiles_in_area.iter().for_each(|&tile| {
-                    tile.set_area_id(self, current_area_id);
+                    area_id_list[tile.index()] = current_area_id;
                 });
             }
         }
 
+        // Check if the current tile has the same impassable and water properties as the before tile. If so, add it to the area.
         let check_tile = |tile: Tile, before_tile: Tile| {
-            let tile_idx = tile.index();
-            let before_idx = before_tile.index();
-
             // Check if both tiles have the same terrain properties
-            tile_impassable[tile_idx] == tile_impassable[before_idx]
-                && tile_water[tile_idx] == tile_water[before_idx]
+            tile.is_impassable(self, ruleset) == before_tile.is_impassable(self, ruleset)
+                && tile.is_water(self) == before_tile.is_water(self)
         };
 
         // Second iterate, all the rest, small and thin area
         for tile in self.all_tiles() {
             // If the tile is already part of an area, skip it.
-            if tile.area_id(self) != UNINITIALIZED_AREA_ID {
+            if area_id_list[tile.index()] != UNINITIALIZED_AREA_ID {
                 continue;
             }
 
@@ -125,19 +115,19 @@ impl TileMap {
                     .iter()
                     .flat_map(|&tile| tile.neighbor_tiles(grid))
                     .filter(|neighbor| {
-                        neighbor.area_id(self) != UNINITIALIZED_AREA_ID
-                            && tile_water[neighbor.index()] == tile_water[tile.index()]
+                        area_id_list[neighbor.index()] != UNINITIALIZED_AREA_ID
+                            && neighbor.is_water(self) == tile.is_water(self)
                     })
-                    .map(|neighbor| neighbor.area_id(self))
-                    .max_by_key(|&area_id| self.area_list[area_id].size);
+                    .map(|neighbor| area_id_list[neighbor.index()])
+                    .max_by_key(|&area_id| area_list[area_id].size);
 
                 if let Some(largest_neighbor_area_id) = largest_neighbor_area_id {
                     // Merge the current small area with the largest neighbor area
                     // and update the area ID of the tiles in the current area.
-                    self.area_list[largest_neighbor_area_id].size += area_size;
+                    area_list[largest_neighbor_area_id].size += area_size;
 
                     for tile in &tiles_in_area {
-                        tile.set_area_id(self, largest_neighbor_area_id);
+                        area_id_list[tile.index()] = largest_neighbor_area_id;
                     }
                     // Skip the rest of the loop since we have already merged the area
                     continue;
@@ -149,7 +139,7 @@ impl TileMap {
             //    we assign a new area ID to it.
             // 2. If it is small enough, but it cannot be merged with any neighbor area,
             //    we assign a new area ID to it.
-            let current_area_id = self.area_list.len();
+            let current_area_id = area_list.len();
 
             let area = Area {
                 is_water: tile.is_water(self),
@@ -158,17 +148,19 @@ impl TileMap {
                 size: area_size,
             };
 
-            self.area_list.push(area);
+            area_list.push(area);
 
             for tile in tiles_in_area {
-                tile.set_area_id(self, current_area_id);
+                area_id_list[tile.index()] = current_area_id;
             }
         }
+
+        // Update the area ID list and area list
+        self.area_id_list = area_id_list;
+        self.area_list = area_list;
     }
 
     fn calculate_landmasses(&mut self) {
-        self.landmass_list.clear();
-
         let height = self.world_grid.size().height;
         let width = self.world_grid.size().width;
 
@@ -176,21 +168,17 @@ impl TileMap {
 
         // Initialize the landmass_id_query with `UNINITIALIZED_LANDMASS_ID`.
         // `UNINITIALIZED_LANDMASS_ID` means that the tile is not part of any landmass.
-        self.landmass_id_list = vec![UNINITIALIZED_LANDMASS_ID; size];
+        let mut landmass_id_list = vec![UNINITIALIZED_LANDMASS_ID; size];
+        let mut landmass_list = Vec::new();
 
-        // Precompute tile properties to avoid borrowing `self` in the closure
-        // `tile_water` is used to check if the tile is water or not.
-        let tile_water: Vec<_> = self.all_tiles().map(|tile| tile.is_water(self)).collect();
-
-        let check_tile = |tile: Tile, before_tile: Tile| {
-            let tile_idx = tile.index();
-            let before_idx = before_tile.index();
-            tile_water[tile_idx] == tile_water[before_idx]
-        };
+        // Check if the current tile has the same water status as the previous tile.
+        // If it does, it means that the current tile is part of the same landmass as the previous tile.
+        let check_tile =
+            |tile: Tile, before_tile: Tile| tile.is_water(self) == before_tile.is_water(self);
 
         for tile in self.all_tiles() {
             // If the tile is already part of a landmass, skip it.
-            if tile.landmass_id(self) != UNINITIALIZED_LANDMASS_ID {
+            if landmass_id_list[tile.index()] != UNINITIALIZED_LANDMASS_ID {
                 continue;
             }
 
@@ -202,7 +190,7 @@ impl TileMap {
                 LandmassType::Land
             };
 
-            let current_landmass_id = self.landmass_list.len();
+            let current_landmass_id = landmass_list.len();
             let landmass_size = tiles_in_landmass.len() as u32;
 
             let landmass = Landmass {
@@ -211,12 +199,16 @@ impl TileMap {
                 size: landmass_size,
             };
 
-            self.landmass_list.push(landmass);
+            landmass_list.push(landmass);
 
             tiles_in_landmass.iter().for_each(|&tile| {
-                tile.set_landmass_id(self, current_landmass_id);
+                landmass_id_list[tile.index()] = current_landmass_id;
             });
         }
+
+        // Update the landmass ID list and landmass list.
+        self.landmass_id_list = landmass_id_list;
+        self.landmass_list = landmass_list;
     }
 
     fn generate_tile_in_area_or_landmass(
