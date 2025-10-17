@@ -17,7 +17,8 @@ pub struct HexGrid {
 }
 
 impl HexGrid {
-    pub fn new(size: Size, layout: HexLayout, offset: Offset, wrap_flags: WrapFlags) -> Self {
+    /// Creates a new `HexGrid` with the specified size, layout, offset, and wrap flags.
+    pub const fn new(size: Size, layout: HexLayout, offset: Offset, wrap_flags: WrapFlags) -> Self {
         match layout.orientation {
             HexOrientation::Pointy => {
                 if wrap_flags.contains(WrapFlags::WrapY) && size.height % 2 == 1 {
@@ -36,6 +37,17 @@ impl HexGrid {
             layout,
             offset,
             wrap_flags,
+        }
+    }
+
+    /// Returns a new `HexGrid` with the specified layout size, keeping other properties unchanged.
+    pub const fn with_resized_layout(&self, layout_size: [f32; 2]) -> Self {
+        Self {
+            layout: HexLayout {
+                size: layout_size,
+                ..self.layout
+            },
+            ..*self
         }
     }
 }

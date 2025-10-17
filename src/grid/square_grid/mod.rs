@@ -16,11 +16,23 @@ pub struct SquareGrid {
 }
 
 impl SquareGrid {
-    pub fn new(size: Size, layout: SquareLayout, wrap_flags: WrapFlags) -> Self {
+    /// Creates a new `SquareGrid` with the specified size, layout, and wrap flags.
+    pub const fn new(size: Size, layout: SquareLayout, wrap_flags: WrapFlags) -> Self {
         Self {
             size,
             layout,
             wrap_flags,
+        }
+    }
+
+    /// Returns a new `SquareGrid` with the specified layout size, keeping other properties unchanged.
+    pub const fn with_resized_layout(&self, layout_size: [f32; 2]) -> Self {
+        Self {
+            layout: SquareLayout {
+                size: layout_size,
+                ..self.layout
+            },
+            ..*self
         }
     }
 }
