@@ -251,16 +251,16 @@ impl HexLayout {
         let size = Vec2::from(self.size);
         let origin = Vec2::from(self.origin);
         let mat2 = m.forward_matrix;
-        let pixel_position = mat2 * (hex.0.as_vec2()) * size;
-        pixel_position + origin
+        let pixel = mat2 * (hex.0.as_vec2()) * size;
+        pixel + origin
     }
 
     /// Returns the hexagonal coordinates that contains the given pixel position.
-    pub fn pixel_to_hex(self, pixel_position: [f32; 2]) -> Hex {
+    pub fn pixel_to_hex(self, pixel: [f32; 2]) -> Hex {
         let m = self.orientation.conversion_matrix();
         let size = Vec2::from(self.size);
         let origin = Vec2::from(self.origin);
-        let pt = (Vec2::from(pixel_position) - origin) / size;
+        let pt = (Vec2::from(pixel) - origin) / size;
         let mat2 = m.inverse_matrix;
         let fractional_hex = mat2 * pt;
         Hex::round(fractional_hex)

@@ -121,6 +121,16 @@ impl Grid for HexGrid {
         self.layout.hex_to_pixel(hex).to_array()
     }
 
+    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2] {
+        let hex = Hex::from_offset(offset, self.layout.orientation, self.offset);
+        self.layout.hex_to_pixel(hex).to_array()
+    }
+
+    fn pixel_to_offset(&self, pixel: [f32; 2]) -> OffsetCoordinate {
+        let hex = self.layout.pixel_to_hex(pixel);
+        hex.to_offset(self.layout.orientation, self.offset)
+    }
+
     fn grid_coordinate_to_cell(&self, grid_coordinate: Hex) -> Option<Cell> {
         let offset_coordinate = grid_coordinate.to_offset(self.layout.orientation, self.offset);
 

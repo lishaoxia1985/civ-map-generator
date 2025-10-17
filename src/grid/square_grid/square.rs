@@ -172,9 +172,8 @@ impl SquareLayout {
     }
 
     /// Returns the square coordinates that contains the given pixel position.
-    pub fn pixel_to_square(self, pixel_position: [f32; 2]) -> Square {
-        let pt: Vec2 =
-            (Vec2::from(pixel_position) - Vec2::from(self.origin)) / Vec2::from(self.size);
+    pub fn pixel_to_square(self, pixel: [f32; 2]) -> Square {
+        let pt: Vec2 = (Vec2::from(pixel) - Vec2::from(self.origin)) / Vec2::from(self.size);
         match self.orientation {
             SquareOrientation::Orthogonal => Square((pt + Vec2::new(0.5, 0.5)).floor().as_ivec2()),
         }

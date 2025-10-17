@@ -72,6 +72,16 @@ impl Grid for SquareGrid {
             .to_array()
     }
 
+    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2] {
+        let square = Square::from_offset(offset);
+        self.layout.square_to_pixel(square).to_array()
+    }
+
+    fn pixel_to_offset(&self, pixel: [f32; 2]) -> OffsetCoordinate {
+        let square = self.layout.pixel_to_square(pixel);
+        square.to_offset()
+    }
+
     fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell> {
         // Convert the square coordinate to an offset coordinate
         let offset_coordinate = grid_coordinate.to_offset();

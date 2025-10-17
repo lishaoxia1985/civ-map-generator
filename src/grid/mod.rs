@@ -86,6 +86,24 @@ pub trait Grid {
     /// That is often used to limit the camera position.
     fn right_top(&self) -> [f32; 2];
 
+    /// Returns the pixel coordinates of the center of the given `OffsetCoordinate`.
+    ///
+    /// # Arguments
+    ///
+    /// - `offset`: The offset coordinate to convert. It can be any offset coordinate for wrapped grids,
+    ///     but for non-wrapped grids, it must be within the grid bounds.
+    ///
+    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2];
+
+    /// Returns the `OffsetCoordinate` which contains the given pixel coordinates.
+    ///
+    /// # Arguments
+    ///
+    /// - `pixel`: The pixel coordinate to convert. It can be any pixel coordinate for wrapped grids,
+    ///     but for non-wrapped grids, it must be within the grid bounds.
+    ///
+    fn pixel_to_offset(&self, pixel: [f32; 2]) -> OffsetCoordinate;
+
     /// Converts a `Cell` to an `OffsetCoordinate`.
     ///
     /// `OffsetCoordinate` is a normalized coordinate that fits within the grid's bounds.
