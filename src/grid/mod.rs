@@ -91,7 +91,7 @@ pub trait Grid {
     /// # Arguments
     ///
     /// - `offset`: The offset coordinate to convert. It can be any offset coordinate for wrapped grids,
-    ///     but for non-wrapped grids, it must be within the grid bounds.
+    ///   but for non-wrapped grids, it must be within the grid bounds.
     ///
     fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2];
 
@@ -100,7 +100,7 @@ pub trait Grid {
     /// # Arguments
     ///
     /// - `pixel`: The pixel coordinate to convert. It can be any pixel coordinate for wrapped grids,
-    ///     but for non-wrapped grids, it must be within the grid bounds.
+    ///   but for non-wrapped grids, it must be within the grid bounds.
     ///
     fn pixel_to_offset(&self, pixel: [f32; 2]) -> OffsetCoordinate;
 

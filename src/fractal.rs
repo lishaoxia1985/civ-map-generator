@@ -32,7 +32,7 @@ struct VoronoiSeed {
 
 impl VoronoiSeed {
     /// Generates a random seed for the fractal.
-    pub fn gen_random_seed(random: &mut StdRng, fractal_grid: HexGrid) -> Self {
+    pub fn random_seed(random: &mut StdRng, fractal_grid: HexGrid) -> Self {
         let offset_coordinate = OffsetCoordinate::from([
             random.random_range(0..fractal_grid.width()),
             random.random_range(0..fractal_grid.height()),
@@ -685,7 +685,7 @@ impl CvFractal {
             let mut voronoi_seed;
 
             loop {
-                voronoi_seed = VoronoiSeed::gen_random_seed(random, self.fractal_grid);
+                voronoi_seed = VoronoiSeed::random_seed(random, self.fractal_grid);
 
                 // Check if the new random seed is too close to an existing seed
                 let is_too_close = voronoi_seeds.iter().any(|existing_seed| {
