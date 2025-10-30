@@ -9,36 +9,36 @@ use super::Name;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TileImprovement {
-    name: String,
+    pub name: String,
     #[serde(default)]
-    food: i8,
+    pub food: i8,
     #[serde(default)]
-    production: i8,
+    pub production: i8,
     #[serde(default)]
-    science: i8,
+    pub science: i8,
     #[serde(default)]
-    gold: i8,
+    pub gold: i8,
     #[serde(default)]
-    culture: i8,
+    pub culture: i8,
     #[serde(default)]
-    faith: i8,
+    pub faith: i8,
     #[serde(default)]
-    happiness: i8,
+    pub happiness: i8,
     #[serde(default)]
-    can_be_built_on_type: Vec<TerrainType>,
+    pub can_be_built_on_type: Vec<TerrainType>,
     #[serde(default)]
-    can_be_built_on_base: Vec<BaseTerrain>,
+    pub can_be_built_on_base: Vec<BaseTerrain>,
     #[serde(default)]
-    can_be_built_on_feature: Vec<Feature>,
+    pub can_be_built_on_feature: Vec<Feature>,
     #[serde(default)]
-    turns_to_build: i8,
+    pub turns_to_build: i8,
     #[serde(default)]
-    tech_required: String,
+    pub required_tech: String,
     #[serde(default)]
-    unique_to: String,
-    uniques: Vec<String>,
-    shortcut_key: Option<char>,
-    civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    pub unique_to: String,
+    pub uniques: Vec<String>,
+    pub shortcut_key: Option<char>,
+    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
 }
 
 impl Name for TileImprovement {

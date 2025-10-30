@@ -7,30 +7,32 @@ use super::Name;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Unit {
-    name: String,
-    unit_type: String,
-    movement: i8,
+    pub name: String,
+    pub unit_type: String,
+    pub movement: i8,
     #[serde(default)]
-    strength: i16,
+    pub strength: i16,
     #[serde(default)]
-    cost: i16,
+    pub cost: i16,
     #[serde(default)]
-    obsolete_tech: String,
+    pub required_tech: String,
     #[serde(default)]
-    unique_to: String,
+    pub obsolete_tech: String,
     #[serde(default)]
-    replaces: String,
+    pub unique_to: String,
     #[serde(default)]
-    upgrades_to: String,
+    pub replaces: String,
     #[serde(default)]
-    hurry_cost_modifier: i8,
+    pub upgrades_to: String,
     #[serde(default)]
-    uniques: Vec<String>,
-    civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    pub hurry_cost_modifier: i8,
     #[serde(default)]
-    promotions: Vec<String>,
+    pub uniques: Vec<String>,
+    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
     #[serde(default)]
-    attack_sound: String,
+    pub promotions: Vec<String>,
+    #[serde(default)]
+    pub attack_sound: String,
 }
 
 impl Name for Unit {
