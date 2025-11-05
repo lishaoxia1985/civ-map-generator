@@ -41,8 +41,10 @@ pub struct NationInfo {
     pub hate_hello: String,
     #[serde(default)]
     pub trade_request: String,
-    pub outer_color: Option<[u8; 3]>,
-    pub inner_color: Option<[u8; 3]>,
+    #[serde(default)]
+    pub outer_color: [u8; 3],
+    #[serde(default)]
+    pub inner_color: [u8; 3],
     #[serde(default)]
     pub favored_religion: String,
     #[serde(default)]

@@ -26,10 +26,12 @@ pub struct BaseTerrainInfo {
     #[serde(default)]
     pub movement_cost: i8,
     #[serde(rename = "RGB")]
-    pub rgb: Option<[u8; 3]>,
+    #[serde(default)]
+    pub rgb: [u8; 3],
     #[serde(default)]
     pub uniques: Vec<String>,
-    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    #[serde(default)]
+    pub civilopedia_text: Vec<HashMap<String, String>>,
 }
 
 impl Name for BaseTerrainInfo {

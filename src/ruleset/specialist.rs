@@ -23,7 +23,8 @@ pub struct Specialist {
     #[serde(default)]
     happiness: i8,
     great_person_points: HashMap<String, i8>,
-    color: Option<[u8; 3]>,
+    #[serde(default)]
+    color: [u8; 3],
 }
 
 impl Name for Specialist {

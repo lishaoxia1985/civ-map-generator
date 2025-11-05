@@ -25,8 +25,10 @@ pub struct Building {
     pub faith: i8,
     #[serde(default)]
     pub happiness: i8,
-    pub great_person_points: Option<HashMap<String, i8>>,
-    pub specialist_slots: Option<HashMap<String, i8>>,
+    #[serde(default)]
+    pub great_person_points: HashMap<String, i8>,
+    #[serde(default)]
+    pub specialist_slots: HashMap<String, i8>,
     #[serde(default)]
     pub hurry_cost_modifier: i8,
     #[serde(default)]
@@ -47,7 +49,8 @@ pub struct Building {
     pub required_building: String,
     #[serde(default)]
     pub required_tech: String,
-    pub percent_stat_bonus: Option<HashMap<String, i8>>,
+    #[serde(default)]
+    pub percent_stat_bonus: HashMap<String, i8>,
     #[serde(default)]
     pub uniques: Vec<String>,
     #[serde(default)]

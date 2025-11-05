@@ -28,7 +28,8 @@ pub struct Unit {
     pub hurry_cost_modifier: i8,
     #[serde(default)]
     pub uniques: Vec<String>,
-    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    #[serde(default)]
+    pub civilopedia_text: Vec<HashMap<String, String>>,
     #[serde(default)]
     pub promotions: Vec<String>,
     #[serde(default)]

@@ -19,7 +19,8 @@ pub struct Era {
     start_percent: i8,
     friend_bonus: HashMap<String, Vec<String>>,
     ally_bonus: HashMap<String, Vec<String>>,
-    icon_r_g_b: [u8; 3],
+    #[serde(rename = "iconRGB")]
+    icon_rgb: [u8; 3],
 }
 
 impl Name for Era {

@@ -38,7 +38,8 @@ pub struct TileImprovement {
     pub unique_to: String,
     pub uniques: Vec<String>,
     pub shortcut_key: Option<char>,
-    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    #[serde(default)]
+    pub civilopedia_text: Vec<HashMap<String, String>>,
 }
 
 impl Name for TileImprovement {

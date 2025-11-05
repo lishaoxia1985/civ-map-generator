@@ -41,7 +41,8 @@ pub struct FeatureInfo {
     pub occurs_on_base: Vec<BaseTerrain>,
     #[serde(default)]
     pub uniques: Vec<String>,
-    pub civilopedia_text: Option<Vec<HashMap<String, String>>>,
+    #[serde(default)]
+    pub civilopedia_text: Vec<HashMap<String, String>>,
 }
 
 impl Name for FeatureInfo {

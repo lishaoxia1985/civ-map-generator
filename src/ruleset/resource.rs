@@ -35,7 +35,8 @@ pub struct TileResource {
     pub improvement: String,
     #[serde(default)]
     pub revealed_by: String,
-    pub improvement_stats: Option<HashMap<String, i8>>,
+    #[serde(default)]
+    pub improvement_stats: HashMap<String, i8>,
     #[serde(default)]
     pub uniques: Vec<String>,
     pub major_deposit_amount: Option<HashMap<String, i8>>,
