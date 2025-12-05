@@ -315,7 +315,7 @@ impl Tile {
 
     /// Checks if the tile is impassable.
     pub fn is_impassable(&self, tile_map: &TileMap, ruleset: &Ruleset) -> bool {
-        self.terrain_type(tile_map) == TerrainType::Mountain
+        ruleset.terrain_types[self.terrain_type(tile_map).as_str()].impassable
             || self
                 .feature(tile_map)
                 .is_some_and(|feature| ruleset.features[feature.as_str()].impassable)
