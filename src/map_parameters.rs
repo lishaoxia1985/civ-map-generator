@@ -76,7 +76,7 @@ impl MapParameters {
 
     /// The maximum number of regions that can share a regional-exclusive luxury resource type.
     ///
-    /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::impls::assign_starting_tile::LuxuryResourceRole::luxury_assigned_to_regions).
+    /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::LuxuryResourceRole::luxury_assigned_to_regions).
     ///
     /// For example, when set to 3, each regionally-exclusive luxury resource type will be
     /// distributed to no more than 3 distinct regions in the game world.
