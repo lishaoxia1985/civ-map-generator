@@ -117,7 +117,7 @@ pub trait Grid {
 
         debug_assert!(
             cell.0 < (width * height) as usize,
-            "Tile is out of bounds! Tile index: {}, Map size: {}x{}",
+            "Cell is out of bounds! Cell index: {}, Map size: {}x{}",
             cell.0,
             width,
             height
@@ -255,6 +255,26 @@ pub trait Grid {
     /// If `dest` is located to the north of `start`, the function returns `Some(Direction::North)`.
     /// If `dest` is equal to `start`, the function returns [`None`].
     fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction>;
+
+    /// Create a rectangle region starting at `origin` with the specified `width` and `height` in the grid.
+    fn rectangle_region(&self, origin: OffsetCoordinate, width: u32, height: u32) -> Rectangle
+    where
+        Self: Sized,
+    {
+        Rectangle::new(origin, width, height, self)
+    }
+
+    /// Create a rectangle region starting at `origin` and ending at `top_right_corner` in the grid.
+    fn rectangle_region_from_corners(
+        &self,
+        origin: OffsetCoordinate,
+        top_right_corner: OffsetCoordinate,
+    ) -> Rectangle
+    where
+        Self: Sized,
+    {
+        Rectangle::from_corners(origin, top_right_corner, self)
+    }
 }
 
 /// Represents the size of a grid or map with a specified width and height.
@@ -361,4 +381,186 @@ pub enum WorldSizeType {
     Standard,
     Large,
     Huge,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+/// Defines a rectangular region within a grid.
+///
+/// Provides functionality to retrieve all cells contained within the region.
+pub struct Rectangle {
+    /// The origin point in offset coordinates.
+    ///
+    /// # Grid Interpretation
+    /// - Represents the south-west corner (bottom-left in visual terms)
+    ///
+    /// # Coordinate Constraints
+    /// - x ∈ [0, grid_width)
+    /// - y ∈ [0, grid_height)
+    ///
+    /// Where `grid_width` and `grid_height` are the dimensions of the containing grid.
+    /// When you create a rectangle with [`Rectangle::new`] or [`Rectangle::from_corners`], the provided origin will be normalized to fit within these bounds.
+    origin: OffsetCoordinate,
+    /// The horizontal extent of the rectangle in cell units.
+    ///
+    /// # Requirements
+    /// - Must be a positive integer (≥1)
+    width: u32,
+    /// The vertical extent of the rectangle in cell units.
+    ///
+    /// # Requirements
+    /// - Must be a positive integer (≥1)
+    height: u32,
+}
+
+impl Rectangle {
+    /// Creates a new rectangle with the given origin, width, height, and grid.
+    ///
+    /// # Arguments
+    ///
+    /// - `origin`: The origin of the rectangle in offset coordinates.
+    ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate,
+    ///   we will process this origin to ensure its x is in the range `[0, grid_width - 1]` and y is in the range `[0, grid_height - 1]`.
+    /// - `width`: The width of the rectangle in cells.
+    /// - `height`: The height of the rectangle in cells.
+    /// - `grid`: The grid is used to determine the map boundaries and wrapping behavior.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the rectangle is not valid.
+    pub fn new(origin: OffsetCoordinate, width: u32, height: u32, grid: &impl Grid) -> Self {
+        // Debug-only validation
+        debug_assert!(
+            width > 0 && height > 0,
+            "Rectangle dimensions must be positive (got {}x{})",
+            width,
+            height
+        );
+        debug_assert!(
+            width <= grid.width() && height <= grid.height(),
+            "Rectangle dimensions {}x{} exceed grid size {}x{}",
+            width,
+            height,
+            grid.width(),
+            grid.height()
+        );
+
+        let normalize_origin = grid
+            .normalize_offset(origin)
+            .unwrap_or_else(|_| panic!("Offset coordinate out of bounds: {:?}", origin));
+
+        Self {
+            origin: normalize_origin,
+            width,
+            height,
+        }
+    }
+
+    /// Creates a new rectangle from the given origin and top-left corner.
+    ///
+    /// # Arguments
+    ///
+    /// - `origin`: The origin of the rectangle in offset coordinates.
+    ///   This represents the bottom-left (south-west) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate,
+    ///   we will process this origin to ensure its x is in the range `[0, grid_width - 1]` and y is in the range `[0, grid_height - 1]`.
+    /// - `top_right_corner`: The top-right corner of the rectangle in offset coordinates.
+    ///   This represents the top-right (north-east) corner of the rectangle in the grid.
+    ///   It can be any valid offset coordinate.
+    /// - `grid`: The grid is used to determine the map boundaries and wrapping behavior.
+    ///
+    /// # Panics
+    /// This function will panic if the rectangle is not valid.
+    pub fn from_corners(
+        origin: OffsetCoordinate,
+        top_right_corner: OffsetCoordinate,
+        grid: &impl Grid,
+    ) -> Self {
+        let normalize_origin = grid
+            .normalize_offset(origin)
+            .unwrap_or_else(|_| panic!("Offset coordinate out of bounds: {:?}", origin));
+
+        let [mut width, mut height] = (top_right_corner.0 - normalize_origin.0 + 1).to_array();
+
+        if grid.wrap_x() {
+            width = width.rem_euclid(grid.width() as i32);
+        }
+        if grid.wrap_y() {
+            height = height.rem_euclid(grid.height() as i32);
+        }
+
+        debug_assert!(
+            width > 0
+                && width <= grid.width() as i32
+                && height > 0
+                && height <= grid.height() as i32,
+            "The rectangle does not exist"
+        );
+
+        Self {
+            origin,
+            width: width as u32,
+            height: height as u32,
+        }
+    }
+
+    #[inline]
+    pub fn origin(&self) -> OffsetCoordinate {
+        self.origin
+    }
+
+    #[inline]
+    pub fn west_x(&self) -> i32 {
+        self.origin.0.x
+    }
+
+    #[inline]
+    pub fn south_y(&self) -> i32 {
+        self.origin.0.y
+    }
+
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    /// Returns an iterator over all cells in current rectangle region of the grid.
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
+    pub fn all_cells<'a>(self, grid: &'a impl Grid) -> impl Iterator<Item = Cell> + 'a {
+        (self.south_y()..self.south_y() + self.height as i32).flat_map(move |y| {
+            (self.west_x()..self.west_x() + self.width as i32).map({
+                move |x| {
+                    let offset_coordinate = OffsetCoordinate::new(x, y);
+                    grid.offset_to_cell(offset_coordinate).unwrap() // It's safe to unwrap because the offset is inside the current grid when the rectangle is valid.
+                }
+            })
+        })
+    }
+
+    /// Checks if the given cell is inside the current rectangle.
+    ///
+    /// Returns `true` if the given cell is inside the current rectangle.
+    pub fn contains(&self, cell: Cell, grid: &impl Grid) -> bool {
+        let [mut x, mut y] = grid.cell_to_offset(cell).to_array();
+
+        // We should consider the map is wrapped around horizontally.
+        if x < self.west_x() {
+            x += grid.width() as i32;
+        }
+
+        // We should consider the map is wrapped around vertically.
+        if y < self.south_y() {
+            y += grid.height() as i32;
+        }
+
+        x >= self.west_x()
+            && x < self.west_x() + self.width as i32
+            && y >= self.south_y()
+            && y < self.south_y() + self.height as i32
+    }
 }

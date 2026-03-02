@@ -945,89 +945,93 @@ impl TileMap {
         let mut region_flood_plain_tile_list = Vec::new();
         let mut region_jungle_flat_tile_list = Vec::new();
 
-        rectangle.all_tiles(grid).for_each(|tile| {
-            let terrain_type = tile.terrain_type(self);
-            let base_terrain = tile.base_terrain(self);
-            let feature = tile.feature(self);
+        rectangle
+            .all_cells(&grid)
+            .map(Tile::from_cell)
+            .for_each(|tile| {
+                let terrain_type = tile.terrain_type(self);
+                let base_terrain = tile.base_terrain(self);
+                let feature = tile.feature(self);
 
-            match terrain_type {
-                TerrainType::Water => {
-                    if base_terrain == BaseTerrain::Coast
-                        && feature != Some(Feature::Ice)
-                        && feature != Some(Feature::Atoll)
-                    {
-                        if let Some(landmass_id) = landmass_id {
-                            if tile
-                                .neighbor_tiles(grid)
-                                .any(|neighbor_tile| neighbor_tile.area_id(self) == landmass_id)
-                            {
+                match terrain_type {
+                    TerrainType::Water => {
+                        if base_terrain == BaseTerrain::Coast
+                            && feature != Some(Feature::Ice)
+                            && feature != Some(Feature::Atoll)
+                        {
+                            if let Some(landmass_id) = landmass_id {
+                                if tile
+                                    .neighbor_tiles(grid)
+                                    .any(|neighbor_tile| neighbor_tile.area_id(self) == landmass_id)
+                                {
+                                    region_coast_next_to_land_tile_list.push(tile);
+                                }
+                            } else {
                                 region_coast_next_to_land_tile_list.push(tile);
                             }
+                        }
+                    }
+                    TerrainType::Flatland => {
+                        if let Some(feature) = feature {
+                            match feature {
+                                Feature::Forest => {
+                                    region_forest_flat_tile_list.push(tile);
+                                    if base_terrain == BaseTerrain::Tundra {
+                                        region_tundra_flat_including_forest_tile_list.push(tile);
+                                    } else {
+                                        region_forest_flat_but_not_tundra_tile_list.push(tile);
+                                    }
+                                }
+                                Feature::Jungle => {
+                                    region_jungle_flat_tile_list.push(tile);
+                                }
+                                Feature::Marsh => {
+                                    region_marsh_tile_list.push(tile);
+                                }
+                                Feature::Floodplain => {
+                                    region_flood_plain_tile_list.push(tile);
+                                }
+                                _ => {}
+                            }
                         } else {
-                            region_coast_next_to_land_tile_list.push(tile);
-                        }
-                    }
-                }
-                TerrainType::Flatland => {
-                    if let Some(feature) = feature {
-                        match feature {
-                            Feature::Forest => {
-                                region_forest_flat_tile_list.push(tile);
-                                if base_terrain == BaseTerrain::Tundra {
+                            match base_terrain {
+                                BaseTerrain::Grassland => {
+                                    if tile.is_freshwater(self) {
+                                        region_fresh_water_grass_flat_no_feature_tile_list
+                                            .push(tile);
+                                    } else {
+                                        region_dry_grass_flat_no_feature_tile_list.push(tile);
+                                    }
+                                }
+                                BaseTerrain::Desert => {
+                                    region_desert_flat_no_feature_tile_list.push(tile);
+                                }
+                                BaseTerrain::Plain => {
+                                    region_plain_flat_no_feature_tile_list.push(tile);
+                                }
+                                BaseTerrain::Tundra => {
                                     region_tundra_flat_including_forest_tile_list.push(tile);
-                                } else {
-                                    region_forest_flat_but_not_tundra_tile_list.push(tile);
                                 }
+                                _ => {}
                             }
-                            Feature::Jungle => {
-                                region_jungle_flat_tile_list.push(tile);
-                            }
-                            Feature::Marsh => {
-                                region_marsh_tile_list.push(tile);
-                            }
-                            Feature::Floodplain => {
-                                region_flood_plain_tile_list.push(tile);
-                            }
-                            _ => {}
                         }
-                    } else {
-                        match base_terrain {
-                            BaseTerrain::Grassland => {
-                                if tile.is_freshwater(self) {
-                                    region_fresh_water_grass_flat_no_feature_tile_list.push(tile);
-                                } else {
-                                    region_dry_grass_flat_no_feature_tile_list.push(tile);
-                                }
+                    }
+                    TerrainType::Mountain => {}
+                    TerrainType::Hill => {
+                        if base_terrain != BaseTerrain::Snow {
+                            if feature.is_none() {
+                                region_hill_open_tile_list.push(tile);
+                            } else if feature == Some(Feature::Forest) {
+                                region_hill_forest_tile_list.push(tile);
+                                region_hill_covered_tile_list.push(tile);
+                            } else if feature == Some(Feature::Jungle) {
+                                region_hill_jungle_tile_list.push(tile);
+                                region_hill_covered_tile_list.push(tile);
                             }
-                            BaseTerrain::Desert => {
-                                region_desert_flat_no_feature_tile_list.push(tile);
-                            }
-                            BaseTerrain::Plain => {
-                                region_plain_flat_no_feature_tile_list.push(tile);
-                            }
-                            BaseTerrain::Tundra => {
-                                region_tundra_flat_including_forest_tile_list.push(tile);
-                            }
-                            _ => {}
                         }
                     }
                 }
-                TerrainType::Mountain => {}
-                TerrainType::Hill => {
-                    if base_terrain != BaseTerrain::Snow {
-                        if feature.is_none() {
-                            region_hill_open_tile_list.push(tile);
-                        } else if feature == Some(Feature::Forest) {
-                            region_hill_forest_tile_list.push(tile);
-                            region_hill_covered_tile_list.push(tile);
-                        } else if feature == Some(Feature::Jungle) {
-                            region_hill_jungle_tile_list.push(tile);
-                            region_hill_covered_tile_list.push(tile);
-                        }
-                    }
-                }
-            }
-        });
+            });
 
         [
             region_coast_next_to_land_tile_list,

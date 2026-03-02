@@ -4,8 +4,8 @@ use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    grid::{WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
-    map_parameters::{Rectangle, RegionDivideMethod},
+    grid::{Rectangle, WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
+    map_parameters::RegionDivideMethod,
     tile::Tile,
     tile_component::*,
     tile_map::{MapParameters, TileMap},
@@ -93,7 +93,7 @@ impl TileMap {
                     OffsetCoordinate::new(0, 0),
                     grid.size.width,
                     grid.size.height,
-                    grid,
+                    &grid,
                 );
 
                 let region = Region::rectangle_region(self, grid, rectangle);
@@ -233,7 +233,10 @@ impl TileMap {
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in landmass_rectangle.all_tiles(self.world_grid.grid) {
+        for tile in landmass_rectangle
+            .all_cells(&self.world_grid.grid)
+            .map(Tile::from_cell)
+        {
             if tile.area_id(self) != area_id {
                 area_fertility_list.push(0);
             } else {
@@ -252,7 +255,10 @@ impl TileMap {
 
         let mut area_fertility_list = Vec::with_capacity(tile_count as usize);
 
-        for tile in rectangle.all_tiles(self.world_grid.grid) {
+        for tile in rectangle
+            .all_cells(&self.world_grid.grid)
+            .map(Tile::from_cell)
+        {
             // Check for coastal land is disabled.
             let tile_fertility = self.measure_start_placement_fertility_of_tile(tile, false);
             area_fertility_list.push(tile_fertility);
@@ -555,7 +561,7 @@ impl TileMap {
             OffsetCoordinate::from([west_x, south_y]),
             width,
             height,
-            grid,
+            &grid,
         )
     }
 
@@ -871,14 +877,14 @@ impl Region {
             OffsetCoordinate::new(first_region_west_x, first_region_south_y),
             first_region_width,
             first_region_height,
-            grid,
+            &grid,
         );
 
         let second_region_rectangle = Rectangle::new(
             OffsetCoordinate::new(second_region_west_x, second_region_south_y),
             second_region_width,
             second_region_height,
-            grid,
+            &grid,
         );
 
         let mut first_region = Region::new(
@@ -984,7 +990,7 @@ impl Region {
             OffsetCoordinate::new(adjusted_west_x, adjusted_south_y),
             adjusted_width,
             adjusted_height,
-            grid,
+            &grid,
         );
 
         self.fertility_list = adjusted_fertility_list;
@@ -1002,7 +1008,7 @@ impl Region {
 
         let mut terrain_statistic = TerrainStatistic::default();
 
-        for tile in self.rectangle.all_tiles(grid) {
+        for tile in self.rectangle.all_cells(&grid).map(Tile::from_cell) {
             let terrain_type = tile.terrain_type(tile_map);
             let base_terrain = tile.base_terrain(tile_map);
             let feature = tile.feature(tile_map);

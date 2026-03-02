@@ -284,7 +284,10 @@ impl TileMap {
             let mut dry_hills = Vec::new();
             let mut grass_flat_no_feature = Vec::new();
             let mut flat_tundra = Vec::new();
-            for tile in rectangle.all_tiles(self.world_grid.grid) {
+            for tile in rectangle
+                .all_cells(&self.world_grid.grid)
+                .map(Tile::from_cell)
+            {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
                 let feature = tile.feature(self);

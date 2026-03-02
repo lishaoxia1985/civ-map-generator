@@ -4,10 +4,11 @@ use enum_map::{Enum, EnumMap};
 
 use crate::{
     grid::{
+        Rectangle,
         hex_grid::{HexOrientation, Offset},
         offset_coordinate::OffsetCoordinate,
     },
-    map_parameters::{MapParameters, Rectangle},
+    map_parameters::MapParameters,
     tile::Tile,
     tile_component::{BaseTerrain, Feature, TerrainType},
     tile_map::{Layer, TileMap},
@@ -65,7 +66,12 @@ impl TileMap {
         // 2. It is not a coastal land tile, and it does not have any coastal land tiles as neighbors
         let mut area_id_and_candidate_tiles: HashMap<usize, Vec<Tile>> = HashMap::new();
 
-        for (i, tile) in region.rectangle.all_tiles(grid).enumerate() {
+        for (i, tile) in region
+            .rectangle
+            .all_cells(&grid)
+            .map(Tile::from_cell)
+            .enumerate()
+        {
             if matches!(
                 tile.terrain_type(self),
                 TerrainType::Flatland | TerrainType::Hill
@@ -187,7 +193,7 @@ impl TileMap {
             OffsetCoordinate::new(center_west_x, center_south_y),
             center_width,
             center_height,
-            grid,
+            &grid,
         );
 
         let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
@@ -206,7 +212,7 @@ impl TileMap {
             OffsetCoordinate::new(middle_west_x, middle_south_y),
             middle_width,
             middle_height,
-            grid,
+            &grid,
         );
 
         let mut center_coastal_plots = Vec::new();
@@ -221,12 +227,12 @@ impl TileMap {
 
         let mut outer_coastal_plots = Vec::new();
 
-        for tile in rectangle.all_tiles(grid) {
+        for tile in rectangle.all_cells(&grid).map(Tile::from_cell) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 let landmass_id = self.region_list[region_index].area_id;
                 if landmass_id == Some(area_id) {
-                    if center_rectangle.contains(tile, grid) {
+                    if center_rectangle.contains(tile.to_cell(), &grid) {
                         // Center Bias
                         center_coastal_plots.push(tile);
                         if tile.has_river(self) {
@@ -236,7 +242,7 @@ impl TileMap {
                         } else {
                             center_dry_plots.push(tile);
                         }
-                    } else if middle_rectangle.contains(tile, grid) {
+                    } else if middle_rectangle.contains(tile.to_cell(), &grid) {
                         // Middle Bias
                         middle_coastal_plots.push(tile);
                         if tile.has_river(self) {
@@ -474,7 +480,7 @@ impl TileMap {
             OffsetCoordinate::new(center_west_x, center_south_y),
             center_width,
             center_height,
-            grid,
+            &grid,
         );
 
         let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
@@ -493,7 +499,7 @@ impl TileMap {
             OffsetCoordinate::new(middle_west_x, middle_south_y),
             middle_width,
             middle_height,
-            grid,
+            &grid,
         );
 
         let mut center_candidates = Vec::new();
@@ -508,11 +514,11 @@ impl TileMap {
 
         let mut outer_plots = Vec::new();
 
-        for tile in region.rectangle.all_tiles(grid) {
+        for tile in region.rectangle.all_cells(&grid).map(Tile::from_cell) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
                 let area_id = tile.area_id(self);
                 if region.area_id == Some(area_id) {
-                    if center_rectangle.contains(tile, grid) {
+                    if center_rectangle.contains(tile.to_cell(), &grid) {
                         // Center Bias
                         center_candidates.push(tile);
                         if tile.has_river(self) {
@@ -522,7 +528,7 @@ impl TileMap {
                         } else {
                             center_inland_dry_land.push(tile);
                         }
-                    } else if middle_rectangle.contains(tile, grid) {
+                    } else if middle_rectangle.contains(tile.to_cell(), &grid) {
                         // Middle Bias
                         middle_candidates.push(tile);
                         if tile.has_river(self) {

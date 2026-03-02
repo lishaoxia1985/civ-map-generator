@@ -6,10 +6,11 @@ use enum_map::Enum;
 use rand::seq::IndexedRandom;
 use rand::{Rng, seq::SliceRandom};
 
+use crate::grid::Rectangle;
 use crate::nation::Nation;
 use crate::{
     grid::offset_coordinate::OffsetCoordinate,
-    map_parameters::{MapParameters, Rectangle, RegionDivideMethod},
+    map_parameters::{MapParameters, RegionDivideMethod},
     ruleset::Ruleset,
     tile::Tile,
     tile_component::{BaseTerrain, Feature, TerrainType},
@@ -218,13 +219,13 @@ impl TileMap {
             OffsetCoordinate::new(center_west_x, center_south_y),
             center_width,
             center_height,
-            grid,
+            &grid,
         );
 
         let mut coastal_tile_list = Vec::new();
         let mut inland_tile_list = Vec::new();
 
-        for tile in rectangle.all_tiles(grid) {
+        for tile in rectangle.all_cells(&grid).map(Tile::from_cell) {
             if should_process_all_tiles {
                 // When the rectangle is small enough, we will process all the tiles.
                 if tile.can_be_city_state_starting_tile(self, Some(region)) {
@@ -238,7 +239,7 @@ impl TileMap {
                 // Process only tiles near enough to the region edge.
                 // That means tiles that are not in the center rectangle.
                 // That is because we often use the center rectangle to place civilizations.
-                if !center_rectangle.contains(tile, grid)
+                if !center_rectangle.contains(tile.to_cell(), &grid)
                     && tile.can_be_city_state_starting_tile(self, Some(region))
                 {
                     if tile.is_coastal_land(self) {
@@ -381,7 +382,7 @@ impl TileMap {
                     if let RegionDivideMethod::CustomRectangle(rectangle) =
                         map_parameters.region_divide_method
                     {
-                        if rectangle.contains(tile, self.world_grid.grid) {
+                        if rectangle.contains(tile.to_cell(), &self.world_grid.grid) {
                             num_civ_landmass_tiles += 1;
                         } else {
                             num_uninhabited_landmass_tiles += 1;
