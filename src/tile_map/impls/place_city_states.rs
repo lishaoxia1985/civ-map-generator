@@ -36,7 +36,7 @@ impl TileMap {
         let mut start_city_state_list: Vec<_> = city_state_list
             .choose_multiple(
                 &mut self.random_number_generator,
-                map_parameters.num_city_state as usize,
+                map_parameters.world_size_type_profile.num_city_states as usize,
             )
             .copied()
             .collect();
@@ -326,17 +326,18 @@ impl TileMap {
         &mut self,
         map_parameters: &MapParameters,
     ) -> CityStatesAssignment {
-        let mut num_city_states_unassigned = map_parameters.num_city_state;
+        let mut num_city_states_unassigned = map_parameters.world_size_type_profile.num_city_states;
+        let num_city_states = num_city_states_unassigned;
 
         // Store region index which city state is assigned to
-        let mut region_index_assignment =
-            Vec::with_capacity(map_parameters.num_city_state as usize);
+        let mut region_index_assignment = Vec::with_capacity(num_city_states as usize);
 
         let mut uninhabited_areas_coastal_land_tiles = Vec::new();
         let mut uninhabited_areas_inland_tiles = Vec::new();
 
         /***** Assign the "Per Region" City States to their regions ******/
-        let ratio = map_parameters.num_city_state as f64 / map_parameters.num_civilization as f64;
+        let ratio = num_city_states as f64
+            / map_parameters.world_size_type_profile.num_civilizations as f64;
         let num_city_states_per_region = match ratio {
             r if r > 14.0 => 10,
             r if r > 11.0 => 8,
@@ -442,13 +443,12 @@ impl TileMap {
 
             let uninhabited_ratio = num_uninhabited_landmass_tiles as f64
                 / (num_civ_landmass_tiles + num_uninhabited_landmass_tiles) as f64;
-            let max_by_ratio =
-                (3. * uninhabited_ratio * map_parameters.num_city_state as f64) as u32;
+            let max_by_ratio = (3. * uninhabited_ratio * num_city_states as f64) as u32;
             let max_by_method =
                 if let RegionDivideMethod::Pangaea = map_parameters.region_divide_method {
-                    map_parameters.num_city_state.div_ceil(4)
+                    num_city_states.div_ceil(4)
                 } else {
-                    map_parameters.num_city_state.div_ceil(2)
+                    num_city_states.div_ceil(2)
                 };
 
             _num_city_states_uninhabited =

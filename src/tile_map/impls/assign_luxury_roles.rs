@@ -303,13 +303,14 @@ impl TileMap {
             ],
         };
 
-        let max_regions_per_exclusive_luxury = match map_parameters.num_civilization as usize {
-            n if n >= MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS * 3 / 2 => {
-                MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
-            }
-            n if n > MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS => 2,
-            _ => 1,
-        };
+        let max_regions_per_exclusive_luxury =
+            match map_parameters.world_size_type_profile.num_civilizations as usize {
+                n if n >= MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS * 3 / 2 => {
+                    MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
+                }
+                n if n > MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS => 2,
+                _ => 1,
+            };
 
         let num_assigned_luxury_types = self.luxury_assign_to_region_count.len();
 

@@ -21,6 +21,8 @@ pub struct MapParameters {
     ///
     /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
     pub seed: u64,
+    /// The profile related to the world size type of the map.
+    pub world_size_type_profile: WorldSizeTypeProfile,
     /// The number of large lakes to generate on the map.
     /// The count excludes lakes formed during terrain type generation, only including those created in the lake-adding process.
     ///
@@ -44,14 +46,6 @@ pub struct MapParameters {
     pub temperature: Temperature,
     /// The rainfall of the map. It affect only feature generation.
     pub rainfall: Rainfall,
-    /// The number of civilizations, excluding city states.
-    ///
-    /// This value must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_NUM`]]**.
-    pub num_civilization: u32,
-    /// The number of city states.
-    ///
-    /// This value must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_NUM`]]**.
-    pub num_city_state: u32,
     /// The method used to divide the map into regions.
     pub region_divide_method: RegionDivideMethod,
     /// Whether the civilization starting tile must be coastal land.
@@ -112,6 +106,8 @@ impl Default for MapParameters {
 
         let world_grid = WorldGrid::new(grid, world_size);
 
+        let world_size_type_profile = WorldSizeTypeProfile::from_world_size_type(world_size);
+
         Self {
             map_type: MapType::Fractal,
             world_grid,
@@ -121,6 +117,7 @@ impl Default for MapParameters {
                 .as_millis()
                 .try_into()
                 .unwrap(),
+            world_size_type_profile,
             num_large_lake: 2,
             lake_max_area_size: 9,
             coast_expand_chance: vec![0.25, 0.25],
@@ -128,8 +125,6 @@ impl Default for MapParameters {
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,
             rainfall: Rainfall::Normal,
-            num_civilization: 4,
-            num_city_state: 8,
             region_divide_method: RegionDivideMethod::Continent,
             civ_require_coastal_land_start: false,
             resource_setting: ResourceSetting::Standard,
@@ -353,4 +348,78 @@ pub enum ResourceSetting {
     LegendaryStart,
     /// Every civilization will begin with a starting tile containing approximately the same amount of strategic resources.
     StrategicBalance,
+}
+
+/// Stores the profile related to the world size type of the map.
+pub struct WorldSizeTypeProfile {
+    /// The number of civilizations, excluding city states.
+    ///
+    /// This value must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_NUM`]]**.
+    pub num_civilizations: u32,
+    /// The number of city states.
+    ///
+    /// This value must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_NUM`]]**.
+    pub num_city_states: u32,
+    /// The number of wonders that will be placed on the map.
+    pub num_natural_wonders: u32,
+
+    //////////////////////////////////////////////////////////////////////////////
+    /* The fields below are not used now, but may be used in the future */
+    /// Maximum number of active religions allowed in the game.
+    pub max_religions: u32,
+
+    /// Base unhappiness penalty per owned city.
+    pub unhappiness_per_city: f32,
+
+    /// Additional unhappiness penalty per annexed city.
+    pub unhappiness_annexed: f32,
+
+    /// Base technology cost modifier (as decimal, e.g., 100% = 1.0, 110% = 1.1)
+    pub tech_cost_base: f32,
+
+    /// Per-city technology cost increase (as decimal, e.g., 5% = 0.05)
+    pub tech_cost_per_city: f32,
+
+    /// Per-city policy cost increase (as decimal, e.g., 10% = 0.10)
+    pub policy_cost_per_city: f32,
+}
+
+impl WorldSizeTypeProfile {
+    /// Creates a new `WorldSizeTypeProfile` with the specified parameters.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        num_civilizations: u32,
+        num_city_states: u32,
+        num_natural_wonders: u32,
+        max_religions: u32,
+        unhappiness_per_city: f32,
+        unhappiness_annexed: f32,
+        tech_cost_base: f32,
+        tech_cost_per_city: f32,
+        policy_cost_per_city: f32,
+    ) -> Self {
+        Self {
+            num_civilizations,
+            num_city_states,
+            num_natural_wonders,
+            max_religions,
+            unhappiness_per_city,
+            unhappiness_annexed,
+            tech_cost_base,
+            tech_cost_per_city,
+            policy_cost_per_city,
+        }
+    }
+
+    /// Creates a new `WorldSizeTypeProfile` from the specified `WorldSizeType`.
+    pub fn from_world_size_type(world_size_type: WorldSizeType) -> Self {
+        match world_size_type {
+            WorldSizeType::Duel => Self::new(2, 4, 2, 2, 3.0, 5.0, 1.0, 0.05, 0.10),
+            WorldSizeType::Tiny => Self::new(4, 8, 3, 3, 3.0, 5.0, 1.0, 0.05, 0.10),
+            WorldSizeType::Small => Self::new(6, 12, 4, 4, 3.0, 5.0, 1.0, 0.05, 0.10),
+            WorldSizeType::Standard => Self::new(8, 16, 5, 5, 3.0, 5.0, 1.1, 0.05, 0.10),
+            WorldSizeType::Large => Self::new(10, 20, 6, 6, 2.4, 4.0, 1.2, 0.03, 0.075),
+            WorldSizeType::Huge => Self::new(12, 24, 7, 7, 1.8, 3.0, 1.3, 0.02, 0.05),
+        }
+    }
 }

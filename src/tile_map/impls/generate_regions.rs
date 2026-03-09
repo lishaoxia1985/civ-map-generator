@@ -19,7 +19,7 @@ impl TileMap {
     pub fn generate_regions(&mut self, map_parameters: &MapParameters) {
         let grid = self.world_grid.grid;
 
-        let civilization_num = map_parameters.num_civilization;
+        let num_civilizations = map_parameters.world_size_type_profile.num_civilizations;
 
         match map_parameters.region_divide_method {
             RegionDivideMethod::Pangaea => {
@@ -28,7 +28,7 @@ impl TileMap {
 
                 let landmass_region = Region::landmass_region(self, biggest_landmass_id);
 
-                self.divide_into_regions(civilization_num, landmass_region);
+                self.divide_into_regions(num_civilizations, landmass_region);
             }
             RegionDivideMethod::Continent => {
                 let mut landmass_region_list: Vec<_> = self
@@ -43,7 +43,7 @@ impl TileMap {
                 let landmass_num = landmass_region_list.len() as u32;
 
                 // If less players than landmasses, we will ignore the extra landmasses.
-                let relevant_landmass_num = min(landmass_num, civilization_num);
+                let relevant_landmass_num = min(landmass_num, num_civilizations);
 
                 // Create a new list containing the most fertile land areas by reversing the sorted list and selecting the top `relevant_landmass_num` items.
                 let best_landmass_region_list = landmass_region_list
@@ -64,7 +64,7 @@ impl TileMap {
                     .collect();
 
                 // Distribute all civilizations one by one
-                for _ in 0..civilization_num {
+                for _ in 0..num_civilizations {
                     // Find the most fertile region (where adding a civ would give highest fertility per civ)
                     let (best_index, _) = average_fertility_per_civ
                         .iter()
@@ -97,11 +97,11 @@ impl TileMap {
                 );
 
                 let region = Region::rectangle_region(self, grid, rectangle);
-                self.divide_into_regions(civilization_num, region);
+                self.divide_into_regions(num_civilizations, region);
             }
             RegionDivideMethod::CustomRectangle(rectangle) => {
                 let region = Region::rectangle_region(self, grid, rectangle);
-                self.divide_into_regions(civilization_num, region);
+                self.divide_into_regions(num_civilizations, region);
             }
         }
     }

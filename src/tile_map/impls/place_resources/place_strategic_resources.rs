@@ -13,6 +13,7 @@ use crate::{
 impl TileMap {
     /// Places strategic resources on the map.
     pub fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
+        let num_civilizations = map_parameters.world_size_type_profile.num_civilizations;
         // Adjust amounts, if applicable, based on Resource Setting.
         let (uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt) =
             get_major_strategic_resource_quantity_values(map_parameters.resource_setting);
@@ -254,7 +255,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Iron) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Iron) < 4 * num_civilizations {
             // print("Map has very low iron, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Iron,
@@ -271,7 +272,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Horses) < 4 * num_civilizations {
             // print("Map has very low horse, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Horses,
@@ -288,7 +289,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Horses) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Horses) < 4 * num_civilizations {
             // print("Map has very low horse, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Horses,
@@ -322,7 +323,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Coal) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Coal) < 4 * num_civilizations {
             // print("Map has very low coal, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Coal,
@@ -339,7 +340,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Oil) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Oil) < 4 * num_civilizations {
             // print("Map has very low oil, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Oil,
@@ -356,7 +357,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Aluminum) < 4 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Aluminum) < 4 * num_civilizations {
             // print("Map has very low aluminum, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Aluminum,
@@ -373,7 +374,7 @@ impl TileMap {
             );
         }
 
-        if self.placed_resource_count(Resource::Uranium) < 2 * map_parameters.num_civilization {
+        if self.placed_resource_count(Resource::Uranium) < 2 * num_civilizations {
             // print("Map has very low uranium, adding another.");
             let resources_to_place = [ResourceToPlace {
                 resource: Resource::Uranium,

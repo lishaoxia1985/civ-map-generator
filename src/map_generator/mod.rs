@@ -69,8 +69,9 @@ pub trait Generator {
             .balance_and_assign_civilization_starting_tiles(map_parameters, ruleset);
     }
 
-    fn place_natural_wonders(&mut self, ruleset: &Ruleset) {
-        self.tile_map_mut().place_natural_wonders(ruleset);
+    fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        self.tile_map_mut()
+            .place_natural_wonders(map_parameters, ruleset);
     }
 
     fn assign_luxury_roles(&mut self, map_parameters: &MapParameters) {
@@ -142,15 +143,15 @@ pub trait Generator {
 
         map.balance_and_assign_civilization_starting_tiles(map_parameters, ruleset);
 
-        map.place_natural_wonders(ruleset);
+        map.place_natural_wonders(map_parameters, ruleset);
 
         map.assign_luxury_roles(map_parameters);
 
         map.place_city_states(map_parameters, ruleset);
 
-        // We have replace this code with `TileMap::generate_bonus_resource_tile_lists_in_map`,
-        // `TileMap::generate_luxury_resource_tile_lists_in_map` and `TileMap::generate_strategic_resource_tile_lists_in_map`.
-        // So the commented code is unnecessary.
+        /* We have replace this code with `TileMap::generate_bonus_resource_tile_lists_in_map`,
+        `TileMap::generate_luxury_resource_tile_lists_in_map` and `TileMap::generate_strategic_resource_tile_lists_in_map`.
+        So the commented code is unnecessary. */
         /* self:GenerateGlobalResourcePlotLists() */
 
         map.place_luxury_resources(map_parameters, ruleset);

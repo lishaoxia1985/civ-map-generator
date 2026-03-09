@@ -47,7 +47,7 @@ impl TileMap {
         let mut start_civilization_list: Vec<_> = civilization_list
             .choose_multiple(
                 &mut self.random_number_generator,
-                map_parameters.num_civilization as usize,
+                map_parameters.world_size_type_profile.num_civilizations as usize,
             )
             .copied()
             .collect();

@@ -6,8 +6,9 @@ use enum_map::EnumMap;
 use rand::prelude::SliceRandom;
 use rand::{Rng, seq::IndexedRandom};
 
+use crate::map_parameters::MapParameters;
 use crate::{
-    grid::{Grid, WorldSizeType},
+    grid::Grid,
     ruleset::{Ruleset, unique::Unique},
     tile::Tile,
     tile_component::*,
@@ -24,12 +25,11 @@ impl TileMap {
     /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
     /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     ///   so we should check if the tile is occupied by a civilization start location.
-    pub fn place_natural_wonders(&mut self, ruleset: &Ruleset) {
+    pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
-        let world_size = self.world_grid.world_size_type;
         // Get the number of natural wonders to place based on the world size
-        let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
+        let num_natural_wonders = map_parameters.world_size_type_profile.num_natural_wonders;
 
         // Collect the natural wonders and their possible tile locations
         let mut natural_wonder_and_tile_list: EnumMap<NaturalWonder, Vec<Tile>> =
@@ -190,7 +190,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder| {
-                if j < natural_wonder_target_number {
+                if j < num_natural_wonders {
                     let tile_list = &mut natural_wonder_and_tile_list[natural_wonder];
 
                     tile_list.shuffle(&mut self.random_number_generator);
@@ -325,12 +325,11 @@ impl TileMap {
     ///   so we don't need to check if the tile is occupied by a civilization start location.
     /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
     ///   so we should check if the tile is occupied by a civilization start location.
-    pub fn generate_natural_wonders(&mut self, ruleset: &Ruleset) {
+    pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
-        let world_size = self.world_grid.world_size_type;
         // Get the number of natural wonders to place based on the world size
-        let natural_wonder_target_number = get_world_natural_wonder_target_number(world_size);
+        let num_natural_wonders = map_parameters.world_size_type_profile.num_natural_wonders;
 
         // Collect the natural wonders and their possible tile locations
         let mut natural_wonder_and_tile_list: EnumMap<NaturalWonder, Vec<Tile>> =
@@ -490,7 +489,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder| {
-                if j < natural_wonder_target_number {
+                if j < num_natural_wonders {
                     // For every natural wonder, give a score to the position where the natural wonder can place.
                     // The score is related to the min value of the distance from the position to all the placed natural wonders
                     // If no natural wonder has placed, we choose the random place where the current natural wonder can place for the current natural wonder
@@ -651,17 +650,5 @@ impl TileMap {
                     || feature.is_some_and(|f| f.as_str() == filter)
             }
         }
-    }
-}
-
-/// Get the target number of natural wonders to place based on the world size type.
-fn get_world_natural_wonder_target_number(world_size_type: WorldSizeType) -> u32 {
-    match world_size_type {
-        WorldSizeType::Duel => 2,
-        WorldSizeType::Tiny => 3,
-        WorldSizeType::Small => 4,
-        WorldSizeType::Standard => 5,
-        WorldSizeType::Large => 6,
-        WorldSizeType::Huge => 7,
     }
 }
