@@ -128,7 +128,7 @@ impl TileMap {
 
         /************ Do river start ************/
 
-        // If the start plot have a river, exit the function
+        // If the start tile have a river, exit the function
         // That will also prevent the river from forming a loop
         if self
             .river_list

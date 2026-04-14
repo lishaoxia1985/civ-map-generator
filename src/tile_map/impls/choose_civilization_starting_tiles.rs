@@ -215,17 +215,17 @@ impl TileMap {
             &grid,
         );
 
-        let mut center_coastal_plots = Vec::new();
-        let mut center_plots_on_river = Vec::new();
-        let mut center_fresh_plots = Vec::new();
-        let mut center_dry_plots = Vec::new();
+        let mut center_coastal_tiles = Vec::new();
+        let mut center_tiles_on_river = Vec::new();
+        let mut center_fresh_tiles = Vec::new();
+        let mut center_dry_tiles = Vec::new();
 
-        let mut middle_coastal_plots = Vec::new();
-        let mut middle_plots_on_river = Vec::new();
-        let mut middle_fresh_plots = Vec::new();
-        let mut middle_dry_plots = Vec::new();
+        let mut middle_coastal_tiles = Vec::new();
+        let mut middle_tiles_on_river = Vec::new();
+        let mut middle_fresh_tiles = Vec::new();
+        let mut middle_dry_tiles = Vec::new();
 
-        let mut outer_coastal_plots = Vec::new();
+        let mut outer_coastal_tiles = Vec::new();
 
         for tile in rectangle.all_cells(&grid).map(Tile::from_cell) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
@@ -234,26 +234,26 @@ impl TileMap {
                 if landmass_id == Some(area_id) {
                     if center_rectangle.contains(tile.to_cell(), &grid) {
                         // Center Bias
-                        center_coastal_plots.push(tile);
+                        center_coastal_tiles.push(tile);
                         if tile.has_river(self) {
-                            center_plots_on_river.push(tile);
+                            center_tiles_on_river.push(tile);
                         } else if tile.is_freshwater(self) {
-                            center_fresh_plots.push(tile);
+                            center_fresh_tiles.push(tile);
                         } else {
-                            center_dry_plots.push(tile);
+                            center_dry_tiles.push(tile);
                         }
                     } else if middle_rectangle.contains(tile.to_cell(), &grid) {
                         // Middle Bias
-                        middle_coastal_plots.push(tile);
+                        middle_coastal_tiles.push(tile);
                         if tile.has_river(self) {
-                            middle_plots_on_river.push(tile);
+                            middle_tiles_on_river.push(tile);
                         } else if tile.is_freshwater(self) {
-                            middle_fresh_plots.push(tile);
+                            middle_fresh_tiles.push(tile);
                         } else {
-                            middle_dry_plots.push(tile);
+                            middle_dry_tiles.push(tile);
                         }
                     } else {
-                        outer_coastal_plots.push(tile);
+                        outer_coastal_tiles.push(tile);
                     }
                 }
             }
@@ -261,14 +261,14 @@ impl TileMap {
 
         let region = &self.region_list[region_index];
 
-        if center_coastal_plots.len() + middle_coastal_plots.len() > 0 {
+        if center_coastal_tiles.len() + middle_coastal_tiles.len() > 0 {
             let candidate_lists = [
-                center_plots_on_river,
-                center_fresh_plots,
-                center_dry_plots,
-                middle_plots_on_river,
-                middle_fresh_plots,
-                middle_dry_plots,
+                center_tiles_on_river,
+                center_fresh_tiles,
+                center_dry_tiles,
+                middle_tiles_on_river,
+                middle_fresh_tiles,
+                middle_dry_tiles,
             ];
 
             for tile_list in candidate_lists.iter() {
@@ -286,15 +286,15 @@ impl TileMap {
             }
         }
 
-        if !outer_coastal_plots.is_empty() {
+        if !outer_coastal_tiles.is_empty() {
             let mut outer_eligible_list = Vec::new();
             let mut found_eligible = false;
             let mut found_fallback = false;
             let mut best_fallback_score = -50;
             let mut best_fallback_index = None;
 
-            // Process list of candidate plots.
-            for tile in outer_coastal_plots.into_iter() {
+            // Process list of candidate tiles.
+            for tile in outer_coastal_tiles.into_iter() {
                 let (score, meets_minimum_requirements) =
                     self.evaluate_candidate_tile(tile, region);
 
@@ -311,7 +311,7 @@ impl TileMap {
             }
 
             if found_eligible {
-                // Iterate through eligible plots and choose the one closest to the center of the region.
+                // Iterate through eligible tiles and choose the one closest to the center of the region.
                 let mut closest_tile = None;
                 let mut closest_distance =
                     u32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
@@ -405,7 +405,7 @@ impl TileMap {
                 }
 
                 if let Some(closest_tile) = closest_tile {
-                    // Re-get plot score for inclusion in start plot data.
+                    // Re-get tile score for inclusion in start tile data.
                     let (_score, _meets_minimum_requirements) =
                         self.evaluate_candidate_tile(closest_tile, region);
 
@@ -512,7 +512,7 @@ impl TileMap {
         let mut middle_coastal_land_and_freshwater = Vec::new();
         let mut middle_inland_dry_land = Vec::new();
 
-        let mut outer_plots = Vec::new();
+        let mut outer_tiles = Vec::new();
 
         for tile in region.rectangle.all_cells(&grid).map(Tile::from_cell) {
             if tile.can_be_civilization_starting_tile(self, map_parameters) {
@@ -539,7 +539,7 @@ impl TileMap {
                             middle_inland_dry_land.push(tile);
                         }
                     } else {
-                        outer_plots.push(tile);
+                        outer_tiles.push(tile);
                     }
                 }
             }
@@ -570,15 +570,15 @@ impl TileMap {
             }
         }
 
-        if !outer_plots.is_empty() {
+        if !outer_tiles.is_empty() {
             let mut outer_eligible_list = Vec::new();
             let mut found_eligible = false;
             let mut found_fallback = false;
             let mut best_fallback_score = -50;
             let mut best_fallback_index = None;
 
-            // Process list of candidate plots.
-            for tile in outer_plots.into_iter() {
+            // Process list of candidate tiles.
+            for tile in outer_tiles.into_iter() {
                 let (score, meets_minimum_requirements) =
                     self.evaluate_candidate_tile(tile, region);
 
@@ -595,7 +595,7 @@ impl TileMap {
             }
 
             if found_eligible {
-                // Iterate through eligible plots and choose the one closest to the center of the region.
+                // Iterate through eligible tiles and choose the one closest to the center of the region.
                 let mut closest_tile = None;
                 let mut closest_distance =
                     u32::max(self.world_grid.size().width, self.world_grid.size().height) as f64;
@@ -682,25 +682,25 @@ impl TileMap {
                         + (adjusted_y - bullseye_y).powf(2.0))
                     .sqrt();
                     if distance < closest_distance {
-                        // Found new "closer" plot.
+                        // Found new "closer" tile.
                         closest_tile = Some(tile);
                         closest_distance = distance;
                     }
                 }
 
                 if let Some(closest_tile) = closest_tile {
-                    // Re-get plot score for inclusion in start plot data.
+                    // Re-get tile score for inclusion in start tile data.
                     let (_score, _meets_minimum_requirements) =
                         self.evaluate_candidate_tile(closest_tile, region);
 
-                    // Assign this plot as the start for this region.
+                    // Assign this tile as the start for this region.
                     self.region_list[region_index].starting_tile = closest_tile;
                     self.place_impact_and_ripples(closest_tile, Layer::Civilization, u32::MAX);
                     return (true, false);
                 }
             }
 
-            // Add the fallback plot (best scored plot) from the Outer region to the fallback list.
+            // Add the fallback tile (best scored tile) from the Outer region to the fallback list.
             if found_fallback && let Some(best_fallback_index) = best_fallback_index {
                 fallback_tile_and_score.push((best_fallback_index, best_fallback_score));
             }
@@ -958,7 +958,7 @@ impl TileMap {
     ///   For example, in tundra regions I have tundra tiles set as Food, but grass are not.
     ///   A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
     /// - [`TileType::Good`] act as a hedge, and are the main way of differentiating one candidate site from another,
-    ///   so that among a group of plots of similar terrain, the best tends to get picked.
+    ///   so that among a group of tiles of similar terrain, the best tends to get picked.
     /// - [`TileType::Production`] is used to identify tiles that yield production.
     /// - [`TileType::Junk`] is used to identify tiles that yield nothing.
     fn measure_single_tile(&self, tile: Tile, region: &Region) -> EnumMap<TileType, bool> {

@@ -20,7 +20,7 @@ impl TileMap {
     // function AssignStartingPlots:ProcessResourceList
     /// Placing bonus or strategic resources on the map based on the given parameters.
     ///
-    /// It iterates through the list of plots and places resources on eligible plots based on the
+    /// It iterates through the list of tiles and places resources on eligible tiles based on the
     /// resource type, quantity, and radius.\
     /// Before using this function, make sure `tile_list` has been shuffled.
     ///
@@ -30,7 +30,7 @@ impl TileMap {
     ///   It determines resource placement such that one resource is placed per every 'frequency' tiles, with at least one resource guaranteed even if there are fewer than 'frequency' tiles.
     ///   For example, a frequency of 3 means that one resource is placed every 3 tiles, with at least one resource guaranteed.
     /// - `layer`: The layer on which the resource will be placed.
-    /// - `tile_list`: A vector of tiles representing the plots where resources can be placed. Before using this argument, make sure the vector has been shuffled.
+    /// - `tile_list`: A vector of tiles representing the tiles where resources can be placed. Before using this argument, make sure the vector has been shuffled.
     /// - `resource_list_to_place`: A vector of resource to place, which contains the resource type,
     ///   quantity, minimum radius, and maximum radius for each resource.
     ///

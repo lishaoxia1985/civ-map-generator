@@ -33,11 +33,10 @@ impl TileMap {
             .filter(|&nation| !ruleset.nations[nation.as_str()].city_state_type.is_empty())
             .collect::<Vec<_>>();
 
+        let num_city_states = map_parameters.world_size_type_profile.num_city_states as usize;
+
         let mut start_city_state_list: Vec<_> = city_state_list
-            .choose_multiple(
-                &mut self.random_number_generator,
-                map_parameters.world_size_type_profile.num_city_states as usize,
-            )
+            .choose_multiple(&mut self.random_number_generator, num_city_states)
             .copied()
             .collect();
 
@@ -135,10 +134,12 @@ impl TileMap {
             }
         }
 
+        #[cfg(debug_assertions)]
         if num_city_states_discarded > 0 {
-            panic!(
-                "Could not place {} city states on map. Too many city states for map size.",
-                num_city_states_discarded
+            eprintln!(
+                "Can only place {} out of {} city states on the map. Not enough valid locations for all city states.",
+                num_city_states - num_city_states_discarded,
+                num_city_states
             );
         }
     }

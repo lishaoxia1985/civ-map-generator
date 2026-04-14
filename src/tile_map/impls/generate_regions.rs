@@ -502,7 +502,7 @@ impl TileMap {
                     let offset_coordinate = OffsetCoordinate::from([x, y]);
                     let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
-                        // Found a plot belonging to i_area_id, will have to check the next row too.
+                        // Found a tile belonging to i_area_id, will have to check the next row too.
                         found_area_in_row = true;
                     }
                 }
@@ -524,7 +524,7 @@ impl TileMap {
                     let offset_coordinate = OffsetCoordinate::from([x, y]);
                     let tile = Tile::from_offset(offset_coordinate, grid);
                     if tile.area_id(self) == area_id {
-                        // Found a plot belonging to i_area_id, will have to check the next row too.
+                        // Found a tile belonging to i_area_id, will have to check the next row too.
                         found_area_in_row = true;
                     }
                 }

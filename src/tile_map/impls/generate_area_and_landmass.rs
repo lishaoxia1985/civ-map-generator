@@ -103,7 +103,7 @@ impl TileMap {
 
             let area_size = tiles_in_area.len() as u32;
 
-            // Merge single-plot mountains / ice with the surrounding area
+            // Merge single-tile mountains / ice with the surrounding area
             if area_size < MIN_AREA_SIZE {
                 // Convert `tiles_in_area` into a sorted vector `tiles_in_area_ordered` to ensure a consistent order,
                 // that will help us to get the same largest area ID of the neighboring area each time

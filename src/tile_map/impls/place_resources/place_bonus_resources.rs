@@ -295,7 +295,7 @@ impl TileMap {
                 if tile.resource(self).is_none()
                     && matches!(terrain_type, TerrainType::Hill | TerrainType::Flatland)
                 {
-                    // Check plot for region membership. Only process this plot if it is a member.
+                    // Check tile for region membership. Only process this tile if it is a member.
                     if landmass_id == Some(area_id) || landmass_id.is_none() {
                         if let Some(feature) = feature {
                             match feature {
@@ -460,7 +460,7 @@ impl TileMap {
             (RegionType::Hybrid, Resource::Cattle),
         ];
 
-        let mut plot_list = Vec::new();
+        let mut tile_list = Vec::new();
         let mut fish_list = Vec::new();
 
         for i in 0..self.region_list.len() {
@@ -481,12 +481,12 @@ impl TileMap {
                             || (terrain_type == TerrainType::Flatland
                                 && base_terrain == BaseTerrain::Tundra)
                         {
-                            plot_list.push(tile);
+                            tile_list.push(tile);
                         }
                     }
                     Resource::Bananas => {
                         if feature == Some(Feature::Jungle) {
-                            plot_list.push(tile);
+                            tile_list.push(tile);
                         }
                     }
                     Resource::Wheat => {
@@ -496,7 +496,7 @@ impl TileMap {
                                 || (base_terrain == BaseTerrain::Desert
                                     && tile.is_freshwater(self)))
                         {
-                            plot_list.push(tile);
+                            tile_list.push(tile);
                         }
                     }
                     Resource::Sheep => {
@@ -507,7 +507,7 @@ impl TileMap {
                                 BaseTerrain::Plain | BaseTerrain::Grassland | BaseTerrain::Tundra
                             )
                         {
-                            plot_list.push(tile);
+                            tile_list.push(tile);
                         }
                     }
                     Resource::Cattle => {
@@ -515,7 +515,7 @@ impl TileMap {
                             && feature.is_none()
                             && base_terrain == BaseTerrain::Grassland
                         {
-                            plot_list.push(tile);
+                            tile_list.push(tile);
                         }
                     }
                     _ => {
@@ -529,8 +529,8 @@ impl TileMap {
                     fish_list.push(tile);
                 }
             });
-            if !plot_list.is_empty() {
-                plot_list.shuffle(&mut self.random_number_generator);
+            if !tile_list.is_empty() {
+                tile_list.shuffle(&mut self.random_number_generator);
                 self.place_specific_number_of_resources(
                     chosen_bonus_resource,
                     1,
@@ -539,10 +539,10 @@ impl TileMap {
                     None,
                     0,
                     0,
-                    &plot_list,
+                    &tile_list,
                 );
                 // Hills region, attempt to give them a second Sexy Sheep.
-                if plot_list.len() > 1 && chosen_bonus_resource == Resource::Sheep {
+                if tile_list.len() > 1 && chosen_bonus_resource == Resource::Sheep {
                     self.place_specific_number_of_resources(
                         Resource::Sheep,
                         1,
@@ -551,7 +551,7 @@ impl TileMap {
                         None,
                         0,
                         0,
-                        &plot_list,
+                        &tile_list,
                     );
                 }
             } else if !fish_list.is_empty() {

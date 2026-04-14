@@ -45,6 +45,7 @@ impl TileMap {
         // Sort by `area_size` in descending order
         land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
+        /***** Tackle with the natural wonders which require 2 adjacent tiles *****/
         // When a natural wonder requires occupying 2 adjacent tiles,
         // we choose the current tile and one of its randomly selected adjacent tiles
         // as the location for placing the wonder.
@@ -182,7 +183,7 @@ impl TileMap {
             .sort_by_key(|&natural_wonder| natural_wonder_and_tile_list[natural_wonder].len());
 
         // Store current how many natural wonders have been placed
-        let mut j = 0;
+        let mut num_placed_natural_wonders = 0;
         // Store the tile where the natural wonder has been placed
         let mut placed_natural_wonder_tiles: Vec<Tile> = Vec::new();
 
@@ -190,7 +191,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder| {
-                if j < num_natural_wonders {
+                if num_placed_natural_wonders < num_natural_wonders {
                     let tile_list = &mut natural_wonder_and_tile_list[natural_wonder];
 
                     tile_list.shuffle(&mut self.random_number_generator);
@@ -273,12 +274,20 @@ impl TileMap {
 
                             self.player_collision_data[tile.index()] = true;
 
-                            j += 1;
+                            num_placed_natural_wonders += 1;
                             break;
                         }
                     }
                 }
             });
+
+        #[cfg(debug_assertions)]
+        if num_placed_natural_wonders < num_natural_wonders {
+            eprintln!(
+                "Could only place {} out of {} natural wonders on the map. Not enough valid locations for all natural wonders or not enough natural wonders available.",
+                num_placed_natural_wonders, num_natural_wonders
+            );
+        }
 
         // If the natural wonder is not a lake, and it has water neighbors, then change the water neighbor tiles to lake or coast.
         placed_natural_wonder_tiles.iter().for_each(|&tile| {
@@ -345,6 +354,7 @@ impl TileMap {
         // Sort by `area_size` in descending order
         land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
 
+        /***** Tackle with the natural wonders which require 2 adjacent tiles *****/
         // When a natural wonder requires occupying 2 adjacent tiles,
         // we choose the current tile and one of its randomly selected adjacent tiles
         // as the location for placing the wonder.
@@ -481,7 +491,7 @@ impl TileMap {
         selected_natural_wonder_list.shuffle(&mut self.random_number_generator);
 
         // Store current how many natural wonders have been placed
-        let mut j = 0;
+        let mut num_placed_natural_wonders = 0;
         // Store the tile where the natural wonder has been placed
         let mut placed_natural_wonder_tiles: Vec<Tile> = Vec::new();
 
@@ -489,7 +499,7 @@ impl TileMap {
         selected_natural_wonder_list
             .into_iter()
             .for_each(|natural_wonder| {
-                if j < num_natural_wonders {
+                if num_placed_natural_wonders < num_natural_wonders {
                     // For every natural wonder, give a score to the position where the natural wonder can place.
                     // The score is related to the min value of the distance from the position to all the placed natural wonders
                     // If no natural wonder has placed, we choose the random place where the current natural wonder can place for the current natural wonder
@@ -596,10 +606,18 @@ impl TileMap {
                                 placed_natural_wonder_tiles.push(max_score_tile);
                             }
                         }
-                        j += 1;
+                        num_placed_natural_wonders += 1;
                     }
                 }
             });
+
+        #[cfg(debug_assertions)]
+        if num_placed_natural_wonders < num_natural_wonders {
+            eprintln!(
+                "Could only place {} out of {} natural wonders on the map. Not enough valid locations for all natural wonders or not enough natural wonders available.",
+                num_placed_natural_wonders, num_natural_wonders
+            );
+        }
 
         // If the natural wonder is not a lake, and it has water neighbors, then change the water neighbor tiles to lake or coast.
         placed_natural_wonder_tiles.iter().for_each(|&tile| {

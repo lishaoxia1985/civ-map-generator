@@ -41,7 +41,7 @@ impl TileMap {
         let mut jungle_count = 0;
         let mut marsh_count = 0;
         let mut oasis_count = 0;
-        let mut num_land_plots = 0;
+        let mut num_land_tiles = 0;
         let jungle_bottom = equator - (jungle_percent as f64 * 0.5).ceil() as i32;
         let jungle_top = equator + (jungle_percent as f64 * 0.5).ceil() as i32;
 
@@ -82,7 +82,7 @@ impl TileMap {
             /* **********the end of add ice********** */
             else {
                 /* **********start to add Floodplain********** */
-                num_land_plots += 1;
+                num_land_tiles += 1;
                 if tile.has_river(self)
                     && ruleset.features["Floodplain"]
                         .occurs_on_type
@@ -102,7 +102,7 @@ impl TileMap {
                     && ruleset.features["Oasis"]
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
-                    && (oasis_count as f64 * 100. / num_land_plots as f64).ceil() as i32
+                    && (oasis_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= oasis_max_percent
                     && self.random_number_generator.random_range(0..4) == 1
                 {
@@ -118,7 +118,7 @@ impl TileMap {
                     && ruleset.features["Marsh"]
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
-                    && (marsh_count as f64 * 100. / num_land_plots as f64).ceil() as i32
+                    && (marsh_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= marsh_max_percent
                 {
                     let mut score = 300;
@@ -148,7 +148,7 @@ impl TileMap {
                     && ruleset.features["Jungle"]
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
-                    && (jungle_count as f64 * 100. / num_land_plots as f64).ceil() as i32
+                    && (jungle_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= jungle_max_percent
                     && (latitude >= jungle_bottom as f64 / 100.
                         && latitude <= jungle_top as f64 / 100.)
@@ -192,7 +192,7 @@ impl TileMap {
                     && ruleset.features["Forest"]
                         .occurs_on_base
                         .contains(&tile.base_terrain(self))
-                    && (forest_count as f64 * 100. / num_land_plots as f64).ceil() as i32
+                    && (forest_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= forest_max_percent
                 {
                     let mut score = 300;
@@ -223,6 +223,7 @@ impl TileMap {
         /* **********the end of add atolls********** */
     }
 
+    /// Add [`Feature::Atoll`] to the tile map.
     fn add_atolls(&mut self) {
         let grid = self.world_grid.grid;
 
@@ -356,7 +357,6 @@ impl TileMap {
                     } else if max_beta > 0 {
                         tile = beta_list_iter.next();
                         max_beta -= 1;
-                        // println!("- Beta site chosen");
                     } else if max_alpha > 0 {
                         tile = alpha_list_iter.next();
                         max_alpha -= 1;
@@ -397,6 +397,7 @@ impl TileMap {
         }
     }
 
+    /// Returns the ID of the biggest water area.
     fn get_biggest_water_area_id(&self) -> usize {
         self.area_list
             .iter()

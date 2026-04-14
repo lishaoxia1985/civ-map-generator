@@ -621,7 +621,7 @@ impl TileMap {
                 let priority_list_indices_of_chosen_resource =
                     PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
 
-                let mut luxury_plot_lists =
+                let mut luxury_tile_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
 
                 let mut num_left_to_place = resource_amount;
@@ -630,7 +630,7 @@ impl TileMap {
                     if num_left_to_place == 0 {
                         break;
                     }
-                    luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                    luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         strategic_resource,
                         num_left_to_place,
@@ -639,7 +639,7 @@ impl TileMap {
                         None,
                         0,
                         0,
-                        &luxury_plot_lists[i],
+                        &luxury_tile_lists[i],
                     );
                 }
             }

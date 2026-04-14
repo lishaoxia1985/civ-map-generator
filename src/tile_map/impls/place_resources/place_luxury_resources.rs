@@ -59,7 +59,7 @@ impl TileMap {
             // Part 1. The basic number of luxuries to place at the start location according to `resource_setting`.
             // Part 2. The number of luxuries to place at the start location because of low fertility.
             let mut num_to_place = basic_num_to_place;
-            // Low fertility per region rectangle plot, add a luxury.
+            // Low fertility per region rectangle tile, add a luxury.
             if region.average_fertility() < 2.5 {
                 num_to_place += 1;
                 *luxury_low_fert_compensation
@@ -71,7 +71,7 @@ impl TileMap {
             let region_land_num = terrain_statistic.terrain_type_num[TerrainType::Hill]
                 + terrain_statistic.terrain_type_num[TerrainType::Flatland];
 
-            // Low fertility per region land plot, add a luxury.
+            // Low fertility per region land tile, add a luxury.
             if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {
                 num_to_place += 1;
                 *luxury_low_fert_compensation
@@ -82,7 +82,7 @@ impl TileMap {
 
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(exclusive_luxury);
-            let mut luxury_plot_lists =
+            let mut luxury_tile_lists =
                 self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
             let mut num_left_to_place = num_to_place;
@@ -92,7 +92,7 @@ impl TileMap {
                 if num_left_to_place == 0 {
                     break;
                 }
-                luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
                     exclusive_luxury,
                     1,
@@ -101,12 +101,12 @@ impl TileMap {
                     None,
                     0,
                     0,
-                    &luxury_plot_lists[i],
+                    &luxury_tile_lists[i],
                 );
             }
 
             if num_left_to_place > 0 {
-                let mut luxury_plot_lists =
+                let mut luxury_tile_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
 
                 // Second pass, checking three rings with a 100% ratio.
@@ -114,7 +114,7 @@ impl TileMap {
                     if num_left_to_place == 0 {
                         break;
                     }
-                    luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                    luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         exclusive_luxury,
                         1,
@@ -123,7 +123,7 @@ impl TileMap {
                         None,
                         0,
                         0,
-                        &luxury_plot_lists[i],
+                        &luxury_tile_lists[i],
                     );
                 }
             }
@@ -157,7 +157,7 @@ impl TileMap {
                         if randoms_to_place == 0 {
                             break;
                         }
-                        luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                        luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
                             random_luxury,
                             1,
@@ -166,7 +166,7 @@ impl TileMap {
                             None,
                             0,
                             0,
-                            &luxury_plot_lists[i],
+                            &luxury_tile_lists[i],
                         );
                     }
                 }
@@ -242,7 +242,7 @@ impl TileMap {
                 // Place luxury.
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(luxury_resource);
-                let mut luxury_plot_lists =
+                let mut luxury_tile_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
                 let mut num_left_to_place = 1;
@@ -251,7 +251,7 @@ impl TileMap {
                     if num_left_to_place == 0 {
                         break;
                     }
-                    luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                    luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         luxury_resource,
                         1,
@@ -260,7 +260,7 @@ impl TileMap {
                         None,
                         0,
                         0,
-                        &luxury_plot_lists[i],
+                        &luxury_tile_lists[i],
                     );
                 }
             }
@@ -281,7 +281,7 @@ impl TileMap {
                 self.luxury_assign_to_region_count[&luxury_resource];
             let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury_resource);
 
-            let mut luxury_plot_lists = self.generate_luxury_tile_lists_in_region(region_index);
+            let mut luxury_tile_lists = self.generate_luxury_tile_lists_in_region(region_index);
 
             let current_luxury_low_fert_compensation = *luxury_low_fert_compensation
                 .entry(luxury_resource)
@@ -323,7 +323,7 @@ impl TileMap {
                 if num_left_to_place == 0 {
                     break;
                 }
-                luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
 
                 num_left_to_place = self.place_specific_number_of_resources(
                     luxury_resource,
@@ -333,7 +333,7 @@ impl TileMap {
                     Some(Layer::Luxury),
                     0,
                     max_radius,
-                    &luxury_plot_lists[i],
+                    &luxury_tile_lists[i],
                 );
             }
         }
@@ -488,7 +488,7 @@ impl TileMap {
                 if let Some(&luxury) = use_this_luxury {
                     let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
-                    let mut luxury_plot_lists =
+                    let mut luxury_tile_lists =
                         self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
                     let mut num_left_to_place = 1;
@@ -497,7 +497,7 @@ impl TileMap {
                         if num_left_to_place == 0 {
                             break;
                         }
-                        luxury_plot_lists[i].shuffle(&mut self.random_number_generator);
+                        luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                         num_left_to_place = self.place_specific_number_of_resources(
                             luxury,
                             1,
@@ -506,7 +506,7 @@ impl TileMap {
                             None,
                             0,
                             0,
-                            &luxury_plot_lists[i],
+                            &luxury_tile_lists[i],
                         );
                     }
                 }
@@ -596,7 +596,7 @@ impl TileMap {
 
         let mut num_left_to_place = num_marble_to_place;
         if marble_tile_list.is_empty() {
-            // println!("No eligible plots available to place Marble!");
+            eprintln!("No eligible tiles available to place Marble!");
             return;
         }
 
@@ -611,16 +611,20 @@ impl TileMap {
                 && self.layer_data[Layer::Marble][tile.index()] == 0
                 && self.layer_data[Layer::Luxury][tile.index()] == 0
             {
-                // Placing this resource in this plot.
+                // Placing this resource in this tile.
                 tile.set_resource(self, luxury_resource, 1);
                 num_left_to_place -= 1;
-                // println!("Still need to place {} more units of Marble.", num_left_to_place);
                 self.place_impact_and_ripples(tile, Layer::Marble, u32::MAX);
             }
         }
 
+        #[cfg(debug_assertions)]
         if num_left_to_place > 0 {
-            eprintln!("Failed to place {} units of Marble.", num_left_to_place);
+            eprintln!(
+                "Can only place {} out of {} units of Marble. Not enough eligible tiles available.",
+                num_marble_to_place - num_left_to_place,
+                num_marble_to_place
+            );
         }
     }
 
@@ -775,7 +779,7 @@ impl TileMap {
     ///
     /// # Notice
     ///
-    /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
+    /// In the original code, `clear ice near city site` and `generate luxury tile lists at city site` are combined in one method.
     /// We have extracted the `clear ice near city site` into a separate method.
     /// If you want to clear ice near city site, you should use [`TileMap::clear_ice_near_city_site`].\
     /// TODO: Sometimes this function is used for strategic resources, so the name should be changed.

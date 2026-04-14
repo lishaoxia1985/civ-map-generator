@@ -97,7 +97,7 @@ impl Default for MapParameters {
             size: HexGrid::default_size(world_size),
             layout: HexLayout {
                 orientation: HexOrientation::Flat,
-                size: [8., 8.],
+                size: [50., 50.],
                 origin: [0., 0.],
             },
             wrap_flags: WrapFlags::WrapX,

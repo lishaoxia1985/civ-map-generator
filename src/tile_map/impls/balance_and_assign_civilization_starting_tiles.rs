@@ -419,7 +419,7 @@ impl TileMap {
             }
         }
 
-        // Assign remaining civs to start plots.
+        // Assign remaining civs to start tiles.
         // Get remaining civilizations that have not been assigned a starting tile.
         let mut remaining_civilization_list: Vec<_> = start_civilization_list
             .into_iter()
@@ -1462,7 +1462,7 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AttemptToPlaceStoneAtGrassPlot
-    /// Attempts to place a stone at a grass plot.
+    /// Attempts to place a stone at a grass tile.
     /// Returns `true` if Stone is placed. Otherwise returns `false`.
     fn attempt_to_place_stone_at_grass_tile(&mut self, tile: Tile) -> bool {
         if tile.resource(self).is_none()
