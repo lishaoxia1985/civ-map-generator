@@ -8,7 +8,12 @@ use crate::grid::{
     hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
 };
 
+/// The parameters for generating a map.
 pub struct MapParameters {
+    /// The seed used to generate the map.
+    ///
+    /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
+    pub seed: u64,
     /// The type of map to generate.
     ///
     /// This can be either [`MapType::Fractal`] or [`MapType::Pangaea`] or other custom map types.
@@ -17,21 +22,17 @@ pub struct MapParameters {
     ///
     /// This grid is used to generate the map and contains information about the layout, size, the type of size, wrapping, and other properties of the map.
     pub world_grid: WorldGrid,
-    /// The seed used to generate the map.
-    ///
-    /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
-    pub seed: u64,
     /// The profile related to the world size type of the map.
     pub world_size_type_profile: WorldSizeTypeProfile,
     /// The number of large lakes to generate on the map.
     /// The count excludes lakes formed during terrain type generation, only including those created in the lake-adding process.
     ///
     /// A `large lake` is defined as a contiguous lake area covering 4 or more tiles.
-    pub num_large_lake: u32,
+    pub num_large_lakes: u32,
     /// The max area size of a lake.
     ///
     /// The water areas with size less than or equal to this value, which are surrounded by land, will be considered as lakes.
-    pub lake_max_area_size: u32,
+    pub max_lake_area_size: u32,
     /// Store the chance of each eligible tile to become a coast in each iteration.
     ///
     /// - Its 'length' is the number of iterations. The more iterations, the more coasts will be generated.
@@ -92,35 +93,54 @@ impl MapParameters {
 
 impl Default for MapParameters {
     fn default() -> Self {
-        let world_size = WorldSizeType::Standard;
-        let grid = HexGrid {
-            size: HexGrid::default_size(world_size),
-            layout: HexLayout {
-                orientation: HexOrientation::Flat,
-                size: [50., 50.],
-                origin: [0., 0.],
-            },
-            wrap_flags: WrapFlags::WrapX,
-            offset: Offset::Odd,
-        };
+        MapParametersBuilder::new(WorldGrid::default()).build()
+    }
+}
 
-        let world_grid = WorldGrid::new(grid, world_size);
+/// A builder for constructing [`MapParameters`].
+///
+/// This builder allows for the flexible configuration of map generation settings.
+/// It separates the construction process from the final object representation,
+/// allowing for more granular control over the map parameters.
+pub struct MapParametersBuilder {
+    seed: u64,
+    world_grid: WorldGrid,
+    map_type: MapType,
+    world_size_type_profile: WorldSizeTypeProfile,
+    num_large_lakes: u32,
+    max_lake_area_size: u32,
+    coast_expand_chance: Vec<f64>,
+    sea_level: SeaLevel,
+    world_age: WorldAge,
+    temperature: Temperature,
+    rainfall: Rainfall,
+    region_divide_method: RegionDivideMethod,
+    civ_require_coastal_land_start: bool,
+    resource_setting: ResourceSetting,
+}
 
-        let world_size_type_profile = WorldSizeTypeProfile::from_world_size_type(world_size);
-
+impl MapParametersBuilder {
+    /// Creates a new `MapParametersBuilder` with the mandatory core parameters.
+    ///
+    /// # Arguments
+    ///
+    /// - `world_grid`: The grid definition for the world layout.
+    pub fn new(world_grid: WorldGrid) -> Self {
         Self {
-            map_type: MapType::Fractal,
-            world_grid,
             seed: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_millis()
                 .try_into()
                 .unwrap(),
-            world_size_type_profile,
-            num_large_lake: 2,
-            lake_max_area_size: 9,
-            coast_expand_chance: vec![0.25, 0.25],
+            world_grid,
+            map_type: Default::default(),
+            world_size_type_profile: WorldSizeTypeProfile::from_world_size_type(
+                world_grid.world_size(),
+            ),
+            num_large_lakes: 2,
+            max_lake_area_size: 9,
+            coast_expand_chance: vec![0.25, 0.25], // Default to two iterations with 25% chance each.
             sea_level: SeaLevel::Normal,
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,
@@ -128,6 +148,108 @@ impl Default for MapParameters {
             region_divide_method: RegionDivideMethod::Continent,
             civ_require_coastal_land_start: false,
             resource_setting: ResourceSetting::Standard,
+        }
+    }
+
+    // --- Chainable Setter Methods ---
+
+    /// Sets the seed for the map generation.
+    pub fn seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
+
+    /// Sets the type of map to generate (e.g., Fractal, Pangaea).
+    pub fn map_type(mut self, map_type: MapType) -> Self {
+        self.map_type = map_type;
+        self
+    }
+
+    /// Sets the profile related to the world size type.
+    pub fn world_size_type_profile(mut self, profile: WorldSizeTypeProfile) -> Self {
+        // TODO: We may need to validate that the provided profile is consistent with the world size type of the world grid.
+        // For example, the world size is too small for the number of civilizations specified in the profile.
+        self.world_size_type_profile = profile;
+        self
+    }
+
+    /// Sets the number of large lakes to generate.
+    pub fn num_large_lakes(mut self, count: u32) -> Self {
+        self.num_large_lakes = count;
+        self
+    }
+
+    /// Sets the maximum area size for a lake.
+    pub fn max_lake_area_size(mut self, size: u32) -> Self {
+        self.max_lake_area_size = size;
+        self
+    }
+
+    /// Sets the probability vector for coast expansion in each iteration.
+    pub fn coast_expand_chance(mut self, chances: Vec<f64>) -> Self {
+        self.coast_expand_chance = chances;
+        self
+    }
+
+    /// Sets the sea level configuration.
+    pub fn sea_level(mut self, sea_level: SeaLevel) -> Self {
+        self.sea_level = sea_level;
+        self
+    }
+
+    /// Sets the age of the world.
+    pub fn world_age(mut self, age: WorldAge) -> Self {
+        self.world_age = age;
+        self
+    }
+
+    /// Sets the temperature configuration.
+    pub fn temperature(mut self, temperature: Temperature) -> Self {
+        self.temperature = temperature;
+        self
+    }
+
+    /// Sets the rainfall configuration.
+    pub fn rainfall(mut self, rainfall: Rainfall) -> Self {
+        self.rainfall = rainfall;
+        self
+    }
+
+    /// Sets the method used to divide the map into regions.
+    pub fn region_divide_method(mut self, method: RegionDivideMethod) -> Self {
+        self.region_divide_method = method;
+        self
+    }
+
+    /// Sets whether the civilization starting tile is required to be coastal land.
+    pub fn civ_require_coastal_land_start(mut self, require: bool) -> Self {
+        self.civ_require_coastal_land_start = require;
+        self
+    }
+
+    /// Sets the resource generation settings.
+    pub fn resource_setting(mut self, setting: ResourceSetting) -> Self {
+        self.resource_setting = setting;
+        self
+    }
+
+    /// Finalizes the construction and returns the `MapParameters` instance.
+    pub fn build(self) -> MapParameters {
+        MapParameters {
+            map_type: self.map_type,
+            world_grid: self.world_grid,
+            seed: self.seed,
+            world_size_type_profile: self.world_size_type_profile,
+            num_large_lakes: self.num_large_lakes,
+            max_lake_area_size: self.max_lake_area_size,
+            coast_expand_chance: self.coast_expand_chance,
+            sea_level: self.sea_level,
+            world_age: self.world_age,
+            temperature: self.temperature,
+            rainfall: self.rainfall,
+            region_divide_method: self.region_divide_method,
+            civ_require_coastal_land_start: self.civ_require_coastal_land_start,
+            resource_setting: self.resource_setting,
         }
     }
 }
@@ -249,17 +371,41 @@ impl WorldGrid {
     }
 }
 
+impl Default for WorldGrid {
+    fn default() -> Self {
+        let world_size = WorldSizeType::Standard;
+        let grid = HexGrid {
+            size: HexGrid::default_size(world_size),
+            layout: HexLayout {
+                orientation: HexOrientation::Pointy,
+                size: [50., 50.],
+                origin: [0., 0.],
+            },
+            wrap_flags: WrapFlags::WrapX,
+            offset: Offset::Odd,
+        };
+        Self {
+            grid,
+            world_size_type: world_size,
+        }
+    }
+}
+
 /// The type of map to generate.
+#[derive(Default)]
 pub enum MapType {
+    #[default]
     Fractal,
     Pangaea,
 }
 
 /// The sea level of the map. It affect only terrain type generation.
+#[derive(Default)]
 pub enum SeaLevel {
     /// Fewer water tiles will be generated on the map than [`SeaLevel::Normal`].
     Low,
     /// The water tiles will be generated on the map as usual.
+    #[default]
     Normal,
     /// More water tiles will be generated on the map than [`SeaLevel::Normal`].
     High,
@@ -275,6 +421,7 @@ pub enum SeaLevel {
 ///   The older the world, the less active the plates are.
 /// - The number of mountains and hills on the map.
 ///   The older the world, the fewer mountains and hills on the map.
+#[derive(Default)]
 pub enum WorldAge {
     /// 5 Billion Years
     ///
@@ -285,6 +432,7 @@ pub enum WorldAge {
     ///
     /// Plates will be used to generate terrain types on the map as usual.
     /// There will be a normal number of mountains and hills on the map.
+    #[default]
     Normal,
     /// 3 Billion Years
     ///
@@ -294,20 +442,24 @@ pub enum WorldAge {
 }
 
 /// The temperature of the map. It affect only base terrain generation.
+#[derive(Default)]
 pub enum Temperature {
     /// More tundra and snow, less desert.
     Cool,
     /// The base terrain will be generated on the map as usual.
+    #[default]
     Normal,
     /// More desert, less tundra and snow.
     Hot,
 }
 
 /// The rainfall of the map. It affect only feature generation.
+#[derive(Default)]
 pub enum Rainfall {
     /// Less forest, jungle, and marsh.
     Arid,
     /// The features will be generated on the map as usual.
+    #[default]
     Normal,
     /// More forest, jungle, and marsh.
     Wet,
@@ -316,17 +468,19 @@ pub enum Rainfall {
 }
 
 /// Defines the method used to divide regions for civilizations in the game. This enum is used to determine how civilizations are assigned to different regions on the map.
+#[derive(Default)]
 pub enum RegionDivideMethod {
     /// All civilizations start on the biggest landmass.
     ///
     /// This method places all civs on a single, largest landmass.
     Pangaea,
     /// Civs are assigned to continents. Any continents with more than one civ are divided.
+    #[default]
     Continent,
     /// This method is primarily used for Archipelago or other maps with many small islands.
     ///
     /// The entire map is treated as one large rectangular region.
-    /// [`RegionDivideMethod::WholeMapRectangle`] is equivalent to [`variant@RegionDivideMethod::CustomRectangle`] when [`Rectangle`] encompasses the entire map area.
+    /// [`RegionDivideMethod::WholeMapRectangle`] is equivalent to [`RegionDivideMethod::CustomRectangle`] when [`Rectangle`] encompasses the entire map area.
     /// We will ignore the area ID when method is set to WholeMapRectangle.
     WholeMapRectangle,
     /// Civs start within a custom-defined rectangle.
@@ -336,11 +490,12 @@ pub enum RegionDivideMethod {
 }
 
 /// The resource setting of the map.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
 pub enum ResourceSetting {
     /// Few resources will be placed on the map than [`ResourceSetting::Standard`].
     Sparse,
     /// Standard number of resources will be placed on the map.
+    #[default]
     Standard,
     /// More resources will be placed on the map than [`ResourceSetting::Standard`].
     Abundant,
