@@ -91,12 +91,6 @@ impl MapParameters {
     pub const NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES: usize = 3;
 }
 
-impl Default for MapParameters {
-    fn default() -> Self {
-        MapParametersBuilder::new(WorldGrid::default()).build()
-    }
-}
-
 /// A builder for constructing [`MapParameters`].
 ///
 /// This builder allows for the flexible configuration of map generation settings.
