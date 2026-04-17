@@ -118,7 +118,19 @@ impl MapParametersBuilder {
     ///
     /// # Arguments
     ///
-    /// - `world_grid`: The grid definition for the world layout.
+    /// - `world_grid`: The grid definition for the world.
+    ///
+    /// # Notice
+    ///
+    /// When defining a custom size grid with the custom size [`HexLayout`], please consider the following constraints:
+    ///
+    /// 1. **Civilization Capacity**: The grid must be large enough to accommodate the number of civilizations specified in the [`WorldSizeTypeProfile`] of [`MapParameters`].
+    ///
+    /// 2. **Wrapping & Display**: To prevent visual artifacts when the map wraps around the screen:
+    ///     - **Wrap X**: The grid width in pixels must be strictly greater than the screen width.
+    ///     - **Wrap Y**: The grid height in pixels must be strictly greater than the screen height.
+    ///
+    /// **Practical Application**: To avoid edge cases where the same tile appears on both sides of the screen simultaneously, it is recommended to maintain a **sufficient margin** between the grid dimensions and the screen dimensions (e.g., ensuring the grid is significantly larger than the viewport) for both Wrap X and Wrap Y scenarios.
     pub fn new(world_grid: WorldGrid) -> Self {
         Self {
             seed: SystemTime::now()
