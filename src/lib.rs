@@ -31,12 +31,17 @@ pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMa
 
 #[cfg(test)]
 mod tests {
-    use crate::{generate_map, map_parameters::MapParameters, ruleset::Ruleset};
+    use crate::{
+        generate_map,
+        map_parameters::{MapParametersBuilder, WorldGrid},
+        ruleset::Ruleset,
+    };
 
     /// Tests for consistent map generation output when provided with the same random seed.
     #[test]
     fn test_generate_map() {
-        let map_parameters = MapParameters::default();
+        let world_grid = WorldGrid::default();
+        let map_parameters = MapParametersBuilder::new(world_grid).build();
         let ruleset = Ruleset::default();
         for _ in 0..15 {
             let map_a = generate_map(&map_parameters, &ruleset);

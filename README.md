@@ -1,55 +1,60 @@
 # Civ Map Generator
 
-This is a civilization map generator. This algorithm is primarily based on the implementation in *Civilization V*, with some references from *Civilization VI*.
+A Civilization series game map generator library. The algorithm is primarily based on *Civilization V* implementation with some references from *Civilization VI*.
 
-## How to add a map type
+## Adding a Map Type
 
 [How to add a map type](./src/map_generator/How%20to%20add%20a%20map%20type.MD)
 
 ## Example
 
-[Civilization-Remastered](https://github.com/lishaoxia1985/Civilization-Remastered)
+```rust
+use crate::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}, ruleset::Ruleset};
 
-## Innovation Highlights
+fn main() {
+    let world_grid = WorldGrid::default();
+    let map_parameters = MapParametersBuilder::new(world_grid).build();
+    let ruleset = Ruleset::default();
+    let map = generate_map(&map_parameters, &ruleset);
+}
+```
 
-This project introduces several key innovations:
+Complete example: [Civilization-Remastered](https://github.com/lishaoxia1985/Civilization-Remastered)
 
-1. **Support both flat and pointy hex**  
-   Original civilization implementation only supports pointy hex, Unciv implementation only supports flat hex, but this project supports both flat and pointy hex.
+## Key Innovations
 
-## Miss Features
+* **Dual Hex Orientation Support**  
+  Supports both flat and pointy hex orientations. Original Civilization implementations typically support only one orientation, but this project supports both.
 
-1. **Only support to generate fractal and pangaea map**  
-   This project only supports to generate fractal and pangaea map. we will add more map generation algorithm in the future.
-2. **No support to square grid**  
-   This project only supports hex grid. We will add support to square grid in the future.
+## Current Limitations
+
+* **Limited Map Generation Algorithms**  
+  Only fractal and pangaea maps are currently supported. More algorithms will be added in the future.
+
+* **Hex Grid Only**  
+  Square grid support is not yet implemented.
 
 ## Future Plans
 
-1. **Add more map generation algorithm**  
-   We will add more map generation algorithm in the future.
-2. **support to square grid**  
-   We will add support to square grid in the future.
-3. **Optimize the JSON file as ruleset information**  
-   We will optimize the JSON file as ruleset information in the future. In folder `src/jsons`, only a litter files are used as ruleset information to generate map. And Some map parameters are hard-coded in the code. We will optimize it in the future.
+* Add more map generation algorithms
+* Add square grid support
+* Optimize JSON-based ruleset information (currently, only a subset of files in `src/jsons` are used as ruleset information)
 
-## Reference project
+## References
 
- * [Unciv](https://github.com/yairm210/Unciv)  
- * [Community Patch for Civilization V - Brave New World](https://github.com/LoneGazebo/Community-Patch-DLL)  
- * [Red Blob Games](https://www.redblobgames.com/grids/hexagons/)
+* [Unciv](https://github.com/yairm210/Unciv)  
+* [Community Patch for Civilization V - Brave New World](https://github.com/LoneGazebo/Community-Patch-DLL)  
+* [Red Blob Games](https://www.redblobgames.com/grids/hexagons/)
 
 ## License
 
 Licensed under either of
 
- * [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
- * [MIT license](http://opensource.org/licenses/MIT)
+* [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+* [MIT license](http://opensource.org/licenses/MIT)
 
 at your option.
 
-**Contributions**
+### Contributions
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
