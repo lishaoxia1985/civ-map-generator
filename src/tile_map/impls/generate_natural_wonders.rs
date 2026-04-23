@@ -19,12 +19,6 @@ impl TileMap {
     /// Generate natural wonders on the map.
     ///
     /// This function is like to Civ6's natural wonder generation. We edit it to fit our game which is like Civ5.
-    ///
-    /// # Notice
-    ///
-    /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
-    /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
-    ///   so we should check if the tile is occupied by a civilization start location.
     pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
@@ -60,6 +54,14 @@ impl TileMap {
             .expect("Failed to choose a random direction");
 
         for tile in self.all_tiles() {
+            // If tile is a civilization start location, or a city state start location, or has natural wonder, then it cannot be chosen as the location for placing natural wonder.
+            if self.starting_tile_and_civilization.contains_key(&tile)
+                || self.starting_tile_and_city_state.contains_key(&tile)
+                || tile.natural_wonder(self).is_some()
+            {
+                continue;
+            }
+
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
                 let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
@@ -272,8 +274,6 @@ impl TileMap {
 
                             self.place_impact_and_ripples(tile, Layer::NaturalWonder, u32::MAX);
 
-                            self.player_collision_data[tile.index()] = true;
-
                             num_placed_natural_wonders += 1;
                             break;
                         }
@@ -326,14 +326,7 @@ impl TileMap {
 
     /// Generate natural wonders on the map.
     ///
-    /// This function is likely to Civ6's natural wonder generation. SO we don't use this function for the current game which is more like Civ5.
-    ///
-    /// # Notice
-    ///
-    /// - In CIV6, generating natural wonders is after generating features, before generating civilization start locations and placing city states.
-    ///   so we don't need to check if the tile is occupied by a civilization start location.
-    /// - In CIV5, generating natural wonders is after generating civilization start locations and before generating city states,
-    ///   so we should check if the tile is occupied by a civilization start location.
+    /// This function is likely to Civ6's natural wonder generation. So we don't use this function for the current game which is more like Civ5.
     pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
 
@@ -369,6 +362,14 @@ impl TileMap {
             .expect("Failed to choose a random direction");
 
         for tile in self.all_tiles() {
+            // If tile is a civilization start location, or a city state start location, or has natural wonder, then it cannot be chosen as the location for placing natural wonder.
+            if self.starting_tile_and_civilization.contains_key(&tile)
+                || self.starting_tile_and_city_state.contains_key(&tile)
+                || tile.natural_wonder(self).is_some()
+            {
+                continue;
+            }
+
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
                 let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 

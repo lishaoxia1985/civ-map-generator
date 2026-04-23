@@ -156,8 +156,6 @@ impl TileMap {
         self.clear_ice_near_city_site(tile, 1);
 
         self.place_impact_and_ripples(tile, Layer::CityState, u32::MAX);
-
-        self.player_collision_data[tile.index()] = true;
     }
 
     // function AssignStartingPlots:PlaceCityStateInRegion(city_state_number, region_number)
@@ -268,7 +266,7 @@ impl TileMap {
     /// - `check_proximity`: A flag indicating whether to check the proximity to other city-states.  
     ///   If `check_proximity` is `true`, the tile is chosen from those that are not too close to other city-states.
     /// - `check_collision`: A flag indicating whether to check for collision with other city-states.  
-    ///   If `check_collision` is `true`, the tile is chosen from those that are not occupied by other city-states.
+    ///   If `check_collision` is `true`, the tile is chosen from those that are not occupied by other city-states, civs, or natural wonders.
     ///
     /// # Returns
     ///
@@ -288,7 +286,9 @@ impl TileMap {
                     // Place city state, avoiding collision
                     candidate_list.shuffle(&mut self.random_number_generator);
                     for tile in candidate_list {
-                        if !self.player_collision_data[tile.index()]
+                        if self.starting_tile_and_civilization.get(&tile).is_none()
+                            && self.starting_tile_and_city_state.get(&tile).is_none()
+                            && tile.natural_wonder(self).is_none()
                             && (!check_proximity
                                 || self.layer_data[Layer::CityState][tile.index()] == 0)
                         {

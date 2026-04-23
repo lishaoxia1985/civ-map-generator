@@ -691,7 +691,11 @@ impl TileMap {
         let mut hills_list = Vec::new();
 
         self.all_tiles().for_each(|tile| {
-            if !self.player_collision_data[tile.index()] && tile.resource(self).is_none() {
+            if self.starting_tile_and_civilization.get(&tile).is_none()
+                && self.starting_tile_and_city_state.get(&tile).is_none()
+                && tile.natural_wonder(self).is_none()
+                && tile.resource(self).is_none()
+            {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
                 let feature = tile.feature(self);

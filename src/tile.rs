@@ -406,12 +406,37 @@ impl Tile {
         tile_map: &TileMap,
         region: Option<&Region>,
     ) -> bool {
-        matches!(
-            self.terrain_type(tile_map),
-            TerrainType::Flatland | TerrainType::Hill
-        ) && region.is_none_or(|region| Some(self.area_id(tile_map)) == region.area_id)
-            && self.base_terrain(tile_map) != BaseTerrain::Snow
-            && (tile_map.layer_data[Layer::CityState][self.index()] == 0)
-            && (!tile_map.player_collision_data[self.index()])
+        // If the tile is already occupied, we can't place a city state there.
+        if tile_map.starting_tile_and_civilization.get(self).is_some()
+            || tile_map.starting_tile_and_city_state.get(self).is_some()
+            || tile_map.layer_data[Layer::CityState][self.index()] != 0
+        {
+            return false;
+        }
+
+        // If the tile has a natural wonder, we can't place a city state there.
+        if self.natural_wonder(tile_map).is_some() {
+            return false;
+        }
+
+        // If the tile is on a snowy terrain, we can't place a city state there.
+        if self.base_terrain(tile_map) == BaseTerrain::Snow {
+            return false;
+        }
+
+        // Check the terrain type must be flatland or hill.
+        let terrain = self.terrain_type(tile_map);
+        if !matches!(terrain, TerrainType::Flatland | TerrainType::Hill) {
+            return false;
+        }
+
+        // Check region constraints.
+        if let Some(region) = region {
+            if Some(self.area_id(tile_map)) != region.area_id {
+                return false;
+            }
+        }
+
+        true
     }
 }

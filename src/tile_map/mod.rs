@@ -119,10 +119,6 @@ pub struct TileMap {
     /// See [`Layer`] documentation for details on adding new layers.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
 
-    /// Collision data for player-related elements (civs, city-states, natural wonders).
-    /// `true` indicates a tile has or is near a player-collision element.
-    pub player_collision_data: Vec<bool>,
-
     /// City-state starting tiles with their assigned region indices.
     /// `None` region index means the city-state is in an uninhabited area.
     city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
@@ -186,7 +182,6 @@ impl TileMap {
             landmass_list: Vec::new(),
             region_list,
             layer_data,
-            player_collision_data: vec![false; size],
             starting_tile_and_civilization: BTreeMap::new(),
             starting_tile_and_city_state: BTreeMap::new(),
             city_state_starting_tile_and_region_index: Vec::new(),
@@ -312,8 +307,6 @@ impl TileMap {
         self.place_impact_and_ripples_for_resource(tile, Layer::NaturalWonder, 4);
 
         self.layer_data[Layer::Civilization][tile.index()] = impact_value;
-
-        self.player_collision_data[tile.index()] = true;
 
         self.layer_data[Layer::CityState][tile.index()] = 1;
 
