@@ -340,12 +340,12 @@ impl TileMap {
         tile_fertility
     }
 
-    /// Get landmass rectangle for the region.
-    fn obtain_landmass_boundaries(&self, area_id: usize) -> Rectangle {
+    /// Get the rectangle which bounds the area with the given `area_id`.
+    fn obtain_area_rectangle(&self, area_id: usize) -> Rectangle {
         let grid = self.world_grid.grid;
         let map_height = grid.size.height;
         let map_width = grid.size.width;
-        // -- Set up variables that will be returned by this function.
+
         let mut wrap_x = false;
         let mut wrap_y = false;
         let mut west_x = 0;
@@ -725,7 +725,7 @@ impl Region {
     /// We don't need to call [`Region::remove_dead_row_and_column()`] in this function,
     /// because [`TileMap::obtain_landmass_boundaries()`] has already ensured that there are no dead rows and columns in the rectangle.
     fn landmass_region(tile_map: &TileMap, landmass_id: usize) -> Self {
-        let rectangle = tile_map.obtain_landmass_boundaries(landmass_id);
+        let rectangle = tile_map.obtain_area_rectangle(landmass_id);
 
         let fertility_list =
             tile_map.measure_start_placement_fertility_of_landmass(landmass_id, rectangle);
