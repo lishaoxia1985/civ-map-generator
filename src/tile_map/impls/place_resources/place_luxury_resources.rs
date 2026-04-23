@@ -351,7 +351,8 @@ impl TileMap {
                 .random_number_generator
                 .random_range(0..num_civilizations);
             let num_placed_luxuries = self.num_placed_luxury_resources(ruleset);
-            let num_random_luxury_target = target_luxury + extra_luxury - num_placed_luxuries;
+            let num_random_luxury_target =
+                (target_luxury + extra_luxury).saturating_sub(num_placed_luxuries);
 
             let mut num_this_luxury_to_place;
 

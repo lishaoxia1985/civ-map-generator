@@ -1,9 +1,32 @@
 //! This module defines the [`TileMap`] struct and its associated methods.
 //! It provides functionality to manage and manipulate a map of tiles, including
 //! querying tile properties, placing resources, and managing layers of data.
-//! Its method contains 2 parts:
-//! 1. The common methods for map generation, included in the `mod.rs` file.
-//! 2. The map generating methods are defined in the [`impls`] module ( which is the submodule of this module).
+//!
+//! # Architecture
+//!
+//! The `TileMap` is the core data structure representing a game map. It consists of:
+//!
+//! - **Parallel Arrays**: Each tile property (terrain, base terrain, features, etc.) is stored in a separate vector indexed by tile position
+//! - **Layer System**: Uses [`Layer`] enum to track placement constraints and prevent overlapping elements
+//! - **Spatial Indexing**: Area and landmass IDs for efficient region-based queries
+//!
+//! # Map Generation Pipeline
+//!
+//! Map generation follows a three-phase process defined in [`Generator`](crate::map_generator::Generator):
+//!
+//! 1. **Terrain Generation**: Create terrain types, base terrains, features, rivers, and lakes
+//! 2. **Element Placement**: Place civilizations, city-states, natural wonders, and resources
+//! 3. **Finalization**: Fix graphical issues and recalculate spatial data
+//!
+//! # Layer System
+//!
+//! The layer system prevents invalid element placement through "impact and ripple" values:
+//!
+//! - **Impact** (value = 99): Marks tiles where elements are placed or forbidden
+//! - **Ripple** (values 1-98): Indicates proximity to placed elements, with higher values meaning closer distance
+//!
+//! Different layers have different ripple behaviors.
+//! See [`TileMap::layer_data`] and [`TileMap::place_impact_and_ripples`] for detailed implementation.
 
 use crate::{
     grid::{direction::Direction, hex_grid::*},
@@ -26,93 +49,113 @@ pub(crate) use impls::*;
 
 #[derive(PartialEq, Debug)]
 pub struct TileMap {
-    /// Random number generator for the map.
+    /// Random number generator seeded for reproducible map generation.
     pub random_number_generator: StdRng,
-    /// World grid of the map.
+
+    /// World grid configuration including size, orientation, and wrap settings.
     pub world_grid: WorldGrid,
-    /// List of rivers in the map.
+
+    /// List of all rivers in the map. Each river is a sequence of [`RiverEdge`] segments.
     pub river_list: Vec<River>,
-    /// Terrain type of each tile. The index of the terrain type is equal to [`Tile::index()`].
+
+    /// Terrain type (Water/Flatland/Hill/Mountain) for each tile.
+    /// Indexed by [`Tile::index()`].
     pub terrain_type_list: Vec<TerrainType>,
-    /// Base terrain of each tile. The index of the base terrain is equal to [`Tile::index()`].
+
+    /// Base terrain (Ocean/Coast/Grassland/etc.) for each tile.
+    /// Indexed by [`Tile::index()`].
     pub base_terrain_list: Vec<BaseTerrain>,
-    /// Feature of each tile. The index of the feature is equal to [`Tile::index()`].
+
+    /// Optional feature (Forest/Jungle/Marsh/etc.) for each tile.
+    /// Indexed by [`Tile::index()`].
     pub feature_list: Vec<Option<Feature>>,
-    /// Natural wonder of each tile. The index of the natural wonder is equal to [`Tile::index()`].
+
+    /// Optional natural wonder for each tile.
+    /// Indexed by [`Tile::index()`].
     pub natural_wonder_list: Vec<Option<NaturalWonder>>,
-    /// Resource of each tile. The index of the resource is equal to [`Tile::index()`].
+
+    /// Optional resource with quantity for each tile.
+    /// Indexed by [`Tile::index()`].
     pub resource_list: Vec<Option<(Resource, u32)>>,
-    /// Area ID of each tile. The index of the area ID is equal to [`Tile::index()`].
+
+    /// Area ID for connected regions.
+    /// Indexed by [`Tile::index()`].
     pub area_id_list: Vec<usize>,
-    /// Landmass ID of each tile. The index of the landmass ID is equal to [`Tile::index()`].
+
+    /// Landmass ID for connected land areas separated by water.
+    /// Indexed by [`Tile::index()`].
     pub landmass_id_list: Vec<usize>,
-    /// List of areas in the map. The index is equal to the area id.
+
+    /// List of all areas (connected regions). Index matches area IDs.
     pub area_list: Vec<Area>,
-    /// List of landmasses in the map. The index is equal to the landmass id.
+
+    /// List of all landmasses. Index matches landmass IDs.
     pub landmass_list: Vec<Landmass>,
-    /// Starting tile and placed civilization.
+
+    /// Mapping of civilization starting tiles to their assigned nations.
     pub starting_tile_and_civilization: BTreeMap<Tile, Nation>,
-    /// Starting tile and placed city state.
+
+    /// Mapping of city-state starting tiles to their assigned nations.
     pub starting_tile_and_city_state: BTreeMap<Tile, Nation>,
-    /// List of regions in the map. The index is equal to the region id.
+
+    /// List of regions for dividing the map among civilizations.
+    /// Capacity is limited to [`MapParameters::MAX_CIVILIZATION_NUM`].
     region_list: ArrayVec<Region, { MapParameters::MAX_CIVILIZATION_NUM as usize }>,
-    /// Stores the impact and ripple values of the tiles in the [`Layer`] when an element,
-    /// associated with a variant of the [`Layer`], is added to the map.
+
+    /// Layer data tracking placement constraints for different element types.
     ///
-    /// It is typically used to ensure that no other elements appear within a defined radius of the placed element,
-    /// or that other elements are not too close to the placed element.
+    /// Each layer uses one of two modes:
     ///
-    /// The element may be a starting tile of civilization, a city-state, a natural wonder, a marble, a resource, ...\
+    /// **Mode 1: Binary Placement Control** (CityState, Marble)
+    /// - `0`: No constraint
+    /// - `1`: Within influence range (placement forbidden)
+    /// - `99`: Element placed or explicitly forbidden
     ///
-    /// According to different [`Layer`], values in `layer_data` can be one mode of the following:
-    /// - **Mode 1: Binary Placement Control**: `0`, `1` and `99`. When you only concerned about whether the tile can be placed with an element or not.
-    ///   - `0` means no element is placed in current tile.
-    ///   - `1` means the element is in influence range of the added element.
-    ///     It is usually used to forbid placing other elements in the influence range.
-    ///   - `99` (typically) means an element is placed in the current tile.
-    ///     Even we don't place an element in current tile, we can also set it to `99` to forbid placing the elements in current tile.
-    /// - **Mode 2: Distance-Based Gradient**: In the range `[0, 99]`. When you want to know how far the tile is from the added element.
-    ///   - `99` means an element is placed in current tile, or the element can't be placed in current tile.
-    ///   - `0` means no element is placed in current tile.
-    ///   - Any value in (0, 99) means no element is placed in current tile, but the tile is in the influence range of the added element.
-    ///     The larger the value, the closer the tile is to the added element.
+    /// **Mode 2: Distance-Based Gradient** (Resources, Civilization, NaturalWonder)
+    /// - `0`: No constraint
+    /// - `1-98`: Within influence range (higher = closer to source)
+    /// - `99`: Element placed or explicitly forbidden
     ///
-    /// # Examples about impact and ripple values
-    ///
-    /// For example, When the `layer` is [`Layer::Civilization`], `layer_data[Layer::Civilization]` stores the "impact and ripple" data
-    /// of the starting tile of civilization. About the values of tiles in `layer_data[Layer::Civilization]`:
-    /// - `value = 0` means no influence from existing impacts in current tile and current tile does not have a starting tile.
-    /// - `value = 99` means an "impact" occurred in current tile, and current tile is a starting tile.
-    /// - Values in (0, 99) represent "ripples", indicating that current tile is within the influence range of an existing starting tile.
-    ///   The larger values, the closer the tile is to the starting tile.
+    /// See [`Layer`] documentation for details on adding new layers.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
-    /// Stores `impact` data only of start points, to avoid player collisions
-    /// It is `true` When the tile has a civ start, CS start, or Natural Wonder.
+
+    /// Collision data for player-related elements (civs, city-states, natural wonders).
+    /// `true` indicates a tile has or is near a player-collision element.
     pub player_collision_data: Vec<bool>,
-    /// City state starting tile and its region index.
-    /// If the second element is `None`, then the tile is in the uninhabited area.
+
+    /// City-state starting tiles with their assigned region indices.
+    /// `None` region index means the city-state is in an uninhabited area.
     city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
-    /// Determine every type of luxury resources are the role: assigned to region, city_state, special case, random, or unused.
+
+    /// Tracks luxury resource role assignments (region, city-state, special, random, unused).
     luxury_resource_role: LuxuryResourceRole,
-    /// The count of luxury resource types assigned to regions.
+
+    /// Count of how many regions each luxury resource type has been assigned to.
     ///
-    /// Its key is the luxury resource type name, all keys are in the [`LuxuryResourceRole::luxury_assigned_to_regions`].
-    /// Its value is the count of assigned luxury resource types, all values should <= [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`].
+    /// Used to adjust assignment probability - the more regions a luxury is in,
+    /// the less likely it is to be assigned to additional regions in the future.
     ///
-    /// It has a maximum length of [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`]. See [`TileMap::assign_luxury_to_region`] for more information.
-    ///
-    /// If a luxury resource type has been assigned to a region, it will be added to this count.
-    ///
-    /// For example, if the count is 2, it means that one luxury resource type has been assigned to two different regions.
-    ///
-    /// This count is used to adjust the probability of assigning the same luxury resource to another region.
-    /// The higher the count, the lower the chance of assigning that luxury resource to an additional region.
-    /// This is achieved by reducing the weight of the resource as the count increases.
+    /// Keys are from [`LuxuryResourceRole::luxury_assigned_to_regions`].
+    /// Values should not exceed [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`].
     luxury_assign_to_region_count: HashMap<Resource, u32>,
 }
 
 impl TileMap {
-    /// Creates an empty tile map with the given parameters.
+    /// Creates a new empty tile map with the given parameters.
+    ///
+    /// All tile property lists are initialized with default values:
+    /// - Terrain types default to [`TerrainType::Water`]
+    /// - Base terrains default to [`BaseTerrain::Ocean`]
+    /// - Features, natural wonders, and resources default to `None`
+    /// - Layer data initialized to zeros (no constraints)
+    ///
+    /// # Arguments
+    ///
+    /// * `map_parameters` - Configuration including seed, world grid, and generation settings
+    ///
+    /// # Performance
+    ///
+    /// Allocates vectors with capacity equal to total tile count (width × height).
     pub fn new(map_parameters: &MapParameters) -> Self {
         let random_number_generator = StdRng::seed_from_u64(map_parameters.seed);
 
@@ -153,6 +196,20 @@ impl TileMap {
     }
 
     /// Returns an iterator over all tiles in the map.
+    ///
+    /// Tiles are yielded in row-major order (left-to-right, bottom-to-top).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use civ_map_generator::tile_map::TileMap;
+    /// # use civ_map_generator::map_parameters::{MapParametersBuilder, WorldGrid};
+    /// # let params = MapParametersBuilder::new(WorldGrid::default()).build();
+    /// # let map = TileMap::new(&params);
+    /// for tile in map.all_tiles() {
+    ///     println!("Tile index: {}", tile.index());
+    /// }
+    /// ```
     #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn all_tiles(&self) -> impl Iterator<Item = Tile> + use<> {
         let size = &self.world_grid.size();

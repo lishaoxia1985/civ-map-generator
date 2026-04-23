@@ -3,6 +3,11 @@
 //! buildings, nations, policies, quests, specialists, technologies, terrain types,
 //! base terrains, features, natural wonders, tile improvements, tile resources,
 //! units, unit promotions, and unit types.
+//!
+//! # Error Handling
+//!
+//! The [`Ruleset::new`] method will panic if any JSON file cannot be loaded or parsed.
+//! For production use, consider implementing proper error handling with `Result` types.
 
 use std::{
     collections::HashMap,
@@ -51,7 +56,7 @@ pub trait Name {
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> HashMap<String, T> {
     let json_string_without_comment = load_json_file_and_strip_json_comments(path);
     let map: Vec<T> = serde_json::from_str(&json_string_without_comment)
-        .unwrap_or_else(|_| panic!("{}'{}'", "Can't serde ", path));
+        .unwrap_or_else(|e| panic!("Failed to parse JSON file '{}': {}", path, e));
     map.into_iter().map(|x| (x.name(), x)).collect()
 }
 

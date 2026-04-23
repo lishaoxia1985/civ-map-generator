@@ -22,6 +22,11 @@ use crate::{
 pub struct Tile(usize);
 
 impl Tile {
+    /// The maximum distance a `Settler` can move in one turn, without considering technologies, eras, improvements, etc.
+    ///
+    /// TODO: This should be a parameter read from the ruleset directly.
+    const SETTLER_MOVEMENT_RANGE: u32 = 2;
+
     #[inline]
     pub const fn new(index: usize) -> Self {
         Self(index)
@@ -374,16 +379,13 @@ impl Tile {
         tile_map: &TileMap,
         map_parameters: &MapParameters,
     ) -> bool {
-        // This variable is the maximum distance a Settler can move.
-        // TODO: It can be customized in the MapParameters in the future.
-        const SETTLER_MOVEMENT: u32 = 2;
         matches!(
             self.terrain_type(tile_map),
             TerrainType::Flatland | TerrainType::Hill
         ) && (self.is_coastal_land(tile_map)
             || (!map_parameters.civ_require_coastal_land_start
                 && self
-                    .tiles_in_distance(SETTLER_MOVEMENT, tile_map.world_grid.grid)
+                    .tiles_in_distance(Self::SETTLER_MOVEMENT_RANGE, tile_map.world_grid.grid)
                     .all(|tile| tile.base_terrain(tile_map) != BaseTerrain::Coast)))
     }
 
