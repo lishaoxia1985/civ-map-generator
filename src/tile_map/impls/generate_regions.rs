@@ -353,18 +353,27 @@ impl TileMap {
         let mut south_y = 0;
         let mut north_y = 0;
 
+        // Check if there are tiles belonging to the area in the given column.
+        let has_area_in_column = |x: u32| {
+            (0..map_height).any(|y| {
+                let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
+                tile.area_id(self) == area_id
+            })
+        };
+
+        // Check if there are tiles belonging to the area in the given row.
+        let has_area_in_row = |y: u32| {
+            (0..map_width).any(|x| {
+                let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
+                tile.area_id(self) == area_id
+            })
+        };
+
         // Check if the landmass wraps around the map horizontally.
         // Check if the first and last columns of the map contain tiles that belong to the area.
         // If so, the landmass wraps around the map horizontally.
         // If not, the landmass does not wrap around the map horizontally.
         if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            let has_area_in_column = |x: u32| {
-                (0..map_height).any(|y| {
-                    let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
-                    tile.area_id(self) == area_id
-                })
-            };
-
             wrap_x = has_area_in_column(0) && has_area_in_column(map_width - 1);
         }
 
@@ -373,13 +382,6 @@ impl TileMap {
         // If so, the landmass wraps around the map vertically.
         // If not, the landmass does not wrap around the map vertically.
         if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            let has_area_in_row = |y: u32| {
-                (0..map_width).any(|x| {
-                    let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
-                    tile.area_id(self) == area_id
-                })
-            };
-
             wrap_y = has_area_in_row(0) && has_area_in_row(map_height - 1);
         }
 
@@ -387,27 +389,13 @@ impl TileMap {
         if !wrap_x {
             // If the landmass does not wrap around the map horizontally.
             // Check for any area membership one column at a time, left to right.
-            for x in 0..map_width {
-                if (0..map_height).any(|y| {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    tile.area_id(self) == area_id
-                }) {
-                    west_x = x;
-                    break;
-                }
+            if let Some(x) = (0..map_width).find(|&x| has_area_in_column(x)) {
+                west_x = x;
             }
 
             // Check for any area membership one column at a time, right to left.
-            for x in (0..map_width).rev() {
-                if (0..map_height).any(|y| {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    tile.area_id(self) == area_id
-                }) {
-                    east_x = x;
-                    break;
-                }
+            if let Some(x) = (0..map_width).rev().find(|&x| has_area_in_column(x)) {
+                east_x = x;
             }
         } else {
             // If the landmass wraps around the map horizontally.
@@ -415,18 +403,11 @@ impl TileMap {
             let mut landmass_spans_entire_world_x = true;
 
             // Check for end of area membership one column at a time, right to left.
-            // When map is wrap_x, there must exist tiles in the column '0' and 'width-1' that are the area memberships.
-            // So we don't need to check the column '0' and 'width-1' for area membership.
+            // When map is `wrap_x`, there must exist tiles in the column '0' and 'map_width-1' that are the area memberships.
+            // So we don't need to check the column '0' and 'map_width-1' for area membership.
             for x in (1..(map_width - 1)).rev() {
-                let mut found_area_in_column = false;
+                let found_area_in_column = has_area_in_column(x);
 
-                for y in 0..map_height {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    if tile.area_id(self) == area_id {
-                        found_area_in_column = true;
-                    }
-                }
                 if !found_area_in_column {
                     west_x = x + 1;
                     landmass_spans_entire_world_x = false;
@@ -435,18 +416,11 @@ impl TileMap {
             }
 
             // Check for end of area membership one column at a time, left to right.
-            // When map is wrap_x, there must exist tiles in the column '0' and 'width-1' that are the area memberships.
-            // So we don't need to check the column '0' and 'width-1' for area membership.
+            // When map is `wrap_x`, there must exist tiles in the column '0' and 'map_width-1' that are the area memberships.
+            // So we don't need to check the column '0' and 'map_width-1' for area membership.
             for x in 1..(map_width - 1) {
-                let mut found_area_in_column = false;
+                let found_area_in_column = has_area_in_column(x);
 
-                for y in 0..map_height {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    if tile.area_id(self) == area_id {
-                        found_area_in_column = true;
-                    }
-                }
                 if !found_area_in_column {
                     east_x = x - 1;
                     landmass_spans_entire_world_x = false;
@@ -466,46 +440,24 @@ impl TileMap {
         if !wrap_y {
             // If the landmass does not wrap around the map vertically.
             // Check for any area membership one row at a time, bottom to top.
-            for y in 0..map_height {
-                if (0..map_width).any(|x| {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    tile.area_id(self) == area_id
-                }) {
-                    south_y = y;
-                    break;
-                }
+            if let Some(y) = (0..map_height).find(|&y| has_area_in_row(y)) {
+                south_y = y;
             }
 
             // Check for any area membership one row at a time, top to bottom.
-            for y in (0..map_height).rev() {
-                if (0..map_width).any(|x| {
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    tile.area_id(self) == area_id
-                }) {
-                    north_y = y;
-                    break;
-                }
+            if let Some(y) = (0..map_height).rev().find(|&y| has_area_in_row(y)) {
+                north_y = y;
             }
         } else {
             // If the landmass wraps around the map vertically.
             let mut landmass_spans_entire_world_y = true;
 
             // Check for end of area membership one row at a time, top to bottom.
-            // When map is wrap_y, there must exist tiles in the row '0' and 'map_height - 1' that are the area memberships.
+            // When map is `wrap_y`, there must exist tiles in the row '0' and 'map_height - 1' that are the area memberships.
             // So we don't need to check the row '0' and 'map_height - 1' for area membership.
             for y in (1..(map_height - 1)).rev() {
-                let mut found_area_in_row = false;
-                for x in 0..map_width {
-                    // Checking row.
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    if tile.area_id(self) == area_id {
-                        // Found a tile belonging to i_area_id, will have to check the next row too.
-                        found_area_in_row = true;
-                    }
-                }
+                let found_area_in_row = has_area_in_row(y);
+
                 if !found_area_in_row {
                     // Found empty row, which is just south of SouthY.
                     south_y = y + 1;
@@ -515,19 +467,11 @@ impl TileMap {
             }
 
             // Check for end of area membership one row at a time, bottom to top.
-            // When map is wrap_y, there must exist tiles in the row '0' and 'map_height - 1' that are the area memberships.
+            // When map is `wrap_y`, there must exist tiles in the row '0' and 'map_height - 1' that are the area memberships.
             // So we don't need to check the row '0' and 'map_height - 1' for area membership.
             for y in 1..(map_height - 1) {
-                let mut found_area_in_row = false;
-                for x in 0..map_width {
-                    // Checking row.
-                    let offset_coordinate = OffsetCoordinate::from([x, y]);
-                    let tile = Tile::from_offset(offset_coordinate, grid);
-                    if tile.area_id(self) == area_id {
-                        // Found a tile belonging to i_area_id, will have to check the next row too.
-                        found_area_in_row = true;
-                    }
-                }
+                let found_area_in_row = has_area_in_row(y);
+
                 if !found_area_in_row {
                     // Found empty column, which is just north of NorthY.
                     north_y = y - 1;
