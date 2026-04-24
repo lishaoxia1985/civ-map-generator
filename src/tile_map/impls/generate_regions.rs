@@ -358,14 +358,14 @@ impl TileMap {
         // If so, the landmass wraps around the map horizontally.
         // If not, the landmass does not wrap around the map horizontally.
         if grid.wrap_flags.contains(WrapFlags::WrapX) {
-            wrap_x = (0..map_height).any(|y| {
-                let first_column_tile = Tile::from_offset(OffsetCoordinate::from([0, y]), grid);
-                first_column_tile.area_id(self) == area_id
-            }) && (0..map_height).any(|y| {
-                let last_column_tile =
-                    Tile::from_offset(OffsetCoordinate::from([map_width - 1, y]), grid);
-                last_column_tile.area_id(self) == area_id
-            });
+            let has_area_in_column = |x: u32| {
+                (0..map_height).any(|y| {
+                    let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
+                    tile.area_id(self) == area_id
+                })
+            };
+
+            wrap_x = has_area_in_column(0) && has_area_in_column(map_width - 1);
         }
 
         // Check if the landmass wraps around the map vertically.
@@ -373,14 +373,14 @@ impl TileMap {
         // If so, the landmass wraps around the map vertically.
         // If not, the landmass does not wrap around the map vertically.
         if grid.wrap_flags.contains(WrapFlags::WrapY) {
-            wrap_y = (0..map_width).any(|x| {
-                let first_row_tile = Tile::from_offset(OffsetCoordinate::from([x, 0]), grid);
-                first_row_tile.area_id(self) == area_id
-            }) && (0..map_width).any(|x| {
-                let last_row_tile =
-                    Tile::from_offset(OffsetCoordinate::from([x, map_height - 1]), grid);
-                last_row_tile.area_id(self) == area_id
-            });
+            let has_area_in_row = |y: u32| {
+                (0..map_width).any(|x| {
+                    let tile = Tile::from_offset(OffsetCoordinate::from([x, y]), grid);
+                    tile.area_id(self) == area_id
+                })
+            };
+
+            wrap_y = has_area_in_row(0) && has_area_in_row(map_height - 1);
         }
 
         // Find West and East edges of this landmass.
