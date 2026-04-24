@@ -60,7 +60,7 @@ impl TileMap {
         for region_index in city_states_assignment.region_index_assignment {
             if region_index.is_none() && num_uninhabited_candidate_tiles > 0 {
                 num_uninhabited_candidate_tiles -= 1;
-                let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
+                let tile = self.start_tile_of_city_state(&candidate_tile_list, true, true);
                 // Place city state on uninhabited land
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
@@ -122,7 +122,7 @@ impl TileMap {
             let candidate_tile_list = [coastal_tile_list, inland_tile_list];
 
             for &city_state in start_city_state_list.iter() {
-                let tile = self.get_city_state_start_tile(&candidate_tile_list, true, true);
+                let tile = self.start_tile_of_city_state(&candidate_tile_list, true, true);
                 if let Some(tile) = tile {
                     self.place_city_state(city_state, tile);
                     self.city_state_starting_tile_and_region_index
@@ -163,7 +163,7 @@ impl TileMap {
     fn get_city_state_start_tile_in_region(&mut self, region_index: usize) -> Option<Tile> {
         let candidate_tile_list = self.get_candidate_city_state_tiles_in_region(region_index);
 
-        self.get_city_state_start_tile(&candidate_tile_list, false, false)
+        self.start_tile_of_city_state(&candidate_tile_list, false, false)
     }
 
     // function AssignStartingPlots:ObtainNextSectionInRegion
@@ -254,24 +254,27 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceCityState
-    /// Randomly selects a tile to place a city-state from a list of candidate tiles.
+    /// Selects a valid starting tile for a city-state from a prioritized list of candidates.
     ///
-    /// Coastal tiles are prioritized; if no coastal tiles are available, inland tiles are considered.
+    /// This function attempts to place a city-state by iterating through lists of candidate tiles
+    /// in order of preference (e.g., prioritizing coastal tiles over inland tiles).
     ///
     /// # Arguments
     ///
-    /// - `candidate_tile_list`: A list of candidate tiles.  
-    ///   Typically, this is an array of two `Vec`s. The first `Vec` contains coastal tiles, and the second contains inland tiles.  
-    ///   The selection is made first from the coastal tiles (`Vec`), and if unsuccessful, the selection proceeds with the inland tiles (`Vec`).
-    /// - `check_proximity`: A flag indicating whether to check the proximity to other city-states.  
-    ///   If `check_proximity` is `true`, the tile is chosen from those that are not too close to other city-states.
-    /// - `check_collision`: A flag indicating whether to check for collision with other city-states.  
-    ///   If `check_collision` is `true`, the tile is chosen from those that are not occupied by other city-states, civs, or natural wonders.
+    /// * `candidate_tile_list`: A slice of tile vectors representing candidate locations, ordered by priority.
+    ///     - Typically, the first vector contains coastal tiles, and the second contains inland tiles.
+    ///     - The function returns immediately upon finding a valid tile in a higher-priority list, ignoring subsequent lists.
+    /// * `check_proximity`: Determines whether to enforce minimum distance rules from other city-states.
+    ///     - When `true`, the function forbids placing a city-state in the influence **range** of another city-state (default `range = 4` in original Civ5).
+    ///     - When `false`, the function allows placing a city-state anywhere within the influence range of another city-state.
+    /// * `check_collision`: Determines whether to validate the tile for collision with other civilizations, city-states, or natural wonders.
+    ///     - When `true`, the selected tile must be free of civilizations, other city-states, and natural wonders.
+    ///     - When `false`, the selected tile can be any tile, even if it is occupied by civilizations, city-states, or natural wonders.
     ///
     /// # Returns
     ///
-    /// If a suitable tile is found, the function returns the tile. Otherwise, it returns `None`.
-    fn get_city_state_start_tile(
+    /// Returns `Some(Tile)` if a suitable location is found; otherwise, returns `None` if all candidates are invalid.
+    fn start_tile_of_city_state(
         &mut self,
         candidate_tile_list: &[Vec<Tile>],
         check_proximity: bool,
@@ -280,27 +283,27 @@ impl TileMap {
         let mut chosen_tile = None;
         // We choose tile according in the order of the candidate tile list.
         for candidate_list in candidate_tile_list {
-            if !candidate_list.is_empty() {
-                let mut candidate_list = candidate_list.to_vec();
-                if check_collision {
-                    // Place city state, avoiding collision
-                    candidate_list.shuffle(&mut self.random_number_generator);
-                    for tile in candidate_list {
-                        if self.starting_tile_and_civilization.get(&tile).is_none()
-                            && self.starting_tile_and_city_state.get(&tile).is_none()
-                            && tile.natural_wonder(self).is_none()
-                            && (!check_proximity
-                                || self.layer_data[Layer::CityState][tile.index()] == 0)
-                        {
-                            chosen_tile = Some(tile);
-                            break;
-                        }
+            if candidate_list.is_empty() {
+                continue;
+            }
+
+            let mut candidate_list = candidate_list.clone();
+            candidate_list.shuffle(&mut self.random_number_generator);
+            if check_collision {
+                // Place city state, avoiding collision
+                for tile in candidate_list {
+                    if self.starting_tile_and_civilization.get(&tile).is_none()
+                        && self.starting_tile_and_city_state.get(&tile).is_none()
+                        && tile.natural_wonder(self).is_none()
+                        && (!check_proximity
+                            || self.layer_data[Layer::CityState][tile.index()] == 0)
+                    {
+                        chosen_tile = Some(tile);
+                        break;
                     }
-                } else {
-                    chosen_tile = candidate_list
-                        .choose(&mut self.random_number_generator)
-                        .cloned();
                 }
+            } else {
+                chosen_tile = candidate_list.pop();
             }
         }
         chosen_tile
