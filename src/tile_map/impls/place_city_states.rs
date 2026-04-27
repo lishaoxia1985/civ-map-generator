@@ -292,8 +292,8 @@ impl TileMap {
             if check_collision {
                 // Place city state, avoiding collision
                 for tile in candidate_list {
-                    if self.starting_tile_and_civilization.get(&tile).is_none()
-                        && self.starting_tile_and_city_state.get(&tile).is_none()
+                    if !self.starting_tile_and_civilization.contains_key(&tile)
+                        && !self.starting_tile_and_city_state.contains_key(&tile)
                         && tile.natural_wonder(self).is_none()
                         && (!check_proximity
                             || self.layer_data[Layer::CityState][tile.index()] == 0)

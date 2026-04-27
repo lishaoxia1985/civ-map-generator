@@ -407,8 +407,8 @@ impl Tile {
         region: Option<&Region>,
     ) -> bool {
         // If the tile is already occupied, we can't place a city state there.
-        if tile_map.starting_tile_and_civilization.get(self).is_some()
-            || tile_map.starting_tile_and_city_state.get(self).is_some()
+        if tile_map.starting_tile_and_civilization.contains_key(self)
+            || tile_map.starting_tile_and_city_state.contains_key(self)
             || tile_map.layer_data[Layer::CityState][self.index()] != 0
         {
             return false;

@@ -658,8 +658,8 @@ impl TileMap {
         let mut region_jungle_flat_tile_list = Vec::new();
 
         self.all_tiles().for_each(|tile| {
-            if self.starting_tile_and_civilization.get(&tile).is_none()
-                && self.starting_tile_and_city_state.get(&tile).is_none()
+            if !self.starting_tile_and_civilization.contains_key(&tile)
+                && !self.starting_tile_and_city_state.contains_key(&tile)
                 && tile.natural_wonder(self).is_none()
                 && tile.resource(self).is_none()
             {

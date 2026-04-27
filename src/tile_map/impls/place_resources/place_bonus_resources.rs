@@ -634,8 +634,8 @@ impl TileMap {
         let mut forest_flat_that_are_not_tundra = Vec::new();
 
         self.all_tiles().for_each(|tile| {
-            if self.starting_tile_and_civilization.get(&tile).is_none()
-                && self.starting_tile_and_city_state.get(&tile).is_none()
+            if !self.starting_tile_and_civilization.contains_key(&tile)
+                && !self.starting_tile_and_city_state.contains_key(&tile)
                 && tile.natural_wonder(self).is_none()
                 && tile.resource(self).is_none()
             {
