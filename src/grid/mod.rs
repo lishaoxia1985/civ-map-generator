@@ -576,17 +576,13 @@ impl Rectangle {
     ///
     /// # Panics
     ///
-    /// Panics if `scale` is not in the range (0.0, 1.0].
+    /// In debug builds, this function panics if `scale` is not within the range `(0.0, 1.0]`.
     pub fn scaled_center_crop(&self, scale: f64, grid: &impl Grid) -> Rectangle {
-        // --- Validation ---
-        if scale <= 0.0 || scale > 1.0 {
-            panic!(
-                "Invalid scale factor: {}. Expected a value in range (0.0, 1.0].",
-                scale
-            );
-        }
-
-        // --- Calculation ---
+        debug_assert!(
+            scale > 0.0 && scale <= 1.0,
+            "Invalid scale factor: {}. Expected a value in range (0.0, 1.0].",
+            scale
+        );
 
         let original_width = self.width() as f64;
         let original_height = self.height() as f64;
