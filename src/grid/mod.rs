@@ -563,4 +563,56 @@ impl Rectangle {
             && y >= self.south_y()
             && y < self.south_y() + self.height as i32
     }
+
+    /// Returns a new Rectangle that is a center crop of the original, scaled by the given factor.
+    ///
+    /// The resulting rectangle whose width and height are scaled by the given factor, and it is centered within the original rectangle.
+    ///
+    /// # Arguments
+    ///
+    /// * `scale`: The scaling factor (0.0 < scale <= 1.0).
+    ///             1.0 returns the original rectangle, 0.5 returns a quarter of the area in the center of the original rectangle.
+    /// * `grid`: The grid context required for the new Rectangle instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `scale` is not in the range (0.0, 1.0].
+    pub fn scaled_center_crop(&self, scale: f64, grid: &impl Grid) -> Rectangle {
+        // --- Validation ---
+        if scale <= 0.0 || scale > 1.0 {
+            panic!(
+                "Invalid scale factor: {}. Expected a value in range (0.0, 1.0].",
+                scale
+            );
+        }
+
+        // --- Calculation ---
+
+        let original_width = self.width() as f64;
+        let original_height = self.height() as f64;
+
+        // Calculate target dimensions
+        let target_width = original_width * scale;
+        let target_height = original_height * scale;
+
+        // Calculate padding to center the crop
+        // floor() ensures we don't exceed bounds due to floating point errors
+        let pad_x = ((original_width - target_width) / 2.0).floor() as u32;
+        let pad_y = ((original_height - target_height) / 2.0).floor() as u32;
+
+        // Derive final integer dimensions
+        let final_width = self.width() - (pad_x * 2);
+        let final_height = self.height() - (pad_y * 2);
+
+        // Calculate bottom-left (or West/South) offset coordinates for the new rectangle
+        let start_x = self.west_x() + pad_x as i32;
+        let start_y = self.south_y() + pad_y as i32;
+
+        Rectangle::new(
+            OffsetCoordinate::new(start_x, start_y),
+            final_width,
+            final_height,
+            grid,
+        )
+    }
 }

@@ -177,43 +177,11 @@ impl TileMap {
         const CENTER_BIAS: f64 = 1. / 3.; // d% of radius from region center to examine first
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
-        let center_width = CENTER_BIAS * rectangle.width() as f64;
-        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as u32;
-        let center_width = rectangle.width() - (non_center_width * 2);
+        // Get the rectangle whose width and height is `CENTER_BIAS` times of the original rectangle, and it is in the center of the original rectangle.
+        let center_rectangle = rectangle.scaled_center_crop(CENTER_BIAS, &grid);
 
-        let center_west_x = rectangle.west_x() + non_center_width as i32;
-
-        let center_height = CENTER_BIAS * rectangle.height() as f64;
-        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as u32;
-        let center_height = rectangle.height() - (non_center_height * 2);
-
-        let center_south_y = rectangle.south_y() + non_center_height as i32;
-
-        let center_rectangle = Rectangle::new(
-            OffsetCoordinate::new(center_west_x, center_south_y),
-            center_width,
-            center_height,
-            &grid,
-        );
-
-        let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
-        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as u32;
-        let middle_width = rectangle.width() - (outer_width * 2);
-
-        let middle_west_x = rectangle.west_x() + outer_width as i32;
-
-        let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
-        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as u32;
-        let middle_height = rectangle.height() - (outer_height * 2);
-
-        let middle_south_y = rectangle.south_y() + outer_height as i32;
-
-        let middle_rectangle = Rectangle::new(
-            OffsetCoordinate::new(middle_west_x, middle_south_y),
-            middle_width,
-            middle_height,
-            &grid,
-        );
+        // Get the rectangle whose width and height is `MIDDLE_BIAS` times of the original rectangle, and it is in the middle of the original rectangle.
+        let middle_rectangle = rectangle.scaled_center_crop(MIDDLE_BIAS, &grid);
 
         let mut center_coastal_tiles = Vec::new();
         let mut center_tiles_on_river = Vec::new();
@@ -464,43 +432,11 @@ impl TileMap {
         const CENTER_BIAS: f64 = 1. / 3.; // d% of radius from region center to examine first
         const MIDDLE_BIAS: f64 = 2. / 3.; // d% of radius from region center to check second
 
-        let center_width = CENTER_BIAS * rectangle.width() as f64;
-        let non_center_width = ((rectangle.width() as f64 - center_width) / 2.0).floor() as u32;
-        let center_width = rectangle.width() - (non_center_width * 2);
+        // Get the rectangle whose width and height is `CENTER_BIAS` times of the original rectangle, and it is in the center of the original rectangle.
+        let center_rectangle = rectangle.scaled_center_crop(CENTER_BIAS, &grid);
 
-        let center_west_x = rectangle.west_x() + non_center_width as i32;
-
-        let center_height = CENTER_BIAS * rectangle.height() as f64;
-        let non_center_height = ((rectangle.height() as f64 - center_height) / 2.0).floor() as u32;
-        let center_height = rectangle.height() - (non_center_height * 2);
-
-        let center_south_y = rectangle.south_y() + non_center_height as i32;
-
-        let center_rectangle = Rectangle::new(
-            OffsetCoordinate::new(center_west_x, center_south_y),
-            center_width,
-            center_height,
-            &grid,
-        );
-
-        let middle_width = MIDDLE_BIAS * rectangle.width() as f64;
-        let outer_width = ((rectangle.width() as f64 - middle_width) / 2.0).floor() as u32;
-        let middle_width = rectangle.width() - (outer_width * 2);
-
-        let middle_west_x = rectangle.west_x() + outer_width as i32;
-
-        let middle_height = MIDDLE_BIAS * rectangle.height() as f64;
-        let outer_height = ((rectangle.height() as f64 - middle_height) / 2.0).floor() as u32;
-        let middle_height = rectangle.height() - (outer_height * 2);
-
-        let middle_south_y = rectangle.south_y() + outer_height as i32;
-
-        let middle_rectangle = Rectangle::new(
-            OffsetCoordinate::new(middle_west_x, middle_south_y),
-            middle_width,
-            middle_height,
-            &grid,
-        );
+        // Get the rectangle whose width and height is `MIDDLE_BIAS` times of the original rectangle, and it is in the middle of the original rectangle.
+        let middle_rectangle = rectangle.scaled_center_crop(MIDDLE_BIAS, &grid);
 
         let mut center_candidates = Vec::new();
         let mut center_river = Vec::new();
