@@ -431,10 +431,10 @@ impl Tile {
         }
 
         // Check region constraints.
-        if let Some(region) = region {
-            if Some(self.area_id(tile_map)) != region.area_id {
-                return false;
-            }
+        if let Some(region) = region
+            && Some(self.area_id(tile_map)) != region.area_id
+        {
+            return false;
         }
 
         true

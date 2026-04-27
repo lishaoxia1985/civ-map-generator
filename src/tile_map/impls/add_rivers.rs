@@ -551,50 +551,46 @@ impl TileMap {
         sum
     }
 
-    /// Retrieves an inland corner tile based on the provided tile.
+    /// Retrieves a valid inland corner tile based on the provided anchor tile.
     ///
-    /// *An inland corner* is defined as a tile that has all its neighboring tiles in specific directions
-    /// (0 to 3) existing and not being water.
-    ///
-    /// At first, the function will collect the current tile and its neighbors
-    /// located in specified edge directions (3 to 5), then filter out those that do not qualify
-    /// as inland corners. Finally, choose one of the qualified inland corners randomly.
+    /// An *inland corner* is defined as a tile where all neighbors in edge directions `0..3`
+    /// exist and are not water. This function evaluates the current tile and its neighbors
+    /// in directions `3..6` as potential candidates, returning one valid corner at random.
     ///
     /// # Arguments
     ///
-    /// - `tile`: The current tile.
+    /// - `tile`: The anchor tile used to generate candidates.
     ///
     /// # Returns
     ///
-    /// Returns `Some(Tile)` if an inland corner is found,
-    /// or `None` if no such inland corner exists.
+    /// `Some(Tile)` containing a randomly selected valid inland corner, or `None` if no candidates qualify.
     fn get_inland_corner(&mut self, tile: Tile) -> Option<Tile> {
         let grid = self.world_grid.grid;
-        // We choose current tile and its `grid.edge_direction_array()[3..6]` neighbors as the candidate inland corners
-
-        // Initialize a list with the current tile
-        let mut tile_list = vec![tile];
-
-        // Collect valid neighbor tiles in edge directions [3..6]
-        tile_list.extend(
-            grid.edge_direction_array()[3..6]
+        let edge_dirs = grid.edge_direction_array();
+        // Construct an iterator over potential candidates: the current tile plus its neighbors in directions 3..6
+        let candidates = std::iter::once(tile).chain(
+            edge_dirs[3..6]
                 .iter()
-                .filter_map(|&direction| tile.neighbor_tile(direction, grid)),
+                .filter_map(|&dir| tile.neighbor_tile(dir, grid)),
         );
 
-        // Retain only those tiles that qualify as inland corners
-        // An inland corner requires all neighbors in edge directions [0..3] to exist and not be water
-        tile_list.retain(|&tile| {
-            grid.edge_direction_array()[0..3].iter().all(|&direction| {
-                tile.neighbor_tile(direction, grid)
-                    .is_some_and(|neighbor_tile| {
-                        neighbor_tile.terrain_type(self) != TerrainType::Water
-                    })
+        // Filter candidates to retain only those that qualify as inland corners.
+        // We collect into a Vec to allow for random selection among all valid options.
+        let valid_corners: Vec<Tile> = candidates
+            .filter(|&candidate| {
+                // A valid inland corner must have non-water neighbors in all directions 0..3
+                edge_dirs[0..3].iter().all(|&dir| {
+                    candidate
+                        .neighbor_tile(dir, grid)
+                        .is_some_and(|tile| tile.terrain_type(self) != TerrainType::Water)
+                })
             })
-        });
+            .collect();
 
-        // Choose a random corner if any exist
-        tile_list.choose(&mut self.random_number_generator).copied()
+        // Randomly select and return one of the valid corners, if any exist
+        valid_corners
+            .choose(&mut self.random_number_generator)
+            .copied()
     }
 
     /// Returns the number of river edges in the current area according to `area_id`

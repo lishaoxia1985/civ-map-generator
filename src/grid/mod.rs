@@ -571,7 +571,7 @@ impl Rectangle {
     /// # Arguments
     ///
     /// * `scale`: The scaling factor (0.0 < scale <= 1.0).
-    ///             1.0 returns the original rectangle, 0.5 returns a quarter of the area in the center of the original rectangle.
+    ///   1.0 returns the original rectangle, 0.5 returns a quarter of the area in the center of the original rectangle.
     /// * `grid`: The grid context required for the new Rectangle instance.
     ///
     /// # Panics
