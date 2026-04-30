@@ -16,7 +16,7 @@ use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 pub const SQRT_3: f32 = 1.732_050_8_f32;
 
 /// Hexagonal grid coordinate in axial (cube) coordinate system.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Hex(IVec2);
 impl Hex {
     /// Hexagon neighbor coordinates array, following [`HexOrientation::POINTY_EDGE`] or [`HexOrientation::FLAT_EDGE`] order.
@@ -42,15 +42,6 @@ impl Hex {
         Self::new(-1, 0),
         Self::new(-1, 1),
         Self::new(0, 1),
-    ];
-
-    const HEX_DIAGONALS: [Self; 6] = [
-        Self::new(2, -1),
-        Self::new(1, -2),
-        Self::new(-1, -1),
-        Self::new(-2, 1),
-        Self::new(-1, 2),
-        Self::new(1, 1),
     ];
 
     pub const fn new(x: i32, y: i32) -> Self {
@@ -107,10 +98,6 @@ impl Hex {
     pub fn neighbor(self, orientation: HexOrientation, direction: Direction) -> Hex {
         let edge_index = orientation.edge_index(direction);
         self + Self::HEX_DIRECTIONS[edge_index]
-    }
-
-    pub fn hex_diagonal_neighbor(self, direction: i32) -> Hex {
-        self + Self::HEX_DIAGONALS[direction as usize]
     }
 
     #[inline]
@@ -546,210 +533,281 @@ impl HexOrientation {
 // Tests
 #[cfg(test)]
 mod tests {
-
-    use glam::{IVec2, Vec2};
+    use glam::Vec2;
 
     use super::{Direction, Hex, HexLayout, HexOrientation, Offset, OffsetCoordinate};
 
-    pub fn equal_hex(name: &str, a: Hex, b: Hex) {
-        if a != b {
-            panic!("FAIL {}", name);
-        }
-    }
-
-    pub fn equal_offset_coordinate(name: &str, a: OffsetCoordinate, b: OffsetCoordinate) {
-        if a != b {
-            panic!("FAIL {}", name);
-        }
-    }
-
-    pub fn equal_hex_array(name: &str, a: Vec<Hex>, b: Vec<Hex>) {
-        assert_eq!(a.len(), b.len(), "FAIL {}", name);
-        for (x, y) in a.into_iter().zip(b.into_iter()) {
-            equal_hex(name, x, y);
-        }
-    }
-
-    #[test]
-    pub fn test_hex_neighbor() {
-        equal_hex(
-            "hex_neighbor",
-            Hex::new(1, -3),
-            Hex::new(1, -2).neighbor(HexOrientation::Flat, Direction::South),
-        );
-        equal_hex(
-            "hex_neighbor",
-            Hex::new(1, -3),
-            Hex::new(1, -2).neighbor(HexOrientation::Pointy, Direction::SouthWest),
-        );
-    }
-
-    #[test]
-    pub fn test_hex_diagonal() {
-        equal_hex(
-            "hex_diagonal",
-            Hex::new(-1, -1),
-            Hex::new(1, -2).hex_diagonal_neighbor(3),
-        );
-    }
-
-    #[test]
-    pub fn test_hex_distance() {
+    /// Helper function to assert hex equality with descriptive error message
+    fn assert_hex_eq(actual: Hex, expected: Hex, msg: &str) {
         assert_eq!(
-            7,
-            Hex::new(3, -7).distance_to(Hex(IVec2::ZERO)),
-            "FAIL hex_distance"
+            actual, expected,
+            "{}: expected {:?}, got {:?}",
+            msg, expected, actual
+        );
+    }
+
+    /// Helper function to assert offset coordinate equality
+    fn assert_offset_eq(actual: OffsetCoordinate, expected: OffsetCoordinate, msg: &str) {
+        assert_eq!(
+            actual, expected,
+            "{}: expected {:?}, got {:?}",
+            msg, expected, actual
         );
     }
 
     #[test]
-    pub fn test_hex_round() {
+    fn test_hex_neighbor_flat_orientation() {
+        // Test flat-top orientation: South neighbor
+        let center = Hex::new(1, -2);
+        let expected = Hex::new(1, -3);
+        let actual = center.neighbor(HexOrientation::Flat, Direction::South);
+        assert_hex_eq(actual, expected, "Flat orientation South neighbor");
+    }
+
+    #[test]
+    fn test_hex_neighbor_pointy_orientation() {
+        // Test pointy-top orientation: SouthWest neighbor
+        let center = Hex::new(1, -2);
+        let expected = Hex::new(1, -3);
+        let actual = center.neighbor(HexOrientation::Pointy, Direction::SouthWest);
+        assert_hex_eq(actual, expected, "Pointy orientation SouthWest neighbor");
+    }
+
+    #[test]
+    fn test_hex_distance_from_origin() {
+        let hex = Hex::new(3, -7);
+        let origin = Hex::new(0, 0);
+        let distance = hex.distance_to(origin);
+        assert_eq!(distance, 7, "Distance from (3,-7) to origin should be 7");
+    }
+
+    #[test]
+    fn test_hex_distance_symmetric() {
+        let a = Hex::new(2, -3);
+        let b = Hex::new(-1, 4);
+        let dist_ab = a.distance_to(b);
+        let dist_ba = b.distance_to(a);
+        assert_eq!(dist_ab, dist_ba, "Distance should be symmetric");
+    }
+
+    #[test]
+    fn test_hex_round_interpolation() {
+        // Test rounding at interpolation midpoint
+        let start = Vec2::ZERO;
+        let end = Vec2::new(10.0, -20.0);
+        let midpoint = start.lerp(end, 0.5);
+        let rounded = Hex::round(midpoint);
+        assert_hex_eq(rounded, Hex::new(5, -10), "Rounding at 0.5 interpolation");
+    }
+
+    #[test]
+    fn test_hex_round_bias_towards_start() {
+        // Values < 0.5 should round towards start
+        let a = Vec2::ZERO;
+        let b = Vec2::new(1.0, -1.0);
+        let biased = a.lerp(b, 0.499);
+        let rounded = Hex::round(biased);
+        assert_hex_eq(rounded, Hex::round(a), "Should bias towards start at 0.499");
+    }
+
+    #[test]
+    fn test_hex_round_bias_towards_end() {
+        // Values > 0.5 should round towards end
+        let a = Vec2::ZERO;
+        let b = Vec2::new(1.0, -1.0);
+        let biased = a.lerp(b, 0.501);
+        let rounded = Hex::round(biased);
+        assert_hex_eq(rounded, Hex::round(b), "Should bias towards end at 0.501");
+    }
+
+    #[test]
+    fn test_hex_round_weighted_average() {
+        // Test rounding with weighted combination
         let a = Vec2::ZERO;
         let b = Vec2::new(1.0, -1.0);
         let c = Vec2::new(0.0, -1.0);
-        equal_hex(
-            "hex_round 1",
-            Hex::new(5, -10),
-            Hex::round(Vec2::ZERO.lerp(Vec2::new(10.0, -20.0), 0.5)),
-        );
-        equal_hex("hex_round 2", Hex::round(a), Hex::round(a.lerp(b, 0.499)));
-        equal_hex("hex_round 3", Hex::round(b), Hex::round(a.lerp(b, 0.501)));
-        equal_hex(
-            "hex_round 4",
+
+        // More weight on 'a' should round to 'a'
+        let weighted_a = a * 0.4 + b * 0.3 + c * 0.3;
+        assert_hex_eq(
+            Hex::round(weighted_a),
             Hex::round(a),
-            Hex::round(a * 0.4 + b * 0.3 + c * 0.3),
+            "Weighted average biased towards a",
         );
-        equal_hex(
-            "hex_round 5",
+
+        // More weight on 'c' should round to 'c'
+        let weighted_c = a * 0.3 + b * 0.3 + c * 0.4;
+        assert_hex_eq(
+            Hex::round(weighted_c),
             Hex::round(c),
-            Hex::round(a * 0.3 + b * 0.3 + c * 0.4),
+            "Weighted average biased towards c",
         );
     }
 
     #[test]
-    pub fn test_layout() {
-        let h = Hex::new(3, 4);
-        let flat: HexLayout = HexLayout {
+    fn test_layout_flat_orientation_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let layout = HexLayout {
             orientation: HexOrientation::Flat,
             size: [10.0, 15.0],
             origin: [35.0, 71.0],
         };
-        equal_hex(
-            "layout",
-            h,
-            flat.pixel_to_hex(flat.hex_to_pixel(h).to_array()),
-        );
-        let pointy: HexLayout = HexLayout {
+
+        // Convert hex → pixel → hex should return original
+        let pixel = layout.hex_to_pixel(hex);
+        let recovered = layout.pixel_to_hex(pixel.to_array());
+        assert_hex_eq(recovered, hex, "Flat layout roundtrip conversion");
+    }
+
+    #[test]
+    fn test_layout_pointy_orientation_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let layout = HexLayout {
             orientation: HexOrientation::Pointy,
             size: [10.0, 15.0],
             origin: [35.0, 71.0],
         };
-        equal_hex(
-            "layout",
-            h,
-            pointy.pixel_to_hex(pointy.hex_to_pixel(h).to_array()),
-        );
+
+        // Convert hex → pixel → hex should return original
+        let pixel = layout.hex_to_pixel(hex);
+        let recovered = layout.pixel_to_hex(pixel.to_array());
+        assert_hex_eq(recovered, hex, "Pointy layout roundtrip conversion");
     }
 
     #[test]
-    pub fn test_offset_roundtrip() {
-        let a = Hex::new(3, 4);
-        let b = OffsetCoordinate::new(1, -3);
-        equal_hex(
-            "conversion_roundtrip even-q",
-            a,
-            Hex::from_offset(
-                a.to_offset(HexOrientation::Flat, Offset::Even),
-                HexOrientation::Flat,
-                Offset::Even,
-            ),
-        );
-        equal_offset_coordinate(
-            "conversion_roundtrip even-q",
-            b,
-            Hex::from_offset(b, HexOrientation::Flat, Offset::Even)
-                .to_offset(HexOrientation::Flat, Offset::Even),
-        );
-        equal_hex(
-            "conversion_roundtrip odd-q",
-            a,
-            Hex::from_offset(
-                a.to_offset(HexOrientation::Flat, Offset::Odd),
-                HexOrientation::Flat,
-                Offset::Odd,
-            ),
-        );
-        equal_offset_coordinate(
-            "conversion_roundtrip odd-q",
-            b,
-            Hex::from_offset(b, HexOrientation::Flat, Offset::Odd)
-                .to_offset(HexOrientation::Flat, Offset::Odd),
-        );
-        equal_hex(
-            "conversion_roundtrip even-r",
-            a,
-            Hex::from_offset(
-                a.to_offset(HexOrientation::Pointy, Offset::Even),
-                HexOrientation::Pointy,
-                Offset::Even,
-            ),
-        );
-        equal_offset_coordinate(
-            "conversion_roundtrip even-r",
-            b,
-            Hex::from_offset(b, HexOrientation::Pointy, Offset::Even)
-                .to_offset(HexOrientation::Pointy, Offset::Even),
-        );
-        equal_hex(
-            "conversion_roundtrip odd-r",
-            a,
-            Hex::from_offset(
-                a.to_offset(HexOrientation::Pointy, Offset::Odd),
-                HexOrientation::Pointy,
-                Offset::Odd,
-            ),
-        );
-        equal_offset_coordinate(
-            "conversion_roundtrip odd-r",
-            b,
-            Hex::from_offset(b, HexOrientation::Pointy, Offset::Odd)
-                .to_offset(HexOrientation::Pointy, Offset::Odd),
-        );
+    fn test_offset_conversion_flat_even_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let offset = hex.to_offset(HexOrientation::Flat, Offset::Even);
+        let recovered = Hex::from_offset(offset, HexOrientation::Flat, Offset::Even);
+        assert_hex_eq(recovered, hex, "Flat even-offset roundtrip");
     }
 
     #[test]
-    pub fn test_offset_from_hex() {
-        equal_offset_coordinate(
-            "offset_from_hex even-q",
-            OffsetCoordinate::new(1, 3),
-            Hex::new(1, 2).to_offset(HexOrientation::Flat, Offset::Even),
-        );
-        equal_offset_coordinate(
-            "offset_from_hex odd-q",
-            OffsetCoordinate::new(1, 2),
-            Hex::new(1, 2).to_offset(HexOrientation::Flat, Offset::Odd),
-        );
+    fn test_offset_conversion_flat_odd_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let offset = hex.to_offset(HexOrientation::Flat, Offset::Odd);
+        let recovered = Hex::from_offset(offset, HexOrientation::Flat, Offset::Odd);
+        assert_hex_eq(recovered, hex, "Flat odd-offset roundtrip");
     }
 
     #[test]
-    pub fn test_offset_to_hex() {
-        equal_hex(
-            "offset_to_hex even-q",
-            Hex::new(1, 2),
-            Hex::from_offset(
-                OffsetCoordinate::new(1, 3),
-                HexOrientation::Flat,
-                Offset::Even,
-            ),
-        );
-        equal_hex(
-            "offset_to_hex odd-q",
-            Hex::new(1, 2),
-            Hex::from_offset(
-                OffsetCoordinate::new(1, 2),
-                HexOrientation::Flat,
-                Offset::Odd,
-            ),
-        );
+    fn test_offset_conversion_pointy_even_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let offset = hex.to_offset(HexOrientation::Pointy, Offset::Even);
+        let recovered = Hex::from_offset(offset, HexOrientation::Pointy, Offset::Even);
+        assert_hex_eq(recovered, hex, "Pointy even-offset roundtrip");
+    }
+
+    #[test]
+    fn test_offset_conversion_pointy_odd_roundtrip() {
+        let hex = Hex::new(3, 4);
+        let offset = hex.to_offset(HexOrientation::Pointy, Offset::Odd);
+        let recovered = Hex::from_offset(offset, HexOrientation::Pointy, Offset::Odd);
+        assert_hex_eq(recovered, hex, "Pointy odd-offset roundtrip");
+    }
+
+    #[test]
+    fn test_offset_coordinate_to_hex_flat_even() {
+        let offset = OffsetCoordinate::new(1, -3);
+        let hex = Hex::from_offset(offset, HexOrientation::Flat, Offset::Even);
+        let recovered = hex.to_offset(HexOrientation::Flat, Offset::Even);
+        assert_offset_eq(recovered, offset, "Offset to hex conversion (flat, even)");
+    }
+
+    #[test]
+    fn test_offset_coordinate_to_hex_flat_odd() {
+        let offset = OffsetCoordinate::new(1, -3);
+        let hex = Hex::from_offset(offset, HexOrientation::Flat, Offset::Odd);
+        let recovered = hex.to_offset(HexOrientation::Flat, Offset::Odd);
+        assert_offset_eq(recovered, offset, "Offset to hex conversion (flat, odd)");
+    }
+
+    #[test]
+    fn test_offset_coordinate_to_hex_pointy_even() {
+        let offset = OffsetCoordinate::new(1, -3);
+        let hex = Hex::from_offset(offset, HexOrientation::Pointy, Offset::Even);
+        let recovered = hex.to_offset(HexOrientation::Pointy, Offset::Even);
+        assert_offset_eq(recovered, offset, "Offset to hex conversion (pointy, even)");
+    }
+
+    #[test]
+    fn test_offset_coordinate_to_hex_pointy_odd() {
+        let offset = OffsetCoordinate::new(1, -3);
+        let hex = Hex::from_offset(offset, HexOrientation::Pointy, Offset::Odd);
+        let recovered = hex.to_offset(HexOrientation::Pointy, Offset::Odd);
+        assert_offset_eq(recovered, offset, "Offset to hex conversion (pointy, odd)");
+    }
+
+    #[test]
+    fn test_hex_to_offset_flat_even() {
+        let hex = Hex::new(1, 2);
+        let expected = OffsetCoordinate::new(1, 3);
+        let actual = hex.to_offset(HexOrientation::Flat, Offset::Even);
+        assert_offset_eq(actual, expected, "Hex to offset (flat, even)");
+    }
+
+    #[test]
+    fn test_hex_to_offset_flat_odd() {
+        let hex = Hex::new(1, 2);
+        let expected = OffsetCoordinate::new(1, 2);
+        let actual = hex.to_offset(HexOrientation::Flat, Offset::Odd);
+        assert_offset_eq(actual, expected, "Hex to offset (flat, odd)");
+    }
+
+    #[test]
+    fn test_offset_to_hex_flat_even() {
+        let offset = OffsetCoordinate::new(1, 3);
+        let expected = Hex::new(1, 2);
+        let actual = Hex::from_offset(offset, HexOrientation::Flat, Offset::Even);
+        assert_hex_eq(actual, expected, "Offset to hex (flat, even)");
+    }
+
+    #[test]
+    fn test_offset_to_hex_flat_odd() {
+        let offset = OffsetCoordinate::new(1, 2);
+        let expected = Hex::new(1, 2);
+        let actual = Hex::from_offset(offset, HexOrientation::Flat, Offset::Odd);
+        assert_hex_eq(actual, expected, "Offset to hex (flat, odd)");
+    }
+
+    #[test]
+    fn test_hex_coordinates_accessors() {
+        let hex = Hex::new(5, -3);
+        assert_eq!(hex.x(), 5, "X coordinate accessor");
+        assert_eq!(hex.y(), -3, "Y coordinate accessor");
+        assert_eq!(hex.z(), -2, "Z coordinate (should be -x-y)");
+    }
+
+    #[test]
+    fn test_hex_addition() {
+        let a = Hex::new(2, -1);
+        let b = Hex::new(-1, 3);
+        let sum = a + b;
+        assert_hex_eq(sum, Hex::new(1, 2), "Hex addition");
+    }
+
+    #[test]
+    fn test_hex_subtraction() {
+        let a = Hex::new(5, -2);
+        let b = Hex::new(2, 1);
+        let diff = a - b;
+        assert_hex_eq(diff, Hex::new(3, -3), "Hex subtraction");
+    }
+
+    #[test]
+    fn test_hex_length() {
+        assert_eq!(Hex::new(0, 0).length(), 0, "Origin length");
+        assert_eq!(Hex::new(1, 0).length(), 1, "Unit X length");
+        assert_eq!(Hex::new(0, 1).length(), 1, "Unit Y length");
+        assert_eq!(Hex::new(3, -4).length(), 4, "Longer distance");
+    }
+
+    #[test]
+    fn test_hex_equality() {
+        let a = Hex::new(2, -3);
+        let b = Hex::new(2, -3);
+        let c = Hex::new(2, -2);
+        assert_eq!(a, b, "Equal hexes");
+        assert_ne!(a, c, "Different hexes");
     }
 }
