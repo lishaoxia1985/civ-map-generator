@@ -103,14 +103,6 @@ impl Hex {
         OffsetCoordinate::new(col, row)
     }
 
-    pub fn to_doubled_coordinate(self, orientation: HexOrientation) -> DoubledCoordinate {
-        let (col, row) = match orientation {
-            HexOrientation::Pointy => (2 * self.0.x + self.0.y, self.0.y),
-            HexOrientation::Flat => (self.0.x, 2 * self.0.y + self.0.x),
-        };
-        DoubledCoordinate::new(col, row)
-    }
-
     /// Get the hex at the given `direction` from `self`, according to the given `orientation` is `HexOrientation::Pointy` or `HexOrientation::Flat`.
     pub fn neighbor(self, orientation: HexOrientation, direction: Direction) -> Hex {
         let edge_index = orientation.edge_index(direction);
@@ -227,22 +219,6 @@ impl From<[i32; 2]> for Hex {
     #[inline]
     fn from(a: [i32; 2]) -> Self {
         Self(a.into())
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct DoubledCoordinate(IVec2);
-impl DoubledCoordinate {
-    pub fn new(x: i32, y: i32) -> Self {
-        Self(IVec2::new(x, y))
-    }
-
-    pub fn to_hex(self, orientation: HexOrientation) -> Hex {
-        let (q, r) = match orientation {
-            HexOrientation::Pointy => ((self.0.x - self.0.y) / 2, self.0.y),
-            HexOrientation::Flat => (self.0.x, (self.0.y - self.0.x) / 2),
-        };
-        Hex::new(q, r)
     }
 }
 
@@ -573,9 +549,7 @@ mod tests {
 
     use glam::{IVec2, Vec2};
 
-    use super::{
-        Direction, DoubledCoordinate, Hex, HexLayout, HexOrientation, Offset, OffsetCoordinate,
-    };
+    use super::{Direction, Hex, HexLayout, HexOrientation, Offset, OffsetCoordinate};
 
     pub fn equal_hex(name: &str, a: Hex, b: Hex) {
         if a != b {
@@ -584,12 +558,6 @@ mod tests {
     }
 
     pub fn equal_offset_coordinate(name: &str, a: OffsetCoordinate, b: OffsetCoordinate) {
-        if a != b {
-            panic!("FAIL {}", name);
-        }
-    }
-
-    pub fn equal_doubled_coordinate(name: &str, a: DoubledCoordinate, b: DoubledCoordinate) {
         if a != b {
             panic!("FAIL {}", name);
         }
@@ -782,64 +750,6 @@ mod tests {
                 HexOrientation::Flat,
                 Offset::Odd,
             ),
-        );
-    }
-
-    #[test]
-    pub fn test_doubled_roundtrip() {
-        let a = Hex::new(3, 4);
-        let b = DoubledCoordinate::new(1, -3);
-        equal_hex(
-            "conversion_roundtrip doubled-q",
-            a,
-            a.to_doubled_coordinate(HexOrientation::Flat)
-                .to_hex(HexOrientation::Flat),
-        );
-        equal_doubled_coordinate(
-            "conversion_roundtrip doubled-q",
-            b,
-            b.to_hex(HexOrientation::Flat)
-                .to_doubled_coordinate(HexOrientation::Flat),
-        );
-        equal_hex(
-            "conversion_roundtrip doubled-r",
-            a,
-            a.to_doubled_coordinate(HexOrientation::Pointy)
-                .to_hex(HexOrientation::Pointy),
-        );
-        equal_doubled_coordinate(
-            "conversion_roundtrip doubled-r",
-            b,
-            b.to_hex(HexOrientation::Pointy)
-                .to_doubled_coordinate(HexOrientation::Pointy),
-        );
-    }
-
-    #[test]
-    pub fn test_doubled_from_hex() {
-        equal_doubled_coordinate(
-            "doubled_from_hex doubled-q",
-            DoubledCoordinate::new(1, 5),
-            Hex::new(1, 2).to_doubled_coordinate(HexOrientation::Flat),
-        );
-        equal_doubled_coordinate(
-            "doubled_from_hex doubled-r",
-            DoubledCoordinate::new(4, 2),
-            Hex::new(1, 2).to_doubled_coordinate(HexOrientation::Pointy),
-        );
-    }
-
-    #[test]
-    pub fn test_doubled_to_hex() {
-        equal_hex(
-            "doubled_to_hex doubled-q",
-            Hex::new(1, 2),
-            DoubledCoordinate::new(1, 5).to_hex(HexOrientation::Flat),
-        );
-        equal_hex(
-            "doubled_to_hex doubled-r",
-            Hex::new(1, 2),
-            DoubledCoordinate::new(4, 2).to_hex(HexOrientation::Pointy),
         );
     }
 }
