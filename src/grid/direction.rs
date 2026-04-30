@@ -1,3 +1,22 @@
+//! Direction enum for hexagonal and square grids.
+//!
+//! Represents the 8 cardinal and intercardinal directions used in grid navigation.
+//!
+//! # Direction Layout
+//!
+//! ```txt
+//!         North
+//!           ↑
+//!     NW ←  |  → NE
+//!           |
+//! West ←----+----→ East
+//!           |
+//!     SW ←  |  → SE
+//!           ↓
+//!         South
+//! ```
+//!
+
 #[repr(u8)]
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Direction {

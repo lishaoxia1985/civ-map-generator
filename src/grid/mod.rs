@@ -1,6 +1,67 @@
-//! This module provides various grid implementations and utilities.
-//! It includes support for different grid types such as hexagonal and square grids,
-//! calculating distances, neighbors, and converting between grid coordinates and offset coordinates.
+//! Grid system module providing coordinate systems.
+//!
+//! This module implements multiple coordinate systems to support different purposes.
+//!
+//! # Coordinate Systems Overview
+//!
+//! The module uses three complementary coordinate systems, each serving a specific purpose:
+//!
+//! ## Cell - Unique Position Identifier
+//!
+//! A [`Cell`] represents a unique position/tile in the grid, regardless of wrapping behavior.
+//! It is the primary way to reference tiles because:
+//! - Each cell has a unique linear index in a flattened 1D array
+//! - In wrapped grids, a single cell may have multiple offset/grid coordinate representations
+//! - Other coordinate systems cannot uniquely identify positions in wrapped grids
+//!
+//! ## Offset Coordinate - Column-Row System
+//!
+//! [`OffsetCoordinate`] describes the column and row of a tile in a grid.
+//! It is used to tackle with the situation where the grid is wrapped.
+//!
+//! That picture below shows a unwrapped grid with offset coordinates.
+//!
+//! ```txt
+//! Y ↑
+//!   |
+//!   |  (0,height-1)        (width-1,height-1)
+//!   |  +-------------------+
+//!   |  |                   |
+//!   |  |    Grid Area      |
+//!   |  |                   |
+//!   |  +-------------------+
+//!   |  (0,0)               (width-1,0)
+//!   +--------------------------------→ X
+//!   Origin (bottom-left corner)
+//! ```
+//!
+//! The coordinate ranges depend on whether the grid wraps at boundaries:
+//!
+//! - **Non-wrapped grid**: `x ∈ [0, width)`, `y ∈ [0, height)`
+//! - **Wrapped grid**:
+//!   - Only Wrap x: x can be any value, y ∈ [0, height)]
+//!     - Example (x-wrapped): `(0, 0) ≡ (width, 0) ≡ (-width, 0) ≡ (2*width, 0)` is the same cell/tile
+//!   - Only Wrap y: x ∈ [0, width), y can be any value
+//!     - Example (y-wrapped): `(0, 0) ≡ (0, height) ≡ (0, -height) ≡ (0, 2*height)` is the same cell/tile
+//!   - Wrap both x and y: x and y can be any value
+//!     - Example (both x and y wrapped): `(0, 0) ≡ (width, height) ≡ (-width, -height) ≡ (2*width, 2*height)` is the same cell/tile
+//!
+//! In wrapped grids multiple offset coordinates can represent the same cell,
+//! when we normalize an offset coordinate, i.e. wrap its x and y coordinates to the range `([0, width), [0, height))`,
+//! it can be transformed into [`Cell`] uniquely.
+//!
+//! See the [`offset_coordinate`](self::offset_coordinate) module for detailed wrapping behavior.
+//!
+//! ## Grid Coordinate - Distance Calculation And Pixel Conversion
+//!
+//! Grid coordinates (hex or square) describe the distance between two tiles.
+//!
+//! Grid coordinates (hex or square) are used internally by the grid to calculate neighbors, distances, and other grid-related distance operations,
+//! and to convert between grid coordinates and pixel coordinates.
+//!
+//! # Grid Shape
+//!
+//! This module only supports **rectangular** grids. Other shapes are not considered.
 
 use direction::Direction;
 use offset_coordinate::OffsetCoordinate;
@@ -12,54 +73,89 @@ pub mod hex_grid;
 pub mod offset_coordinate;
 pub mod square_grid;
 
-/// Grid trait defines the interface for a grid structure.
+/// Grid trait defining the interface for grid structures.
 ///
-/// Grid uses [`Cell`] representing each unique position in the grid.
-/// Grids implement this trait with their specific coordinate types,
-/// such as [`Hex`](hex_grid::hex::Hex) for hexagonal grids or [`Square`](square_grid::square::Square) for square grids.
-/// their specific coordinate types is used to calculate the neighbors of a given coordinate,
-/// distance between coordinates, and other grid-related operations.
+/// # Overview
+///
+/// This trait provides a unified interface for different grid types (hexagonal, square, etc.)
+/// and defines core operations for coordinate manipulation, distance calculation, and spatial queries.
+///
+/// Grids use [`Cell`] to represent unique positions. Each grid implementation uses its specific
+/// coordinate type:
+/// - Hexagonal grids: [`Hex`](hex_grid::Hex) with axial coordinates (q, r)
+/// - Square grids: [`Square`](square_grid::Square) with Cartesian coordinates (x, y)
+///
+/// These internal coordinates enable neighbor finding, distance calculations, and other
+/// grid-related operations. All grids support conversion to/from [`OffsetCoordinate`] for
+/// external interfaces.
+///
+/// # Wrapping Behavior
+///
+/// Grids can be configured with wrapping using [`WrapFlags`]:
+/// - **WrapX**: Horizontal wrapping (left ↔ right edges connect)
+/// - **WrapY**: Vertical wrapping (top ↔ bottom edges connect)
+/// - **Both**: Toroidal topology (wraps in both directions)
+/// - **Neither**: Standard rectangular grid with hard boundaries
+///
+/// Wrapping affects all operations including neighbor finding, distance calculation,
+/// and pathfinding.
 pub trait Grid {
-    /// The type of coordinate used in the grid.
-    /// This type is used to calculate neighbors, distances, and other grid-related operations.
-    /// For a hex grid, this would be [`Hex`](hex_grid::hex::Hex).
-    /// For a square grid, this would be [`Square`](square_grid::square::Square).
+    /// Internal coordinate type used by the grid.
+    ///
+    /// Used for neighbor calculations, distance measurements, and spatial operations.
+    /// - Hex grids: [`Hex`](hex_grid::Hex)
+    /// - Square grids: [`Square`](square_grid::Square)
     type GridCoordinateType;
 
-    /// The type of the edge direction and corner array.
-    /// It should be `[Direction; N]` where N is the number of edges or corners.
-    /// For a hex grid, this would be `[Direction; 6]`.
-    /// For a square grid, this would be `[Direction; 4]`.
+    /// Direction array type for edges or corners.
+    ///
+    /// Should be `[Direction; N]` where N is the number of edges/corners:
+    /// - Hex grids: `[Direction; 6]`
+    /// - Square grids: `[Direction; 4]`
     type DirectionArrayType;
 
-    /// Returns the array of directions for the edges of the grid.
+    /// Returns the array of edge directions for the grid.
+    ///
+    /// - Hex grids: 6 directions (edges of hexagon)
+    /// - Square grids: 4 directions (edges of square)
     fn edge_direction_array(&self) -> Self::DirectionArrayType;
 
-    /// Returns the array of directions for the corners of the grid.
+    /// Returns the array of corner directions for the grid.
+    ///
+    /// - Hex grids: 6 directions (vertices of hexagon)
+    /// - Square grids: 4 directions (corners of square)
     fn corner_direction_array(&self) -> Self::DirectionArrayType;
 
-    /// Returns the size of the grid as a [`Size`] struct, which contains the width and height of the grid.
+    /// Returns the grid dimensions as a [`Size`] struct.
     fn size(&self) -> Size;
 
-    /// Returns the width of the grid.
+    /// Returns the grid width in cells (number of columns).
     fn width(&self) -> u32 {
         self.size().width
     }
 
-    /// Returns the height of the grid.
+    /// Returns the height of the grid in cells (number of rows).
     fn height(&self) -> u32 {
         self.size().height
     }
 
     /// Returns the flags that indicate how a grid/map wraps at its borders.
+    ///
+    /// See [`WrapFlags`] for details on wrapping behavior.
     fn wrap_flags(&self) -> WrapFlags;
 
-    /// Returns if the grid is wrapped in the X direction.
+    /// Returns if the grid is wrapped in the X direction (horizontal wrapping).
+    ///
+    /// When enabled, moving east from the rightmost column wraps to the leftmost column,
+    /// and vice versa.
     fn wrap_x(&self) -> bool {
         self.wrap_flags().contains(WrapFlags::WrapX)
     }
 
-    /// Returns if the grid is wrapped in the Y direction.
+    /// Returns if the grid is wrapped in the Y direction (vertical wrapping).
+    ///
+    /// When enabled, moving north from the top row wraps to the bottom row,
+    /// and vice versa.
     fn wrap_y(&self) -> bool {
         self.wrap_flags().contains(WrapFlags::WrapY)
     }
@@ -108,6 +204,16 @@ pub trait Grid {
     ///
     /// `OffsetCoordinate` is a normalized coordinate that fits within the grid's bounds.
     ///
+    /// # Arguments
+    ///
+    /// - `cell`: The cell index to convert
+    ///
+    /// # Returns
+    ///
+    /// An `OffsetCoordinate` where:
+    /// - x = cell_index % width (column position)
+    /// - y = cell_index / width (row position)
+    ///
     /// # Panics
     ///
     /// If the cell is out of bounds, it will panic in debug mode.
@@ -129,15 +235,25 @@ pub trait Grid {
         OffsetCoordinate::from([x, y])
     }
 
-    /// Converts an `OffsetCoordinate`  to a `Cell`. If the coordinate is out of bounds, an error is returned.
+    /// Converts an `OffsetCoordinate` to a `Cell`. If the coordinate is out of bounds, an error is returned.
     ///
     /// # Arguments
     ///
-    /// - `offset_coordinate` - The offset coordinate to convert.
+    /// - `offset_coordinate`: The offset coordinate to convert.
     ///
     /// # Returns
     ///
     /// - `Result<Cell, String>`: The cell if the coordinate is valid, otherwise an error message.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// let offset = OffsetCoordinate::new(3, 2);
+    /// match grid.offset_to_cell(offset) {
+    ///     Ok(cell) => println!("Cell index: {}", cell.index()),
+    ///     Err(e) => println!("Error: {}", e),
+    /// }
+    /// ```
     #[must_use = "iterators are lazy and do nothing unless consumed"]
     fn offset_to_cell(&self, offset_coordinate: OffsetCoordinate) -> Result<Cell, String> {
         self.normalize_offset(offset_coordinate)
@@ -187,6 +303,16 @@ pub trait Grid {
     }
 
     /// Checks if the given `OffsetCoordinate` is within the grid's bounds.
+    ///
+    /// Returns `true` if the coordinate satisfies:
+    /// - `0 <= x < width`
+    /// - `0 <= y < height`
+    ///
+    /// # Notice
+    ///
+    /// This check does **NOT** account for wrapping. For wrapped coordinates,
+    /// use [`Self::normalize_offset()`] first, unless you are sure that the
+    /// coordinate is already normalized.
     fn within_grid_bounds(&self, offset_coordinate: OffsetCoordinate) -> bool {
         offset_coordinate.0.x >= 0
             && offset_coordinate.0.x < self.width() as i32
@@ -200,6 +326,9 @@ pub trait Grid {
     fn grid_coordinate_to_cell(&self, grid_coordinate: Self::GridCoordinateType) -> Option<Cell>;
 
     /// Computes the distance from `start` to `dest` in the grid.
+    ///
+    /// For wrapped grids, the distance accounts for wrapping and returns the
+    /// shortest path considering wrap-around.
     fn distance_to(&self, start: Cell, dest: Cell) -> i32;
 
     /// Returns the neighbor of `center` in the given `direction`.
@@ -209,8 +338,8 @@ pub trait Grid {
     ///
     /// # Arguments
     ///
-    /// * `center` - The center cell.
-    /// * `distance` - The distance from the center cell.
+    /// * `center`: The center cell.
+    /// * `distance`: The distance from the center cell.
     ///
     /// # Notice
     ///
@@ -221,9 +350,16 @@ pub trait Grid {
     /// If you need distances beyond these limits (not recommended), filter results like this:
     /// ```rust, ignore
     /// let cells = grid.cells_at_distance(center, distance)
-    /// .filter(|cell| {
+    ///     .filter(|cell| {
     ///     grid.distance_to(center, *cell) == distance as i32
-    /// }).collect::<Vec<_>>();
+    ///     }).collect::<Vec<_>>();
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// // Get all cells exactly 3 steps away from center
+    /// let ring = grid.cells_at_distance(center, 3).collect::<Vec<_>>();
     /// ```
     #[must_use]
     fn cells_at_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
@@ -234,7 +370,7 @@ pub trait Grid {
     /// # Arguments
     ///
     /// - `center`: The center cell.
-    /// - `distance`: The distance from the center cell.
+    /// - `distance`: The maximum distance from the center cell (inclusive).
     ///
     /// # Notice
     ///
@@ -245,18 +381,56 @@ pub trait Grid {
     /// If you need distances beyond these limits (not recommended), remove duplicate results like this:
     /// ```rust, ignore
     /// let cells = grid.cells_within_distance(center, distance)
-    /// .collect::<HashSet<_>>();
+    ///     .collect::<HashSet<_>>();
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// // Get all cells within 2 steps of center (includes center)
+    /// let area = grid.cells_within_distance(center, 2).collect::<Vec<_>>();
     /// ```
     #[must_use]
     fn cells_within_distance(self, center: Cell, distance: u32) -> impl Iterator<Item = Cell>;
 
     /// Determine the direction of `dest` relative to `start`.
     ///
-    /// If `dest` is located to the north of `start`, the function returns `Some(Direction::North)`.
-    /// If `dest` is equal to `start`, the function returns [`None`].
+    /// Returns the primary compass direction from `start` to `dest`.
+    /// The exact direction set depends on grid type (6 directions for hex, 4 for square).
+    ///
+    /// # Arguments
+    ///
+    /// - `start`: The starting cell
+    /// - `dest`: The destination cell
+    ///
+    /// # Returns
+    ///
+    /// - `Some(Direction)` indicating the general direction from start to dest
+    /// - [`None`] if `dest` equals `start` (no direction)
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// let to = grid.neighbor(from, Direction::North);
+    /// if let Some(dir) = grid.estimate_direction(from, to) {
+    ///     // dir would be `Direction::North` in this case
+    ///     println!("Move {:?}", dir);
+    /// }
+    /// ```
     fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction>;
 
     /// Create a rectangle region starting at `origin` with the specified `width` and `height` in the grid.
+    ///
+    /// # Arguments
+    ///
+    /// - `origin`: The bottom-left (south-west) corner of the rectangle in offset coordinates
+    /// - `width`: Width of the rectangle in cells
+    /// - `height`: Height of the rectangle in cells
+    /// - `grid`: The grid context for boundary checking
+    ///
+    /// # Returns
+    ///
+    /// A [`Rectangle`] object that can iterate over all contained cells
     fn rectangle_region(&self, origin: OffsetCoordinate, width: u32, height: u32) -> Rectangle
     where
         Self: Sized,
@@ -264,7 +438,17 @@ pub trait Grid {
         Rectangle::new(origin, width, height, self)
     }
 
-    /// Create a rectangle region starting at `origin` and ending at `top_right_corner` in the grid.
+    /// Create a rectangle region starting at `origin`(bottom-left corner) and ending at `top-right corner` in the grid.
+    ///
+    /// # Arguments
+    ///
+    /// - `origin`: The bottom-left (south-west) corner of the rectangle in offset coordinates
+    /// - `top_right_corner`: The top-right (north-east) corner of the rectangle in offset coordinates
+    /// - `grid`: The grid context for boundary checking and wrap handling
+    ///
+    /// # Returns
+    ///
+    /// A [`Rectangle`] object that can iterate over all contained cells
     fn rectangle_region_from_corners(
         &self,
         origin: OffsetCoordinate,
@@ -277,12 +461,43 @@ pub trait Grid {
     }
 }
 
-/// Represents the size of a grid or map with a specified width and height.
+/// Represents the dimensions of a grid or map.
+///
+/// # Structure
+///
+/// Contains width and height as unsigned 32-bit integers, defining the grid's extent
+/// in offset coordinate space.
+///
+/// # Visual Representation
+///
+/// ```txt
+/// Y ↑
+///   |
+/// H |  +-------------------+
+/// e |  |                   |
+/// i |  |    Grid Area      |
+/// g |  |    W × H cells    |
+/// h |  |                   |
+/// t |  +-------------------+
+///   +--------------------------------→ X
+///   0         Width
+/// ```
+///
+/// # Examples
+///
+/// ```rust
+/// use civ_map_generator::grid::Size;
+///
+/// let size = Size::new(10, 8);
+/// assert_eq!(size.width, 10);
+/// assert_eq!(size.height, 8);
+/// assert_eq!(size.area(), 80); // 10 × 8 cells
+/// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Size {
-    /// The width of the grid or map.
+    /// The width of the grid in cells (number of columns).
     pub width: u32,
-    /// The height of the grid or map.
+    /// The height of the grid in cells (number of rows).
     pub height: u32,
 }
 
@@ -293,7 +508,6 @@ impl Size {
     }
 
     /// Returns how many cells are in the grid.
-    ///
     pub fn area(&self) -> u32 {
         self.width * self.height
     }
@@ -303,17 +517,43 @@ bitflags! {
     /// Bitflags representing how a grid/map wraps at its borders.
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct WrapFlags: u8 {
-        ///Enable horizontal wrapping (left/right edges connect)
+        /// Enable horizontal wrapping (left/right edges connect).
         const WrapX = 0b0000_0001;
-        /// Enable vertical wrapping (top/bottom edges connect)
+        /// Enable vertical wrapping (top/bottom edges connect).
         const WrapY = 0b0000_0010;
     }
 }
 
-/// Representing a cell or tile in a grid, which is identified by a unique index.
+/// Represents a unique position or tile in a grid, identified by a linear index.
 ///
-/// It is a wrapper around a `usize` index, which uniquely identifies the cell within the grid.
-/// The index is used to access the cell in a flat representation of the grid, such as a 1D array.
+/// # Overview
+///
+/// `Cell` is a wrapper around a `usize` index that provides a type-safe way to reference
+/// individual tiles in a grid. The index corresponds to a position in a flattened 1D array
+/// representation of the 2D grid.
+///
+/// # Index Calculation
+///
+/// For a grid with dimensions `width × height`:
+/// ```txt
+/// cell_index = x + y * width
+/// ```
+/// Where:
+/// - `x ∈ [0, width)` is the column (offset x coordinate)
+/// - `y ∈ [0, height)` is the row (offset y coordinate)
+///
+/// # Visual Layout
+///
+/// ```txt
+/// Grid (4×3):
+///
+/// y=2:  [8]  [9]  [10] [11]
+/// y=1:  [4]  [5]  [6]  [7]
+/// y=0:  [0]  [1]  [2]  [3]
+///       x=0  x=1  x=2  x=3
+///
+/// Cell indices increase left-to-right, bottom-to-top
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Cell(usize);
 
@@ -383,10 +623,45 @@ pub enum WorldSizeType {
     Huge,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 /// Defines a rectangular region within a grid.
 ///
 /// Provides functionality to retrieve all cells contained within the region.
+///
+/// # Coordinate System
+///
+/// Rectangles are defined using offset coordinates with:
+/// - **Origin**: The bottom-left (south-west) corner of the rectangle
+/// - **Width**: Horizontal extent in cells (positive, ≥1)
+/// - **Height**: Vertical extent in cells (positive, ≥1)
+///
+/// ```txt
+/// Y ↑
+///   |
+/// H |  origin+width-1,height-1 ──────── top_right_corner
+/// e |    (x+w-1, y+h-1)                    (x+w-1, y+h-1)
+/// i |         +-------------------+
+/// g |         |                   |
+/// h |         |   Rectangle       |
+/// t |         |    Area           |
+///   |         |                   |
+///   |         +-------------------+
+///   |       origin (x, y)
+///   +--------------------------------→ X
+///   0         
+/// ```
+///
+/// # Grid Interpretation
+/// - Origin represents the south-west corner (bottom-left in visual terms)
+/// - Rectangle extends positively in both x and y directions from origin
+///
+/// # Coordinate Constraints
+/// - x ∈ [0, grid_width)
+/// - y ∈ [0, grid_height)
+///
+/// Where `grid_width` and `grid_height` are the dimensions of the containing grid.
+/// When you create a rectangle with [`Rectangle::new`] or [`Rectangle::from_corners`],
+/// the provided origin will be normalized to fit within these bounds.
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Rectangle {
     /// The origin point in offset coordinates.
     ///

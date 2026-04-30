@@ -1,3 +1,6 @@
+//! Hexagonal grid coordinate system implementation.
+//!
+
 #![allow(dead_code)]
 
 use core::f32::consts::{FRAC_PI_3, FRAC_PI_6};
@@ -12,10 +15,26 @@ use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
 
 pub const SQRT_3: f32 = 1.732_050_8_f32;
 
+/// Hexagonal grid coordinate in axial (cube) coordinate system.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Hex(IVec2);
 impl Hex {
-    /// Hexagon neighbor coordinates array, following [`HexOrientation::POINTY_EDGE`] or [`HexOrientation::FLAT_EDGE`] order
+    /// Hexagon neighbor coordinates array, following [`HexOrientation::POINTY_EDGE`] or [`HexOrientation::FLAT_EDGE`] order.
+    ///
+    /// These 6 direction vectors represent the offset from a hex to each of its neighbors.
+    /// The order corresponds to clockwise directions starting from East (for pointy-top)
+    /// or NorthEast (for flat-top).
+    ///
+    /// # Direction Mapping
+    ///
+    /// | Index | Pointy-Top | Flat-Top | Vector (Hex)  |
+    /// | :---: | :--------- | :------- | :------------ |
+    /// | 0     | East       | NE       | (1, 0)        |
+    /// | 1     | SE         | SE       | (1, -1)       |
+    /// | 2     | SW         | South    | (0, -1)       |
+    /// | 3     | West       | SW       | (-1, 0)       |
+    /// | 4     | NW         | NW       | (-1, 1)       |
+    /// | 5     | NE         | North    | (0, 1)        |
     pub const HEX_DIRECTIONS: [Self; 6] = [
         Self::new(1, 0),
         Self::new(1, -1),
@@ -69,6 +88,7 @@ impl Hex {
         self.0
     }
 
+    /// Converts a hex coordinate to an offset coordinate.
     pub fn to_offset(self, orientation: HexOrientation, offset: Offset) -> OffsetCoordinate {
         let (col, row) = match orientation {
             HexOrientation::Pointy => (
@@ -228,11 +248,11 @@ impl DoubledCoordinate {
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub struct HexLayout {
-    /// The orientation of the hexagonal layout, it can be `pointy` or `flat`.
+    /// The orientation of the hexagonal layout (pointy or flat top).
     pub orientation: HexOrientation,
-    /// The size of the hexagonal layout, its first element is the width and the second is the height.
+    /// The size of each hex in pixels: [width, height].
     pub size: [f32; 2],
-    /// The origin of the hexagonal layout, its first element is the x coordinate and the second is the y coordinate.
+    /// The pixel position of hex (0, 0): [x, y].
     pub origin: [f32; 2],
 }
 
@@ -292,25 +312,34 @@ impl HexLayout {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Offset {
+    /// Even offset variant (value = +1)
     Even = 1,
+    /// Odd offset variant (value = -1)
     Odd = -1,
 }
 
+/// Conversion matrices for transforming between hex and pixel coordinates.
+///
+/// Contains precomputed forward and inverse matrices for efficient coordinate transformations.
+/// These matrices are orientation-specific (pointy vs flat) and account for hex geometry.
 #[derive(Clone, Copy, Debug)]
-/// This struct stored a forward and inverse matrix, for pixel/hex conversion
 pub struct ConversionMatrix {
-    /// Matrix used to compute hexagonal coordinates to pixel coordinates
+    /// Matrix used to compute hexagonal coordinates to pixel coordinates.
     pub forward_matrix: Mat2,
-    /// Matrix used to compute pixel coordinates to hexagonal coordinates
+    /// Matrix used to compute pixel coordinates to hexagonal coordinates.
     pub inverse_matrix: Mat2,
 }
 
+/// Hexagonal grid orientation (pointy-top vs flat-top).
+///
+/// Determines the visual orientation of hexagons and affects coordinate conversions,
+/// neighbor directions, and pixel layout calculations.
 #[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum HexOrientation {
-    /// ⬢, [`Hex`] is pointy-topped
+    /// ⬢ Pointy-top orientation: hexagon has pointed top/bottom
     Pointy,
-    /// ⬣, [`Hex`] is flat-topped
+    /// ⬣ Flat-top orientation: hexagon has flat top/bottom
     Flat,
 }
 

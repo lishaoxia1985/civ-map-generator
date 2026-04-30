@@ -1,32 +1,46 @@
-use core::convert::From;
+//! Offset coordinate system for grid positioning.
+//!
+//! [`OffsetCoordinate`] describes the column and row of a tile in a grid.
+//! It is used to tackle with the situation where the grid is wrapped.
+//!
+//! That picture below shows a unwrapped grid with offset coordinates.
+//!
+//! ```txt
+//! Y ↑
+//!   |
+//!   |  (0,height-1)        (width-1,height-1)
+//!   |  +-------------------+
+//!   |  |                   |
+//!   |  |    Grid Area      |
+//!   |  |                   |
+//!   |  +-------------------+
+//!   |  (0,0)               (width-1,0)
+//!   +--------------------------------→ X
+//!   Origin (bottom-left corner)
+//! ```
+//!
+//! The coordinate ranges depend on whether the grid wraps at boundaries:
+//!
+//! - **Non-wrapped grid**: `x ∈ [0, width)`, `y ∈ [0, height)`
+//! - **Wrapped grid**:
+//!   - Only Wrap x: x can be any value, y ∈ [0, height)]
+//!     - Example (x-wrapped): `(0, 0) ≡ (width, 0) ≡ (-width, 0) ≡ (2*width, 0)` is the same cell/tile
+//!   - Only Wrap y: x ∈ [0, width), y can be any value
+//!     - Example (y-wrapped): `(0, 0) ≡ (0, height) ≡ (0, -height) ≡ (0, 2*height)` is the same cell/tile
+//!   - Wrap both x and y: x and y can be any value
+//!     - Example (both x and y wrapped): `(0, 0) ≡ (width, height) ≡ (-width, -height) ≡ (2*width, 2*height)` is the same cell/tile
+//!
+//! In wrapped grids multiple offset coordinates can represent the same cell,
+//! when we normalize an offset coordinate, i.e. wrap its x and y coordinates to the range `([0, width), [0, height))`,
+//! it can be transformed into [`Cell`] uniquely. See the documentation of [`Grid::normalize_offset`](crate::grid::Grid::normalize_offset) for details on normalization.
+//!
 
 use glam::IVec2;
 
 /// A coordinate in the offset coordinate system.
 ///
-/// Offset coordinates represent positions relative to a reference point (typically the origin at (0, 0)
-/// in a 2D coordinate system, with the grid's left-bottom corner as origin). These coordinates indicate
-/// displacement rather than absolute positions.
-///
-/// # Coordinate Ranges
-///
-/// `width` and `height` are the dimensions of the grid, and they define the valid ranges for the x and y coordinates:
-///
-/// - **Non-wrapped grid**:  
-///   `x ∈ [0, width)`, `y ∈ [0, height)`
-///
-/// - **Wrapped grid**:
-///   - When x-wrapped: `x` can be any integer (multiple representations exist)
-///   - When y-wrapped: `y` can be any integer (multiple representations exist)
-///
-/// # Multiple Representations
-///
-/// In wrapped grids, a single coordinate may have multiple representations. For example:
-///
-/// - If x-wrapped: (0, 0) ≡ (width, 0) ≡ (-width, 0) ≡ (2*width, 0), etc.
-///
-/// By convention, we typically store coordinates normalized to `x ∈ [0, width)` and `y ∈ [0, height)`.
-/// If you want to convert a grid coordinate to a normalized offset coordinate, see [`Grid::normalize_offset`](crate::grid::Grid::normalize_offset).
+/// See the [module-level documentation](self) for details on coordinate ranges,
+/// normalization, and relationships to other coordinate systems.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct OffsetCoordinate(pub IVec2);
 
