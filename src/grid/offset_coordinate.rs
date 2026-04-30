@@ -23,7 +23,7 @@
 //!
 //! - **Non-wrapped grid**: `x ∈ [0, width)`, `y ∈ [0, height)`
 //! - **Wrapped grid**:
-//!   - Only Wrap x: x can be any value, y ∈ [0, height)]
+//!   - Only Wrap x: x can be any value, y ∈ [0, height)
 //!     - Example (x-wrapped): `(0, 0) ≡ (width, 0) ≡ (-width, 0) ≡ (2*width, 0)` is the same cell/tile
 //!   - Only Wrap y: x ∈ [0, width), y can be any value
 //!     - Example (y-wrapped): `(0, 0) ≡ (0, height) ≡ (0, -height) ≡ (0, 2*height)` is the same cell/tile

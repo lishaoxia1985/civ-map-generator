@@ -39,7 +39,7 @@
 //!
 //! - **Non-wrapped grid**: `x ∈ [0, width)`, `y ∈ [0, height)`
 //! - **Wrapped grid**:
-//!   - Only Wrap x: x can be any value, y ∈ [0, height)]
+//!   - Only Wrap x: x can be any value, y ∈ [0, height)
 //!     - Example (x-wrapped): `(0, 0) ≡ (width, 0) ≡ (-width, 0) ≡ (2*width, 0)` is the same cell/tile
 //!   - Only Wrap y: x ∈ [0, width), y can be any value
 //!     - Example (y-wrapped): `(0, 0) ≡ (0, height) ≡ (0, -height) ≡ (0, 2*height)` is the same cell/tile
@@ -186,18 +186,33 @@ pub trait Grid {
     ///
     /// # Arguments
     ///
-    /// - `offset`: The offset coordinate to convert. It can be any offset coordinate for wrapped grids,
-    ///   but for non-wrapped grids, it must be within the grid bounds.
-    ///
-    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2];
+    /// - `offset_coordinate`: The offset coordinate to convert.
+    ///   The offset coordinate's x and y should meet the condition below according to the grid's wrapping flags:
+    ///    - **Non-wrapped grid**: `x ∈ [0, width)`, `y ∈ [0, height)`
+    ///    - **Wrapped grid**:
+    ///      - Only Wrap x: x can be any value, y ∈ [0, height)
+    ///      - Only Wrap y: x ∈ [0, width), y can be any value
+    ///      - Wrap both x and y: x and y can be any value
+    fn offset_to_pixel(&self, offset_coordinate: OffsetCoordinate) -> [f32; 2];
 
     /// Returns the `OffsetCoordinate` which contains the given pixel coordinates.
     ///
     /// # Arguments
     ///
-    /// - `pixel`: The pixel coordinate to convert. It can be any pixel coordinate for wrapped grids,
-    ///   but for non-wrapped grids, it must be within the grid bounds.
+    /// - `pixel`: The pixel coordinate to convert.
     ///
+    /// # Returns
+    ///
+    /// Returns the corresponding `OffsetCoordinate` in the grid's coordinate space.
+    ///
+    /// # Notes
+    ///
+    /// - **No Bounds Checking:** This function performs a direct mathematical conversion
+    ///   and does not verify if the input pixel lies within the grid.
+    ///   Consequently, the returned offset coordinate may be out of bounds.
+    /// - **Intended Usage:** This method is typically used as a precursor to [`Self::offset_to_cell`].
+    ///   Since that method handles bounds validation and returns an error for invalid coordinates,
+    ///   explicit range checking is omitted here to avoid redundancy.
     fn pixel_to_offset(&self, pixel: [f32; 2]) -> OffsetCoordinate;
 
     /// Converts a `Cell` to an `OffsetCoordinate`.
@@ -216,7 +231,7 @@ pub trait Grid {
     ///
     /// # Panics
     ///
-    /// If the cell is out of bounds, it will panic in debug mode.
+    /// Panics in debug mode if the cell is out of bounds.
     fn cell_to_offset(&self, cell: Cell) -> OffsetCoordinate {
         let width = self.size().width;
         let height = self.size().height;
@@ -254,7 +269,7 @@ pub trait Grid {
     ///     Err(e) => println!("Error: {}", e),
     /// }
     /// ```
-    #[must_use = "iterators are lazy and do nothing unless consumed"]
+    #[must_use = "this `Result` may be an `Err` variant, which should be handled"]
     fn offset_to_cell(&self, offset_coordinate: OffsetCoordinate) -> Result<Cell, String> {
         self.normalize_offset(offset_coordinate)
             .map(|normalized_coordinate| {

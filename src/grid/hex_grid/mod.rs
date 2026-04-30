@@ -133,8 +133,8 @@ impl Grid for HexGrid {
         self.layout.hex_to_pixel(hex).to_array()
     }
 
-    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2] {
-        let hex = Hex::from_offset(offset, self.layout.orientation, self.offset);
+    fn offset_to_pixel(&self, offset_coordinate: OffsetCoordinate) -> [f32; 2] {
+        let hex = Hex::from_offset(offset_coordinate, self.layout.orientation, self.offset);
         self.layout.hex_to_pixel(hex).to_array()
     }
 

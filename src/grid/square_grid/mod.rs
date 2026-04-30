@@ -84,8 +84,8 @@ impl Grid for SquareGrid {
             .to_array()
     }
 
-    fn offset_to_pixel(&self, offset: OffsetCoordinate) -> [f32; 2] {
-        let square = Square::from_offset(offset);
+    fn offset_to_pixel(&self, offset_coordinate: OffsetCoordinate) -> [f32; 2] {
+        let square = Square::from_offset(offset_coordinate);
         self.layout.square_to_pixel(square).to_array()
     }
 
