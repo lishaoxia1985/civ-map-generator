@@ -292,7 +292,11 @@ pub trait Grid {
 
         let offset_coordinate = OffsetCoordinate::new(x, y);
 
-        if self.within_grid_bounds(offset_coordinate) {
+        if offset_coordinate.0.x >= 0
+            && offset_coordinate.0.x < self.width() as i32
+            && offset_coordinate.0.y >= 0
+            && offset_coordinate.0.y < self.height() as i32
+        {
             Ok(offset_coordinate)
         } else {
             Err(format!(
@@ -300,24 +304,6 @@ pub trait Grid {
                 offset_coordinate
             ))
         }
-    }
-
-    /// Checks if the given `OffsetCoordinate` is within the grid's bounds.
-    ///
-    /// Returns `true` if the coordinate satisfies:
-    /// - `0 <= x < width`
-    /// - `0 <= y < height`
-    ///
-    /// # Notice
-    ///
-    /// This check does **NOT** account for wrapping. For wrapped coordinates,
-    /// use [`Self::normalize_offset()`] first, unless you are sure that the
-    /// coordinate is already normalized.
-    fn within_grid_bounds(&self, offset_coordinate: OffsetCoordinate) -> bool {
-        offset_coordinate.0.x >= 0
-            && offset_coordinate.0.x < self.width() as i32
-            && offset_coordinate.0.y >= 0
-            && offset_coordinate.0.y < self.height() as i32
     }
 
     /// Convert `GridCoordinateType` to a [`Cell`] in the grid.
