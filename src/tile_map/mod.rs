@@ -222,14 +222,26 @@ impl TileMap {
     /// - `layer`: the layer to place the impact and ripples on. It should be a variant of the [`Layer`] enum.
     /// - `radius`: the radius of the ripple. The ripple will be placed on all tiles within this radius. When it is `0`, only the impact will be placed on the `tile`.
     ///     - When layer is [`Layer::Strategic`], [`Layer::Luxury`] or [`Layer::Bonus`], [`Layer::Fish`], this argument is used to determine the ripple radius.
-    ///     - When layer is other variants, this argument is ignored (recommended to use [`u32::MAX`] as placeholder).
+    ///     - When layer is other variants, this argument is ignored (must use [`u32::MAX`] as a placeholder).
     ///
     /// # Notice
     ///
     /// You can place impact and ripples to forbid other elements to appear around a specific tile, even if you are not adding an element to this tile.
     /// See [`TileMap::normalize_civilization_starting_tile`] for an example.
     ///
+    /// # Panics
+    ///
+    /// Panics in debug mode when layer is not [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`], but radius is not `u32::MAX`.
     pub fn place_impact_and_ripples(&mut self, tile: Tile, layer: Layer, radius: u32) {
+        debug_assert!(
+            matches!(
+                layer,
+                Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish
+            ) || radius == u32::MAX,
+            "When layer is not [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], [`Layer::Fish`], radius must be u32::MAX as a placeholder. Got: {}",
+            radius
+        );
+
         match layer {
             Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish => {
                 self.place_impact_and_ripples_for_resource(tile, layer, radius)
