@@ -29,15 +29,16 @@ impl TileMap {
         let resource_setting = map_parameters.resource_setting;
         let num_civilizations = map_parameters.world_size_type_profile.num_civilizations;
 
-        // Stores number of each luxury had extras handed out at civ starts because of low fertility.
+        // Stores the total number of each exclusive luxury had extras handed out at civ starts because of low fertility.
         // The key is the luxury type, and the value is the number of extras handed out.
         let mut luxury_low_fert_compensation = HashMap::new();
-        // Stores number of luxury compensation each region received because of low fertility.
+
+        // Stores number of exclusive luxury compensation each region received because of low fertility, defaulting to 0.
         // The index of the vector corresponds to the index of the region, and the value is the number of compensation.
-        let mut region_low_fert_compensation = vec![0; num_civilizations as usize];
+        let mut region_low_fert_compensation: Vec<i32> = vec![0; num_civilizations as usize];
 
         /********** Process 1: Place Luxuries at civ start locations **********/
-        // Determine basic number of luxuries to place at the start location according to `resource_setting`.
+        // Determine basic number of exclusive luxuries to place at the start location according to `resource_setting`.
         let basic_num_to_place =
             if let ResourceSetting::LegendaryStart = map_parameters.resource_setting {
                 2
@@ -54,17 +55,10 @@ impl TileMap {
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
             let starting_tile = self.region_list[region_index].starting_tile;
             let exclusive_luxury = self.region_list[region_index].exclusive_luxury.unwrap();
-            // Determine number to place at the start location
-            // `num_to_place` contains 2 parts:
-            // Part 1. The basic number of luxuries to place at the start location according to `resource_setting`.
-            // Part 2. The number of luxuries to place at the start location because of low fertility.
-            let mut num_to_place = basic_num_to_place;
+
+            /***** Calculate the low fertility compensation for the region ******/
             // Low fertility per region rectangle tile, add a luxury.
             if region.average_fertility() < 2.5 {
-                num_to_place += 1;
-                *luxury_low_fert_compensation
-                    .entry(exclusive_luxury.to_owned())
-                    .or_insert(0) += 1;
                 *current_region_low_fert_compensation += 1;
             }
 
@@ -73,26 +67,29 @@ impl TileMap {
 
             // Low fertility per region land tile, add a luxury.
             if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {
-                num_to_place += 1;
-                *luxury_low_fert_compensation
-                    .entry(exclusive_luxury.to_owned())
-                    .or_insert(0) += 1;
                 *current_region_low_fert_compensation += 1;
             }
+            /***** End of calculating the low fertility compensation for the region ******/
+
+            // Determine number of exclusive luxuries to place at the start location
+            // `num_to_place` contains 2 parts:
+            //   - Part 1. The basic number of luxuries to place at the start location according to `resource_setting`.
+            //   - Part 2. The number of luxuries to place at the start location because of low fertility compensation.
+            let num_to_place = basic_num_to_place + *current_region_low_fert_compensation;
 
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(exclusive_luxury);
-            let mut luxury_tile_lists =
+            let mut luxury_tile_lists_in_distance_two =
                 self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
-            let mut num_left_to_place = num_to_place;
+            let mut num_left_to_place = num_to_place as u32;
 
             // First pass, checking only first two rings with a 50% ratio.
             for &i in priority_list_indices_of_luxury.iter() {
                 if num_left_to_place == 0 {
                     break;
                 }
-                luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
+                luxury_tile_lists_in_distance_two[i].shuffle(&mut self.random_number_generator);
                 num_left_to_place = self.place_specific_number_of_resources(
                     exclusive_luxury,
                     1,
@@ -101,12 +98,12 @@ impl TileMap {
                     None,
                     0,
                     0,
-                    &luxury_tile_lists[i],
+                    &luxury_tile_lists_in_distance_two[i],
                 );
             }
 
             if num_left_to_place > 0 {
-                let mut luxury_tile_lists =
+                let mut luxury_tile_lists_in_distance_three =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
 
                 // Second pass, checking three rings with a 100% ratio.
@@ -114,7 +111,8 @@ impl TileMap {
                     if num_left_to_place == 0 {
                         break;
                     }
-                    luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
+                    luxury_tile_lists_in_distance_three[i]
+                        .shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
                         exclusive_luxury,
                         1,
@@ -123,28 +121,16 @@ impl TileMap {
                         None,
                         0,
                         0,
-                        &luxury_tile_lists[i],
+                        &luxury_tile_lists_in_distance_three[i],
                     );
                 }
             }
 
             if num_left_to_place > 0 {
                 // `num_left_to_place > 0` means that we have not been able to place all of the civ exclusive luxury resources at the civ start.
-                // Now we replce with `luxury_assigned_to_random` to fill the rest `num_left_to_place`.
+                // Now we place one `luxury_assigned_to_random` instead.
                 //
                 // These `luxury_assigned_to_random` will affect Process 4. (Please view Process 4)
-                //
-                // About the remainder of the civ exclusive luxury resources, it will be placed in the same region somewhere.(Please view Process 3)
-                *luxury_low_fert_compensation
-                    .entry(exclusive_luxury)
-                    .or_insert(0) -= num_left_to_place as i32;
-                // Calculates the number of `num_to_place` (Part 2) resources placed at the civilization's start.
-                // NOTICE: Assumes that `num_to_place` (Part 1) resources have been fully placed at the civilization's start.
-                // We should subtract that in Process 3.
-                // If that is negative, it indicates that even `num_to_place` (Part 1) resources
-                // have not been fully placed at the civilization's start. In such a case, during Process 3,
-                // we should adjust by "subtracting" this negative value, which effectively means adding extra luxury resources.
-                *current_region_low_fert_compensation -= num_left_to_place as i32;
 
                 let mut randoms_to_place = 1;
                 let resource_assigned_to_random =
@@ -157,7 +143,8 @@ impl TileMap {
                         if randoms_to_place == 0 {
                             break;
                         }
-                        luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
+                        luxury_tile_lists_in_distance_two[i]
+                            .shuffle(&mut self.random_number_generator);
                         randoms_to_place = self.place_specific_number_of_resources(
                             random_luxury,
                             1,
@@ -166,10 +153,30 @@ impl TileMap {
                             None,
                             0,
                             0,
-                            &luxury_tile_lists[i],
+                            &luxury_tile_lists_in_distance_two[i],
                         );
                     }
                 }
+
+                /***** At last we tackle with the remainder of the unplaced civ exclusive luxury resources ******/
+
+                // This is equivalent to `basic_num_to_place + current_region_low_fert_compensation - num_to_left_to_place - basic_num_to_place`,
+                // which represents the number of luxury resources placed in the current region minus the basic number we intended to place
+                // according to `resource_setting`.
+                //
+                // The result indicates the actual count of low-fertility compensation resources placed at the civilization's start (Part 2 of `num_to_place`).
+                // We need to subtract this value in Process 3.
+                //
+                // If the result is negative, it implies that even the `basic_num_to_place` resources (Part 1 of `num_to_place`) have not been fully placed at the start.
+                // In such a case, subtracting this negative value during Process 3 effectively adds extra luxury resources.
+                *current_region_low_fert_compensation -= num_left_to_place as i32;
+
+                // Add the current region's low fertility compensation to the corresponding exclusive luxury in `luxury_low_fert_compensation`.
+                *luxury_low_fert_compensation
+                    .entry(exclusive_luxury.to_owned())
+                    .or_insert(0) += *current_region_low_fert_compensation;
+
+                /***** End of tackling with the remainder of the unplaced civ exclusive luxury resources  *****/
             }
         }
         /********** Process 1: Place Luxuries at civ start locations **********/
@@ -290,16 +297,17 @@ impl TileMap {
             // Calibrate the number of luxuries per region based on the world size and the number of civilizations.
             // The number of luxuries per region should be highest when the number of civilizations is closest to the "default" value for that map size.
             let target_list = get_region_luxury_target_numbers(world_size);
+
             let mut target_num = ((target_list[num_civilizations as usize] as f64
                 + 0.5 * current_luxury_low_fert_compensation as f64)
                 / luxury_assign_to_region_count as f64) as i32;
 
-            // `current_region_low_fert_compensation` is the number of `num_to_place` (Part 2) resources placed at the civilization's start.
-            // NOTICE: Assumes that `num_to_place` (Part 1) resources have been fully placed at the civilization's start.
-            // We should subtract that in this process.
-            // If that is negative, it indicates that even `num_to_place` (Part 1) resources
-            // have not been fully placed at the civilization's start. In such a case, during Process 3,
-            // we should adjust by "subtracting" this negative value, which effectively means adding extra luxury resources.
+            // `current_region_low_fert_compensation` indicates the actual count of low-fertility compensation resources placed at the civilization's start (Part 2 of `num_to_place`).
+            // We need to subtract this value in Process 3.
+            //
+            // If the result is negative, it implies that even the `basic_num_to_place` resources (Part 1 of `num_to_place`) have not been fully placed at the start.
+            // In such a case, subtracting this negative value during Process 3 effectively adds extra luxury resources.
+            //
             // View Process 1 for more details.
             target_num -= current_region_low_fert_compensation;
 
@@ -1177,18 +1185,25 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:GetIndicesForLuxuryType
-    /// Get a list of indices for a given luxury type.
+    /// Returns the priority indices for placing a specific luxury resource.
     ///
-    /// Before use this function's return value, make sure [`TileMap::generate_luxury_tile_lists_at_city_site`] has been run.
+    /// # Prerequisites
     ///
-    /// [`TileMap::generate_luxury_tile_lists_at_city_site`] will generate an array of 15 vectors of tiles that are available for placing Luxury resources.
-    /// This function will return a list of indices for the given luxury type.
-    /// The indices are used to access the vectors in the array.
-    /// The order of the indices is important, because we try to place the Luxury resources in the order of the indices.
-    /// If the first index is not available, we will try to place the Luxury resource in the second index, and so on.
+    /// Ensure that [`TileMap::generate_luxury_tile_lists_at_city_site`] has been executed.
+    /// This function relies on the **`[Vec<Tile>; 15]`** generated by that method to perform lookups.
     ///
-    /// # Arguments
-    /// - `resource`: The name of the luxury resource.
+    /// # Behavior
+    ///
+    /// The returned vector represents a prioritized list of indices (0..=14) used to access
+    /// the tile vectors. The placement logic attempts to assign resources based on this order:
+    ///
+    /// 1. The system checks the first index in the list.
+    /// 2. If the tile at that index is unavailable, it proceeds to the next index.
+    /// 3. This process continues until a valid location is found or the list is exhausted.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided `resource` is not a recognized luxury resource.
     fn get_indices_for_luxury_type(&self, resource: Resource) -> Vec<usize> {
         match resource {
             Resource::Whales | Resource::Pearls => vec![0],
@@ -1211,10 +1226,11 @@ impl TileMap {
             Resource::Truffles => vec![14, 7, 1, 4],
             Resource::Crab => vec![0],
             Resource::Cocoa => vec![7, 5, 14],
-            _ => vec![],
+            _ => panic!("{:?} is not a luxury resource", resource),
         }
     }
 
+    /// Returns the total quantity of luxury resources placed on the map.
     fn num_placed_luxury_resources(&self, ruleset: &Ruleset) -> u32 {
         (0..Resource::LENGTH)
             .map(Resource::from_usize)
