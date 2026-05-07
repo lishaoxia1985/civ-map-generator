@@ -54,7 +54,10 @@ impl TileMap {
             let region = &self.region_list[region_index];
             let terrain_statistic = &self.region_list[region_index].terrain_statistic;
             let starting_tile = self.region_list[region_index].starting_tile;
-            let exclusive_luxury = self.region_list[region_index].exclusive_luxury.unwrap();
+            let exclusive_luxury = *self.region_list[region_index]
+                .exclusive_luxury
+                .get()
+                .unwrap();
 
             /***** Calculate the low fertility compensation for the region ******/
             // Low fertility per region rectangle tile, add a luxury.
@@ -227,7 +230,10 @@ impl TileMap {
             if let Some(region_index) = region_index {
                 // Adding the region type in to the mix with the random types.
                 num_allowed += 1;
-                let luxury = self.region_list[region_index].exclusive_luxury.unwrap();
+                let luxury = *self.region_list[region_index]
+                    .exclusive_luxury
+                    .get()
+                    .unwrap();
                 if allowed_luxuries.contains(&luxury) {
                     luxury_for_city_state_and_weight.push((luxury, 25. / num_allowed as f64));
                 }
@@ -283,7 +289,10 @@ impl TileMap {
         for (region_index, &current_region_low_fert_compensation) in
             region_low_fert_compensation.iter().enumerate()
         {
-            let luxury_resource = self.region_list[region_index].exclusive_luxury.unwrap();
+            let luxury_resource = *self.region_list[region_index]
+                .exclusive_luxury
+                .get()
+                .unwrap();
             let luxury_assign_to_region_count: u32 =
                 self.luxury_assign_to_region_count[&luxury_resource];
             let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury_resource);
@@ -480,8 +489,10 @@ impl TileMap {
                             candidate_luxury_types.choose(&mut self.random_number_generator);
                     } else {
                         // No City State luxuries available. Use a type from another region.
-                        let region_luxury =
-                            self.region_list[region_index].exclusive_luxury.unwrap();
+                        let region_luxury = *self.region_list[region_index]
+                            .exclusive_luxury
+                            .get()
+                            .unwrap();
                         for &luxury in self.luxury_resource_role.luxury_assigned_to_regions.iter() {
                             if allowed_luxuries.contains(&luxury) && luxury != region_luxury {
                                 candidate_luxury_types.push(luxury);

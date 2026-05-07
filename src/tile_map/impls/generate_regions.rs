@@ -1,4 +1,8 @@
-use std::cmp::{max, min};
+use std::{
+    cell::OnceCell,
+    cmp::{max, min},
+    iter::Once,
+};
 
 use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
@@ -629,8 +633,8 @@ pub struct Region {
     /// # Notice
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::assign_luxury_roles`] to set this field.
-    /// And this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
-    pub exclusive_luxury: Option<Resource>,
+    /// And after calling [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
+    pub exclusive_luxury: OnceCell<Resource>,
 }
 
 impl Region {
@@ -653,7 +657,7 @@ impl Region {
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
             start_location_condition: StartLocationCondition::default(),
-            exclusive_luxury: None,
+            exclusive_luxury: OnceCell::new(),
         }
     }
 

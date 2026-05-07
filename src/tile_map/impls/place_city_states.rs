@@ -498,9 +498,9 @@ impl TileMap {
                 // Sort the shared luxury resources by their string representation.
                 // That will make sure we get the same order every time.
                 shared_luxury.sort_by_key(|luxury| luxury.as_str());
-                for &luxury_resource in shared_luxury.iter() {
+                for luxury_resource in shared_luxury.iter() {
                     for (region_index, region) in self.region_list.iter().enumerate() {
-                        if region.exclusive_luxury == Some(luxury_resource) {
+                        if region.exclusive_luxury.get() == Some(luxury_resource) {
                             region_index_assignment.push(Some(region_index));
                             num_city_states_unassigned -= 1;
                         }

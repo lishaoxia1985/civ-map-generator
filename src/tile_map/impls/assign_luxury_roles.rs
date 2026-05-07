@@ -48,7 +48,10 @@ impl TileMap {
         let mut luxury_assigned_to_regions = ArrayVec::new();
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(region_index, map_parameters);
-            self.region_list[region_index].exclusive_luxury = Some(resource);
+            self.region_list[region_index]
+                .exclusive_luxury
+                .set(resource)
+                .unwrap();
             luxury_assigned_to_regions.push(resource);
             *self
                 .luxury_assign_to_region_count
