@@ -527,38 +527,39 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:PlaceSpecificNumberOfResources
-    /// Places a specific number of resources on the map.
+    /// Places a specific number of resources onto the provided list of tiles.
     ///
-    /// Before calling this function, make sure `tile_list` has been shuffled.
+    /// > **Notice:** Ensure that `tile_list` is shuffled before calling this function to ensure random distribution.
     ///
     /// # Arguments
     ///
-    /// - `quantity`: The number of every type resource that can be placed on the tile.\
-    ///   For example, when placing `Horses`, `quantity` is 2, which means that the tile has 2 `Horses`.\
-    ///   In CIV5, when resource is bonus or luxury, `quantity` is always 1;
-    ///   When resource is strategic, `quantity` is usually determined by [`ResourceSetting`].
-    /// - `amount`: The number of tiles intended to receive an assignment of this resource.
-    /// - `ratio`: Determines when secondary and tertiary lists come in to play, should be in (0, 1].\
-    ///   The num of tiles we will assign this resource is the minimum of `amount` and `(ratio * tile_list.len() as f64).ceil() as u32`.\
-    ///   For example, if we are assigning Sugar resources to Marsh, then if we are to assign 8 Sugar
-    ///   resources (`amount = 8`), but there are only 4 Marsh plots in the list (`tile_list.len() = 4`):
-    ///     - `ratio = 1`, the num of tiles we will assign is 4, we would assign a Sugar to every single marsh plot, and then the function return an unplaced value of 4.
-    ///     - `ratio = 0.5`, the num of tiles we will assign is 2, we would assign only 2 Sugars to the 4 marsh plots, and the function return a value of 6.
-    ///     - `ratio <= 0.25`, the num of tiles we will assign is 1, we would assign 1 Sugar and return 7, as the ratio results will be rounded up not down, to the nearest integer.
-    /// - `layer`: The layer we should tackle resource impact or ripple. If None, the resource can be placed on any tiles of `tile_list` that are not already assigned to a resource.
-    /// - `min_radius` and `max_radius`: Related to `resource_impact` when we place resources on tiles.
-    ///     - If `layer` is None, then `min_radius` and `max_radius` are ignored.
-    ///     - If `layer` is not [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`], then `min_radius` and `max_radius` are ignored as well.
-    /// - `tile_list`: The list of tiles that are candidates to place the resource on.
+    /// - `resource`: The type of resource to place.
+    /// - `quantity`: The stack size of the resource per tile.
+    ///   - For **Bonus** or **Luxury** resources, this is typically `1`.
+    ///   - For **Strategic** resources, this is determined by the [`ResourceSetting`].
+    /// - `amount`: The target number of tiles intended to receive this resource.
+    /// - `ratio`: A factor between `0.0` and `1.0` that limits the pool of candidate tiles.
+    ///   - The actual number of tiles considered for placement is `min(amount, ceil(ratio * tile_list.len()))`.
+    ///   - **Example:** If `amount = 8` but `tile_list.len() = 4`:
+    ///     - `ratio = 1.0`: Considers all 4 tiles. Result: Places on 4 tiles, returns `4` unplaced.
+    ///     - `ratio = 0.5`: Considers `ceil(0.5 * 4) = 2` tiles. Result: Places on 2 tiles, returns `6` unplaced.
+    ///     - `ratio <= 0.25`: Considers `1` tile. Result: Places on 1 tile, returns `7` unplaced.
+    /// - `layer`: The specific map layer for resource collision detection. layer is only one of the following:
+    ///   - `None`: The resource can be placed on any tile in `tile_list` that does not already have a resource.
+    ///   - `Some(T)`: `T` is only one of [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`]. Checks for conflicts specifically within this layer.
+    /// - `min_radius`: The minimum radius for the resource's impact/ripple effect. Ignored if `layer` is `None`.
+    /// - `max_radius`: The maximum radius for the resource's impact/ripple effect. Ignored if `layer` is `None`.
+    /// - `tile_list`: A slice of tiles eligible for resource placement.
     ///
     /// # Returns
     ///
-    /// - The number of resources that were not placed.
-    ///   It is equal to `amount` minus the number of tiles that were assigned a resource.
+    /// The number of resources that were **not** placed.
+    /// Calculated as: `amount` - (number of successfully assigned tiles).
     ///
     /// # Panics
     ///
-    /// - `max_radius` must be greater than or equal to `min_radius`. Otherwise, the function will panic.
+    /// Panics in debug builds if:
+    /// `max_radius < min_radius` or `layer` is specified but not one of the allowed layers.
     #[allow(clippy::too_many_arguments)]
     pub fn place_specific_number_of_resources(
         &mut self,
@@ -574,6 +575,15 @@ impl TileMap {
         debug_assert!(
             max_radius >= min_radius,
             "'max_radius' must be greater than or equal to 'min_radius'!"
+        );
+
+        debug_assert!(
+            layer.is_none()
+                || matches!(
+                    layer,
+                    Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
+                ),
+            "If 'layer' is specified, it must be one of: Strategic, Luxury, Bonus, Fish."
         );
 
         if tile_list.is_empty() {

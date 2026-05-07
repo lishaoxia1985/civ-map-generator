@@ -57,6 +57,7 @@ impl TileMap {
         }
 
         let disable_start_bias = false;
+
         // If disbable_start_bias is true, then the starting tile will be chosen randomly.
         if disable_start_bias {
             start_civilization_list.shuffle(&mut self.random_number_generator);
@@ -70,16 +71,13 @@ impl TileMap {
         }
 
         let mut num_coastal_civs_remaining = 0;
+
         let mut civs_needing_coastal_start = Vec::new();
 
-        let mut _num_river_civs_remaining = 0;
         let mut civs_needing_river_start = Vec::new();
 
-        let mut _num_priority_civs_remaining = 0;
         let mut civs_needing_region_priority = Vec::new();
 
-        let mut _num_avoid_civs = 0;
-        let mut _num_avoid_civs_remaining = 0;
         let mut civs_needing_region_avoid = Vec::new();
 
         // Store all the regions' indices that have not been assigned a civilization.
@@ -93,11 +91,8 @@ impl TileMap {
             } else if nation_info.along_river {
                 civs_needing_river_start.push(civilization);
             } else if !nation_info.region_type_priority.is_empty() {
-                _num_priority_civs_remaining += 1;
                 civs_needing_region_priority.push(civilization);
             } else if !nation_info.region_type_avoid.is_empty() {
-                _num_avoid_civs += 1;
-                _num_avoid_civs_remaining += 1;
                 civs_needing_region_avoid.push(civilization);
             }
         }
@@ -114,20 +109,9 @@ impl TileMap {
                     .unwrap();
                 if start_location_condition.along_ocean {
                     regions_with_coastal_start.push(region_index);
-                }
-            }
-
-            if regions_with_coastal_start.len() < civs_needing_coastal_start.len() {
-                for &region_index in region_index_list.iter() {
-                    let start_location_condition = self.region_list[region_index]
-                        .start_location_condition
-                        .get()
-                        .unwrap();
-                    if start_location_condition.next_to_lake
-                        && !start_location_condition.along_ocean
-                    {
-                        regions_with_lake_start.push(region_index);
-                    }
+                } else if start_location_condition.next_to_lake {
+                    // Only Check whether starting location is next to a lake when it is not along ocean.
+                    regions_with_lake_start.push(region_index);
                 }
             }
 
@@ -147,19 +131,20 @@ impl TileMap {
                 // that means there are not enough coastal and lake starting tiles,
                 // so `num_coastal_civs_remaining = civs_needing_coastal_start.len() - (regions_with_coastal_start.len() + regions_with_lake_start.len())`,
                 // if there are enough coastal and lake starting tiles, `num_coastal_civs_remaining = 0`.
-                num_coastal_civs_remaining = max(
-                    0,
-                    civs_needing_coastal_start.len() as i32
-                        - (regions_with_coastal_start.len() + regions_with_lake_start.len()) as i32,
-                ) as usize;
+                num_coastal_civs_remaining = civs_needing_coastal_start.len().saturating_sub(
+                    regions_with_coastal_start.len() + regions_with_lake_start.len(),
+                );
+
+                let num_assigned_civs =
+                    civs_needing_coastal_start.len() - num_coastal_civs_remaining;
 
                 // Assign starting tile to civilizations with coastal bias or lake bias,
                 // and remove the assigned civilizations from `civs_needing_coastal_start`.
                 // When civilization should be along ocean, we assign starting tile to civilizations following these rules:
-                // 1. At first, we assign starting tile to civilizations with coastal bias.
-                // 2. If there are not enough coastal starting tiles, we assign starting tile to civilizations with lake bias.
+                //   1. At first, we assign starting tile to civilizations with coastal bias.
+                //   2. If there are not enough coastal starting tiles, we assign starting tile to civilizations with lake bias.
                 civs_needing_coastal_start
-                    .drain(..civs_needing_coastal_start.len() - num_coastal_civs_remaining)
+                    .drain(..num_assigned_civs)
                     .zip(
                         regions_with_coastal_start
                             .iter()
@@ -186,15 +171,8 @@ impl TileMap {
                     .unwrap();
                 if start_location_condition.is_river {
                     regions_with_river_start.push(region_index);
-                }
-            }
-
-            for &region_index in region_index_list.iter() {
-                let start_location_condition = self.region_list[region_index]
-                    .start_location_condition
-                    .get()
-                    .unwrap();
-                if start_location_condition.near_river && !start_location_condition.is_river {
+                } else if start_location_condition.near_river {
+                    // Only Check whether starting location is near river when it hasn't a river.
                     regions_with_near_river_start.push(region_index);
                 }
             }
@@ -214,15 +192,19 @@ impl TileMap {
                 // that means there are not enough river and near river starting tiles,
                 // so `civs_needing_river_start.len() - (regions_with_river_start.len() + regions_with_near_river_start.len())`,
                 // if there are enough river and near river starting tiles, `num_river_civs_remaining = 0`.
-                _num_river_civs_remaining = max(
-                    0,
-                    civs_needing_river_start.len() as i32
-                        - (regions_with_river_start.len() + regions_with_near_river_start.len())
-                            as i32,
-                ) as usize;
+                let num_river_civs_remaining = civs_needing_river_start.len().saturating_sub(
+                    regions_with_river_start.len() + regions_with_near_river_start.len(),
+                );
 
+                let num_assigned_civs = civs_needing_river_start.len() - num_river_civs_remaining;
+
+                // Assign starting tile to civilizations with river bias or near river bias,
+                // and remove the assigned civilizations from `civs_needing_river_start`.
+                // When civilization should be along river, we assign starting tile to civilizations following these rules:
+                //   1. At first, we assign starting tile to civilizations with river bias.
+                //   2. If there are not enough river starting tiles, we assign starting tile to civilizations with near river bias.
                 civs_needing_river_start
-                    .drain(..civs_needing_river_start.len() - _num_river_civs_remaining)
+                    .drain(..num_assigned_civs)
                     .zip(
                         regions_with_river_start
                             .iter()
@@ -251,15 +233,8 @@ impl TileMap {
                         .unwrap();
                     if start_location_condition.is_river {
                         fallbacks_with_river_start.push(region_index);
-                    }
-                }
-
-                for &region_index in region_index_list.iter() {
-                    let start_location_condition = self.region_list[region_index]
-                        .start_location_condition
-                        .get()
-                        .unwrap();
-                    if start_location_condition.near_river && !start_location_condition.is_river {
+                    } else if start_location_condition.near_river {
+                        // Only Check whether starting location is near river when it hasn't a river.
                         fallbacks_with_near_river_start.push(region_index);
                     }
                 }
@@ -275,16 +250,15 @@ impl TileMap {
                         fallbacks_with_near_river_start.shuffle(&mut self.random_number_generator);
                     }
 
-                    num_coastal_civs_remaining = max(
-                        0,
-                        civs_needing_coastal_start.len() as i32
-                            - (fallbacks_with_river_start.len()
-                                + fallbacks_with_near_river_start.len())
-                                as i32,
-                    ) as usize;
+                    num_coastal_civs_remaining = civs_needing_coastal_start.len().saturating_sub(
+                        fallbacks_with_river_start.len() + fallbacks_with_near_river_start.len(),
+                    );
+
+                    let num_assigned_civs =
+                        civs_needing_coastal_start.len() - num_coastal_civs_remaining;
 
                     civs_needing_coastal_start
-                        .drain(..civs_needing_coastal_start.len() - num_coastal_civs_remaining)
+                        .drain(..num_assigned_civs)
                         .zip(
                             fallbacks_with_river_start
                                 .iter()
@@ -316,28 +290,36 @@ impl TileMap {
             }
 
             if !civs_needing_single_priority.is_empty() {
-                // Sort civs_needing_single_priority by the first element of nation.region_type_priority
-                // Notice: region_type_priority always doesn't have 'RegionType::Undefined' as the element,
-                // so we don't need to tackle the case that the first element is 'RegionType::Undefined'.
+                // Sort `civs_needing_single_priority` by their region type priority - compare the actual region type values,
+                // The less value of region type means higher priority, so it should come first.
+                // Please view the docs for `RegionType` for more info.
+                //
+                // Notice: priority list always doesn't have 'RegionType::Undefined' as the element,
+                //         so we don't need to tackle this case.
                 civs_needing_single_priority.sort_by_key(|&civilization| {
                     let nation_info = &ruleset.nations[civilization.as_str()];
                     nation_info.region_type_priority[0] as i32
                 });
 
                 for &civilization in civs_needing_single_priority.iter() {
-                    let mut candidate_regions = Vec::new();
-                    for &region_index in region_index_list.iter() {
-                        let region_type_priority =
-                            ruleset.nations[civilization.as_str()].region_type_priority[0];
-                        if self.region_list[region_index].region_type == region_type_priority {
-                            candidate_regions.push(region_index);
-                        }
-                    }
+                    let region_type_priority =
+                        ruleset.nations[civilization.as_str()].region_type_priority[0];
 
-                    if !candidate_regions.is_empty() {
-                        let region_index = *candidate_regions
-                            .choose(&mut self.random_number_generator)
-                            .unwrap();
+                    let candidate_regions: Vec<_> = region_index_list
+                        .iter()
+                        .filter(|&&region_index| {
+                            self.region_list[region_index].region_type == region_type_priority
+                        })
+                        .copied()
+                        .collect();
+
+                    // Randomly choose a region from candidate regions that match the civilization's single region priority.
+                    //
+                    // If we haven't found any region that matches the civilization's single region priority,
+                    // we will add it to `civs_fallback_priority` list to find fallback for it later.
+                    if let Some(&region_index) =
+                        candidate_regions.choose(&mut self.random_number_generator)
+                    {
                         self.starting_tile_and_civilization
                             .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
@@ -349,28 +331,32 @@ impl TileMap {
             }
 
             if !civs_needing_multi_priority.is_empty() {
-                // Sort `civs_needing_multi_priority` by the length of nation.region_type_priority
+                // Sort `civs_needing_multi_priority` by the length of their region priority list, shorter ones first.
                 civs_needing_multi_priority.sort_by_key(|&civilization| {
                     let nation_info = &ruleset.nations[civilization.as_str()];
                     nation_info.region_type_priority.len()
                 });
 
                 for &civilization in civs_needing_multi_priority.iter() {
-                    let mut candidate_regions = Vec::new();
-                    for &region_index in region_index_list.iter() {
-                        let region_type_priority_list =
-                            &ruleset.nations[civilization.as_str()].region_type_priority;
-                        if region_type_priority_list
-                            .contains(&self.region_list[region_index].region_type)
-                        {
-                            candidate_regions.push(region_index);
-                        }
-                    }
+                    let region_type_priority_list =
+                        &ruleset.nations[civilization.as_str()].region_type_priority;
 
-                    if !candidate_regions.is_empty() {
-                        let region_index = *candidate_regions
-                            .choose(&mut self.random_number_generator)
-                            .unwrap();
+                    let candidate_regions: Vec<_> = region_index_list
+                        .iter()
+                        .filter(|&&region_index| {
+                            region_type_priority_list
+                                .contains(&self.region_list[region_index].region_type)
+                        })
+                        .copied()
+                        .collect();
+
+                    // Randomly choose a region from candidate regions that match the civilization's multi region priority.
+                    //
+                    // If we haven't found any region that matches the civilization's multiple region priority,
+                    // we will not assign a fallback for it, and just let it be assigned later.
+                    if let Some(&region_index) =
+                        candidate_regions.choose(&mut self.random_number_generator)
+                    {
                         self.starting_tile_and_civilization
                             .insert(self.region_list[region_index].starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
@@ -379,7 +365,10 @@ impl TileMap {
                 }
             }
 
-            // Fallbacks are done (if needed) after multiple-region priority is handled. The list is pre-sorted.
+            // Fallbacks are done after region priority is handled. The list is pre-sorted.
+            //
+            // Notice: this only handles the case the civilization has single region priority but no region of that type is available,
+            //         then we will assign it to a region with the most preferred terrain for that region priority.
             if !civs_fallback_priority.is_empty() {
                 for &civilization in civs_fallback_priority.iter() {
                     let region_type_priority =
@@ -388,6 +377,7 @@ impl TileMap {
                         region_type_priority,
                         &region_index_list,
                     );
+
                     if let Some(region_index) = region_index {
                         self.starting_tile_and_civilization
                             .insert(self.region_list[region_index].starting_tile, civilization);
@@ -408,21 +398,21 @@ impl TileMap {
 
             // process in reverse order, so most needs goes first.
             for &civilization in civs_needing_region_avoid.iter().rev() {
-                let mut candidate_regions = Vec::new();
-                for &region_index in region_index_list.iter() {
-                    let region_type_priority_list =
-                        &ruleset.nations[civilization.as_str()].region_type_priority;
-                    if !region_type_priority_list
-                        .contains(&self.region_list[region_index].region_type)
-                    {
-                        candidate_regions.push(region_index);
-                    }
-                }
+                let region_type_avoid_list =
+                    &ruleset.nations[civilization.as_str()].region_type_avoid;
 
-                if !candidate_regions.is_empty() {
-                    let region_index = *candidate_regions
-                        .choose(&mut self.random_number_generator)
-                        .unwrap();
+                let candidate_regions: Vec<_> = region_index_list
+                    .iter()
+                    .filter(|&&region_index| {
+                        !region_type_avoid_list
+                            .contains(&self.region_list[region_index].region_type)
+                    })
+                    .copied()
+                    .collect();
+
+                if let Some(&region_index) =
+                    candidate_regions.choose(&mut self.random_number_generator)
+                {
                     self.starting_tile_and_civilization
                         .insert(self.region_list[region_index].starting_tile, civilization);
                     // Remove region index that has been assigned from region index list
@@ -456,6 +446,20 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:FindFallbackForUnmatchedRegionPriority
+    /// Finds fallback region index for civilizations with unmatched region priority.
+    ///
+    /// When a civilization has region priority but no region of that type is available, we will assign it to a region with the most preferred terrain for that region priority.
+    ///
+    /// For example, if a civilization has [`RegionType::Jungle`] as its region priority but there is no region with [`RegionType::Jungle`] available, we will assign it to a region with the most Jungle tiles.
+    ///
+    /// # Arguments
+    ///
+    /// - `region_type`: The region type to find a fallback for.
+    /// - `region_index_list`: The list of regions to search through.
+    ///
+    /// # Returns
+    ///
+    /// The index of the fallback region, or `None` if no fallback was found.
     fn find_fallback_for_unmatched_region_priority(
         &self,
         region_type: RegionType,

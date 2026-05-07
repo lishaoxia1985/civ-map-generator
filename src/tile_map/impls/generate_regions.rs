@@ -625,9 +625,9 @@ pub struct Region {
     /// The starting tile of the civilization in this region.
     pub starting_tile: Tile,
     /// The start location condition of the region.
-    /// 
+    ///
     /// # Notice
-    /// 
+    ///
     /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
     pub start_location_condition: OnceCell<StartLocationCondition>,
     /// The exclusive luxury resource of the region.
@@ -1156,17 +1156,17 @@ pub struct StartLocationCondition {
     /// Whether the start location has a river.
     pub is_river: bool,
     /// Whether there is a river in 2-tile radius of the start location, except for the start location.
-    /// 
+    ///
     /// NOTICE: This is only check whether there is a river in 2-tile radius of the start location, not contain the start location itself.
     pub near_river: bool,
     /// Whether there is a mountain in 2-tile radius of the start location.
     pub near_mountain: bool,
     /// The number of forest tiles in 2-tile radius of the start location, except for the start location.
-    /// 
+    ///
     /// NOTICE: This is only check the number of forest tiles in 2-tile radius of the start location, not contain the start location itself.
     pub forest_count: i32,
     /// The number of jungle tiles in 2-tile radius of the start location, except for the start location.
-    /// 
+    ///
     /// NOTICE: This is only check the number of jungle tiles in 2-tile radius of the start location, not contain the start location itself.
     pub jungle_count: i32,
 }
