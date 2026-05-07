@@ -154,6 +154,7 @@ impl TileMap {
     ) -> Resource {
         let region = &self.region_list[region_index];
         let region_type = region.region_type;
+        let start_location_condition = region.start_location_condition.get().unwrap();
 
         /* let luxury_city_state_weights = vec![
             (Resource::Resource("Whales".to_string()), 15),
@@ -369,7 +370,7 @@ impl TileMap {
                         // Crabs are not allowed in Desert regions.
                         continue;
                     } else */
-                    if region.start_location_condition.along_ocean
+                    if start_location_condition.along_ocean
                         && region.terrain_statistic.terrain_type_num[TerrainType::Water] >= 12
                     {
                         // Water-based luxuries are allowed if both of the following are true:
@@ -429,7 +430,7 @@ impl TileMap {
                             // Crabs are not allowed in Desert regions.
                             // NOTE: In the original code, this check is not present. I think it is a bug.
                             continue;
-                        } else if region.start_location_condition.along_ocean
+                        } else if start_location_condition.along_ocean
                             && region.terrain_statistic.terrain_type_num[TerrainType::Water] >= 12
                         {
                             // Water-based luxuries are allowed if both of the following are true:

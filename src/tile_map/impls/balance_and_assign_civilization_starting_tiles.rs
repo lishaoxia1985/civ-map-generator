@@ -53,9 +53,7 @@ impl TileMap {
             .collect();
 
         for region_index in 0..self.region_list.len() {
-            let start_location_condition =
-                self.normalize_civilization_starting_tile(map_parameters, region_index);
-            self.region_list[region_index].start_location_condition = start_location_condition;
+            self.normalize_civilization_starting_tile(map_parameters, region_index);
         }
 
         let disable_start_bias = false;
@@ -110,17 +108,23 @@ impl TileMap {
             let mut regions_with_lake_start: Vec<usize> = Vec::new();
 
             for &region_index in region_index_list.iter() {
-                let region = &self.region_list[region_index];
-                if region.start_location_condition.along_ocean {
+                let start_location_condition = self.region_list[region_index]
+                    .start_location_condition
+                    .get()
+                    .unwrap();
+                if start_location_condition.along_ocean {
                     regions_with_coastal_start.push(region_index);
                 }
             }
 
             if regions_with_coastal_start.len() < civs_needing_coastal_start.len() {
                 for &region_index in region_index_list.iter() {
-                    let region = &self.region_list[region_index];
-                    if region.start_location_condition.next_to_lake
-                        && !region.start_location_condition.along_ocean
+                    let start_location_condition = self.region_list[region_index]
+                        .start_location_condition
+                        .get()
+                        .unwrap();
+                    if start_location_condition.next_to_lake
+                        && !start_location_condition.along_ocean
                     {
                         regions_with_lake_start.push(region_index);
                     }
@@ -176,17 +180,21 @@ impl TileMap {
             let mut regions_with_near_river_start = Vec::new();
 
             for &region_index in region_index_list.iter() {
-                let region = &self.region_list[region_index];
-                if region.start_location_condition.is_river {
+                let start_location_condition = self.region_list[region_index]
+                    .start_location_condition
+                    .get()
+                    .unwrap();
+                if start_location_condition.is_river {
                     regions_with_river_start.push(region_index);
                 }
             }
 
             for &region_index in region_index_list.iter() {
-                let region = &self.region_list[region_index];
-                if region.start_location_condition.near_river
-                    && !region.start_location_condition.is_river
-                {
+                let start_location_condition = self.region_list[region_index]
+                    .start_location_condition
+                    .get()
+                    .unwrap();
+                if start_location_condition.near_river && !start_location_condition.is_river {
                     regions_with_near_river_start.push(region_index);
                 }
             }
@@ -237,17 +245,21 @@ impl TileMap {
                 let mut fallbacks_with_near_river_start = Vec::new();
 
                 for &region_index in region_index_list.iter() {
-                    let region = &self.region_list[region_index];
-                    if region.start_location_condition.is_river {
+                    let start_location_condition = self.region_list[region_index]
+                        .start_location_condition
+                        .get()
+                        .unwrap();
+                    if start_location_condition.is_river {
                         fallbacks_with_river_start.push(region_index);
                     }
                 }
 
                 for &region_index in region_index_list.iter() {
-                    let region = &self.region_list[region_index];
-                    if region.start_location_condition.near_river
-                        && !region.start_location_condition.is_river
-                    {
+                    let start_location_condition = self.region_list[region_index]
+                        .start_location_condition
+                        .get()
+                        .unwrap();
+                    if start_location_condition.near_river && !start_location_condition.is_river {
                         fallbacks_with_near_river_start.push(region_index);
                     }
                 }
@@ -573,12 +585,12 @@ impl TileMap {
     ///    (it will contain forest in 1-2 radius when calculating the number of hammer).
     /// 4. If resource_setting is [`ResourceSetting::StrategicBalance`], call [`TileMap::add_strategic_balance_resources`] to add strategic resources to the starting tile's 1-3 radius.
     /// 5. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
-    /// 6. Get information about the starting tile and its surroundings for placing the civilization.
+    /// 6. Set current region's [`Region::start_location_condition`](crate::tile_map::Region::start_location_condition) field.
     fn normalize_civilization_starting_tile(
         &mut self,
         map_parameters: &MapParameters,
         region_index: usize,
-    ) -> StartLocationCondition {
+    ) {
         let grid = self.world_grid.grid;
 
         let starting_tile = self.region_list[region_index].starting_tile;
@@ -932,6 +944,20 @@ impl TileMap {
                 }
             });
 
+        // Set start location condition for the region, which will be used in later start location evaluation and adjustment.
+        self.region_list[region_index]
+            .start_location_condition
+            .set(StartLocationCondition {
+                along_ocean,
+                next_to_lake,
+                is_river,
+                near_river,
+                near_mountain,
+                forest_count,
+                jungle_count,
+            })
+            .unwrap();
+
         // Adjust the hammer situation, if needed.
         let mut inner_hammer_score = (4 * inner_hill) + (2 * inner_forest) + inner_one_hammer;
         let outer_hammer_score = (2 * outer_hill) + outer_forest + outer_one_hammer;
@@ -1222,16 +1248,6 @@ impl TileMap {
                     }
                 }
             }
-        }
-
-        StartLocationCondition {
-            along_ocean,
-            next_to_lake,
-            is_river,
-            near_river,
-            near_mountain,
-            forest_count,
-            jungle_count,
         }
     }
 

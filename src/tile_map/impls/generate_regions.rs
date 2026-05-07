@@ -625,7 +625,11 @@ pub struct Region {
     /// The starting tile of the civilization in this region.
     pub starting_tile: Tile,
     /// The start location condition of the region.
-    pub start_location_condition: StartLocationCondition,
+    /// 
+    /// # Notice
+    /// 
+    /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
+    pub start_location_condition: OnceCell<StartLocationCondition>,
     /// The exclusive luxury resource of the region.
     ///
     /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
@@ -656,7 +660,7 @@ impl Region {
             terrain_statistic: TerrainStatistic::default(),
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
-            start_location_condition: StartLocationCondition::default(),
+            start_location_condition: OnceCell::new(),
             exclusive_luxury: OnceCell::new(),
         }
     }
@@ -1143,7 +1147,7 @@ pub enum RegionType {
     Hybrid,    //-- 8.
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug)]
 pub struct StartLocationCondition {
     /// Whether the start location is coastal land.
     pub along_ocean: bool,
@@ -1151,15 +1155,18 @@ pub struct StartLocationCondition {
     pub next_to_lake: bool,
     /// Whether the start location has a river.
     pub is_river: bool,
-    /// Whether there is a river in 2-tile radius of the start location.
+    /// Whether there is a river in 2-tile radius of the start location, except for the start location.
+    /// 
     /// NOTICE: This is only check whether there is a river in 2-tile radius of the start location, not contain the start location itself.
     pub near_river: bool,
     /// Whether there is a mountain in 2-tile radius of the start location.
     pub near_mountain: bool,
-    /// The number of forest tiles in 2-tile radius of the start location.
+    /// The number of forest tiles in 2-tile radius of the start location, except for the start location.
+    /// 
     /// NOTICE: This is only check the number of forest tiles in 2-tile radius of the start location, not contain the start location itself.
     pub forest_count: i32,
-    /// The number of jungle tiles in 2-tile radius of the start location.
+    /// The number of jungle tiles in 2-tile radius of the start location, except for the start location.
+    /// 
     /// NOTICE: This is only check the number of jungle tiles in 2-tile radius of the start location, not contain the start location itself.
     pub jungle_count: i32,
 }
