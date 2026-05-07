@@ -1050,44 +1050,70 @@ impl Region {
         let flatland_and_hill_num = terrain_type_num[TerrainType::Flatland]
             + terrain_statistic.terrain_type_num[TerrainType::Hill];
 
+        debug_assert!(
+            flatland_and_hill_num > 0,
+            "The region must have at least one buildable terrain (flatland or hill) to determine its type."
+        );
+
+        // Pre-calculate common thresholds to avoid repeated calculations
+        let threshold_20 = flatland_and_hill_num * 20 / 100;
+        let threshold_25 = flatland_and_hill_num * 25 / 100;
+        let threshold_30 = flatland_and_hill_num * 30 / 100;
+        let threshold_35 = flatland_and_hill_num * 35 / 100;
+        let threshold_415 = flatland_and_hill_num * 415 / 1000;
+        let threshold_80 = flatland_and_hill_num * 80 / 100;
+
+        // Tundra: Tundra + Snow >= 30% of buildable terrain
         if (base_terrain_num[BaseTerrain::Tundra] + base_terrain_num[BaseTerrain::Snow])
-            >= flatland_and_hill_num * 30 / 100
+            >= threshold_30
         {
             self.region_type = RegionType::Tundra;
-        } else if feature_num[Feature::Jungle] >= flatland_and_hill_num * 30 / 100
-            || ((feature_num[Feature::Jungle] >= flatland_and_hill_num * 20 / 100)
-                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
-                    >= flatland_and_hill_num * 35 / 100))
+        }
+        // Jungle: Jungle >= 30% OR (Jungle >= 20% AND Jungle+Forest >= 35%)
+        else if feature_num[Feature::Jungle] >= threshold_30
+            || ((feature_num[Feature::Jungle] >= threshold_20)
+                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest] >= threshold_35))
         {
             self.region_type = RegionType::Jungle;
-        } else if feature_num[Feature::Forest] >= flatland_and_hill_num * 30 / 100
-            || ((feature_num[Feature::Forest] >= flatland_and_hill_num * 20 / 100)
-                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest]
-                    >= flatland_and_hill_num * 35 / 100))
+        }
+        // Forest: Forest >= 30% OR (Forest >= 20% AND Jungle+Forest >= 35%)
+        else if feature_num[Feature::Forest] >= threshold_30
+            || ((feature_num[Feature::Forest] >= threshold_20)
+                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest] >= threshold_35))
         {
             self.region_type = RegionType::Forest;
-        } else if base_terrain_num[BaseTerrain::Desert] >= flatland_and_hill_num * 25 / 100 {
+        }
+        // Desert: Desert >= 25% of buildable terrain
+        else if base_terrain_num[BaseTerrain::Desert] >= threshold_25 {
             self.region_type = RegionType::Desert;
-        } else if terrain_type_num[TerrainType::Hill] >= flatland_and_hill_num * 415 / 1000 {
+        }
+        // Hill: Hill >= 41.5% of buildable terrain
+        else if terrain_type_num[TerrainType::Hill] >= threshold_415 {
             self.region_type = RegionType::Hill;
-        } else if (base_terrain_num[BaseTerrain::Plain] >= flatland_and_hill_num * 30 / 100)
+        }
+        // Plain: Plain >= 30% AND Plain * 0.7 > Grassland
+        else if (base_terrain_num[BaseTerrain::Plain] >= threshold_30)
             && (base_terrain_num[BaseTerrain::Plain] * 70 / 100
                 > base_terrain_num[BaseTerrain::Grassland])
         {
             self.region_type = RegionType::Plain;
-        } else if (base_terrain_num[BaseTerrain::Grassland] >= flatland_and_hill_num * 30 / 100)
+        }
+        // Grassland: Grassland >= 30% AND Grassland * 0.7 > Plain
+        else if (base_terrain_num[BaseTerrain::Grassland] >= threshold_30)
             && (base_terrain_num[BaseTerrain::Grassland] * 70 / 100
                 > base_terrain_num[BaseTerrain::Plain])
         {
             self.region_type = RegionType::Grassland;
-        } else if (base_terrain_num[BaseTerrain::Grassland]
+        }
+        // Hybrid: Sum of major terrain types > 80% of buildable terrain
+        else if (base_terrain_num[BaseTerrain::Grassland]
             + base_terrain_num[BaseTerrain::Plain]
             + base_terrain_num[BaseTerrain::Desert]
             + base_terrain_num[BaseTerrain::Tundra]
             + base_terrain_num[BaseTerrain::Snow]
             + terrain_type_num[TerrainType::Hill]
             + terrain_type_num[TerrainType::Mountain])
-            > flatland_and_hill_num * 80 / 100
+            > threshold_80
         {
             self.region_type = RegionType::Hybrid;
         } else {
