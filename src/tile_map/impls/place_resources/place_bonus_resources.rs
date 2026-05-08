@@ -273,7 +273,7 @@ impl TileMap {
                         as f64;
             }
             // If the infertility quotient is greater than 1, it will increase the number of Bonuses placed, up to a maximum of twice the normal ratio.
-            let infertility_quotient = 1.0 + f64::max(hills_ratio - farm_ratio, 0.0);
+            let infertility_quotient = 1.0 + (hills_ratio - farm_ratio).max(0.0);
 
             let rectangle = self.region_list[region_index].rectangle;
             let landmass_id = self.region_list[region_index].area_id;

@@ -135,11 +135,11 @@ impl TileMap {
         let luxury_not_being_used = remaining_resource_list;
 
         self.luxury_resource_role = LuxuryResourceRole {
-            luxury_assigned_to_regions,
-            luxury_assigned_to_city_state,
-            luxury_assigned_to_special_case,
-            luxury_assigned_to_random,
-            _luxury_not_being_used: luxury_not_being_used,
+            regions_exclusive: luxury_assigned_to_regions,
+            city_states_exclusive: luxury_assigned_to_city_state,
+            special_cases: luxury_assigned_to_special_case,
+            random_placement: luxury_assigned_to_random,
+            disabled: luxury_not_being_used,
         };
     }
 
@@ -335,7 +335,7 @@ impl TileMap {
                         < MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
                         || self
                             .luxury_resource_role
-                            .luxury_assigned_to_regions
+                            .regions_exclusive
                             .contains(&luxury_resource))
             };
 
@@ -483,27 +483,34 @@ impl TileMap {
 /// The role of luxury resources. View [`TileMap::assign_luxury_roles`] for more information.
 #[derive(PartialEq, Eq, Default, Debug)]
 pub struct LuxuryResourceRole {
-    /// Exclusively Assigned to regions. The length of this set is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`].
+    /// Resources exclusively assigned to player regions.
+    /// The length is limited by [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`].
     ///
-    /// In original CIV5, the same luxury resource can only be found in at most 3 regions on the map.
+    /// In original CIV5, the same luxury resource appears in at most 3 regions.
     /// Because there are a maximum of 22 civilizations (each representing a region) in the game, so these luxury types are limited to 8 in original CIV5.
-    pub luxury_assigned_to_regions:
+    pub regions_exclusive:
         ArrayVec<Resource, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS }>,
 
-    /// Exclusively Assigned to a city state. The length of this set is limited to [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES`].
+    /// Resources exclusively assigned to City-States.
+    /// The length is limited by [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES`].
     ///
     /// These luxury types are exclusive to city states. These types is limited to 3 in original CIV5.
-    pub luxury_assigned_to_city_state:
+    pub city_states_exclusive:
         ArrayVec<Resource, { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_CITY_STATES }>,
 
-    /// Special case. For example, `Marble`. For each type of luxury resource in this vector, we need to implement a dedicated placement function to handle it.
-    pub luxury_assigned_to_special_case: Vec<Resource>,
+    /// Resources requiring special placement logic (e.g., `Marble`).
+    ///
+    /// Each resource in this collection requires a dedicated placement function
+    /// to handle specific map generation rules.
+    pub special_cases: Vec<Resource>,
 
-    /// Not exclusively assigned to any region or city state, and not special case too. we will place it randomly. That means it can be placed in any region or city state.
-    pub luxury_assigned_to_random: Vec<Resource>,
+    /// Not exclusively assigned to any region or city state, and not special case too.
+    ///
+    /// we will place it randomly. That means it can be placed in any region or city state.
+    pub random_placement: Vec<Resource>,
 
-    /// Disabled. We will not place it on the map.
-    pub _luxury_not_being_used: Vec<Resource>,
+    /// Disabled resources that will not be placed on the map.
+    pub disabled: Vec<Resource>,
 }
 
 /// Determines the target number of disabled luxury resources which can not be placed on the map.

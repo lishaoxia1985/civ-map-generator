@@ -54,9 +54,9 @@ impl TileMap {
         }
 
         let desert_top_percent = 100;
-        let desert_bottom_percent = max(0, 100 - desert_percent);
+        let desert_bottom_percent = 100u32.saturating_sub(desert_percent);
         let plains_top_percent = 100;
-        let plains_bottom_percent = max(0, 100 - plains_percent);
+        let plains_bottom_percent = 100u32.saturating_sub(plains_percent);
 
         let flags = FractalFlags::empty();
 

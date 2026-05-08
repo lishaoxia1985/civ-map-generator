@@ -137,7 +137,7 @@ impl TileMap {
 
                 let mut randoms_to_place = 1;
                 let resource_assigned_to_random =
-                    self.luxury_resource_role.luxury_assigned_to_random.clone();
+                    self.luxury_resource_role.random_placement.clone();
                 for &random_luxury in resource_assigned_to_random.iter() {
                     let priority_list_indices_of_luxury =
                         self.get_indices_for_luxury_type(random_luxury);
@@ -197,7 +197,7 @@ impl TileMap {
             // 2. The luxury type is allowed at this city state. (based on the allowed luxuries)
             let city_state_luxury_types: Vec<_> = self
                 .luxury_resource_role
-                .luxury_assigned_to_city_state
+                .city_states_exclusive
                 .iter()
                 .filter(|luxury| allowed_luxuries.contains(luxury))
                 .copied()
@@ -218,7 +218,7 @@ impl TileMap {
 
             let random_types_allowed: Vec<_> = self
                 .luxury_resource_role
-                .luxury_assigned_to_city_state
+                .city_states_exclusive
                 .iter()
                 .filter(|luxury| allowed_luxuries.contains(luxury))
                 .copied()
@@ -357,7 +357,7 @@ impl TileMap {
         /********** Process 3: Place Regional Luxuries **********/
 
         /********** Process 4: Place Random Luxuries **********/
-        let num_random_luxury_types = self.luxury_resource_role.luxury_assigned_to_random.len();
+        let num_random_luxury_types = self.luxury_resource_role.random_placement.len();
         if num_random_luxury_types > 0 {
             // `num_random_luxury_target` is the number of random luxuries to place in the world during this process.
             // - It shouldn't contain `luxury_assigned_to_random` that have already been placed in the world.
@@ -386,7 +386,7 @@ impl TileMap {
             ];
 
             for i in 0..num_random_luxury_types {
-                let luxury_resource = self.luxury_resource_role.luxury_assigned_to_random[i];
+                let luxury_resource = self.luxury_resource_role.random_placement[i];
 
                 let priority_list_indices_of_luxury =
                     self.get_indices_for_luxury_type(luxury_resource);
@@ -448,7 +448,7 @@ impl TileMap {
                 let mut candidate_luxury_types = Vec::new();
 
                 // See if any Random types are eligible.
-                for &luxury in self.luxury_resource_role.luxury_assigned_to_random.iter() {
+                for &luxury in self.luxury_resource_role.random_placement.iter() {
                     if allowed_luxuries.contains(&luxury) {
                         candidate_luxury_types.push(luxury);
                     }
@@ -456,11 +456,7 @@ impl TileMap {
 
                 // Check to see if any Special Case luxuries are eligible. Disallow if Strategic Balance resource setting.
                 if map_parameters.resource_setting != ResourceSetting::StrategicBalance {
-                    for &luxury in self
-                        .luxury_resource_role
-                        .luxury_assigned_to_special_case
-                        .iter()
-                    {
+                    for &luxury in self.luxury_resource_role.special_cases.iter() {
                         if allowed_luxuries.contains(&luxury) {
                             candidate_luxury_types.push(luxury);
                         }
@@ -474,11 +470,7 @@ impl TileMap {
                         candidate_luxury_types.choose(&mut self.random_number_generator);
                 } else {
                     // No Random or Special Case luxuries available. See if any City State types are eligible.
-                    for &luxury in self
-                        .luxury_resource_role
-                        .luxury_assigned_to_city_state
-                        .iter()
-                    {
+                    for &luxury in self.luxury_resource_role.city_states_exclusive.iter() {
                         if allowed_luxuries.contains(&luxury) {
                             candidate_luxury_types.push(luxury);
                         }
@@ -493,7 +485,7 @@ impl TileMap {
                             .exclusive_luxury
                             .get()
                             .unwrap();
-                        for &luxury in self.luxury_resource_role.luxury_assigned_to_regions.iter() {
+                        for &luxury in self.luxury_resource_role.regions_exclusive.iter() {
                             if allowed_luxuries.contains(&luxury) && luxury != region_luxury {
                                 candidate_luxury_types.push(luxury);
                             }
@@ -535,15 +527,8 @@ impl TileMap {
         /********** Process 5: Place Second Luxury Type at civ start locations **********/
 
         /********** Process 6: Place Special Case Luxury Resources **********/
-        if !self
-            .luxury_resource_role
-            .luxury_assigned_to_special_case
-            .is_empty()
-        {
-            let luxury_list = self
-                .luxury_resource_role
-                .luxury_assigned_to_special_case
-                .clone();
+        if !self.luxury_resource_role.special_cases.is_empty() {
+            let luxury_list = self.luxury_resource_role.special_cases.clone();
             for luxury in luxury_list {
                 match luxury {
                     Resource::Marble => {
