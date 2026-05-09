@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{BaseTerrain, Feature, TerrainType};
+use crate::{
+    ruleset::Yields,
+    tile_component::{BaseTerrain, Feature, TerrainType},
+};
 
 use super::Name;
 
@@ -10,20 +13,8 @@ use super::Name;
 #[serde(rename_all = "camelCase")]
 pub struct TileImprovement {
     pub name: String,
-    #[serde(default)]
-    pub food: i8,
-    #[serde(default)]
-    pub production: i8,
-    #[serde(default)]
-    pub science: i8,
-    #[serde(default)]
-    pub gold: i8,
-    #[serde(default)]
-    pub culture: i8,
-    #[serde(default)]
-    pub faith: i8,
-    #[serde(default)]
-    pub happiness: i8,
+    #[serde(flatten)]
+    pub yields: Yields,
     #[serde(default)]
     pub can_be_built_on_type: Vec<TerrainType>,
     #[serde(default)]

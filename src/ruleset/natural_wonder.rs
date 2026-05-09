@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{BaseTerrain, TerrainType};
+use crate::{
+    ruleset::Yields,
+    tile_component::{BaseTerrain, TerrainType},
+};
 
 use super::Name;
 
@@ -9,20 +12,8 @@ use super::Name;
 pub struct NaturalWonderInfo {
     pub name: String,
     pub r#type: String,
-    #[serde(default)]
-    pub food: i8,
-    #[serde(default)]
-    pub production: i8,
-    #[serde(default)]
-    pub science: i8,
-    #[serde(default)]
-    pub gold: i8,
-    #[serde(default)]
-    pub culture: i8,
-    #[serde(default)]
-    pub faith: i8,
-    #[serde(default)]
-    pub happiness: i8,
+    #[serde(flatten)]
+    pub yields: Yields,
     #[serde(default)]
     pub turns_into_type: Option<TerrainType>,
     #[serde(default)]
@@ -41,8 +32,6 @@ pub struct NaturalWonderInfo {
     pub occurs_on_type: Vec<TerrainType>,
     #[serde(default)]
     pub occurs_on_base: Vec<BaseTerrain>,
-    #[serde(default)]
-    pub occurs_on_feature: Vec<String>,
     #[serde(default)]
     pub uniques: Vec<String>,
 }

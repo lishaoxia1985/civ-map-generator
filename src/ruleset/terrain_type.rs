@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::ruleset::Yields;
+
 use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -9,20 +11,8 @@ use super::Name;
 pub struct TerrainTypeInfo {
     pub name: String,
     pub r#type: String,
-    #[serde(default)]
-    pub food: i8,
-    #[serde(default)]
-    pub production: i8,
-    #[serde(default)]
-    pub science: i8,
-    #[serde(default)]
-    pub gold: i8,
-    #[serde(default)]
-    pub culture: i8,
-    #[serde(default)]
-    pub faith: i8,
-    #[serde(default)]
-    pub happiness: i8,
+    #[serde(flatten)]
+    pub yields: Yields,
     #[serde(default)]
     pub defence_bonus: f32,
     #[serde(default)]

@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 pub mod base_terrain;
 pub mod belief;
@@ -51,6 +51,24 @@ use crate::ruleset::{
 use self::tech::Technology;
 pub trait Name {
     fn name(&self) -> String;
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Yields {
+    #[serde(default)]
+    pub food: i8,
+    #[serde(default)]
+    pub production: i8,
+    #[serde(default)]
+    pub science: i8,
+    #[serde(default)]
+    pub gold: i8,
+    #[serde(default)]
+    pub culture: i8,
+    #[serde(default)]
+    pub faith: i8,
+    #[serde(default)]
+    pub happiness: i8,
 }
 
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> HashMap<String, T> {

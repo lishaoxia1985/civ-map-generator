@@ -2,26 +2,16 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::ruleset::Yields;
+
 use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Specialist {
     name: String,
-    #[serde(default)]
-    food: i8,
-    #[serde(default)]
-    production: i8,
-    #[serde(default)]
-    science: i8,
-    #[serde(default)]
-    gold: i8,
-    #[serde(default)]
-    culture: i8,
-    #[serde(default)]
-    faith: i8,
-    #[serde(default)]
-    happiness: i8,
+    #[serde(flatten)]
+    pub yields: Yields,
     great_person_points: HashMap<String, i8>,
     #[serde(default)]
     color: [u8; 3],

@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{BaseTerrain, Feature, TerrainType};
+use crate::{
+    ruleset::Yields,
+    tile_component::{BaseTerrain, Feature, TerrainType},
+};
 
 use super::Name;
 
@@ -17,20 +20,8 @@ pub struct TileResource {
     pub can_be_found_on_base: Vec<BaseTerrain>,
     #[serde(default)]
     pub can_be_found_on_feature: Vec<Feature>,
-    #[serde(default)]
-    pub food: i8,
-    #[serde(default)]
-    pub production: i8,
-    #[serde(default)]
-    pub science: i8,
-    #[serde(default)]
-    pub gold: i8,
-    #[serde(default)]
-    pub culture: i8,
-    #[serde(default)]
-    pub faith: i8,
-    #[serde(default)]
-    pub happiness: i8,
+    #[serde(flatten)]
+    pub yields: Yields,
     #[serde(default)]
     pub improvement: String,
     #[serde(default)]
@@ -39,8 +30,8 @@ pub struct TileResource {
     pub improvement_stats: HashMap<String, i8>,
     #[serde(default)]
     pub uniques: Vec<String>,
-    pub major_deposit_amount: Option<HashMap<String, i8>>,
-    pub minor_deposit_amount: Option<HashMap<String, i8>>,
+    pub major_deposit_amount: HashMap<String, i8>,
+    pub minor_deposit_amount: HashMap<String, i8>,
 }
 
 impl Name for TileResource {
