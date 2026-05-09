@@ -11,7 +11,7 @@
 		"name": "Babylon",
 		"leaderName": "Nebuchadnezzar II",
 		"adjective": ["Babylonian"],
-		"regionTypeAvoid": ["Tundra"],
+		"startBias": {"regionTypeAvoid": ["Tundra"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "May the blessings of heaven be upon you, O great Nebuchadnezzar, father of mighty and ancient Babylon! Young was the world when Sargon built Babylon some five thousand years ago, long did it grow and prosper, gaining its first empire the eighteenth century BC, under godlike Hammurabi, the giver of law. Although conquered by the Kassites and then by the Assyrians, Babylon endured, emerging phoenix-like from its ashes of destruction and regaining its independence despite its many enemies. Truly was Babylon the center of arts and learning in the ancient world. O Nebuchadnezzar, your empire endured but a short time after your death, falling to the mighty Persians, and then to the Greeks, until the great city was destroyed by 141 BC.",
@@ -40,7 +40,7 @@
 		"name": "Greece",
 		"leaderName": "Alexander",
 		"adjective": ["Greek"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType":"Diplomatic",
 
 		"startIntroPart1": "May the blessings of the gods be upon you, oh great King Alexander! You are the ruler of the mighty Greek nation. Your people lived for so many years in isolated city-states - legendary cities such as Athens, Sparta, Thebes - where they gave the world many great things, such as democracy, philosophy, tragedy, art and architecture, the very foundation of Western Civilization. Although few in number and often hostile to each other, in the 5th century BC they were able to defeat their much larger neighbor, Persia, on land and sea.",
@@ -94,7 +94,7 @@
 		"name": "Egypt",
 		"leaderName": "Ramesses II",
 		"adjective": ["Egyptian"],
-		"regionTypeAvoid": ["Jungle","Forest"],
+		"startBias": {"regionTypeAvoid": ["Jungle","Forest"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "We greet thee, oh great Ramesses, Pharaoh of Egypt, who causes the sun to rise and the Nile to flow, and who blesses his fortunate people with all the good things of life! Oh great lord, from time immemorial your people lived on the banks of the Nile river, where they brought writing to the world, and advanced mathematics, sculpture, and architecture. Thousands of years ago they created the great monuments which still stand tall and proud.",
@@ -124,7 +124,7 @@
 		"name": "England",
 		"leaderName": "Elizabeth",
 		"adjective": ["English"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Diplomatic",
 
 		"startIntroPart1": "Praises upon her serene highness, Queen Elizabeth Gloriana. You lead and protect the celebrated maritime nation of England. England is an ancient land, settled as early as 35,000 years ago. The island has seen countless waves of invaders, each in turn becoming a part of the fabric of the people. Although England is a small island, for many years your people dominated the world stage. Their matchless navy, brilliant artists and shrewd merchants, giving them power and influence far in excess of their mere numbers.",
@@ -173,7 +173,7 @@
 		"name": "Russia",
 		"leaderName": "Catherine",
 		"adjective": ["Russian"],
-		"regionTypePriority": ["Tundra"],
+		"startBias": {"regionTypePriority": ["Tundra"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Greetings upon thee, Your Imperial Majesty Catherine, wondrous Empress of all the Russias. At your command lies the largest country in the world. Mighty Russia stretches from the Pacific Ocean in the east to the Baltic Sea in the west. Despite wars, droughts, and every manner of disaster the heroic Russian people survive and prosper, their artists and scientists among the best in the world. The Empire today remains one of the strongest ever seen in human history - a true superpower, with the greatest destructive force ever devised at her command.",
@@ -199,7 +199,7 @@
 		"name": "Rome",
 		"leaderName": "Augustus Caesar",
 		"adjective": ["Roman"],
-		"regionTypeAvoid": ["Tundra","Desert"],
+		"startBias": {"regionTypeAvoid": ["Tundra","Desert"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "The blessings of the gods be upon you, Caesar Augustus, emperor of Rome and all her holdings. Your empire was the greatest and longest lived of all in Western civilization. And your people single-handedly shaped its culture, law, art, and warfare like none other, before or since. Through years of glorious conquest, Rome came to dominate all the lands of the Mediterranean from Spain in the west to Syria in the east. And her dominion would eventually expand to cover much of England and northern Germany. Roman art and architecture still awe and inspire the world. And she remains the envy of all lesser civilizations who have followed.",
@@ -225,7 +225,7 @@
 		"name": "Arabia",
 		"leaderName": "Harun al-Rashid",
 		"adjective": ["Arabian"],
-		"regionTypePriority": ["Desert"],
+		"startBias": {"regionTypePriority": ["Desert"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Blessings of God be upon you oh great caliph Harun al-Rashid, leader of the pious Arabian people! The Muslim empire, the Caliphate was born in the turbulent years after the death of the prophet Muhammad in 632 AD, as his followers sought to extend the rule of God to all of the people of the earth. The caliphate grew mighty indeed at the height of its power, ruling Spain, North Africa, the Middle East, Anatolia, the Balkans and Persia. An empire as great as or even greater than that of Rome. The arts and sciences flourished in Arabia during the Middle Ages, even as the countries of Europe descended into ignorance and chaos. The Caliphate survived for six hundred years, until finally succumbing to attack from the Mongols, those destroyers of Empires.",
@@ -275,7 +275,7 @@
 		"name": "Japan",
 		"leaderName": "Oda Nobunaga",
 		"adjective": ["Japanese"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Blessings upon you, noble Oda Nobunaga, ruler of Japan, the land of the Rising Sun! May you long walk among its flowering blossoms. The Japanese are an island people, proud and pious with a rich culture of arts and letters. Your civilization stretches back thousands of years, years of bloody warfare, expansion and isolation, great wealth and great poverty. In addition to their prowess on the field of battle, your people are also immensely industrious, and their technological innovation and mighty factories are the envy of lesser people everywhere.",
@@ -300,7 +300,7 @@
 		"name": "India",
 		"leaderName": "Gandhi",
 		"adjective": ["Indian"],
-		"regionTypePriority": ["Grassland"],
+		"startBias": {"regionTypePriority": ["Grassland"]},
 		"preferredVictoryType": "Cultural",
 
 		"declaringWar": "I have just received a report that large numbers of my troops have crossed your borders.",
@@ -350,7 +350,7 @@
 		"name": "The Ottomans",
 		"leaderName": "Suleiman I",
 		"adjective": ["Ottoman"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Blessings of God be upon you, oh Great Emperor Suleiman! Your power, wealth and generosity awe the world! Truly, are you called 'Magnificent!' Your empire began in Bithynia, a small country in Eastern Anatolia in 12th century. Taking advantage in the decline of the great Seljuk Sultanate of Rum, King Osman I of Bithynia expanded west into Anatolia. Over the next century, your subjects brought down the empire of Byzantium, taking its holdings in Turkey and then the Balkans. In the mid 15th century, the Ottomans captured ancient Constantinople, gaining control of the strategic link between Europe and the Middle East. Your people's empire would continue to expand for centuries governing much of North Africa, the Middle East and Eastern Europe at its height.",
@@ -376,7 +376,7 @@
 		"name": "Korea",
 		"leaderName": "Sejong",
 		"adjective": ["Korean"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Greetings to you, exalted King Sejong the Great, servant to the people and protector of the Choson Dynasty! Your glorious vision of prosperity and overwhelming benevolence towards the common man made you the most beloved of all Korean kings. From the earliest days of your reign, the effort you took to provide a fair and just society for all was surpassed only by the technological advances spurred onwards by your unquenched thirst for knowledge. Guided by your wisdom, the scholars of the Jade Hall developed Korea's first written language, Hangul, bringing the light of literature and science to the masses after centuries of literary darkness.",
@@ -402,7 +402,7 @@
 		"name": "Iroquois",
 		"leaderName": "Hiawatha",
 		"adjective": ["Iroquoise"],
-		"regionTypePriority": ["Forest"],
+		"startBias": {"regionTypePriority": ["Forest"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Greetings, noble Hiawatha, leader of the mighty Iroquois nations! Long have your people lived near the great and holy lake Ontario in the land that has come to be known as the New York state in North America. In the mists of antiquity, the five peoples of Seneca, Onondaga, Mohawks, Cayugas and Oneida united into one nation, the Haudenosaunee, the Iroquois. With no written language, the wise men of your nation created the great law of peace, the model for many constitutions including that of the United States. For many years, your people battled great enemies, such as the Huron, and the French and English invaders. Tough outnumbered and facing weapons far more advanced than the ones your warriors wielded, the Iroquois survived and prospered, until they were finally overwhelmed by the mighty armies of the new United States.",
@@ -454,7 +454,7 @@
 		"name": "Polynesia",
 		"leaderName": "Kamehameha I",
 		"adjective": ["Polynesia"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Greetings and blessings be upon you, Kamehameha the Great, chosen by the heavens to unite your scattered peoples. Oh mighty King, you were the first to bring the Big Island of Hawai'i under one solitary rule in 1791 AD. This was followed by the merging of all the remaining islands under your standard in 1810. As the first King of Hawai'i, you standardized the legal and taxation systems and instituted the Mamalahoe Kawanai, an edict protecting civilians in times of war. You ensured the continued unification and sovereignty of the islands by your strong laws and deeds, even after your death in 1819.",
@@ -479,7 +479,7 @@
 		"name": "Siam",
 		"leaderName": "Ramkhamhaeng",
 		"adjective": ["Siamese"],
-		"regionTypeAvoid": ["Forest"],
+		"startBias": {"regionTypeAvoid": ["Forest"]},
 		"preferredVictoryType":"Diplomatic",
 
 		"startIntroPart1": "Greetings to you, Great King Ramkhamhaeng, leader of the glorious Siamese people! O mighty King, your people bow down before you in awe and fear! You are the ruler of Siam, an ancient country in the heart of Southeast Asia, a beautiful and mysterious land. Surrounded by foes, beset by bloody war and grinding poverty, the clever and loyal Siamese people have endured and triumphed. King Ramkhamhaeng, your empire was once part of the Khmer Empire, until the 13th century AD, when your ancestors revolted, forming the small Sukhothai kingdom. Through successful battle and cunning diplomacy, the tiny kingdom grew into a mighty empire, an empire which would dominate South East Asia for more than a century!",
@@ -504,7 +504,7 @@
 		"name": "Spain",
 		"leaderName": "Isabella",
 		"adjective": ["Spanish"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Blessed Isabella, servant of God, holy queen of Castille and León! Your people greet and welcome you. You are the ruler of Spain, a beautiful and ancient country at the crossroads of the world between Europe and Africa, one shore on the Mediterranean and the other on the mighty Atlantic Ocean. The Spanish are a multicultural people with roots in the Muslim and Christian worlds. A seafaring race, Spanish explorers found and conquered much of the New World, and, for many centuries, its gold and silver brought Spain unrivalled wealth and power, making the Spanish court the envy of the world.",
@@ -530,7 +530,7 @@
 		"name": "Songhai",
 		"leaderName": "Askia",
 		"adjective": ["Songhai"],
-		"regionTypeAvoid": ["Tundra"],
+		"startBias": {"regionTypeAvoid": ["Tundra"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "May the blessings of God, who is greatest of all, be upon you Askia, leader of the Songhai people! For many years your kingdom was a vassal of the mighty West African state of Mali, until the middle of the 14th century, when King Sunni Ali Ber wrested independence from the Mali, conquering much territory and fighting off numerous foes who sought to destroy him. Ultimately, his conquest of the wealthy cities of Timbuktu and Jenne gave the growing Songhai empire the economic power to survive for some 100 years, until the empire was destroyed by foes with advanced technology - muskets against spearmen.",
@@ -554,7 +554,7 @@
 		"name": "Mongolia",
 		"leaderName": "Genghis Khan",
 		"adjective": ["Mongolian"],
-		"regionTypePriority": ["Plain"],
+		"startBias": {"regionTypePriority": ["Plain"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Greetings, o great Temuujin, immortal emperor of the mighty Mongol Empire! Your fists shatter walls of cities and your voice brings despair to your enemies. O Khan! You united the warring tribes of Northern Asia into a mighty people, creating the greatest cavalry force the world has ever witnessed. Your people's cunning diplomacy divided their enemies, making them weak and helpless before Mongolia's conquering armies. In a few short years, your people's soldiers conquered most of China and Eastern Asia, and the empire continued to grow until it reached west into Europe and south to Korea. Indeed, it was the greatest empire ever seen, dwarfing those pathetic conquests of the Romans or the Greeks.",
@@ -579,7 +579,7 @@
 		"name": "Aztecs",
 		"leaderName": "Montezuma I",
 		"adjective": ["Aztec"],
-		"regionTypePriority": ["Jungle"],
+		"startBias": {"regionTypePriority": ["Jungle"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Welcome, O divine Montezuma! We grovel in awe at your magnificence! May the heaven shower all manner of good things upon you all the days of your life! You are the leader of the mighty Aztec people, wandering nomads from a lost home in the north who in the 12th century came to live in the mesa central in the heart of what would come to be called Mexico. Surrounded by many tribes fighting to control the rich land surrounding the sacred lakes of Texcoco, Xaltocan and Zampango, through cunning alliances and martial prowess, within a mere two hundred years, the Aztecs came to dominate the Central American basin, ruling a mighty empire stretching from sea to sea. But the empire fell at last under the assault of foreign devils - the accursed Spaniards! - wielding fiendish weapons the likes of which your faithful warriors had never seen.",
@@ -608,7 +608,7 @@
 		"name": "Inca",
 		"leaderName": "Pachacuti",
 		"adjective": ["Incan"],
-		"regionTypePriority": ["Hill"],
+		"startBias": {"regionTypePriority": ["Hill"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Oh ye who remakes the world, your loyal subjects greet you, King Pachacuti Sapa Inca, ruler of Tawantinsuyu and the Inca people! From the beginnings in the small state of Cusco, the Incans displayed their potential for greatness, marching to war against their many enemies, crushing their armies into dust and carving for themselves a mighty empire stretching from Ecuador to Chile. Indeed, they built the greatest empire ever seen in pre-Columbian America. More than mere soldiers, your people were great builders and artists as well, and the remnants of their works still awe and inspire the world today.",
@@ -647,7 +647,7 @@
 		"name": "Denmark",
 		"leaderName": "Harald Bluetooth",
 		"adjective": ["Danish"],
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Honor and glory be yours, Harald Bluetooth Gormsson, mighty heir of King Gorm of the Old and Thyra Dannebod. Not only were you victorious on the battlefield against the armies of Norway, you also completed massive construction project across the land - numerous Ring Fortresses to protect the populace from invasion and internal strife. You successfully drove off waves of German settlers in 983 AD and sheltered your kingdom from unwanted foreign influence.",
@@ -822,7 +822,7 @@
 		"name": "Rio de Janeiro",
 		"adjective": ["Carioca"],
 		"cityStateType": "Maritime",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "I have to do this, for the sake of progress if nothing else. You must be opposed!",
 		"attacked": "You can see how fruitless this will be for you... right?",
@@ -847,7 +847,7 @@
 		"name": "Ur",
 		"adjective": ["Ur"],
 		"cityStateType": "Maritime",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "I will enjoy hearing your last breath as you witness the destruction of your realm!",
 		"attacked": "Why do we fight? Because Inanna demands it. Now, witness the power of the Sumerians!",
@@ -873,7 +873,7 @@
 		"name": "Venice",
 		"adjective": ["Venetian"],
 		"cityStateType": "Maritime",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "You have revealed your purposes a bit too early, my friend...",
 		"attacked": "Very well, this shall not be forgotten.",
@@ -887,7 +887,7 @@
 		"name": "Antwerp",
 		"adjective": ["Antwerp"],
 		"cityStateType": "Mercantile",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "You leave us no choice. War it must be.",
 		"attacked": "Very well, this shall not be forgotten.",
@@ -900,7 +900,7 @@
 		"name": "Genoa",
 		"adjective": ["Genoese"],
 		"cityStateType": "Mercantile",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "You leave us no choice. War it must be.",
 		"attacked": "Very well, this shall not be forgotten.",
@@ -937,7 +937,7 @@
 		"name": "Tyre",
 		"adjective": ["Tyrian"],
 		"cityStateType": "Mercantile",
-		"alongOcean": true,
+		"startBias": "AlongOcean",
 
 		"declaringWar": "You leave us no choice. War it must be.",
 		"attacked": "Very well, this shall not be forgotten.",

@@ -9,7 +9,7 @@ use rand::{
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     nation::Nation,
-    ruleset::Ruleset,
+    ruleset::{Ruleset, nation::StartBias},
     tile::Tile,
     tile_component::{BaseTerrain, Feature, Resource, TerrainType},
     tile_map::{Layer, TileMap, get_major_strategic_resource_quantity_values},
@@ -86,14 +86,22 @@ impl TileMap {
 
         for &civilization in start_civilization_list.iter() {
             let nation_info = &ruleset.nations[civilization.as_str()];
-            if nation_info.along_ocean {
-                civs_needing_coastal_start.push(civilization);
-            } else if nation_info.along_river {
-                civs_needing_river_start.push(civilization);
-            } else if !nation_info.region_type_priority.is_empty() {
-                civs_needing_region_priority.push(civilization);
-            } else if !nation_info.region_type_avoid.is_empty() {
-                civs_needing_region_avoid.push(civilization);
+            let Some(start_bias) = &nation_info.start_bias else {
+                continue;
+            };
+            match start_bias {
+                StartBias::AlongOcean => {
+                    civs_needing_coastal_start.push(civilization);
+                }
+                StartBias::AlongRiver => {
+                    civs_needing_river_start.push(civilization);
+                }
+                StartBias::RegionTypePriority(_) => {
+                    civs_needing_region_priority.push(civilization);
+                }
+                StartBias::RegionTypeAvoid(_) => {
+                    civs_needing_region_avoid.push(civilization);
+                }
             }
         }
 
@@ -282,7 +290,12 @@ impl TileMap {
 
             for &civilization in civs_needing_region_priority.iter() {
                 let nation_info = &ruleset.nations[civilization.as_str()];
-                if nation_info.region_type_priority.len() == 1 {
+                let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                    &nation_info.start_bias
+                else {
+                    unreachable!()
+                };
+                if region_types_priority.len() == 1 {
                     civs_needing_single_priority.push(civilization);
                 } else {
                     civs_needing_multi_priority.push(civilization);
@@ -298,17 +311,28 @@ impl TileMap {
                 //         so we don't need to tackle this case.
                 civs_needing_single_priority.sort_by_key(|&civilization| {
                     let nation_info = &ruleset.nations[civilization.as_str()];
-                    nation_info.region_type_priority[0] as i32
+                    let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                        &nation_info.start_bias
+                    else {
+                        unreachable!()
+                    };
+                    region_types_priority[0] as i32
                 });
 
                 for &civilization in civs_needing_single_priority.iter() {
-                    let region_type_priority =
-                        ruleset.nations[civilization.as_str()].region_type_priority[0];
+                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                        &nation_info.start_bias
+                    else {
+                        unreachable!()
+                    };
+
+                    let single_region_priority = region_types_priority[0];
 
                     let candidate_regions: Vec<_> = region_index_list
                         .iter()
                         .filter(|&&region_index| {
-                            self.region_list[region_index].region_type == region_type_priority
+                            self.region_list[region_index].region_type == single_region_priority
                         })
                         .copied()
                         .collect();
@@ -334,17 +358,26 @@ impl TileMap {
                 // Sort `civs_needing_multi_priority` by the length of their region priority list, shorter ones first.
                 civs_needing_multi_priority.sort_by_key(|&civilization| {
                     let nation_info = &ruleset.nations[civilization.as_str()];
-                    nation_info.region_type_priority.len()
+                    let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                        &nation_info.start_bias
+                    else {
+                        unreachable!()
+                    };
+                    region_types_priority.len()
                 });
 
                 for &civilization in civs_needing_multi_priority.iter() {
-                    let region_type_priority_list =
-                        &ruleset.nations[civilization.as_str()].region_type_priority;
+                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                        &nation_info.start_bias
+                    else {
+                        unreachable!()
+                    };
 
                     let candidate_regions: Vec<_> = region_index_list
                         .iter()
                         .filter(|&&region_index| {
-                            region_type_priority_list
+                            region_types_priority
                                 .contains(&self.region_list[region_index].region_type)
                         })
                         .copied()
@@ -371,10 +404,16 @@ impl TileMap {
             //         then we will assign it to a region with the most preferred terrain for that region priority.
             if !civs_fallback_priority.is_empty() {
                 for &civilization in civs_fallback_priority.iter() {
-                    let region_type_priority =
-                        ruleset.nations[civilization.as_str()].region_type_priority[0];
+                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let Some(StartBias::RegionTypePriority(region_types_priority)) =
+                        &nation_info.start_bias
+                    else {
+                        unreachable!()
+                    };
+
+                    let single_region_priority = region_types_priority[0];
                     let region_index = self.find_fallback_for_unmatched_region_priority(
-                        region_type_priority,
+                        single_region_priority,
                         &region_index_list,
                     );
 
@@ -390,22 +429,28 @@ impl TileMap {
 
         // Handle Region Avoid
         if !civs_needing_region_avoid.is_empty() {
-            // Sort `civs_needing_region_avoid` by the length of `nation.avoid_region_type`.
+            // Sort `civs_needing_region_avoid` by the length of `region_types_avoid`.
             civs_needing_region_avoid.sort_by_key(|civilization| {
                 let nation_info = &ruleset.nations[civilization.as_str()];
-                nation_info.region_type_avoid.len()
+                let Some(StartBias::RegionTypeAvoid(region_types_avoid)) = &nation_info.start_bias
+                else {
+                    unreachable!()
+                };
+                region_types_avoid.len()
             });
 
             // process in reverse order, so most needs goes first.
             for &civilization in civs_needing_region_avoid.iter().rev() {
-                let region_type_avoid_list =
-                    &ruleset.nations[civilization.as_str()].region_type_avoid;
+                let nation_info = &ruleset.nations[civilization.as_str()];
+                let Some(StartBias::RegionTypeAvoid(region_types_avoid)) = &nation_info.start_bias
+                else {
+                    unreachable!()
+                };
 
                 let candidate_regions: Vec<_> = region_index_list
                     .iter()
                     .filter(|&&region_index| {
-                        !region_type_avoid_list
-                            .contains(&self.region_list[region_index].region_type)
+                        !region_types_avoid.contains(&self.region_list[region_index].region_type)
                     })
                     .copied()
                     .collect();

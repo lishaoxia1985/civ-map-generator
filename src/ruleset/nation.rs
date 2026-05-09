@@ -12,15 +12,8 @@ pub struct NationInfo {
     pub leader_name: String,
     #[serde(default)]
     pub adjective: Vec<String>,
-    // These fields below are relevant to Civilization starting position.
     #[serde(default)]
-    pub along_ocean: bool,
-    #[serde(default)]
-    pub along_river: bool,
-    #[serde(default)]
-    pub region_type_priority: Vec<RegionType>,
-    #[serde(default)]
-    pub region_type_avoid: Vec<RegionType>,
+    pub start_bias: Option<StartBias>,
     #[serde(default)]
     pub preferred_victory_type: String,
     #[serde(default)]
@@ -61,4 +54,12 @@ impl Name for NationInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StartBias {
+    AlongOcean,
+    AlongRiver,
+    RegionTypePriority(Vec<RegionType>),
+    RegionTypeAvoid(Vec<RegionType>),
 }
