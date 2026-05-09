@@ -321,6 +321,28 @@ pub trait Grid {
         }
     }
 
+    /// Checks if the given `OffsetCoordinate` is within the grid bounds.
+    ///
+    /// # Notice
+    ///
+    /// If you only need to verify whether an offset coordinate is within the grid bounds, you can use this function.
+    ///
+    /// If you intend to normalize an offset coordinate while checking, you can call the [`Self::normalize_offset`] function directly and determine validity based on whether the result is `Ok`.
+    ///
+    /// If you intend to convert an offset coordinate to a cell while checking, you can call the [`Self::offset_to_cell`] function directly and determine validity based on whether the result is `Ok`.
+    fn within_grid_bounds(&self, offset_coordinate: OffsetCoordinate) -> bool {
+        let x = offset_coordinate.0.x;
+        let y = offset_coordinate.0.y;
+        match (self.wrap_x(), self.wrap_y()) {
+            (true, true) => true,
+            (true, false) => y >= 0 && y < self.height() as i32,
+            (false, true) => x >= 0 && x < self.width() as i32,
+            (false, false) => {
+                x >= 0 && x < self.width() as i32 && y >= 0 && y < self.height() as i32
+            }
+        }
+    }
+
     /// Convert `GridCoordinateType` to a [`Cell`] in the grid.
     ///
     /// If the grid coordinate is out of bounds, it will return `None`.
