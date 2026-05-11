@@ -15,10 +15,6 @@ pub struct NaturalWonderInfo {
     #[serde(flatten)]
     pub yields: Yields,
     #[serde(default)]
-    pub turns_into_type: Option<TerrainType>,
-    #[serde(default)]
-    pub turns_into_base: Option<BaseTerrain>,
-    #[serde(default)]
     pub impassable: bool,
     #[serde(default)]
     pub unbuildable: bool,
@@ -30,6 +26,10 @@ pub struct NaturalWonderInfo {
     pub is_fresh_water: bool,
     #[serde(default)]
     pub required_terrain: RequiredTerrain,
+    #[serde(default)]
+    pub turns_into_type: Option<TerrainType>,
+    #[serde(default)]
+    pub turns_into_base: Option<BaseTerrain>,
     #[serde(default)]
     pub uniques: Vec<String>,
 }

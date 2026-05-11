@@ -9,15 +9,10 @@
 		"overrideStats": true,
 		"unbuildable": true,
 		"defenceBonus": 0.25,
-		"occursOnType": [
-			"Flatland",
-			"Hill"
-		],
-		"occursOnBase": [
-			"Tundra",
-			"Plain",
-			"Grassland"
-		],
+		"requiredTerrain": {
+             "terrainType": ["Flatland","Hill"],
+             "baseTerrain": ["Tundra","Plain","Grassland"]
+        },
 		"uniques": [
 			"Rough terrain",
 			"Vegetation",
@@ -48,13 +43,10 @@
 		"overrideStats": true,
 		"unbuildable": true,
 		"defenceBonus": 0.25,
-		"occursOnType": [
-			"Flatland",
-			"Hill"
-		],
-		"occursOnBase": [
-			"Grassland"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Flatland","Hill"],
+			 "baseTerrain": ["Grassland"]
+		},
 		"uniques": [
 			"Rough terrain",
 			"Vegetation",
@@ -76,12 +68,10 @@
 		"movementCost": 3,
 		"unbuildable": true,
 		"defenceBonus": -0.15,
-		"occursOnType": [
-			"Flatland"
-		],
-		"occursOnBase": [
-			"Grassland"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Flatland"],
+			 "baseTerrain": ["Grassland"]
+		},
 		"uniques": [
 			"Rare feature",
 			"[-2] to Fertility for Map Generation",
@@ -105,13 +95,10 @@
 		],
 		// For map editor only - the generator won't place it without code or enabling uniques
 		// If the map generator is ever updated to always take these into account, it should also take the "Doesn't generate naturally" unique into account
-		"occursOnBase": [
-			"Grassland",
-			"Plain",
-			"Desert",
-			"Tundra",
-			"Snow"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Flatland","Hill"],
+			 "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+		},
 		"defenceBonus": -0.15
 	},
 	{
@@ -122,12 +109,10 @@
 		"movementCost": 1,
 		"unbuildable": true,
 		"defenceBonus": -0.1,
-		"occursOnType": [
-			"Flatland"
-		],
-		"occursOnBase": [
-			"Desert"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Flatland"],
+			 "baseTerrain": ["Desert"]
+		},
 		"uniques": [
 			"Fresh water",
 			"Rare feature",
@@ -143,12 +128,10 @@
 		"food": 2,
 		"movementCost": 1,
 		"defenceBonus": -0.1,
-		"occursOnType": [
-			"Flatland"
-		],
-		"occursOnBase": [
-			"Desert"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Flatland"],
+			 "baseTerrain": ["Desert"]
+		},
 		"uniques": [
 			"Always Fertility [5] for Map Generation",
 			"Considered [Food] when determining start locations",
@@ -160,14 +143,10 @@
 		"type": "TerrainFeature",
 		"impassable": true,
 		"overrideStats": true,
-		"occursOnType": [
-			"Water"
-		],
-		"occursOnBase": [
-			"Ocean",
-			"Coast",
-			"Lake"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Water"],
+			 "baseTerrain": ["Ocean","Coast","Lake"]
+		},
 		"uniques": [
 			"Occurs at temperature between [-1] and [-0.8] and humidity between [0] and [1]",
 			"[-1] to Fertility for Map Generation",
@@ -180,13 +159,10 @@
 		"movementCost": 1,
 		"food": 1,
 		"production": 1,
-		"occursOnType": [
-			"Water"
-		],
-		"occursOnBase": [
-			"Ocean",
-			"Coast"
-		],
+		"requiredTerrain": {
+			 "terrainType": ["Water"],
+			 "baseTerrain": ["Coast"]
+		},
 		"uniques": [
 			"Rare feature"
 		]

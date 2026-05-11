@@ -49,15 +49,17 @@ impl TileMap {
             let latitude = tile.latitude(grid);
 
             /* **********start to add ice********** */
+            let ice_required_terrain = &ruleset.features["Ice"].required_terrain;
+
             if tile.is_impassable(self, ruleset) {
                 continue;
             } else if tile.terrain_type(self) == TerrainType::Water {
                 if !tile.has_river(self)
-                    && ruleset.features["Ice"]
-                        .occurs_on_type
+                    && ice_required_terrain
+                        .terrain_type
                         .contains(&tile.terrain_type(self))
-                    && ruleset.features["Ice"]
-                        .occurs_on_base
+                    && ice_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                     && latitude > 0.78
                 {
@@ -82,13 +84,16 @@ impl TileMap {
             /* **********the end of add ice********** */
             else {
                 /* **********start to add Floodplain********** */
+                let floodplain_required_terrain = &ruleset.features["Floodplain"].required_terrain;
+                let oasis_required_terrain = &ruleset.features["Oasis"].required_terrain;
+
                 num_land_tiles += 1;
                 if tile.has_river(self)
-                    && ruleset.features["Floodplain"]
-                        .occurs_on_type
+                    && floodplain_required_terrain
+                        .terrain_type
                         .contains(&tile.terrain_type(self))
-                    && ruleset.features["Floodplain"]
-                        .occurs_on_base
+                    && floodplain_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                 {
                     tile.set_feature(self, Feature::Floodplain);
@@ -96,11 +101,11 @@ impl TileMap {
                 }
                 /* **********the end of add Floodplain********** */
                 /* **********start to add oasis********** */
-                else if ruleset.features["Oasis"]
-                    .occurs_on_type
+                else if oasis_required_terrain
+                    .terrain_type
                     .contains(&tile.terrain_type(self))
-                    && ruleset.features["Oasis"]
-                        .occurs_on_base
+                    && oasis_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                     && (oasis_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= oasis_max_percent
@@ -112,11 +117,13 @@ impl TileMap {
                 }
                 /* **********the end of add oasis********** */
                 /* **********start to add march********** */
-                if ruleset.features["Marsh"]
-                    .occurs_on_type
+                let marsh_required_terrain = &ruleset.features["Marsh"].required_terrain;
+
+                if marsh_required_terrain
+                    .terrain_type
                     .contains(&tile.terrain_type(self))
-                    && ruleset.features["Marsh"]
-                        .occurs_on_base
+                    && marsh_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                     && (marsh_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= marsh_max_percent
@@ -142,11 +149,13 @@ impl TileMap {
                 };
                 /* **********the end of add march********** */
                 /* **********start to add jungle********** */
-                if ruleset.features["Jungle"]
-                    .occurs_on_type
+                let jungle_required_terrain = &ruleset.features["Jungle"].required_terrain;
+
+                if jungle_required_terrain
+                    .terrain_type
                     .contains(&tile.terrain_type(self))
-                    && ruleset.features["Jungle"]
-                        .occurs_on_base
+                    && jungle_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                     && (jungle_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= jungle_max_percent
@@ -186,11 +195,13 @@ impl TileMap {
                 }
                 /* **********the end of add jungle********** */
                 /* **********start to add forest********** */
-                if ruleset.features["Forest"]
-                    .occurs_on_type
+                let forest_required_terrain = &ruleset.features["Forest"].required_terrain;
+
+                if forest_required_terrain
+                    .terrain_type
                     .contains(&tile.terrain_type(self))
-                    && ruleset.features["Forest"]
-                        .occurs_on_base
+                    && forest_required_terrain
+                        .base_terrain
                         .contains(&tile.base_terrain(self))
                     && (forest_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= forest_max_percent
