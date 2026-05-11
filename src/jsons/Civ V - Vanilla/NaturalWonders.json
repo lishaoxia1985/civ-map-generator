@@ -7,14 +7,10 @@
         "production": 1,
         "gold": 1,
         "science": 2,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Ocean"
-        ],
+        "requiredTerrain": {
+            "terrainType": ["Flatland","Mountain","Hill","Water"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast","Ocean"]
+        },
         "uniques": [
             "Must be adjacent to [1] to [6] [Coast] tiles",
             "Must be adjacent to [6] [Water] tiles",
@@ -32,18 +28,10 @@
         "type": "NaturalWonder",
         "science": 2,
         "happiness": 3,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Grassland",
-            "Plain",
-            "Desert",
-            "Tundra",
-            "Snow"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "uniques": [
             "Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [0] to [4] [Mountain] tiles",
@@ -61,18 +49,10 @@
         "type": "NaturalWonder",
         "culture": 5,
         "overrideStats": true,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Grassland",
-            "Plain",
-            "Desert",
-            "Tundra",
-            "Snow"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "turnsIntoType": "Flatland",
         "turnsIntoBase": "Plain",
         "impassable": true,
@@ -89,18 +69,10 @@
         "type": "NaturalWonder",
         "happiness": 10,
         "overrideStats": true,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Grassland",
-            "Plain",
-            "Desert",
-            "Tundra",
-            "Snow"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "turnsIntoType": "Flatland",
         "turnsIntoBase": "Plain",
         "impassable": true,
@@ -117,16 +89,10 @@
         "type": "NaturalWonder",
         "production": 2,
         "gold": 3,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Plain",
-            "Desert",
-            "Tundra"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Plain","Desert","Tundra"]
+        },
         "uniques": [
             "Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [0] [Grassland] tiles",
@@ -143,15 +109,10 @@
         "type": "NaturalWonder",
         "gold": 1,
         "culture": 5,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Grassland",
-            "Plain"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain"]
+        },
         "uniques": [
             "Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [0] [Tundra] tiles",
@@ -171,13 +132,10 @@
         "name": "Krakatoa",
         "type": "NaturalWonder",
         "science": 5,
-        "occursOnType": [
-            "Water"
-        ],
-        "occursOnBase": [
-            "Ocean",
-            "Coast"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Water"],
+             "baseTerrain": ["Ocean","Coast"]
+        },
         "uniques": [
             "Must be adjacent to [6] [Water] tiles",
             "Must be adjacent to [1] to [6] [Coast] tiles",
@@ -195,15 +153,10 @@
         "type": "NaturalWonder",
         "food": 2,
         "gold": 5,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill",
-            "Water"
-        ],
-        "occursOnBase": [
-            "Grassland"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill","Water"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast"]
+        },
         "uniques": [
             "Must be adjacent to [3] to [5] [Coast] tiles",
             "Must be adjacent to [1] [Land] tiles",
@@ -219,18 +172,10 @@
         "name": "Cerro de Potosi",
         "type": "NaturalWonder",
         "gold": 10,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Grassland",
-            "Plain",
-            "Desert",
-            "Tundra",
-            "Snow"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "uniques": [
             "Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [1] to [6] [Hill] tiles"
@@ -245,15 +190,10 @@
         "type": "NaturalWonder",
         "gold": 2,
         "science": 3,
-        "occursOnType": [
-            "Flatland",
-            "Mountain",
-            "Hill"
-        ],
-        "occursOnBase": [
-            "Desert",
-            "Tundra"
-        ],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Desert","Tundra"]
+        },
         "uniques": [
             "Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [0] [Grassland] tiles",
@@ -271,8 +211,10 @@
         "type": "NaturalWonder",
         "production": 6,
         "overrideStats": true,
-        "occursOnType": ["Flatland","Mountain","Hill"],
-        "occursOnBase": ["Grassland","Plain","Desert","Tundra","Snow"],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "uniques": ["Must be adjacent to [0] [Coast] tiles",
             "Must be adjacent to [0] to [2] [Mountain] tiles"],
         "turnsIntoType": "Flatland",
@@ -285,8 +227,10 @@
         "name": "Lake Victoria",
         "type": "NaturalWonder",
         "food": 6,
-        "occursOnType": ["Flatland","Mountain","Hill"],
-        "occursOnBase": ["Grassland","Plain","Desert","Tundra","Snow"],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+        },
         "turnsIntoType": "Flatland",
         "turnsIntoBase": "Plain",
         "impassable": true,
@@ -299,8 +243,10 @@
         "type": "NaturalWonder",
         "food": 3,
         "culture": 2,
-        "occursOnType": ["Flatland","Mountain","Hill"],
-        "occursOnBase": ["Plain","Grassland"],
+        "requiredTerrain": {
+             "terrainType": ["Flatland","Mountain","Hill"],
+             "baseTerrain": ["Plain","Grassland"]
+        },
         "turnsIntoType": "Mountain",
         "impassable": true,
         "unbuildable": true,

@@ -105,11 +105,12 @@ impl TileMap {
                             continue;
                         };
 
-                        if !natural_wonder_info
-                            .occurs_on_type
+                        let required_terrain = &natural_wonder_info.required_terrain;
+                        if !required_terrain
+                            .terrain_type
                             .contains(&tile.terrain_type(self))
-                            || !natural_wonder_info
-                                .occurs_on_base
+                            || !required_terrain
+                                .base_terrain
                                 .contains(&tile.base_terrain(self))
                         {
                             continue;
@@ -413,11 +414,12 @@ impl TileMap {
                             continue;
                         };
 
-                        if !natural_wonder_info
-                            .occurs_on_type
+                        let required_terrain = &natural_wonder_info.required_terrain;
+                        if !required_terrain
+                            .terrain_type
                             .contains(&tile.terrain_type(self))
-                            || !natural_wonder_info
-                                .occurs_on_base
+                            || !required_terrain
+                                .base_terrain
                                 .contains(&tile.base_terrain(self))
                         {
                             continue;
