@@ -11,7 +11,7 @@
 		"name": "Babylon",
 		"leaderName": "Nebuchadnezzar II",
 		"adjective": ["Babylonian"],
-		"startBias": {"regionTypeAvoid": ["Tundra"]},
+		"startBias": {"RegionTypeAvoid": ["Tundra"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "May the blessings of heaven be upon you, O great Nebuchadnezzar, father of mighty and ancient Babylon! Young was the world when Sargon built Babylon some five thousand years ago, long did it grow and prosper, gaining its first empire the eighteenth century BC, under godlike Hammurabi, the giver of law. Although conquered by the Kassites and then by the Assyrians, Babylon endured, emerging phoenix-like from its ashes of destruction and regaining its independence despite its many enemies. Truly was Babylon the center of arts and learning in the ancient world. O Nebuchadnezzar, your empire endured but a short time after your death, falling to the mighty Persians, and then to the Greeks, until the great city was destroyed by 141 BC.",
@@ -97,7 +97,7 @@
 		"name": "Egypt",
 		"leaderName": "Ramesses II",
 		"adjective": ["Egyptian"],
-		"startBias": {"regionTypeAvoid": ["Jungle","Forest"]},
+		"startBias": {"RegionTypeAvoid": ["Jungle","Forest"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "We greet thee, oh great Ramesses, Pharaoh of Egypt, who causes the sun to rise and the Nile to flow, and who blesses his fortunate people with all the good things of life! Oh great lord, from time immemorial your people lived on the banks of the Nile river, where they brought writing to the world, and advanced mathematics, sculpture, and architecture. Thousands of years ago they created the great monuments which still stand tall and proud.",
@@ -179,7 +179,7 @@
 		"name": "Russia",
 		"leaderName": "Catherine",
 		"adjective": ["Russian"],
-		"startBias": {"regionTypePriority": ["Tundra"]},
+		"startBias": {"RegionTypePriority": ["Tundra"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Greetings upon thee, Your Imperial Majesty Catherine, wondrous Empress of all the Russias. At your command lies the largest country in the world. Mighty Russia stretches from the Pacific Ocean in the east to the Baltic Sea in the west. Despite wars, droughts, and every manner of disaster the heroic Russian people survive and prosper, their artists and scientists among the best in the world. The Empire today remains one of the strongest ever seen in human history - a true superpower, with the greatest destructive force ever devised at her command.",
@@ -206,7 +206,7 @@
 		"name": "Rome",
 		"leaderName": "Augustus Caesar",
 		"adjective": ["Roman"],
-		"startBias": {"regionTypeAvoid": ["Tundra","Desert"]},
+		"startBias": {"RegionTypeAvoid": ["Tundra","Desert"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "The blessings of the gods be upon you, Caesar Augustus, emperor of Rome and all her holdings. Your empire was the greatest and longest lived of all in Western civilization. And your people single-handedly shaped its culture, law, art, and warfare like none other, before or since. Through years of glorious conquest, Rome came to dominate all the lands of the Mediterranean from Spain in the west to Syria in the east. And her dominion would eventually expand to cover much of England and northern Germany. Roman art and architecture still awe and inspire the world. And she remains the envy of all lesser civilizations who have followed.",
@@ -233,7 +233,7 @@
 		"name": "Arabia",
 		"leaderName": "Harun al-Rashid",
 		"adjective": ["Arabian"],
-		"startBias": {"regionTypePriority": ["Desert"]},
+		"startBias": {"RegionTypePriority": ["Desert"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Blessings of God be upon you oh great caliph Harun al-Rashid, leader of the pious Arabian people! The Muslim empire, the Caliphate was born in the turbulent years after the death of the prophet Muhammad in 632 AD, as his followers sought to extend the rule of God to all of the people of the earth. The caliphate grew mighty indeed at the height of its power, ruling Spain, North Africa, the Middle East, Anatolia, the Balkans and Persia. An empire as great as or even greater than that of Rome. The arts and sciences flourished in Arabia during the Middle Ages, even as the countries of Europe descended into ignorance and chaos. The Caliphate survived for six hundred years, until finally succumbing to attack from the Mongols, those destroyers of Empires.",
@@ -311,7 +311,7 @@
 		"name": "India",
 		"leaderName": "Gandhi",
 		"adjective": ["Indian"],
-		"startBias": {"regionTypePriority": ["Grassland"]},
+		"startBias": {"RegionTypePriority": ["Grassland"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Greetings, President Mahatma Gandhi, great souled leader of India! You are the ruler of one of the oldest countries in the world with history stretching back almost 10,000 years. A spiritual country, India is the birthplace of three of the world's great religions - Hinduism, Buddhism and Jainism. This is a passionate land of music and color, a land of great wealth and grinding poverty. For centuries, India was divided into kingdoms who fought constantly with each other and against outside invaders. That was, however, after empires such as Maratha, Maurya and Gupta. In the 12th century AD, India was conquered by Muslim Turks who fled from the Mongols. In the early 17th century, the English arrived, and through a combination of shrewd diplomacy and technological superiority, they conquered your fragmented nation. England remained in power for some two centuries until driven out by a rising wave of Indian nationalism, a peaceful rebellion unlike any before seen in history, one led by you!",
@@ -419,7 +419,7 @@
 		"name": "Iroquois",
 		"leaderName": "Hiawatha",
 		"adjective": ["Iroquoise"],
-		"startBias": {"regionTypePriority": ["Forest"]},
+		"startBias": {"RegionTypePriority": ["Forest"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Greetings, noble Hiawatha, leader of the mighty Iroquois nations! Long have your people lived near the great and holy lake Ontario in the land that has come to be known as the New York state in North America. In the mists of antiquity, the five peoples of Seneca, Onondaga, Mohawks, Cayugas and Oneida united into one nation, the Haudenosaunee, the Iroquois. With no written language, the wise men of your nation created the great law of peace, the model for many constitutions including that of the United States. For many years, your people battled great enemies, such as the Huron, and the French and English invaders. Tough outnumbered and facing weapons far more advanced than the ones your warriors wielded, the Iroquois survived and prospered, until they were finally overwhelmed by the mighty armies of the new United States.",
@@ -499,7 +499,7 @@
 		"name": "Siam",
 		"leaderName": "Ramkhamhaeng",
 		"adjective": ["Siamese"],
-		"startBias": {"regionTypeAvoid": ["Forest"]},
+		"startBias": {"RegionTypeAvoid": ["Forest"]},
 		"preferredVictoryType":"Diplomatic",
 
 		"startIntroPart1": "Greetings to you, Great King Ramkhamhaeng, leader of the glorious Siamese people! O mighty King, your people bow down before you in awe and fear! You are the ruler of Siam, an ancient country in the heart of Southeast Asia, a beautiful and mysterious land. Surrounded by foes, beset by bloody war and grinding poverty, the clever and loyal Siamese people have endured and triumphed. King Ramkhamhaeng, your empire was once part of the Khmer Empire, until the 13th century AD, when your ancestors revolted, forming the small Sukhothai kingdom. Through successful battle and cunning diplomacy, the tiny kingdom grew into a mighty empire, an empire which would dominate South East Asia for more than a century!",
@@ -552,7 +552,7 @@
 		"name": "Songhai",
 		"leaderName": "Askia",
 		"adjective": ["Songhai"],
-		"startBias": {"regionTypeAvoid": ["Tundra"]},
+		"startBias": {"RegionTypeAvoid": ["Tundra"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "May the blessings of God, who is greatest of all, be upon you Askia, leader of the Songhai people! For many years your kingdom was a vassal of the mighty West African state of Mali, until the middle of the 14th century, when King Sunni Ali Ber wrested independence from the Mali, conquering much territory and fighting off numerous foes who sought to destroy him. Ultimately, his conquest of the wealthy cities of Timbuktu and Jenne gave the growing Songhai empire the economic power to survive for some 100 years, until the empire was destroyed by foes with advanced technology - muskets against spearmen.",
@@ -577,7 +577,7 @@
 		"name": "Mongolia",
 		"leaderName": "Genghis Khan",
 		"adjective": ["Mongolian"],
-		"startBias": {"regionTypePriority": ["Plain"]},
+		"startBias": {"RegionTypePriority": ["Plain"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Greetings, o great Temuujin, immortal emperor of the mighty Mongol Empire! Your fists shatter walls of cities and your voice brings despair to your enemies. O Khan! You united the warring tribes of Northern Asia into a mighty people, creating the greatest cavalry force the world has ever witnessed. Your people's cunning diplomacy divided their enemies, making them weak and helpless before Mongolia's conquering armies. In a few short years, your people's soldiers conquered most of China and Eastern Asia, and the empire continued to grow until it reached west into Europe and south to Korea. Indeed, it was the greatest empire ever seen, dwarfing those pathetic conquests of the Romans or the Greeks.",
@@ -603,7 +603,7 @@
 		"name": "Aztecs",
 		"leaderName": "Montezuma I",
 		"adjective": ["Aztec"],
-		"startBias": {"regionTypePriority": ["Jungle"]},
+		"startBias": {"RegionTypePriority": ["Jungle"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Welcome, O divine Montezuma! We grovel in awe at your magnificence! May the heaven shower all manner of good things upon you all the days of your life! You are the leader of the mighty Aztec people, wandering nomads from a lost home in the north who in the 12th century came to live in the mesa central in the heart of what would come to be called Mexico. Surrounded by many tribes fighting to control the rich land surrounding the sacred lakes of Texcoco, Xaltocan and Zampango, through cunning alliances and martial prowess, within a mere two hundred years, the Aztecs came to dominate the Central American basin, ruling a mighty empire stretching from sea to sea. But the empire fell at last under the assault of foreign devils - the accursed Spaniards! - wielding fiendish weapons the likes of which your faithful warriors had never seen.",
@@ -633,7 +633,7 @@
 		"name": "Inca",
 		"leaderName": "Pachacuti",
 		"adjective": ["Incan"],
-		"startBias": {"regionTypePriority": ["Hill"]},
+		"startBias": {"RegionTypePriority": ["Hill"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Oh ye who remakes the world, your loyal subjects greet you, King Pachacuti Sapa Inca, ruler of Tawantinsuyu and the Inca people! From the beginnings in the small state of Cusco, the Incans displayed their potential for greatness, marching to war against their many enemies, crushing their armies into dust and carving for themselves a mighty empire stretching from Ecuador to Chile. Indeed, they built the greatest empire ever seen in pre-Columbian America. More than mere soldiers, your people were great builders and artists as well, and the remnants of their works still awe and inspire the world today.",
@@ -701,7 +701,7 @@
 		"name": "The Huns",
 		"leaderName": "Attila the Hun",
 		"adjective": ["Hunnic"],
-		"startBias": {"regionTypeAvoid": ["Jungle","Forest"]},
+		"startBias": {"RegionTypeAvoid": ["Jungle","Forest"]},
 		"preferredVictorType": "Domination",
 
 		"startIntroPart1": "Your men stand proudly to greet you, Great Attila, grand warrior and ruler of the Hunnic empire. Together with your brother Bleda you expanded the boundaries of your empire, becoming the most powerful and frightening force of the 5th century. You bowed the Eastern Roman Emperors to your will and took kingdom after kingdom along the Danube and Nisava Rivers. As the sovereign ruler of the Huns, you marched your army across Europe into Gaul, planning to extend your already impressive lands all the way to the Atlantic Ocean. Your untimely death led to the quick disintegration and downfall of your empire, but your name and deeds have created an everlasting legacy for your people.",
@@ -724,7 +724,7 @@
 		"name": "The Netherlands",
 		"leaderName": "William of Orange",
 		"adjective": ["Dutch"],
-		"startBias": {"regionTypePriority": ["Grassland"]},
+		"startBias": {"RegionTypePriority": ["Grassland"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Hail stalwart Prince William of Orange, liberator of the Netherlands and hero to the Dutch people. It was your courageous effort in the 1568 rebellion against Spanish dominion that led the Dutch to freedom, and ultimately resulted in the Eighty Years' War. Your undertaking allowed for the creation of one of Europe's first modern republics, the Seven United Provinces. You gave your life to the rebellion, falling at the hands of an assassin in 1584, but your death would only serve to embolden the people's charge, and your legacy as \"Father of the Fatherland\" will stand as a symbol of Dutch independence for all time.",
@@ -748,7 +748,7 @@
 	    "name": "Sweden",
 		"leaderName": "Gustavus Adolphus",
 		"adjective": ["Swedish"],
-		"startBias": {"regionTypePriority": ["Tundra"]},
+		"startBias": {"RegionTypePriority": ["Tundra"]},
 		"preferredVictoryType": "Diplomatic",
 
 		"startIntroPart1": "All hail the transcendent King Gustavus Adolphus, founder of the Swedish Empire and her most distinguished military tactician. It was during your reign that Sweden emerged as one of the greatest powers in Europe, due in no small part to your wisdom, both on and off the battlefield. As king, you initiated a number of domestic reforms that ensured the economic stability and prosperity of your people. As the general who came to be known as the \"Lion of the North,\" your visionary designs in warfare gained the admiration of military commanders the world over. Thanks to your triumphs in the Thirty Years' War, you were assured a legacy as one of history's greatest generals.",
@@ -777,7 +777,7 @@
 		"name": "Austria",
 		"leaderName": "Maria Theresa",
 		"adjective": ["Austrian"],
-		"startBias": {"regionTypePriority": ["Hill"]},
+		"startBias": {"RegionTypePriority": ["Hill"]},
 		"preferredVictoryType": "Diplomatic",
 
 		"startIntroPart1": "Noble and virtuous Queen Maria Theresa, Holy Roman Empress and sovereign of Austria, the people bow to your gracious will. Following the death of your father King Charles VI, you ascended the thone of Austria during a time of great instability, but the empty coffers and diminished military did litle to dissuade your ambitions. Faced with war almost immediately upon your succession to the thron, you managed to fend off your foes, and in naming your husband Francis Stephen co-ruler, assured your place as Empress of the Holy Roman Empire. During your reigh, you guided Austria on a new path of reform - strengthening the military, replenishing the treasury, and improving the educational system of the kingdom.",
@@ -861,7 +861,7 @@
 		"name": "Celts",
 		"leaderName": "Boudicca",
 		"adjective": ["celtic"],
-		"startBias": {"regionTypePriority": ["Forest"]},
+		"startBias": {"RegionTypePriority": ["Forest"]},
 		"preferredVictoryType": "Domination",
 
 		"startIntroPart1": "Eternal glory and praise for you, fierce and vengeful Warrior Queen! In a time dominated by men, you not only secured your throne and sovereign rule, but also successfully defied the power of the Roman Empire. After suffering terrible punishment and humiliation at the hand of the Roman invaders, you rallied your people in a bloody and terrifying revolt. Legions fell under your chariot wheels and the city of London burned. While in the end the Romans retained ownership of the isles, you alone made Nero consider withdrawing all troops and leaving Britain forever.",
@@ -900,7 +900,7 @@
 		"name": "Ethiopia",
 		"leaderName": "Haile Selassie",
 		"adjective": ["ethiopian"],
-		"startBias": {"regionTypePriority": ["Jungle"]},
+		"startBias": {"RegionTypePriority": ["Jungle"]},
 		"preferredVictoryType": "Cultural",
 
 		"startIntroPart1": "Blessings be upon you, honorable and righteous Emperor of Ethiopia, Haile Selassie. Your legacy as one of Ethiopia's greatest rulers, and as the spiritual leader to the Rastafarian movement, is outshone only by the influence you had on diplomacy and political cooperation throughout the world. In introducing Ethiopia's first written constitution, you planted the seeds of democracy that would take root over the coming years, and your infinitely wise grasp of global affairs secured Ethiopia's place as a charter member of the United Nations. Spearheading efforts to reform and modernize the nation during your reign, you changed the course of Ethiopian history forever",
@@ -937,7 +937,7 @@
 		"name": "The Maya",
 		"leaderName": "Pacal",
 		"adjective": ["mayan"],
-		"startBias": {"regionTypePriority": ["Jungle"]},
+		"startBias": {"RegionTypePriority": ["Jungle"]},
 		"preferredVictoryType": "Scientific",
 
 		"startIntroPart1": "Your people kneel before you, exalted King Pacal the Great, favored son of the gods and shield to the citizens of the Palenque domain. After years of strife at the hands of your neighboring rivals, you struck back at the enemies of your people, sacrificing their leaders in retribution for the insults dealt to your predecessors. The glory of Palenque was restored only by the guidance afforded by your wisdom, as you orchestrated vast reconstruction efforts within the city, creating some of the greatest monuments and architecture your people - and the world - have ever known.",

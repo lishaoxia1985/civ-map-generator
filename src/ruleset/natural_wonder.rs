@@ -26,10 +26,7 @@ pub struct NaturalWonderInfo {
     pub is_fresh_water: bool,
     #[serde(default)]
     pub required_terrain: RequiredTerrain,
-    #[serde(default)]
-    pub turns_into_type: Option<TerrainType>,
-    #[serde(default)]
-    pub turns_into_base: Option<BaseTerrain>,
+    pub turns_into_terrain: TurnsIntoTerrain,
     #[serde(default)]
     pub uniques: Vec<String>,
 }
@@ -51,4 +48,12 @@ impl NaturalWonderInfo {
 pub struct RequiredTerrain {
     pub terrain_type: Vec<TerrainType>,
     pub base_terrain: Vec<BaseTerrain>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnsIntoTerrain {
+    pub terrain_type: TerrainType,
+    #[serde(default)]
+    pub base_terrain: Option<BaseTerrain>,
 }

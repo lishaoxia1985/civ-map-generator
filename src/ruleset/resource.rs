@@ -30,7 +30,9 @@ pub struct TileResource {
     pub improvement_stats: HashMap<String, i8>,
     #[serde(default)]
     pub uniques: Vec<String>,
+    #[serde(default)]
     pub major_deposit_amount: HashMap<String, i8>,
+    #[serde(default)]
     pub minor_deposit_amount: HashMap<String, i8>,
 }
 

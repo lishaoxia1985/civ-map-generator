@@ -254,15 +254,14 @@ impl TileMap {
                                     placed_natural_wonder_tiles.push(tile);
                                 }
                                 _ => {
-                                    // Edit the choice tile's terrain_type to match the natural wonder
-                                    if let Some(turn_into_terrain_type) =
-                                        natural_wonder_info.turns_into_type
-                                    {
-                                        tile.set_terrain_type(self, turn_into_terrain_type);
-                                    };
-                                    // Edit the choice tile's base_terrain to match the natural wonder
+                                    let turns_into_terrain =
+                                        &natural_wonder_info.turns_into_terrain;
+                                    // Edit the choice tile's `terrain_type` to match the natural wonder
+                                    tile.set_terrain_type(self, turns_into_terrain.terrain_type);
+
+                                    // Edit the choice tile's `base_terrain` to match the natural wonder
                                     if let Some(turn_into_base_terrain) =
-                                        natural_wonder_info.turns_into_base
+                                        turns_into_terrain.base_terrain
                                     {
                                         tile.set_base_terrain(self, turn_into_base_terrain);
                                     }
@@ -591,15 +590,14 @@ impl TileMap {
                                 placed_natural_wonder_tiles.push(max_score_tile);
                             }
                             _ => {
-                                // Edit the choice tile's terrain_type to match the natural wonder
-                                if let Some(turn_into_terrain_type) =
-                                    natural_wonder_info.turns_into_type
-                                {
-                                    max_score_tile.set_terrain_type(self, turn_into_terrain_type);
-                                };
-                                // Edit the choice tile's base_terrain to match the natural wonder
+                                let turns_into_terrain = &natural_wonder_info.turns_into_terrain;
+                                // Edit the choice tile's `terrain_type` to match the natural wonder
+                                max_score_tile
+                                    .set_terrain_type(self, turns_into_terrain.terrain_type);
+
+                                // Edit the choice tile's `base_terrain` to match the natural wonder
                                 if let Some(turn_into_base_terrain) =
-                                    natural_wonder_info.turns_into_base
+                                    turns_into_terrain.base_terrain
                                 {
                                     max_score_tile.set_base_terrain(self, turn_into_base_terrain);
                                 }
