@@ -2,17 +2,14 @@
 	// TerrainType
 	{
 		"name": "Water",
-		"type": "TerrainType",
 		"RGB": [45,108,145]
 	},
 	{
 		"name": "Flatland",
-		"type": "TerrainType",
 		"RGB": [97,171,58]
 	},
 	{
 		"name": "Hill",
-		"type": "TerrainType",
 		"production": 2,
 		"movementCost": 2,
 		"overrideStats": true,
@@ -33,7 +30,6 @@
 	},
 	{
 		"name": "Mountain",
-		"type": "TerrainType",
 		"impassable": true,
 		"defenceBonus": 0.25,
 		"RGB": [120, 120, 120],

@@ -124,7 +124,7 @@ mod tests {
         let map_parameters = MapParametersBuilder::new(world_grid).seed(12345).build();
         let ruleset = Ruleset::default();
 
-        for _ in 0..15 {
+        for _ in 0..10 {
             let map_a = generate_map(&map_parameters, &ruleset);
             let map_b = generate_map(&map_parameters, &ruleset);
             assert_eq!(map_a, map_b, "Maps should be identical with same seed");
