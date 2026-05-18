@@ -15,11 +15,7 @@ pub struct TileResource {
     pub name: String,
     pub resource_type: String,
     #[serde(default)]
-    pub can_be_found_on_type: Vec<TerrainType>,
-    #[serde(default)]
-    pub can_be_found_on_base: Vec<BaseTerrain>,
-    #[serde(default)]
-    pub can_be_found_on_feature: Vec<Feature>,
+    pub required_terrain: Vec<RequiredTerrain>,
     #[serde(flatten)]
     pub yields: Yields,
     #[serde(default)]
@@ -40,4 +36,18 @@ impl Name for TileResource {
     fn name(&self) -> String {
         self.name.to_owned()
     }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RequiredTerrain {
+    pub terrain_type: Vec<TerrainType>,
+    pub base_terrain: Vec<BaseTerrain>,
+    /// When it's `None`, it means the required terrain will ignore this value,
+    /// which means it can be any feature or no feature.
+    pub feature: Option<Vec<Feature>>,
+    /// When it's `None`, it means the required terrain will ignore this value,
+    /// which means the required terrain can be freshwater or not.
+    #[serde(default)]
+    pub freshwater: Option<bool>,
 }
