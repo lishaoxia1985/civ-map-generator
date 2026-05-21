@@ -23,8 +23,6 @@ pub struct NaturalWonderInfo {
     #[serde(default)]
     pub override_stats: bool,
     #[serde(default)]
-    pub is_fresh_water: bool,
-    #[serde(default)]
     pub required_terrain: RequiredTerrain,
     pub turns_into_terrain: TurnsIntoTerrain,
     #[serde(default)]
@@ -48,6 +46,16 @@ impl NaturalWonderInfo {
 pub struct RequiredTerrain {
     pub terrain_type: Vec<TerrainType>,
     pub base_terrain: Vec<BaseTerrain>,
+    /// When it's `None`, it means the required terrain will ignore this value,
+    /// which means the required terrain can be freshwater or not.
+    ///
+    /// # Notes
+    ///
+    /// Although it occurs in the XML file of the original CIV5 game, it be never used.
+    #[serde(default)]
+    pub freshwater: Option<bool>,
+    #[serde(default)]
+    pub extra_conditions: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

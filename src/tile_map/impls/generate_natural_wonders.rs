@@ -65,6 +65,23 @@ impl TileMap {
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
                 let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
+                if let Some(freshwater) = natural_wonder_info.required_terrain.freshwater {
+                    if tile.is_freshwater(self) != freshwater {
+                        continue;
+                    }
+                }
+
+                let required_terrain = &natural_wonder_info.required_terrain;
+                if !required_terrain
+                    .terrain_type
+                    .contains(&tile.terrain_type(self))
+                    || !required_terrain
+                        .base_terrain
+                        .contains(&tile.base_terrain(self))
+                {
+                    continue;
+                }
+
                 match natural_wonder {
                     NaturalWonder::GreatBarrierReef => {
                         if let Some(neighbor_tile) =
@@ -101,23 +118,11 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self) != natural_wonder_info.is_fresh_water {
-                            continue;
-                        };
-
-                        let required_terrain = &natural_wonder_info.required_terrain;
-                        if !required_terrain
-                            .terrain_type
-                            .contains(&tile.terrain_type(self))
-                            || !required_terrain
-                                .base_terrain
-                                .contains(&tile.base_terrain(self))
-                        {
-                            continue;
-                        }
-
-                        let check_unique_conditions =
-                            natural_wonder_info.uniques.iter().all(|unique| {
+                        let check_unique_conditions = natural_wonder_info
+                            .required_terrain
+                            .extra_conditions
+                            .iter()
+                            .all(|unique| {
                                 let unique = Unique::new(unique);
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {
@@ -373,6 +378,23 @@ impl TileMap {
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
                 let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
 
+                if let Some(freshwater) = natural_wonder_info.required_terrain.freshwater {
+                    if tile.is_freshwater(self) != freshwater {
+                        continue;
+                    }
+                }
+
+                let required_terrain = &natural_wonder_info.required_terrain;
+                if !required_terrain
+                    .terrain_type
+                    .contains(&tile.terrain_type(self))
+                    || !required_terrain
+                        .base_terrain
+                        .contains(&tile.base_terrain(self))
+                {
+                    continue;
+                }
+
                 match natural_wonder {
                     NaturalWonder::GreatBarrierReef => {
                         if let Some(neighbor_tile) =
@@ -409,23 +431,11 @@ impl TileMap {
                         }
                     }
                     _ => {
-                        if tile.is_freshwater(self) != natural_wonder_info.is_fresh_water {
-                            continue;
-                        };
-
-                        let required_terrain = &natural_wonder_info.required_terrain;
-                        if !required_terrain
-                            .terrain_type
-                            .contains(&tile.terrain_type(self))
-                            || !required_terrain
-                                .base_terrain
-                                .contains(&tile.base_terrain(self))
-                        {
-                            continue;
-                        }
-
-                        let check_unique_conditions =
-                            natural_wonder_info.uniques.iter().all(|unique| {
+                        let check_unique_conditions = natural_wonder_info
+                            .required_terrain
+                            .extra_conditions
+                            .iter()
+                            .all(|unique| {
                                 let unique = Unique::new(unique);
                                 match unique.placeholder_text.as_str() {
                                     "Must be adjacent to [] [] tiles" => {

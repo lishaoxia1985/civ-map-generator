@@ -9,14 +9,14 @@
         "science": 2,
         "requiredTerrain": {
             "terrainType": ["Flatland","Mountain","Hill","Water"],
-            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast","Ocean"]
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast","Ocean"],
+            "extraConditions": [
+                "Must be adjacent to [1] to [6] [Coast] tiles",
+                "Must be adjacent to [6] [Water] tiles",
+                "Occurs on latitudes from [10] to [70] percent of distance equator to pole",
+                "Occurs in groups of [2] to [2] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [1] to [6] [Coast] tiles",
-            "Must be adjacent to [6] [Water] tiles",
-            "Occurs on latitudes from [10] to [70] percent of distance equator to pole",
-            "Occurs in groups of [2] to [2] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Water",
             "baseTerrain": "Coast"
@@ -31,17 +31,16 @@
         "science": 2,
         "happiness": 3,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] to [4] [Mountain] tiles",
+                "Must be adjacent to [3] to [6] [Elevated] tiles",
+                "Must be adjacent to [0] to [3] [Desert] tiles",
+                "Must be adjacent to [0] to [3] [Tundra] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] to [4] [Mountain] tiles",
-            "Must be adjacent to [3] to [6] [Elevated] tiles",
-            "Must be adjacent to [0] to [3] [Desert] tiles",
-            "Must be adjacent to [0] to [3] [Tundra] tiles"
-        ],
-        
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -55,8 +54,12 @@
         "culture": 5,
         "overrideStats": true,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [1] to [6] [Jungle] tiles"
+            ]
         },
         "turnsIntoTerrain": {
             "terrainType": "Flatland",
@@ -65,8 +68,6 @@
         "impassable": true,
         "unbuildable": true,
         "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [1] to [6] [Jungle] tiles",
             "Grants 500 Gold to the first civilization to discover it"
         ],
         "weight": 2
@@ -77,8 +78,11 @@
         "happiness": 10,
         "overrideStats": true,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles"
+            ]
         },
         "turnsIntoTerrain": {
             "terrainType": "Flatland",
@@ -87,7 +91,6 @@
         "impassable": true,
         "unbuildable": true,
         "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
             "Grants [Rejuvenation] ([all healing effects doubled]) to adjacent [{Military} {Land}] units for the rest of the game",
             "Tile provides yield without assigned population"
         ],
@@ -99,15 +102,15 @@
         "production": 2,
         "gold": 3,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Desert","Tundra"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Desert","Tundra"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Grassland] tiles",
+                "Must be adjacent to [2] to [6] [Hill] tiles",
+                "Must be adjacent to [0] to [2] [Mountain] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Grassland] tiles",
-            "Must be adjacent to [2] to [6] [Hill] tiles",
-            "Must be adjacent to [0] to [2] [Mountain] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -122,18 +125,18 @@
         "culture": 3,
         "faith": 3,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Grassland"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Grassland"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Tundra] tiles",
+                "Must be adjacent to [0] [Desert] tiles",
+                "Must be adjacent to [0] [Mountain] tiles",
+                "Must be adjacent to [0] [Marsh] tiles",
+                "Must be adjacent to [0] to [2] [Hill] tiles",
+                "Must not be on [1] largest landmasses"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Tundra] tiles",
-            "Must be adjacent to [0] [Desert] tiles",
-            "Must be adjacent to [0] [Mountain] tiles",
-            "Must be adjacent to [0] [Marsh] tiles",
-            "Must be adjacent to [0] to [2] [Hill] tiles",
-            "Must not be on [1] largest landmasses"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain",
             "baseTerrain": "Grassland"
@@ -147,13 +150,15 @@
         "type": "NaturalWonder",
         "science": 5,
         "requiredTerrain": {
-             "terrainType": ["Water"],
-             "baseTerrain": ["Ocean","Coast"]
+            "terrainType": ["Water"],
+            "baseTerrain": ["Ocean","Coast"],
+            "extraConditions": [
+                "Must be adjacent to [6] [Water] tiles",
+                "Must be adjacent to [1] to [6] [Coast] tiles",
+                "Must be adjacent to [0] [Ice] tiles"
+            ]
         },
         "uniques": [
-            "Must be adjacent to [6] [Water] tiles",
-            "Must be adjacent to [1] to [6] [Coast] tiles",
-            "Must be adjacent to [0] [Ice] tiles",
             "Neighboring tiles will convert to [Coast]"
         ],
         "turnsIntoTerrain": {
@@ -170,12 +175,14 @@
         "food": 2,
         "gold": 5,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill","Water"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast"]
+            "terrainType": ["Flatland","Mountain","Hill","Water"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow","Coast"],
+            "extraConditions": [
+                "Must be adjacent to [3] to [5] [Coast] tiles",
+                "Must be adjacent to [1] [Land] tiles"
+            ]
         },
         "uniques": [
-            "Must be adjacent to [3] to [5] [Coast] tiles",
-            "Must be adjacent to [1] [Land] tiles",
             "Neighboring [Land] tiles will convert to [Mountain]",
             "Neighboring [Ocean] tiles will convert to [Coast]"
         ],
@@ -191,13 +198,13 @@
         "type": "NaturalWonder",
         "gold": 10,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [1] to [6] [Hill] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [1] to [6] [Hill] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -211,15 +218,15 @@
         "gold": 2,
         "science": 3,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Desert","Tundra"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Desert","Tundra"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Grassland] tiles",
+                "Must be adjacent to [0] to [2] [Mountain] tiles",
+                "Must be adjacent to [0] to [4] [Elevated] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Grassland] tiles",
-            "Must be adjacent to [0] to [2] [Mountain] tiles",
-            "Must be adjacent to [0] to [4] [Elevated] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -234,15 +241,15 @@
         "faith": 6,
         "happiness": 2,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Grassland"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Grassland"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Marsh] tiles",
+                "Must be adjacent to [0] to [1] [Desert] tiles",
+                "Must be adjacent to [4] to [6] [Elevated] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Marsh] tiles",
-            "Must be adjacent to [0] to [1] [Desert] tiles",
-            "Must be adjacent to [4] to [6] [Elevated] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -256,15 +263,15 @@
         "faith": 8,
         "requiredTerrain": {
             "terrainType": ["Flatland","Mountain","Hill"],
-            "baseTerrain": ["Desert","Plain"]
+            "baseTerrain": ["Desert","Plain"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Grassland] tiles",
+                "Must be adjacent to [0] [Tundra] tiles",
+                "Must be adjacent to [0] [Marsh] tiles",
+                "Must be adjacent to [3] to [6] [Desert] tiles"
+            ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Grassland] tiles",
-            "Must be adjacent to [0] [Tundra] tiles",
-            "Must be adjacent to [0] [Marsh] tiles",
-            "Must be adjacent to [3] to [6] [Desert] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -279,15 +286,15 @@
         "faith": 4,
         "happiness": 2,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Grassland"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Grassland"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Tundra] tiles",
+                "Must be adjacent to [0] [Desert] tiles",
+                "Must be adjacent to [0] [Marsh] tiles",
+                "Must not be on [1] largest landmasses"
+             ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Tundra] tiles",
-            "Must be adjacent to [0] [Desert] tiles",
-            "Must be adjacent to [0] [Marsh] tiles",
-            "Must not be on [1] largest landmasses"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -301,16 +308,16 @@
         "food": 2,
         "faith": 6,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Desert"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Desert"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+                "Must be adjacent to [0] [Grassland] tiles",
+                "Must be adjacent to [0] [Tundra] tiles",
+                "Must be adjacent to [0] [Marsh] tiles",
+                "Must be adjacent to [3] to [6] [Plain] tiles"
+             ]
         },
-        "uniques": [
-            "Must be adjacent to [0] [Coast] tiles",
-            "Must be adjacent to [0] [Grassland] tiles",
-            "Must be adjacent to [0] [Tundra] tiles",
-            "Must be adjacent to [0] [Marsh] tiles",
-            "Must be adjacent to [3] to [6] [Plain] tiles"
-        ],
         "turnsIntoTerrain": {
             "terrainType": "Mountain"
         },
@@ -325,11 +332,13 @@
 		"production": 6,
 		"overrideStats": true,
         "requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+			    "Must be adjacent to [0] to [2] [Mountain] tiles"
+            ]
         },
-		"uniques": ["Must be adjacent to [0] [Coast] tiles",
-			"Must be adjacent to [0] to [2] [Mountain] tiles"],
 		"turnsIntoTerrain": {
 			"terrainType": "Flatland",
 			"baseTerrain": "Plain"
@@ -343,8 +352,11 @@
 		"type": "NaturalWonder",
 		"food": 6,
         "requiredTerrain": {
-         "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Grassland","Plain","Desert","Tundra","Snow"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles"
+            ]
         },
 		"turnsIntoTerrain": {
 			"terrainType": "Flatland",
@@ -352,7 +364,7 @@
 		},
 		"impassable": true,
 		"unbuildable": true,
-		"uniques": ["Fresh water","Must be adjacent to [0] [Coast] tiles"],
+		"uniques": ["Fresh water"],
 		"weight": 10
 	},
 	{
@@ -361,17 +373,20 @@
 		"food": 3,
 		"culture": 2,
 		"requiredTerrain": {
-             "terrainType": ["Flatland","Mountain","Hill"],
-             "baseTerrain": ["Plain","Grassland"]
+            "terrainType": ["Flatland","Mountain","Hill"],
+            "baseTerrain": ["Plain","Grassland"],
+            "extraConditions": [
+                "Must be adjacent to [0] [Coast] tiles",
+			    "Must be adjacent to [2] to [6] [Hill] tiles",
+			    "Must be adjacent to [0] to [2] [Mountain] tiles"
+            ]
         },
 		"turnsIntoTerrain": {
 			"terrainType": "Mountain"
 		},
 		"impassable": true,
 		"unbuildable": true,
-		"uniques": ["Must be adjacent to [0] [Coast] tiles",
-			"Must be adjacent to [2] to [6] [Hill] tiles",
-			"Must be adjacent to [0] to [2] [Mountain] tiles",
+		"uniques": [
 			"Grants [Altitude Training] ([double movement and +10% Strength in hills]) to adjacent [Land] units for the rest of the game"],
 		"weight": 10
 	}
