@@ -86,7 +86,7 @@ bitflags! {
     pub struct FractalFlags: u8 {
         /// When flag is set, The closer to the edge of the grid, the closer the value of the height to 0.
         ///
-        /// # Notice
+        /// # Notes
         ///
         /// When grid is wrapped in the X direction, ignored in the X direction.
         /// When grid is wrapped in the Y direction, ignored in the Y direction.
@@ -221,7 +221,7 @@ impl CvFractal {
     ///
     /// Panics if `grain` is invalid.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
     /// This function support to create both vertical and horizontal rifts.

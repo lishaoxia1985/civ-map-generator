@@ -120,7 +120,7 @@ impl MapParametersBuilder {
     ///
     /// - `world_grid`: The grid definition for the world.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// When defining a custom size grid with the custom size [`HexLayout`], please consider the following constraints:
     ///
@@ -318,7 +318,7 @@ pub struct WorldGrid {
 impl WorldGrid {
     /// Creates a new `WorldGrid` with the specified grid and world size.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Before calling this function, ensure that the grid's size matches the specified world size.
     /// This check is performed at runtime through `debug_assert!`, which only activates in debug mode.

@@ -26,7 +26,7 @@ impl TileMap {
     ///    That will make each civilization have a fair chance to win the game.
     /// 2. Assign the starting tiles to civilizations according to civilization's bias.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// TODO: We have not implemented to create the team for the civilization.
     pub fn balance_and_assign_civilization_starting_tiles(

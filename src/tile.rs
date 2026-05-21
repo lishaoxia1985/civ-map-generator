@@ -345,7 +345,7 @@ impl Tile {
     ///
     /// A tile is considered `coastal land` if it is not `Water` and has at least one neighboring tile that is `Coast`.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// If the tile is not `Water` and has at least one neighboring tile that is `Lake`, but it has no neighboring tile that is `Coast`, it is not `coastal land`.
     pub fn is_coastal_land(&self, tile_map: &TileMap) -> bool {
@@ -367,7 +367,7 @@ impl Tile {
     /// Because in the original game, the `Settler` unit can move 2 tiles per turn (ignoring terrain movement cost).
     /// If such a tile were considered a starting tile, a `Settler` can move to the coastal land and build a city in just one turn, which is functionally equivalent to choosing a coastal land tile as the starting tile of civilization directly.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// The tile with nature wonder can not be a starting tile of civilization.
     /// But we don't check the nature wonder in this function, because we generate the nature wonder after generating the civilization starting tile.

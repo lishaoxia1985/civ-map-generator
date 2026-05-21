@@ -166,7 +166,7 @@ pub trait Grid {
     /// But in the game, the camera is not exactly at the center of the map.
     /// So you might want to adjust the camera position slightly.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// For wrapped grids, returns the hypothetical unwrapped center position
     /// (since wrapped grids have no true center).
@@ -323,7 +323,7 @@ pub trait Grid {
 
     /// Checks if the given `OffsetCoordinate` is within the grid bounds.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// If you only need to verify whether an offset coordinate is within the grid bounds, you can use this function.
     ///
@@ -364,7 +364,7 @@ pub trait Grid {
     /// * `center`: The center cell.
     /// * `distance`: The distance from the center cell.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Before calling:
     /// - For WarpX grids: `distance` should be ≤ `self.width() / 2`.
@@ -395,7 +395,7 @@ pub trait Grid {
     /// - `center`: The center cell.
     /// - `distance`: The maximum distance from the center cell (inclusive).
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Before calling:
     /// - For WarpX grids: `distance` should be ≤ `self.width() / 2`.

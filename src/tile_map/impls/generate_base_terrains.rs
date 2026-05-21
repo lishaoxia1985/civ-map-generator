@@ -12,7 +12,7 @@ use crate::{
 impl TileMap {
     /// Generate base terrains except for [`BaseTerrain::Lake`].
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// We don't generate [`BaseTerrain::Lake`] here, because the lake is a special base terrain that is generated in the [`TileMap::generate_lakes`] and [`TileMap::add_lakes`] method.
     pub fn generate_base_terrains(&mut self, map_parameters: &MapParameters) {
@@ -149,7 +149,7 @@ impl TileMap {
     /// 2. They have at least one neighbor that is coast
     /// 3. A random number generator will be used to determine whether the tile will be expanded.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// This method is called after the [`TileMap::generate_base_terrains`] method.
     pub fn expand_coasts(&mut self, map_parameters: &MapParameters) {

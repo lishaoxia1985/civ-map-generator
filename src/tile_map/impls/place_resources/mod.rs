@@ -38,7 +38,7 @@ impl TileMap {
     ///
     /// This function will panic if the layer is not [`Layer::Bonus`] or [`Layer::Strategic`]. That means if you use this function to place luxury resources, it will panic.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Although in the original CIV5, this function has some code about placing luxury resources, but in fact, it is never used to place luxury resources. So, we forbid placing luxury resources in this function.
     /// If you want to place luxury resources, please use [`TileMap::place_specific_number_of_resources`].

@@ -397,7 +397,7 @@ impl TileMap {
     /// If the map has too little ocean, it will place as much as can fit.
     /// Before calling this function, make sure `coast_list` is shuffled.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// This operation will invalidate the Strategic Resource Impact Table for future operations,
     /// so it should always be called last, even after minor resource placements.

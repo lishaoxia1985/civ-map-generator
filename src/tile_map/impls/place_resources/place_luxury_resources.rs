@@ -786,7 +786,7 @@ impl TileMap {
     ///
     /// - `[Vec<Tile>; 15]`: An array of vectors of tiles, where each inner vector represents a list of candidate tiles matching a specific criteria.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// In the original code, `clear ice near city site` and `generate luxury tile lists at city site` are combined in one method.
     /// We have extracted the `clear ice near city site` into a separate method.

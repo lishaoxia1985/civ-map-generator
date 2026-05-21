@@ -224,7 +224,7 @@ impl TileMap {
     ///     - When layer is [`Layer::Strategic`], [`Layer::Luxury`] or [`Layer::Bonus`], [`Layer::Fish`], this argument is used to determine the ripple radius.
     ///     - When layer is other variants, this argument is ignored (must use [`u32::MAX`] as a placeholder).
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// You can place impact and ripples to forbid other elements to appear around a specific tile, even if you are not adding an element to this tile.
     /// See [`TileMap::normalize_civilization_starting_tile`] for an example.
@@ -363,7 +363,7 @@ impl TileMap {
     ///
     /// Panics in debug mode if `layer` is [`Layer::Civilization`]. If you want to place impact and ripples on the civilization layer, use [`TileMap::place_impact_and_ripples_for_civilization`].
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Different with the original code, we use the same impact value `(99)` for all layers, but the behavior is the same.
     ///
@@ -635,7 +635,7 @@ impl TileMap {
     // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
     /// Clear [`Feature::Ice`] from the map within a given radius of the city site.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
     /// We have extracted the `generate luxury plot lists at city site` into a separate method.
@@ -660,7 +660,7 @@ impl TileMap {
 // TODO: This function should be implemented in future.
 /// Determines the quantity per tile for each strategic resource's major deposit size.
 ///
-/// # Notice
+/// # Notes
 ///
 /// In some maps, If we cannot place oil in the sea, we should increase the resource amounts on land to compensate.
 pub fn get_major_strategic_resource_quantity_values(

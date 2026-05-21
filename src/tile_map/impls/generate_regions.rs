@@ -118,7 +118,7 @@ impl TileMap {
     /// - `divisions_num`: The number of divisions to make.
     /// - `region`: The region to divide.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// - Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
     ///   That means if [`MapParameters::MAX_CIVILIZATION_NUM`] is greater than 22, we don't need to rewrite this function.
@@ -626,7 +626,7 @@ pub struct Region {
     pub starting_tile: Tile,
     /// The start location condition of the region.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
     pub start_location_condition: OnceCell<StartLocationCondition>,
@@ -634,7 +634,7 @@ pub struct Region {
     ///
     /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::assign_luxury_roles`] to set this field.
     /// And after calling [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
@@ -672,7 +672,7 @@ impl Region {
 
     /// Get the region of the landmass according to the given `landmass_id`.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// We don't need to call [`Region::remove_dead_row_and_column()`] in this function,
     /// because [`TileMap::obtain_landmass_boundaries()`] has already ensured that there are no dead rows and columns in the rectangle.
@@ -864,7 +864,7 @@ impl Region {
     /// At first, the region is divided into two regions. Then, the second region is divided into two smaller regions.
     /// The fertility of each region is 1/3 of the original region's fertility.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// We don't need to call [`Region::remove_dead_row_and_column`] in this function,
     /// because the function has been called in [`Region::chop_into_two_regions`] function.

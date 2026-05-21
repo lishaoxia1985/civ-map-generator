@@ -569,7 +569,7 @@ impl TileMap {
     /// 1. Add hills to city state location's 1 radius if it has not enough hammer.
     /// 2. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// We don't place impact and ripples when we add bonus resources in this function.
     fn normalize_city_state(&mut self, tile: Tile) {

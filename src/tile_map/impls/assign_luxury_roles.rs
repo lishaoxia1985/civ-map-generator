@@ -28,7 +28,7 @@ impl TileMap {
     /// - then, radomly assign
     /// - then, disable
     ///
-    /// # Notice
+    /// # Notes
     ///
     /// Luxury roles must be assigned before placing City States.
     /// This is because civs who are forced to share their luxury type with other
