@@ -3,6 +3,7 @@ use std::cmp::Reverse;
 use std::collections::HashSet;
 
 use enum_map::EnumMap;
+use rand::RngExt;
 use rand::prelude::SliceRandom;
 use rand::{Rng, seq::IndexedRandom};
 

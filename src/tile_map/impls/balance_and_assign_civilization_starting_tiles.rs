@@ -2,7 +2,7 @@ use std::{cmp::max, collections::BTreeSet};
 
 use enum_map::Enum;
 use rand::{
-    Rng,
+    Rng, RngExt,
     seq::{IndexedRandom, SliceRandom},
 };
 
@@ -45,7 +45,7 @@ impl TileMap {
 
         // Take the civilization randomly as the starting civilization in the map.
         let mut start_civilization_list: Vec<_> = civilization_list
-            .choose_multiple(
+            .sample(
                 &mut self.random_number_generator,
                 map_parameters.world_size_type_profile.num_civilizations as usize,
             )

@@ -1,4 +1,4 @@
-use rand::{Rng, seq::IndexedRandom};
+use rand::{Rng, RngExt, seq::IndexedRandom};
 
 use crate::{
     grid::{

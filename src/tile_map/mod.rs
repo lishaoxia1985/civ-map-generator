@@ -37,7 +37,7 @@ use crate::{
 };
 use arrayvec::ArrayVec;
 use enum_map::{Enum, EnumMap, enum_map};
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{RngExt, SeedableRng, rngs::StdRng};
 use std::{
     cmp::{max, min},
     collections::{BTreeMap, HashMap},

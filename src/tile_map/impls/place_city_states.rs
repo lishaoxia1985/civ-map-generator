@@ -3,6 +3,7 @@ use std::cmp::min;
 use std::collections::{BTreeMap, HashSet};
 
 use enum_map::Enum;
+use rand::RngExt;
 use rand::seq::IndexedRandom;
 use rand::{Rng, seq::SliceRandom};
 
@@ -36,7 +37,7 @@ impl TileMap {
         let num_city_states = map_parameters.world_size_type_profile.num_city_states as usize;
 
         let mut start_city_state_list: Vec<_> = city_state_list
-            .choose_multiple(&mut self.random_number_generator, num_city_states)
+            .sample(&mut self.random_number_generator, num_city_states)
             .copied()
             .collect();
 

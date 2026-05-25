@@ -12,7 +12,7 @@ pub(crate) use place_bonus_resources::*;
 pub(crate) use place_luxury_resources::*;
 pub(crate) use place_strategic_resources::*;
 use rand::{
-    Rng,
+    Rng, RngExt,
     distr::{Distribution, weighted::WeightedIndex},
 };
 

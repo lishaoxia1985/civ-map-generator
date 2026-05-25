@@ -1,4 +1,4 @@
-use rand::{Rng, seq::SliceRandom};
+use rand::{Rng, RngExt, seq::SliceRandom};
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},

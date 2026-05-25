@@ -1,6 +1,6 @@
 use std::cmp::max;
 
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::{
     fractal::{CvFractal, FractalFlags},

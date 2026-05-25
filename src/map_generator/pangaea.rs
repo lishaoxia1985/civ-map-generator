@@ -1,5 +1,5 @@
 use glam::{DVec2, IVec2};
-use rand::Rng;
+use rand::RngExt;
 
 use crate::{
     fractal::{CvFractal, FractalFlags},

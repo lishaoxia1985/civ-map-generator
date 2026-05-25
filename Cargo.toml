@@ -16,11 +16,11 @@ rustdoc-args = ["--document-private-items"]
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 regex = "1.11"
-rand = "0.9"
+rand = "0.10"
 image = "0.25"
-glam = "0.30"
+glam = "0.33"
 enum-map = "2.7"
-bitflags = "2.9"
+bitflags = "2.11"
 arrayvec = "0.7"
 
 [build-dependencies]

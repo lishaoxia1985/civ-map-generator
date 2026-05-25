@@ -11,7 +11,7 @@ use image::{
     DynamicImage, GrayImage, ImageBuffer,
     imageops::{FilterType, resize},
 };
-use rand::{Rng, rngs::StdRng, seq::IndexedRandom};
+use rand::{RngExt, rngs::StdRng, seq::IndexedRandom};
 
 use crate::grid::{
     Cell, Grid, Size, WrapFlags, direction::Direction, hex_grid::HexGrid,

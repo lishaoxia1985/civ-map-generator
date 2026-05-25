@@ -5,7 +5,7 @@ use std::{
 
 use enum_map::Enum;
 use rand::{
-    Rng,
+    Rng, RngExt,
     distr::{Distribution, weighted::WeightedIndex},
     seq::{IndexedRandom, SliceRandom},
 };
