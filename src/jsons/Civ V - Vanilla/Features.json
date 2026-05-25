@@ -114,7 +114,7 @@
 			 "baseTerrain": ["Desert"]
 		},
 		"uniques": [
-			"Fresh water",
+			"Provide fresh water to adjacent land tiles",
 			"Rare feature",
 			"Only [All Road] improvements may be built on this tile",
 			"Always Fertility [4] for Map Generation",

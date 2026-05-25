@@ -348,6 +348,9 @@
 		"weight": 4
 	},
 	{// Will be introduced in Brave New World. Despite being a lake, it cannot be sailed on and it blocks line of sight like a mountain.
+     // Notes: In original Civ 5, The tile placed by Lake Victoria will turn into a 'Flatland' 'Plain' tile,
+     //        that's because original Civ 5 doesn't have a 'BaseTerrain' called 'Lake'.
+     //        We don't need to add "Provide fresh water to adjacent land tiles" unique to it because it's already included in the 'Lake' base terrain.
 		"name": "Lake Victoria",
 		"type": "NaturalWonder",
 		"food": 6,
@@ -359,12 +362,11 @@
             ]
         },
 		"turnsIntoTerrain": {
-			"terrainType": "Flatland",
-			"baseTerrain": "Plain"
+			"terrainType": "Water",
+			"baseTerrain": "Lake"
 		},
 		"impassable": true,
 		"unbuildable": true,
-		"uniques": ["Fresh water"],
 		"weight": 10
 	},
 	{

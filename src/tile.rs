@@ -331,7 +331,13 @@ impl Tile {
 
     /// Check if the tile is freshwater
     ///
-    /// Freshwater is not water and is adjacent to lake, oasis or has a river
+    /// Freshwater is not water and is adjacent to lake, oasis or has a river.
+    ///
+    /// # Notes
+    ///
+    /// We should check all base terrains and features of the neighboring tiles with `"Provide fresh water to adjacent land tiles"` unique,
+    /// not just `Lake` and `Oasis`, there we don't use `ruleset` as argument to check the unique because of performance.
+    /// Maybe in the future we will add a `ruleset` argument to `is_freshwater` function.
     pub fn is_freshwater(&self, tile_map: &TileMap) -> bool {
         let grid = tile_map.world_grid.grid;
         self.terrain_type(tile_map) != TerrainType::Water
