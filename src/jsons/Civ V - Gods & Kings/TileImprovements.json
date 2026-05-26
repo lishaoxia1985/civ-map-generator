@@ -442,7 +442,7 @@
 			  "terrainType": ["Flatland","Hill"],
 			  "baseTerrain": ["Tundra","Plain","Grassland","Desert","Snow"],
 			  "feature": null,
-			  "coastal": true
+			  "extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
 			}
 		],
 		"culture": 1,

@@ -48,12 +48,6 @@ pub struct RequiredTerrain {
     /// which means the required terrain can be freshwater or not.
     #[serde(default)]
     pub freshwater: Option<bool>,
-    /// When it's `None`, it means the required terrain will ignore this value,
-    /// which means the required terrain can be coastal land or not.
-    ///
-    /// A tile is considered `coastal` tile if it is not `Water` and has at least one neighboring tile that is `Coast`.
-    #[serde(default)]
-    pub coastal: Option<bool>,
     #[serde(default)]
     pub extra_conditions: Vec<String>,
 }
