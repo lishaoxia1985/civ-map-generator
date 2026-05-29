@@ -48,7 +48,10 @@
 		"culture": 1,
 		"greatPersonPoints": {"Great Merchant": 1},
 		"isWonder": true,
-		"uniques": ["Must be adjacent to [1] to [6] [Coast] tiles", "[+1] Movement <for [{Military} {Water}] units>",
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
+		"uniques": ["[+1] Movement <for [{Military} {Water}] units>",
 			"[+1] Sight <for [{Military} {Water}] units>", "Gain a free [Lighthouse] [in this city]"],
 		"requiredTech": "Sailing",
 		"quote": "'They that go down to the sea in ships, that do business in great waters; these see the works of the Lord, and his wonders in the deep.' - The Bible, Psalms 107:23-24"
@@ -60,7 +63,10 @@
 		"requiredNearbyImprovedResources": ["Marble", "Stone"],
 		"maintenance": 1,
 		"hurryCostModifier": 0,
-		"uniques": ["Must not be on [Plain]",
+		"requiredTerrain": { // Required the City Center is not on `Plain`
+			"baseTerrain": ["Grassland", "Tundra", "Snow", "Desert"]
+		},
+		"uniques": [
 			"[+1 Production] from [Stone] tiles [in this city]",
 			"[+1 Production] from [Marble] tiles [in this city]"],
 		"requiredTech": "Calendar"
@@ -112,7 +118,9 @@
 		"food": 2,
 		"production": 1,
 		"hurryCostModifier": 25,
-		"uniques": ["Must be on [River]"],
+		"requiredTerrain": {
+			"river": true
+		},
 		"requiredTech": "The Wheel"
 	},
 	{
@@ -121,7 +129,10 @@
 		"uniqueTo": "Aztecs",
 		"food": 2,
 		"production": 1,
-		"uniques": ["[+2 Food] from [Lakes] tiles [in this city]", "Must be next to [Fresh water]"],
+		"requiredTerrain": { 
+			"freshwater": true
+		},
+		"uniques": ["[+2 Food] from [Lakes] tiles [in this city]"],
 		"hurryCostModifier": 25,
 		"maintenance": 1,
 		"percentStatBonus": {"food": 15},
@@ -200,7 +211,10 @@
 		"cost": 75,
 		"hurryCostModifier": 25,
 		"maintenance": 1,
-		"uniques": ["Must be adjacent to [1] to [6] [Coast] tiles", "[+1 Food] from [Ocean] tiles [in this city]",
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
+		"uniques": ["[+1 Food] from [Ocean] tiles [in this city]",
 			"[+1 Food] from [Coast] tiles [in this city]", "[+1 Food] from [Fish] tiles [in this city]" ],
 		"requiredTech": "Optics"
 	},
@@ -219,8 +233,10 @@
 		"name": "Courthouse",
 		"maintenance": 4,
 		"hurryCostModifier": 50,
-		"uniques": ["Remove extra unhappiness from annexed cities",
-			"Can only be built [in annexed cities]"],
+		"requiredTerrain": {
+			"extraConditions": ["Can only be built [in annexed cities]"]
+		},
+		"uniques": ["Remove extra unhappiness from annexed cities"],
 		"requiredTech": "Mathematics"
 	},
 	{
@@ -245,7 +261,8 @@
 		"happiness": 5,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Colosseum] in all cities", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Colosseum",
+		"uniques": ["Cost increases by [30] per owned city"],
 		"requiredTech": "Construction"
 	},
 	{
@@ -262,7 +279,7 @@
 	{
 		"name": "Temple",
 		"culture": 3,
-		"requiredBuilding": "Monument",
+		"requiredBuildingInCity": "Monument",
 		"maintenance": 2,
 		"hurryCostModifier": 25,
 		"requiredTech": "Philosophy",
@@ -277,7 +294,7 @@
 		"uniques": ["Doubles Gold given to enemy if city is captured"],
 		"culture": 2,
 		"happiness": 2,
-		"requiredBuilding": "Monument",
+		"requiredBuildingInCity": "Monument",
 		"hurryCostModifier": 25,
 		"requiredTech": "Philosophy"
 	},
@@ -288,7 +305,7 @@
 		"maintenance": 0,
 		"hurryCostModifier": 25,
 		"culture": 4,
-		"requiredBuilding": "Monument",
+		"requiredBuildingInCity": "Monument",
 		"requiredTech": "Philosophy"
 	},
 	
@@ -299,7 +316,8 @@
 		"culture": 1,
 		"isNationalWonder": true,
 		"percentStatBonus": {"science": 50},
-		"uniques": ["Requires a [Library] in all cities", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Library",
+		"uniques": ["Cost increases by [30] per owned city"],
 		"requiredTech": "Philosophy"
 	},
 	{
@@ -316,7 +334,8 @@
 		"cost": 125,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Monument] in all cities", "[+25]% Great Person generation [in this city]", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Monument",
+		"uniques": ["[+25]% Great Person generation [in this city]", "Cost increases by [30] per owned city"],
 		"requiredTech": "Philosophy"
 	},
 	{
@@ -359,7 +378,8 @@
 		"cost": 125,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Barracks] in all cities", "All newly-trained [non-air] units [in this city] receive the [Morale] promotion",
+		"requiredBuildingInAllCities": "Barracks",
+		"uniques": ["All newly-trained [non-air] units [in this city] receive the [Morale] promotion",
 			"Cost increases by [30] per owned city"],
 		"requiredTech": "Iron Working"
 	},
@@ -370,7 +390,10 @@
 		"gold": 5,
 		"greatPersonPoints": {"Great Merchant": 1},
 		"isWonder": true,
-		"uniques": ["Must be adjacent to [1] to [6] [Coast] tiles", "[+1 Gold] from [Water] tiles [in this city]"],
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
+		"uniques": ["[+1 Gold] from [Water] tiles [in this city]"],
 		"requiredTech": "Bronze Working",
 		"quote": "'Why man, he doth bestride the narrow world like a colossus, and we petty men walk under his huge legs, and peep about to find ourselves dishonorable graves.' - William Shakespeare, Julius Caesar"
 	},
@@ -380,7 +403,10 @@
 	// Column 5
 	{
 		"name": "Garden",
-		"uniques": ["[+25]% Great Person generation [in this city]", "Must be next to [Fresh water]"],
+		"requiredTerrain": { 
+			"freshwater": true
+		},
+		"uniques": ["[+25]% Great Person generation [in this city]"],
 		"hurryCostModifier": 25,
 		"maintenance": 1,
 		"requiredTech": "Theology"
@@ -425,7 +451,8 @@
 		"gold": 8,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Market] in all cities", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Market",
+		"uniques": ["Cost increases by [30] per owned city"],
 		"requiredTech": "Currency"
 	},
 	{
@@ -434,7 +461,10 @@
 		"greatPersonPoints": {"Great Merchant": 1},
 		"culture": 1,
 		"isWonder": true,
-		"uniques": ["[+25]% [Gold] from Trade Routes","Must have an owned [Mountain] within [2] tiles"],
+		"requiredTerrain": {
+			"extraConditions": ["Must have an owned [Mountain] within [2] tiles"]
+		},
+		"uniques": ["[+25]% [Gold] from Trade Routes"],
 		"requiredTech": "Currency",
 		"quote": "'Few romances can ever surpass that of the granite citadel on top of the beetling precipices of Machu Picchu, the crown of Inca Land.' - Hiram Bingham"
 	},
@@ -475,8 +505,11 @@
 		"cost": 120,
 		"maintenance": 2,
 		"hurryCostModifier": 25,
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
 		"uniques": ["[+1 Production] from [Water resource] tiles [in this city]",
-			"Connects trade routes over water","Must be adjacent to [1] to [6] [Coast] tiles"],
+			"Connects trade routes over water"],
 		"requiredTech": "Compass"
 	},
 	{
@@ -485,7 +518,7 @@
 		"hurryCostModifier": 15,
 		"percentStatBonus": {"science": 33},
 		"specialistSlots": {"Scientist": 2},
-		"requiredBuilding": "Library",
+		"requiredBuildingInCity": "Library",
 		"uniques": ["[+2 Science] from [Jungle] tiles [in this city]"],
 		"requiredTech": "Education"
 	},
@@ -498,7 +531,7 @@
 		"percentStatBonus": {"science": 33},
 		"specialistSlots": {"Scientist": 2},
 		"culture": 3,
-		"requiredBuilding": "Library",
+		"requiredBuildingInCity": "Library",
 		"uniques": ["[+2 Science] from [Jungle] tiles [in this city]"],
 		"requiredTech": "Education"
 	},
@@ -508,7 +541,8 @@
 		"science": 3,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [University] in all cities", "Free Technology", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "University",
+		"uniques": ["Free Technology", "Cost increases by [30] per owned city"],
 		"requiredTech": "Education"
 	},
 	{
@@ -525,7 +559,7 @@
 		"cityStrength": 7,
 		"cityHealth": 25,
 		"hurryCostModifier": 25,
-		"requiredBuilding": "Walls",
+		"requiredBuildingInCity": "Walls",
 		"requiredTech": "Chivalry",
 		"uniques": ["Destroyed when the city is captured"]
 	},
@@ -538,7 +572,7 @@
 		"cityHealth": 25,
 		"culture": 2,
 		"hurryCostModifier": 25,
-		"requiredBuilding": "Walls",
+		"requiredBuildingInCity": "Walls",
 		"uniques": ["[+1 Gold] [in this city] <after discovering [Flight]>", "Destroyed when the city is captured"],
 		"requiredTech": "Chivalry"
 	},
@@ -558,14 +592,15 @@
 		"production": 8,
 		"culture": 1,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Workshop] in all cities", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Workshop",
+		"uniques": ["Cost increases by [30] per owned city"],
 		"requiredTech": "Machinery"
 	},
 	{
 		"name": "Armory",
 		"hurryCostModifier": 25,
 		"maintenance": 1,
-		"requiredBuilding": "Barracks",
+		"requiredBuildingInCity": "Barracks",
 		"uniques": ["New [Military] units start with [15] Experience [in this city]", "Destroyed when the city is captured"],
 		"requiredTech": "Machinery"
 	},
@@ -578,8 +613,10 @@
 		"maintenance": 0,
 		"hurryCostModifier": 15,
 		"percentStatBonus": {"science": 50},
-		"requiredBuilding": "Library",
-		"uniques": ["Must be adjacent to [1] to [6] [Mountain] tiles"],
+		"requiredBuildingInCity": "Library",
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Mountain] tiles"]
+		},
 		"requiredTech": "Astronomy"
 	},
 	{
@@ -587,7 +624,7 @@
 		"culture": 4,
 		"specialistSlots": {"Artist": 1},
 		"hurryCostModifier": 10,
-		"requiredBuilding": "Temple",
+		"requiredBuildingInCity": "Temple",
 		"maintenance": 2,
 		"requiredTech": "Acoustics",
 		"uniques": ["Destroyed when the city is captured"]
@@ -607,7 +644,7 @@
 		"specialistSlots": {"Merchant": 1},
 		"hurryCostModifier": 15,
 		"percentStatBonus": {"gold": 25},
-		"requiredBuilding": "Market",
+		"requiredBuildingInCity": "Market",
 		"requiredTech": "Banking"
 	},
 	{
@@ -619,7 +656,7 @@
 		"happiness": 2,
 		"hurryCostModifier": 15,
 		"percentStatBonus": {"gold": 25},
-		"requiredBuilding": "Market",
+		"requiredBuildingInCity": "Market",
 		"requiredTech": "Banking"
 	},
 	{
@@ -636,7 +673,7 @@
 		"happiness": 3,
 		"hurryCostModifier": 10,
 		"maintenance": 2,
-		"requiredBuilding": "Colosseum",
+		"requiredBuildingInCity": "Colosseum",
 		"requiredTech": "Printing Press"
 	},
 	// Column 8
@@ -644,9 +681,12 @@
 		"name": "Seaport",
 		"hurryCostModifier": 25,
 		"maintenance": 3,
-		"requiredBuilding": "Harbor",
+		"requiredBuildingInCity": "Harbor",
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
 		"uniques": ["[+1 Production, +1 Gold] from [Water resource] tiles [in this city]",
-			"Must be adjacent to [1] to [6] [Coast] tiles", "[+15]% Production when constructing [Water] units [in this city]"],
+			"[+15]% Production when constructing [Water] units [in this city]"],
 		"requiredTech": "Navigation"
 	},
 	{
@@ -655,7 +695,8 @@
 		"percentStatBonus": {"culture": 50},
 		"culture": 5,
 		"isNationalWonder": true,
-		"uniques": ["Requires a [Opera House] in all cities", "Cost increases by [30] per owned city"],
+		"requiredBuildingInAllCities": "Opera House",
+		"uniques": ["Cost increases by [30] per owned city"],
 		"requiredTech": "Acoustics"
 	},
 	{
@@ -683,7 +724,10 @@
 		"specialistSlots": {"Engineer": 1},
 		"hurryCostModifier": 25,
 		"maintenance": 2,
-		"uniques": ["Must not be on [Hill]", "[+10]% Production when constructing [All] buildings [in this city]"],
+		"requiredTerrain": { // Required the City Center is not on `Hill`
+			"terrainType": ["Flatland"]
+		},
+		"uniques": ["[+10]% Production when constructing [All] buildings [in this city]"],
 		"requiredTech": "Economics"
 	},
 	{
@@ -704,7 +748,7 @@
 		"name": "Museum",
 		"culture": 5,
 		"specialistSlots": {"Artist": 2},
-		"requiredBuilding": "Opera House",
+		"requiredBuildingInCity": "Opera House",
 		"maintenance": 3,
 		"hurryCostModifier": 0,
 		"requiredTech": "Archaeology",
@@ -723,7 +767,7 @@
 		"name": "Public School",
 		"science": 3,
 		"specialistSlots": {"Scientist": 1},
-		"requiredBuilding": "University",
+		"requiredBuildingInCity": "University",
 		"maintenance": 3,
 		"hurryCostModifier": 0,
 		"uniques": ["[+1 Science] per [2] population [in this city]"],
@@ -735,7 +779,7 @@
 		"production": 4,
 		"percentStatBonus": {"production": 10},
 		"specialistSlots": {"Engineer": 2},
-		"requiredBuilding": "Workshop",
+		"requiredBuildingInCity": "Workshop",
 		"maintenance": 3,
 		"hurryCostModifier": 0,
 		"requiredResource": "Coal",
@@ -755,7 +799,7 @@
 		"name": "Military Academy",
 		"hurryCostModifier": 0,
 		"maintenance": 1,
-		"requiredBuilding": "Armory",
+		"requiredBuildingInCity": "Armory",
 		"uniques": ["New [Military] units start with [15] Experience [in this city]", "Destroyed when the city is captured"],
 		"requiredTech": "Military Science"
 	},
@@ -774,7 +818,7 @@
 		"cityStrength": 9,
 		"cityHealth": 25,
 		"hurryCostModifier": 25,
-		"requiredBuilding": "Castle",
+		"requiredBuildingInCity": "Castle",
 		"requiredTech": "Rifling",
 		"uniques": ["Destroyed when the city is captured"]
 	},
@@ -782,7 +826,7 @@
 	{
 		"name": "Hospital",
 		"food": 5,
-		"requiredBuilding": "Aqueduct",
+		"requiredBuildingInCity": "Aqueduct",
 		"maintenance": 2,
 		"hurryCostModifier": 0,
 		"requiredTech": "Biology"
@@ -793,7 +837,7 @@
 		"percentStatBonus": {"gold": 25},
 		"specialistSlots": {"Merchant": 2},
 		"hurryCostModifier": 15,
-		"requiredBuilding": "Bank",
+		"requiredBuildingInCity": "Bank",
 		"requiredTech": "Electricity"
 	},
 
@@ -804,7 +848,7 @@
 		"name": "Broadcast Tower",
 		"culture": 3,
 		"percentStatBonus": {"culture": 33},
-		"requiredBuilding": "Museum",
+		"requiredBuildingInCity": "Museum",
 		"maintenance": 3,
 		"requiredTech": "Radio",
 		"uniques": ["Destroyed when the city is captured"]
@@ -834,7 +878,7 @@
 		"cityStrength": 12,
 		"cityHealth": 25,
 		"hurryCostModifier": 25,
-		"requiredBuilding": "Arsenal",
+		"requiredBuildingInCity": "Arsenal",
 		"requiredTech": "Telegraph",
 		"uniques": ["Destroyed when the city is captured"]
 	},
@@ -852,7 +896,7 @@
 		"science": 4,
 		"percentStatBonus": {"science": 50},
 		"specialistSlots": {"Scientist": 1},
-		"requiredBuilding": "Public School",
+		"requiredBuildingInCity": "Public School",
 		"maintenance": 3,
 		"requiredTech": "Plastics"
 	},
@@ -862,7 +906,7 @@
 	// Column 13
 	{
 		"name": "Medical Lab",
-		"requiredBuilding": "Hospital",
+		"requiredBuildingInCity": "Hospital",
 		"maintenance": 3,
 		"requiredTech": "Pharmaceuticals",
 		"uniques": ["[25]% Food is carried over after population increases [in this city]"]
@@ -872,13 +916,16 @@
 		"requiredResource": "Aluminum",
 		"hurryCostModifier": 0,
 		"maintenance": 3,
-		"uniques": ["Must be on [River]","[+1 Production] from [River] tiles [in this city]"],
+		"requiredTerrain": {
+			"river": true
+		},
+		"uniques": ["[+1 Production] from [River] tiles [in this city]"],
 		"requiredTech": "Plastics"
 	},
 	{
 		"name": "Stadium",
 		"happiness": 4,
-		"requiredBuilding": "Theatre",
+		"requiredBuildingInCity": "Theatre",
 		"maintenance": 2,
 		"requiredTech": "Mass Media"
 	},
@@ -887,7 +934,10 @@
 		"isWonder": true,
 		"greatPersonPoints": {"Great Artist": 2},
 		"percentStatBonus": {"culture": 50},
-		"uniques": ["Free Social Policy","Must be adjacent to [1] to [6] [Coast] tiles"],
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Coast] tiles"]
+		},
+		"uniques": ["Free Social Policy"],
 		"requiredTech": "Mass Media",
 		"quote": "'Those who lose dreaming are lost.' - Australian Aboriginal saying"
 	},
@@ -912,16 +962,19 @@
 		"name": "Solar Plant",
 		"production": 5,
 		"percentStatBonus": {"production": 15},
-		"requiredBuilding": "Factory",
+		"requiredBuildingInCity": "Factory",
 		"maintenance": 3,
 		"requiredTech": "Ecology",
-		"uniques": ["Must be adjacent to [1] to [6] [Desert] tiles", "Only available <in cities without a [Nuclear Plant]>"]
+		"requiredTerrain": {
+			"extraConditions": ["Must be adjacent to [1] to [6] [Desert] tiles"]
+		},
+		"uniques": ["Only available <in cities without a [Nuclear Plant]>"]
 	},
 	{
 		"name": "Nuclear Plant",
 		"production": 5,
 		"percentStatBonus": {"production": 15},
-		"requiredBuilding": "Factory",
+		"requiredBuildingInCity": "Factory",
 		"maintenance": 3,
 		"requiredResource": "Uranium",
 		"requiredTech": "Nuclear Fission",
@@ -931,8 +984,10 @@
 		"name": "Apollo Program",
 		"cost": 750,
 		"isNationalWonder": true,
-		"uniques": ["Enables construction of Spaceship parts", "Triggers a global alert upon completion", 
-			"Hidden when [Scientific] Victory is disabled"],
+		"requiredTerrain": {
+			"extraConditions": ["Hidden when [Scientific] Victory is disabled"]
+		},
+		"uniques": ["Enables construction of Spaceship parts", "Triggers a global alert upon completion"],
 		"requiredTech": "Rocketry"
 	},
 
@@ -944,7 +999,7 @@
 		"production": 3,
 		"requiredResource": "Aluminum",
 		"cost": 360,
-		"requiredBuilding": "Factory",
+		"requiredBuildingInCity": "Factory",
 		"uniques": ["[+50]% Production when constructing [Spaceship part] units [in this city]"],
 		"requiredTech": "Robotics"
 	},
@@ -955,7 +1010,10 @@
 		"culture": 1,
 		"greatPersonPoints": {"Great Merchant": 2},
 		"requiredTech": "Globalization",
-		"uniques": ["Triggers voting for the Diplomatic Victory", "Hidden when [Diplomatic] Victory is disabled", "Triggers a global alert upon completion"],
+		"requiredTerrain": {
+			"extraConditions": ["Hidden when [Diplomatic] Victory is disabled"]
+		},
+		"uniques": ["Triggers voting for the Diplomatic Victory", "Triggers a global alert upon completion"],
 		"quote": "'More than ever before in human history, we share a common destiny. We can master it only if we face it together. And that is why we have the United Nations.' - Kofi Annan"
 	},
 
@@ -965,8 +1023,11 @@
 		"name": "Utopia Project",
 		"cost": 1500,
 		"isNationalWonder": true,
-		"uniques": ["Hidden until [5] social policy branches have been completed", "Triggers a global alert upon build start",
-			"Triggers a Cultural Victory upon completion", "Hidden when [Cultural] Victory is disabled"]
+		"requiredTerrain": {
+			"extraConditions": ["Hidden until [5] social policy branches have been completed", "Hidden when [Cultural] Victory is disabled"]
+		},
+		"uniques": ["Triggers a global alert upon build start",
+			"Triggers a Cultural Victory upon completion"]
 	}
 	
 ]
