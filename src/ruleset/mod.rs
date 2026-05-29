@@ -35,7 +35,6 @@ pub mod specialist;
 pub mod tech;
 pub mod terrain_type;
 pub mod tile_improvement;
-pub mod unique;
 pub mod unit;
 pub mod unit_promotion;
 pub mod unit_type;

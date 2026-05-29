@@ -8,9 +8,10 @@ use rand::prelude::SliceRandom;
 use rand::{Rng, seq::IndexedRandom};
 
 use crate::map_parameters::MapParameters;
+use crate::ruleset::common::Unique;
 use crate::{
     grid::Grid,
-    ruleset::{Ruleset, unique::Unique},
+    ruleset::Ruleset,
     tile::Tile,
     tile_component::*,
     tile_map::{Layer, TileMap},
