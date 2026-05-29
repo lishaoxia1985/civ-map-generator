@@ -15,11 +15,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::de::DeserializeOwned;
 
 pub mod base_terrain;
 pub mod belief;
 pub mod building;
+pub mod common;
 pub mod difficulty;
 pub mod era;
 pub mod feature;
@@ -40,36 +41,15 @@ pub mod unit_promotion;
 pub mod unit_type;
 
 use crate::ruleset::{
-    base_terrain::BaseTerrainInfo, belief::Belief, building::Building, difficulty::Difficulty,
-    era::Era, feature::FeatureInfo, global_unique::GlobalUnique, nation::NationInfo,
-    natural_wonder::NaturalWonderInfo, policy::PolicyBranch, quest::Quest, resource::TileResource,
-    ruin::Ruin, specialist::Specialist, tech::TechColumn, terrain_type::TerrainTypeInfo,
-    tile_improvement::TileImprovement, unit::Unit, unit_promotion::UnitPromotion,
-    unit_type::UnitType,
+    base_terrain::BaseTerrainInfo, belief::Belief, building::Building, common::Name,
+    difficulty::Difficulty, era::Era, feature::FeatureInfo, global_unique::GlobalUnique,
+    nation::NationInfo, natural_wonder::NaturalWonderInfo, policy::PolicyBranch, quest::Quest,
+    resource::TileResource, ruin::Ruin, specialist::Specialist, tech::TechColumn,
+    terrain_type::TerrainTypeInfo, tile_improvement::TileImprovement, unit::Unit,
+    unit_promotion::UnitPromotion, unit_type::UnitType,
 };
 
 use self::tech::Technology;
-pub trait Name {
-    fn name(&self) -> String;
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Yields {
-    #[serde(default)]
-    pub food: i8,
-    #[serde(default)]
-    pub production: i8,
-    #[serde(default)]
-    pub science: i8,
-    #[serde(default)]
-    pub gold: i8,
-    #[serde(default)]
-    pub culture: i8,
-    #[serde(default)]
-    pub faith: i8,
-    #[serde(default)]
-    pub happiness: i8,
-}
 
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> HashMap<String, T> {
     let json_string_without_comment = load_json_file_and_strip_json_comments(path);

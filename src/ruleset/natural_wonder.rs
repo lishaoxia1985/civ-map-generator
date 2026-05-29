@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ruleset::Yields,
+    ruleset::common::{RequiredTerrain, Yields},
     tile_component::{BaseTerrain, TerrainType},
 };
 
@@ -39,23 +39,6 @@ impl NaturalWonderInfo {
     pub fn has_unique(&self, unique: &str) -> bool {
         self.uniques.iter().any(|x| x == unique)
     }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RequiredTerrain {
-    pub terrain_type: Vec<TerrainType>,
-    pub base_terrain: Vec<BaseTerrain>,
-    /// When it's `None`, it means the required terrain will ignore this value,
-    /// which means the required terrain can be freshwater or not.
-    ///
-    /// # Notes
-    ///
-    /// Although it occurs in the XML file of the original CIV5 game, it be never used.
-    #[serde(default)]
-    pub freshwater: Option<bool>,
-    #[serde(default)]
-    pub extra_conditions: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

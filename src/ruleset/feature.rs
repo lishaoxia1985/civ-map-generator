@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    ruleset::Yields,
-    tile_component::{BaseTerrain, TerrainType},
-};
+use crate::ruleset::common::{RequiredTerrain, Yields};
 
 use super::Name;
 
@@ -44,11 +41,4 @@ impl FeatureInfo {
     pub fn has_unique(&self, unique: &str) -> bool {
         self.uniques.iter().any(|x| x == unique)
     }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RequiredTerrain {
-    pub terrain_type: Vec<TerrainType>,
-    pub base_terrain: Vec<BaseTerrain>,
 }
