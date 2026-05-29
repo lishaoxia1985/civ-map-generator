@@ -1,5 +1,5 @@
 use std::{
-    cell::OnceCell,
+    sync::OnceLock,
     cmp::{max, min},
     iter::Once,
 };
@@ -629,7 +629,7 @@ pub struct Region {
     /// # Notes
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
-    pub start_location_condition: OnceCell<StartLocationCondition>,
+    pub start_location_condition: OnceLock<StartLocationCondition>,
     /// The exclusive luxury resource of the region.
     ///
     /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
@@ -638,7 +638,7 @@ pub struct Region {
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::assign_luxury_roles`] to set this field.
     /// And after calling [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
-    pub exclusive_luxury: OnceCell<Resource>,
+    pub exclusive_luxury: OnceLock<Resource>,
 }
 
 impl Region {
@@ -660,8 +660,8 @@ impl Region {
             terrain_statistic: TerrainStatistic::default(),
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
-            start_location_condition: OnceCell::new(),
-            exclusive_luxury: OnceCell::new(),
+            start_location_condition: OnceLock::new(),
+            exclusive_luxury: OnceLock::new(),
         }
     }
 
