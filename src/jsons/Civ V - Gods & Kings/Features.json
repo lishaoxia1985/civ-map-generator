@@ -130,7 +130,8 @@
 		"defenceBonus": -0.1,
 		"requiredTerrain": {
 			 "terrainType": ["Flatland"],
-			 "baseTerrain": ["Desert"]
+			 "baseTerrain": ["Desert"],
+			 "river": true
 		},
 		"uniques": [
 			"Always Fertility [5] for Map Generation",
