@@ -56,7 +56,7 @@ impl TileMap {
                 .terrain_statistic
                 .get()
                 .unwrap();
-            let starting_tile = self.region_list[region_index].starting_tile;
+            let starting_tile = *self.region_list[region_index].starting_tile.get().unwrap();
             let exclusive_luxury = *self.region_list[region_index]
                 .exclusive_luxury
                 .get()
@@ -444,7 +444,7 @@ impl TileMap {
         //   4. Types from other regions, if no random, Special Case, or CS types are available.
         if map_parameters.resource_setting != ResourceSetting::Sparse {
             for region_index in 0..self.region_list.len() {
-                let starting_tile = self.region_list[region_index].starting_tile;
+                let starting_tile = *self.region_list[region_index].starting_tile.get().unwrap();
                 let allowed_luxuries =
                     self.get_list_of_allowable_luxuries_at_city_site(starting_tile, 2);
 

@@ -102,7 +102,10 @@ impl TileMap {
                 self.iterate_through_candidate_tile_list(tile_list, region);
 
             if let Some(election1_tile) = eletion1_tile {
-                self.region_list[region_index].starting_tile = election1_tile;
+                self.region_list[region_index]
+                    .starting_tile
+                    .set(election1_tile)
+                    .unwrap();
                 self.place_impact_and_ripples(election1_tile, Layer::Civilization, u32::MAX);
                 return (true, false);
             }
@@ -118,7 +121,10 @@ impl TileMap {
             .map(|&(tile, _)| tile);
 
         if let Some(max_score_tile) = max_score_tile {
-            self.region_list[region_index].starting_tile = max_score_tile;
+            self.region_list[region_index]
+                .starting_tile
+                .set(max_score_tile)
+                .unwrap();
             self.place_impact_and_ripples(max_score_tile, Layer::Civilization, u32::MAX);
             (true, false)
         } else {
@@ -129,7 +135,10 @@ impl TileMap {
             tile.set_base_terrain(self, BaseTerrain::Grassland);
             tile.clear_feature(self);
             tile.clear_natural_wonder(self);
-            self.region_list[region_index].starting_tile = tile;
+            self.region_list[region_index]
+                .starting_tile
+                .set(tile)
+                .unwrap();
             self.place_impact_and_ripples(tile, Layer::Civilization, u32::MAX);
             (false, true)
         }
@@ -247,7 +256,10 @@ impl TileMap {
                     self.iterate_through_candidate_tile_list(tile_list, region);
 
                 if let Some(election1_tile) = eletion1_tile {
-                    self.region_list[region_index].starting_tile = election1_tile;
+                    self.region_list[region_index]
+                        .starting_tile
+                        .set(election1_tile)
+                        .unwrap();
                     self.place_impact_and_ripples(election1_tile, Layer::Civilization, u32::MAX);
                     return (true, false);
                 }
@@ -381,7 +393,10 @@ impl TileMap {
                         self.evaluate_candidate_tile(closest_tile, region);
 
                     // Assign this tile as the start for this region.
-                    self.region_list[region_index].starting_tile = closest_tile;
+                    self.region_list[region_index]
+                        .starting_tile
+                        .set(closest_tile)
+                        .unwrap();
                     self.place_impact_and_ripples(closest_tile, Layer::Civilization, u32::MAX);
                     return (true, false);
                 }
@@ -399,7 +414,10 @@ impl TileMap {
             .map(|&(tile, _)| tile);
 
         if let Some(max_score_tile) = max_score_tile {
-            self.region_list[region_index].starting_tile = max_score_tile;
+            self.region_list[region_index]
+                .starting_tile
+                .set(max_score_tile)
+                .unwrap();
             self.place_impact_and_ripples(max_score_tile, Layer::Civilization, u32::MAX);
             (true, false)
         } else {
@@ -499,7 +517,10 @@ impl TileMap {
                     self.iterate_through_candidate_tile_list(tile_list, region);
 
                 if let Some(election1_tile) = eletion1_tile {
-                    self.region_list[region_index].starting_tile = election1_tile;
+                    self.region_list[region_index]
+                        .starting_tile
+                        .set(election1_tile)
+                        .unwrap();
                     self.place_impact_and_ripples(election1_tile, Layer::Civilization, u32::MAX);
                     return (true, false);
                 }
@@ -633,7 +654,10 @@ impl TileMap {
                         self.evaluate_candidate_tile(closest_tile, region);
 
                     // Assign this tile as the start for this region.
-                    self.region_list[region_index].starting_tile = closest_tile;
+                    self.region_list[region_index]
+                        .starting_tile
+                        .set(closest_tile)
+                        .unwrap();
                     self.place_impact_and_ripples(closest_tile, Layer::Civilization, u32::MAX);
                     return (true, false);
                 }
@@ -651,7 +675,10 @@ impl TileMap {
             .map(|&(tile, _)| tile);
 
         if let Some(max_score_tile) = max_score_tile {
-            self.region_list[region_index].starting_tile = max_score_tile;
+            self.region_list[region_index]
+                .starting_tile
+                .set(max_score_tile)
+                .unwrap();
             self.place_impact_and_ripples(max_score_tile, Layer::Civilization, u32::MAX);
             (true, false)
         } else {
@@ -662,7 +689,10 @@ impl TileMap {
             tile.set_base_terrain(self, BaseTerrain::Grassland);
             tile.clear_feature(self);
             tile.clear_natural_wonder(self);
-            self.region_list[region_index].starting_tile = tile;
+            self.region_list[region_index]
+                .starting_tile
+                .set(tile)
+                .unwrap();
             self.place_impact_and_ripples(tile, Layer::Civilization, u32::MAX);
             (false, true)
         }

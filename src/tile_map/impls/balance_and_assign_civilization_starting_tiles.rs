@@ -64,7 +64,7 @@ impl TileMap {
             self.starting_tile_and_civilization = start_civilization_list
                 .iter()
                 .zip(self.region_list.iter())
-                .map(|(&civilization, region)| (region.starting_tile, civilization))
+                .map(|(&civilization, region)| (*region.starting_tile.get().unwrap(), civilization))
                 .collect();
             // TODO: Set the civilization to the team in the future.
             return;
@@ -159,8 +159,10 @@ impl TileMap {
                             .chain(regions_with_lake_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
+                        let starting_tile =
+                            *self.region_list[region_index].starting_tile.get().unwrap();
                         self.starting_tile_and_civilization
-                            .insert(self.region_list[region_index].starting_tile, civilization);
+                            .insert(starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     });
@@ -219,8 +221,10 @@ impl TileMap {
                             .chain(regions_with_near_river_start.iter()),
                     )
                     .for_each(|(civilization, &region_index)| {
+                        let starting_tile =
+                            *self.region_list[region_index].starting_tile.get().unwrap();
                         self.starting_tile_and_civilization
-                            .insert(self.region_list[region_index].starting_tile, civilization);
+                            .insert(starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     });
@@ -273,8 +277,10 @@ impl TileMap {
                                 .chain(fallbacks_with_near_river_start.iter()),
                         )
                         .for_each(|(civilization, &region_index)| {
+                            let starting_tile =
+                                *self.region_list[region_index].starting_tile.get().unwrap();
                             self.starting_tile_and_civilization
-                                .insert(self.region_list[region_index].starting_tile, civilization);
+                                .insert(starting_tile, civilization);
                             // Remove region index that has been assigned from region index list
                             region_index_list.remove(&region_index);
                         });
@@ -346,8 +352,10 @@ impl TileMap {
                     if let Some(&region_index) =
                         candidate_regions.choose(&mut self.random_number_generator)
                     {
+                        let starting_tile =
+                            *self.region_list[region_index].starting_tile.get().unwrap();
                         self.starting_tile_and_civilization
-                            .insert(self.region_list[region_index].starting_tile, civilization);
+                            .insert(starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     } else {
@@ -393,8 +401,10 @@ impl TileMap {
                     if let Some(&region_index) =
                         candidate_regions.choose(&mut self.random_number_generator)
                     {
+                        let starting_tile =
+                            *self.region_list[region_index].starting_tile.get().unwrap();
                         self.starting_tile_and_civilization
-                            .insert(self.region_list[region_index].starting_tile, civilization);
+                            .insert(starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     }
@@ -421,8 +431,10 @@ impl TileMap {
                     );
 
                     if let Some(region_index) = region_index {
+                        let starting_tile =
+                            *self.region_list[region_index].starting_tile.get().unwrap();
                         self.starting_tile_and_civilization
-                            .insert(self.region_list[region_index].starting_tile, civilization);
+                            .insert(starting_tile, civilization);
                         // Remove region index that has been assigned from region index list
                         region_index_list.remove(&region_index);
                     }
@@ -463,8 +475,10 @@ impl TileMap {
                 if let Some(&region_index) =
                     candidate_regions.choose(&mut self.random_number_generator)
                 {
+                    let starting_tile =
+                        *self.region_list[region_index].starting_tile.get().unwrap();
                     self.starting_tile_and_civilization
-                        .insert(self.region_list[region_index].starting_tile, civilization);
+                        .insert(starting_tile, civilization);
                     // Remove region index that has been assigned from region index list
                     region_index_list.remove(&region_index);
                 }
@@ -489,8 +503,9 @@ impl TileMap {
             .iter()
             .zip(region_index_list.iter())
             .for_each(|(&civilization, &region_index)| {
+                let starting_tile = *self.region_list[region_index].starting_tile.get().unwrap();
                 self.starting_tile_and_civilization
-                    .insert(self.region_list[region_index].starting_tile, civilization);
+                    .insert(starting_tile, civilization);
             });
         // TODO: Set the civilization to the team in the future.
     }
@@ -647,7 +662,7 @@ impl TileMap {
     ) {
         let grid = self.world_grid.grid;
 
-        let starting_tile = self.region_list[region_index].starting_tile;
+        let starting_tile = *self.region_list[region_index].starting_tile.get().unwrap();
 
         let mut inner_four_food = 0;
         let mut inner_three_food = 0;
@@ -1320,7 +1335,7 @@ impl TileMap {
 
         let grid = self.world_grid.grid;
 
-        let starting_tile = self.region_list[region_index].starting_tile;
+        let starting_tile = self.region_list[region_index].starting_tile.get().unwrap();
 
         let mut iron_list = Vec::new();
         let mut horse_list = Vec::new();

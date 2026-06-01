@@ -618,12 +618,12 @@ pub struct Region {
     pub fertility_sum: i32,
     /// The number of tiles in the region.
     pub tile_count: i32,
-    /// The terrain statistic of the region. Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
+    /// The terrain statistic of the region. Ensure that method [`Region::measure_terrain`] has been called before accessing this field.
     pub terrain_statistic: OnceLock<TerrainStatistic>,
-    /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field, as it will be meaningless otherwise.
+    /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field.
     pub region_type: OnceLock<RegionType>,
-    /// The starting tile of the civilization in this region.
-    pub starting_tile: Tile,
+    /// The starting tile of the civilization in this region. Ensure that method [`TileMap::choose_civilization_starting_tiles`] has been called before accessing this field.
+    pub starting_tile: OnceLock<Tile>,
     /// The start location condition of the region.
     ///
     /// # Notes
@@ -659,7 +659,7 @@ impl Region {
             tile_count,
             terrain_statistic: OnceLock::new(),
             region_type: OnceLock::new(),
-            starting_tile: Tile::new(usize::MAX),
+            starting_tile: OnceLock::new(),
             start_location_condition: OnceLock::new(),
             exclusive_luxury: OnceLock::new(),
         }

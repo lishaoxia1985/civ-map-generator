@@ -468,7 +468,7 @@ impl TileMap {
         let mut fish_list = Vec::new();
 
         for i in 0..self.region_list.len() {
-            let starting_tile = self.region_list[i].starting_tile;
+            let starting_tile = self.region_list[i].starting_tile.get().unwrap();
             let region_type = self.region_list[i].region_type.get().unwrap();
             let chosen_bonus_resource = bonus_type_associated_with_region_type
                 .iter()
