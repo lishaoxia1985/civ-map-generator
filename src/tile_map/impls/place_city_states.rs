@@ -528,7 +528,8 @@ impl TileMap {
                 let mut region_index_and_fertility_per_land_tile = Vec::new();
                 for (region_index, region) in self.region_list.iter().enumerate() {
                     let terrain_statistic = region.terrain_statistic.get().unwrap();
-                    let land_tile_count = terrain_statistic.terrain_type_count[TerrainType::Flatland]
+                    let land_tile_count = terrain_statistic.terrain_type_count
+                        [TerrainType::Flatland]
                         + terrain_statistic.terrain_type_count[TerrainType::Hill];
                     let region_fertility = region.fertility_sum;
                     let fertility_per_land_tile = region_fertility / land_tile_count as i32;

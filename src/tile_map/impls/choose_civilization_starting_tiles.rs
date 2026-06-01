@@ -901,7 +901,7 @@ impl TileMap {
     /// - [`TileType::Production`] is used to identify tiles that yield production.
     /// - [`TileType::Junk`] is used to identify tiles that yield nothing.
     fn measure_single_tile(&self, tile: Tile, region: &Region) -> EnumMap<TileType, bool> {
-        let region_type = region.region_type;
+        let region_type = *region.region_type.get().unwrap();
         // Notice: "Food" is not strictly equivalent to tile yield.
         //
         // Different regions obtain food in various ways.

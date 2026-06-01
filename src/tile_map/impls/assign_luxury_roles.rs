@@ -38,7 +38,7 @@ impl TileMap {
         // Sort the regions by their type, with `RegionType::Undefined` being sorted last.
         // Notice: In original code, the region which has the same type should be shuffled. But here we don't do that. We will implement it in the future.
         self.region_list.sort_by_key(|region| {
-            let region_type = region.region_type;
+            let region_type = *region.region_type.get().unwrap();
             if region_type == RegionType::Undefined {
                 9 // Place undefined regions at the end
             } else {
@@ -154,7 +154,7 @@ impl TileMap {
         map_parameters: &MapParameters,
     ) -> Resource {
         let region = &self.region_list[region_index];
-        let region_type = region.region_type;
+        let region_type = *region.region_type.get().unwrap();
         let terrain_statistic = region.terrain_statistic.get().unwrap();
         let start_location_condition = region.start_location_condition.get().unwrap();
 

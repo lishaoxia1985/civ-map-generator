@@ -234,7 +234,7 @@ impl TileMap {
             .region_list
             .iter()
             .enumerate()
-            .filter(|(_, region)| region.region_type == RegionType::Hill)
+            .filter(|(_, region)| *region.region_type.get().unwrap() == RegionType::Hill)
             .map(|(index, _)| index)
             .collect();
 
@@ -250,7 +250,8 @@ impl TileMap {
                 .get()
                 .unwrap();
 
-            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_count[TerrainType::Hill]
+            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_count
+                [TerrainType::Hill]
                 + terrain_statistic.terrain_type_count[TerrainType::Flatland];
             // Evaluate the level of infertility in the region by comparing the rugged terrain of hills and mountains to the flat farmlands.
             let mut hills_ratio = (terrain_statistic.terrain_type_count[TerrainType::Hill]
@@ -468,10 +469,10 @@ impl TileMap {
 
         for i in 0..self.region_list.len() {
             let starting_tile = self.region_list[i].starting_tile;
-            let region_type = self.region_list[i].region_type;
+            let region_type = self.region_list[i].region_type.get().unwrap();
             let chosen_bonus_resource = bonus_type_associated_with_region_type
                 .iter()
-                .find(|(region_type_, _)| *region_type_ == region_type)
+                .find(|(associated_region_type, _)| associated_region_type == region_type)
                 .unwrap()
                 .1;
             starting_tile.tiles_at_distance(3, grid).for_each(|tile| {

@@ -621,7 +621,7 @@ pub struct Region {
     /// The terrain statistic of the region. Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
     pub terrain_statistic: OnceLock<TerrainStatistic>,
     /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field, as it will be meaningless otherwise.
-    pub region_type: RegionType,
+    pub region_type: OnceLock<RegionType>,
     /// The starting tile of the civilization in this region.
     pub starting_tile: Tile,
     /// The start location condition of the region.
@@ -658,7 +658,7 @@ impl Region {
             fertility_sum,
             tile_count,
             terrain_statistic: OnceLock::new(),
-            region_type: RegionType::Undefined,
+            region_type: OnceLock::new(),
             starting_tile: Tile::new(usize::MAX),
             start_location_condition: OnceLock::new(),
             exclusive_luxury: OnceLock::new(),
@@ -1071,47 +1071,51 @@ impl Region {
         let threshold_415 = flatland_and_hill_count * 415 / 1000;
         let threshold_80 = flatland_and_hill_count * 80 / 100;
 
+        let region_type;
+
         // Tundra: Tundra + Snow >= 30% of buildable terrain
         if (base_terrain_count[BaseTerrain::Tundra] + base_terrain_count[BaseTerrain::Snow])
             >= threshold_30
         {
-            self.region_type = RegionType::Tundra;
+            region_type = RegionType::Tundra;
         }
         // Jungle: Jungle >= 30% OR (Jungle >= 20% AND Jungle+Forest >= 35%)
         else if feature_count[Feature::Jungle] >= threshold_30
             || ((feature_count[Feature::Jungle] >= threshold_20)
-                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest] >= threshold_35))
+                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest]
+                    >= threshold_35))
         {
-            self.region_type = RegionType::Jungle;
+            region_type = RegionType::Jungle;
         }
         // Forest: Forest >= 30% OR (Forest >= 20% AND Jungle+Forest >= 35%)
         else if feature_count[Feature::Forest] >= threshold_30
             || ((feature_count[Feature::Forest] >= threshold_20)
-                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest] >= threshold_35))
+                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest]
+                    >= threshold_35))
         {
-            self.region_type = RegionType::Forest;
+            region_type = RegionType::Forest;
         }
         // Desert: Desert >= 25% of buildable terrain
         else if base_terrain_count[BaseTerrain::Desert] >= threshold_25 {
-            self.region_type = RegionType::Desert;
+            region_type = RegionType::Desert;
         }
         // Hill: Hill >= 41.5% of buildable terrain
         else if terrain_type_count[TerrainType::Hill] >= threshold_415 {
-            self.region_type = RegionType::Hill;
+            region_type = RegionType::Hill;
         }
         // Plain: Plain >= 30% AND Plain * 0.7 > Grassland
         else if (base_terrain_count[BaseTerrain::Plain] >= threshold_30)
             && (base_terrain_count[BaseTerrain::Plain] * 70 / 100
                 > base_terrain_count[BaseTerrain::Grassland])
         {
-            self.region_type = RegionType::Plain;
+            region_type = RegionType::Plain;
         }
         // Grassland: Grassland >= 30% AND Grassland * 0.7 > Plain
         else if (base_terrain_count[BaseTerrain::Grassland] >= threshold_30)
             && (base_terrain_count[BaseTerrain::Grassland] * 70 / 100
                 > base_terrain_count[BaseTerrain::Plain])
         {
-            self.region_type = RegionType::Grassland;
+            region_type = RegionType::Grassland;
         }
         // Hybrid: Sum of major terrain types > 80% of buildable terrain
         else if (base_terrain_count[BaseTerrain::Grassland]
@@ -1123,10 +1127,12 @@ impl Region {
             + terrain_type_count[TerrainType::Mountain])
             > threshold_80
         {
-            self.region_type = RegionType::Hybrid;
+            region_type = RegionType::Hybrid;
         } else {
-            self.region_type = RegionType::Undefined;
+            region_type = RegionType::Undefined;
         }
+
+        self.region_type.set(region_type).unwrap();
     }
 }
 
