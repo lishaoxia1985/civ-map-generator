@@ -532,19 +532,19 @@ impl TileMap {
 
         for &region_index in region_index_list.iter() {
             let region = &self.region_list[region_index];
-            let terrain_statistic = &region.terrain_statistic;
-            let hills_count = terrain_statistic.terrain_type_num[TerrainType::Hill];
-            let peaks_count = terrain_statistic.terrain_type_num[TerrainType::Mountain];
-            let grass_count = terrain_statistic.base_terrain_num[BaseTerrain::Grassland];
-            let plains_count = terrain_statistic.base_terrain_num[BaseTerrain::Plain];
-            let desert_count = terrain_statistic.base_terrain_num[BaseTerrain::Desert];
-            let tundra_count = terrain_statistic.base_terrain_num[BaseTerrain::Tundra];
-            let snow_count = terrain_statistic.base_terrain_num[BaseTerrain::Snow];
-            let forest_count = terrain_statistic.feature_num[Feature::Forest];
-            let jungle_count = terrain_statistic.feature_num[Feature::Jungle];
-            let marsh_count = terrain_statistic.feature_num[Feature::Marsh];
-            let floodplain_count = terrain_statistic.feature_num[Feature::Floodplain];
-            let oasis_count = terrain_statistic.feature_num[Feature::Oasis];
+            let terrain_statistic = region.terrain_statistic.get().unwrap();
+            let hills_count = terrain_statistic.terrain_type_count[TerrainType::Hill];
+            let peaks_count = terrain_statistic.terrain_type_count[TerrainType::Mountain];
+            let grass_count = terrain_statistic.base_terrain_count[BaseTerrain::Grassland];
+            let plains_count = terrain_statistic.base_terrain_count[BaseTerrain::Plain];
+            let desert_count = terrain_statistic.base_terrain_count[BaseTerrain::Desert];
+            let tundra_count = terrain_statistic.base_terrain_count[BaseTerrain::Tundra];
+            let snow_count = terrain_statistic.base_terrain_count[BaseTerrain::Snow];
+            let forest_count = terrain_statistic.feature_count[Feature::Forest];
+            let jungle_count = terrain_statistic.feature_count[Feature::Jungle];
+            let marsh_count = terrain_statistic.feature_count[Feature::Marsh];
+            let floodplain_count = terrain_statistic.feature_count[Feature::Floodplain];
+            let oasis_count = terrain_statistic.feature_count[Feature::Oasis];
 
             match region_type {
                 RegionType::Undefined => unreachable!(),

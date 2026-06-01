@@ -1,7 +1,7 @@
 use std::{
-    sync::OnceLock,
     cmp::{max, min},
     iter::Once,
+    sync::OnceLock,
 };
 
 use enum_map::EnumMap;
@@ -589,17 +589,17 @@ const fn largest_power_of_three_less_or_equal(a: u32) -> u32 {
 #[derive(PartialEq, Eq, Default, Debug)]
 pub struct TerrainStatistic {
     /// Each terrain type's number in the region.
-    pub terrain_type_num: EnumMap<TerrainType, u32>,
+    pub terrain_type_count: EnumMap<TerrainType, u32>,
     /// Each base terrain's number in the region.
-    pub base_terrain_num: EnumMap<BaseTerrain, u32>,
+    pub base_terrain_count: EnumMap<BaseTerrain, u32>,
     /// Each feature's number in the region.
-    pub feature_num: EnumMap<Feature, u32>,
+    pub feature_count: EnumMap<Feature, u32>,
     /// The number of tiles with rivers in the region.
-    pub river_num: u32,
+    pub river_count: u32,
     /// The number of tiles which are coastal land in the region.
-    pub coastal_land_num: u32,
+    pub coastal_land_count: u32,
     /// The number of tiles which are land, not coastal land, but are next to coastal land in the region.
-    pub next_to_coastal_land_num: u32,
+    pub next_to_coastal_land_count: u32,
 }
 
 #[derive(PartialEq, Debug)]
@@ -619,7 +619,7 @@ pub struct Region {
     /// The number of tiles in the region.
     pub tile_count: i32,
     /// The terrain statistic of the region. Ensure that method [`Region::measure_terrain`] has been called before accessing this field, as it will be meaningless otherwise.
-    pub terrain_statistic: TerrainStatistic,
+    pub terrain_statistic: OnceLock<TerrainStatistic>,
     /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field, as it will be meaningless otherwise.
     pub region_type: RegionType,
     /// The starting tile of the civilization in this region.
@@ -657,7 +657,7 @@ impl Region {
             fertility_list,
             fertility_sum,
             tile_count,
-            terrain_statistic: TerrainStatistic::default(),
+            terrain_statistic: OnceLock::new(),
             region_type: RegionType::Undefined,
             starting_tile: Tile::new(usize::MAX),
             start_location_condition: OnceLock::new(),
@@ -969,38 +969,38 @@ impl Region {
 
             match terrain_type {
                 TerrainType::Mountain => {
-                    terrain_statistic.terrain_type_num[terrain_type] += 1;
+                    terrain_statistic.terrain_type_count[terrain_type] += 1;
                 }
                 TerrainType::Water => {
-                    terrain_statistic.terrain_type_num[terrain_type] += 1;
+                    terrain_statistic.terrain_type_count[terrain_type] += 1;
 
-                    terrain_statistic.base_terrain_num[base_terrain] += 1;
+                    terrain_statistic.base_terrain_count[base_terrain] += 1;
 
                     if let Some(feature) = feature {
-                        terrain_statistic.feature_num[feature] += 1;
+                        terrain_statistic.feature_count[feature] += 1;
                     }
                 }
                 TerrainType::Hill => {
                     if Some(area_id) == self.area_id || self.area_id.is_none() {
-                        terrain_statistic.terrain_type_num[terrain_type] += 1;
+                        terrain_statistic.terrain_type_count[terrain_type] += 1;
                         // We don't need to count the base terrain of hill tiles, because its base terrain bonus is invalid when it is a hill.
                         // For exmple in the original game, if a tile is a hill:
                         // 1. If feature is None:
                         //      (1) When base terrain is not Snow, the tile always produces 2 production.
                         //      (2) When base terrain is Snow, the tile has no output.
                         // 2. If feature is Some, its outpuput is determined by the feature.
-                        /* terrain_statistic.base_terrain_num[base_terrain] += 1; */
+                        /* terrain_statistic.base_terrain_count[base_terrain] += 1; */
 
                         if let Some(feature) = feature {
-                            terrain_statistic.feature_num[feature] += 1;
+                            terrain_statistic.feature_count[feature] += 1;
                         }
 
                         if tile.has_river(tile_map) {
-                            terrain_statistic.river_num += 1;
+                            terrain_statistic.river_count += 1;
                         }
 
                         if tile.is_coastal_land(tile_map) {
-                            terrain_statistic.coastal_land_num += 1;
+                            terrain_statistic.coastal_land_count += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
@@ -1009,26 +1009,26 @@ impl Region {
                                 .neighbor_tiles(grid)
                                 .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
-                            terrain_statistic.next_to_coastal_land_num += 1;
+                            terrain_statistic.next_to_coastal_land_count += 1;
                         }
                     }
                 }
                 TerrainType::Flatland => {
                     if Some(area_id) == self.area_id || self.area_id.is_none() {
-                        terrain_statistic.terrain_type_num[terrain_type] += 1;
+                        terrain_statistic.terrain_type_count[terrain_type] += 1;
 
-                        terrain_statistic.base_terrain_num[base_terrain] += 1;
+                        terrain_statistic.base_terrain_count[base_terrain] += 1;
 
                         if let Some(feature) = feature {
-                            terrain_statistic.feature_num[feature] += 1;
+                            terrain_statistic.feature_count[feature] += 1;
                         }
 
                         if tile.has_river(tile_map) {
-                            terrain_statistic.river_num += 1;
+                            terrain_statistic.river_count += 1;
                         }
 
                         if tile.is_coastal_land(tile_map) {
-                            terrain_statistic.coastal_land_num += 1;
+                            terrain_statistic.coastal_land_count += 1;
                         }
 
                         // Check if the tile is land and not coastal land, and if it has a neighbor that is coastal land
@@ -1037,90 +1037,90 @@ impl Region {
                                 .neighbor_tiles(grid)
                                 .any(|neighbor_tile| neighbor_tile.is_coastal_land(tile_map))
                         {
-                            terrain_statistic.next_to_coastal_land_num += 1;
+                            terrain_statistic.next_to_coastal_land_count += 1;
                         }
                     }
                 }
             }
         }
 
-        self.terrain_statistic = terrain_statistic;
+        self.terrain_statistic.set(terrain_statistic).unwrap();
     }
 
     /// Determines region type based on [Region::terrain_statistic] and sets [Region::region_type] field.
     pub fn determine_region_type(&mut self) {
-        let terrain_statistic = &self.terrain_statistic;
-        let terrain_type_num = &terrain_statistic.terrain_type_num;
-        let base_terrain_num = &terrain_statistic.base_terrain_num;
-        let feature_num = &terrain_statistic.feature_num;
+        let terrain_statistic = self.terrain_statistic.get().unwrap();
+        let terrain_type_count = &terrain_statistic.terrain_type_count;
+        let base_terrain_count = &terrain_statistic.base_terrain_count;
+        let feature_count = &terrain_statistic.feature_count;
 
         // Flatland and hill are the terrain type that cities, mens, and improvements can be built on
-        let flatland_and_hill_num = terrain_type_num[TerrainType::Flatland]
-            + terrain_statistic.terrain_type_num[TerrainType::Hill];
+        let flatland_and_hill_count = terrain_type_count[TerrainType::Flatland]
+            + terrain_statistic.terrain_type_count[TerrainType::Hill];
 
         debug_assert!(
-            flatland_and_hill_num > 0,
+            flatland_and_hill_count > 0,
             "The region must have at least one buildable terrain (flatland or hill) to determine its type."
         );
 
         // Pre-calculate common thresholds to avoid repeated calculations
-        let threshold_20 = flatland_and_hill_num * 20 / 100;
-        let threshold_25 = flatland_and_hill_num * 25 / 100;
-        let threshold_30 = flatland_and_hill_num * 30 / 100;
-        let threshold_35 = flatland_and_hill_num * 35 / 100;
-        let threshold_415 = flatland_and_hill_num * 415 / 1000;
-        let threshold_80 = flatland_and_hill_num * 80 / 100;
+        let threshold_20 = flatland_and_hill_count * 20 / 100;
+        let threshold_25 = flatland_and_hill_count * 25 / 100;
+        let threshold_30 = flatland_and_hill_count * 30 / 100;
+        let threshold_35 = flatland_and_hill_count * 35 / 100;
+        let threshold_415 = flatland_and_hill_count * 415 / 1000;
+        let threshold_80 = flatland_and_hill_count * 80 / 100;
 
         // Tundra: Tundra + Snow >= 30% of buildable terrain
-        if (base_terrain_num[BaseTerrain::Tundra] + base_terrain_num[BaseTerrain::Snow])
+        if (base_terrain_count[BaseTerrain::Tundra] + base_terrain_count[BaseTerrain::Snow])
             >= threshold_30
         {
             self.region_type = RegionType::Tundra;
         }
         // Jungle: Jungle >= 30% OR (Jungle >= 20% AND Jungle+Forest >= 35%)
-        else if feature_num[Feature::Jungle] >= threshold_30
-            || ((feature_num[Feature::Jungle] >= threshold_20)
-                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest] >= threshold_35))
+        else if feature_count[Feature::Jungle] >= threshold_30
+            || ((feature_count[Feature::Jungle] >= threshold_20)
+                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest] >= threshold_35))
         {
             self.region_type = RegionType::Jungle;
         }
         // Forest: Forest >= 30% OR (Forest >= 20% AND Jungle+Forest >= 35%)
-        else if feature_num[Feature::Forest] >= threshold_30
-            || ((feature_num[Feature::Forest] >= threshold_20)
-                && (feature_num[Feature::Jungle] + feature_num[Feature::Forest] >= threshold_35))
+        else if feature_count[Feature::Forest] >= threshold_30
+            || ((feature_count[Feature::Forest] >= threshold_20)
+                && (feature_count[Feature::Jungle] + feature_count[Feature::Forest] >= threshold_35))
         {
             self.region_type = RegionType::Forest;
         }
         // Desert: Desert >= 25% of buildable terrain
-        else if base_terrain_num[BaseTerrain::Desert] >= threshold_25 {
+        else if base_terrain_count[BaseTerrain::Desert] >= threshold_25 {
             self.region_type = RegionType::Desert;
         }
         // Hill: Hill >= 41.5% of buildable terrain
-        else if terrain_type_num[TerrainType::Hill] >= threshold_415 {
+        else if terrain_type_count[TerrainType::Hill] >= threshold_415 {
             self.region_type = RegionType::Hill;
         }
         // Plain: Plain >= 30% AND Plain * 0.7 > Grassland
-        else if (base_terrain_num[BaseTerrain::Plain] >= threshold_30)
-            && (base_terrain_num[BaseTerrain::Plain] * 70 / 100
-                > base_terrain_num[BaseTerrain::Grassland])
+        else if (base_terrain_count[BaseTerrain::Plain] >= threshold_30)
+            && (base_terrain_count[BaseTerrain::Plain] * 70 / 100
+                > base_terrain_count[BaseTerrain::Grassland])
         {
             self.region_type = RegionType::Plain;
         }
         // Grassland: Grassland >= 30% AND Grassland * 0.7 > Plain
-        else if (base_terrain_num[BaseTerrain::Grassland] >= threshold_30)
-            && (base_terrain_num[BaseTerrain::Grassland] * 70 / 100
-                > base_terrain_num[BaseTerrain::Plain])
+        else if (base_terrain_count[BaseTerrain::Grassland] >= threshold_30)
+            && (base_terrain_count[BaseTerrain::Grassland] * 70 / 100
+                > base_terrain_count[BaseTerrain::Plain])
         {
             self.region_type = RegionType::Grassland;
         }
         // Hybrid: Sum of major terrain types > 80% of buildable terrain
-        else if (base_terrain_num[BaseTerrain::Grassland]
-            + base_terrain_num[BaseTerrain::Plain]
-            + base_terrain_num[BaseTerrain::Desert]
-            + base_terrain_num[BaseTerrain::Tundra]
-            + base_terrain_num[BaseTerrain::Snow]
-            + terrain_type_num[TerrainType::Hill]
-            + terrain_type_num[TerrainType::Mountain])
+        else if (base_terrain_count[BaseTerrain::Grassland]
+            + base_terrain_count[BaseTerrain::Plain]
+            + base_terrain_count[BaseTerrain::Desert]
+            + base_terrain_count[BaseTerrain::Tundra]
+            + base_terrain_count[BaseTerrain::Snow]
+            + terrain_type_count[TerrainType::Hill]
+            + terrain_type_count[TerrainType::Mountain])
             > threshold_80
         {
             self.region_type = RegionType::Hybrid;

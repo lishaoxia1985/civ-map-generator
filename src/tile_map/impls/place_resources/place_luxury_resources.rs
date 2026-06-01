@@ -52,7 +52,10 @@ impl TileMap {
             region_low_fert_compensation.iter_mut().enumerate()
         {
             let region = &self.region_list[region_index];
-            let terrain_statistic = &self.region_list[region_index].terrain_statistic;
+            let terrain_statistic = &self.region_list[region_index]
+                .terrain_statistic
+                .get()
+                .unwrap();
             let starting_tile = self.region_list[region_index].starting_tile;
             let exclusive_luxury = *self.region_list[region_index]
                 .exclusive_luxury
@@ -65,8 +68,8 @@ impl TileMap {
                 *current_region_low_fert_compensation += 1;
             }
 
-            let region_land_num = terrain_statistic.terrain_type_num[TerrainType::Hill]
-                + terrain_statistic.terrain_type_num[TerrainType::Flatland];
+            let region_land_num = terrain_statistic.terrain_type_count[TerrainType::Hill]
+                + terrain_statistic.terrain_type_count[TerrainType::Flatland];
 
             // Low fertility per region land tile, add a luxury.
             if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {

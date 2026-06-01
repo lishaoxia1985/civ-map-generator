@@ -245,31 +245,34 @@ impl TileMap {
         hills_region_indices.shuffle(&mut self.random_number_generator);
 
         for region_index in hills_region_indices {
-            let terrain_statistic = &self.region_list[region_index].terrain_statistic;
+            let terrain_statistic = &self.region_list[region_index]
+                .terrain_statistic
+                .get()
+                .unwrap();
 
-            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_num[TerrainType::Hill]
-                + terrain_statistic.terrain_type_num[TerrainType::Flatland];
+            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_count[TerrainType::Hill]
+                + terrain_statistic.terrain_type_count[TerrainType::Flatland];
             // Evaluate the level of infertility in the region by comparing the rugged terrain of hills and mountains to the flat farmlands.
-            let mut hills_ratio = (terrain_statistic.terrain_type_num[TerrainType::Hill]
-                + terrain_statistic.terrain_type_num[TerrainType::Mountain])
+            let mut hills_ratio = (terrain_statistic.terrain_type_count[TerrainType::Hill]
+                + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                 as f64
                 / hill_and_flatland_tile_num as f64;
-            let mut farm_ratio = (terrain_statistic.base_terrain_num[BaseTerrain::Grassland]
-                + terrain_statistic.base_terrain_num[BaseTerrain::Plain])
+            let mut farm_ratio = (terrain_statistic.base_terrain_count[BaseTerrain::Grassland]
+                + terrain_statistic.base_terrain_count[BaseTerrain::Plain])
                 as f64
                 / hill_and_flatland_tile_num as f64;
             if let RegionDivideMethod::WholeMapRectangle = map_parameters.region_divide_method {
-                hills_ratio = (terrain_statistic.terrain_type_num[TerrainType::Hill]
-                    + terrain_statistic.terrain_type_num[TerrainType::Mountain])
+                hills_ratio = (terrain_statistic.terrain_type_count[TerrainType::Hill]
+                    + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                     as f64
                     / (hill_and_flatland_tile_num
-                        + terrain_statistic.terrain_type_num[TerrainType::Mountain])
+                        + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                         as f64;
-                farm_ratio = (terrain_statistic.base_terrain_num[BaseTerrain::Grassland]
-                    + terrain_statistic.base_terrain_num[BaseTerrain::Plain])
+                farm_ratio = (terrain_statistic.base_terrain_count[BaseTerrain::Grassland]
+                    + terrain_statistic.base_terrain_count[BaseTerrain::Plain])
                     as f64
                     / (hill_and_flatland_tile_num
-                        + terrain_statistic.terrain_type_num[TerrainType::Mountain])
+                        + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                         as f64;
             }
             // If the infertility quotient is greater than 1, it will increase the number of Bonuses placed, up to a maximum of twice the normal ratio.

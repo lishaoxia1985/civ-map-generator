@@ -156,9 +156,12 @@ impl TileMap {
 
         let mut fallback_tile_and_score = Vec::new();
 
-        let coastal_land_sum = self.region_list[region_index]
+        let terrain_statistic = self.region_list[region_index]
             .terrain_statistic
-            .coastal_land_num;
+            .get()
+            .unwrap();
+
+        let coastal_land_sum = terrain_statistic.coastal_land_count;
 
         if coastal_land_sum < 3 {
             // This region cannot support an Along Ocean start.
