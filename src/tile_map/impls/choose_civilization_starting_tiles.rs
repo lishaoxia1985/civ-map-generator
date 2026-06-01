@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use bitflags::bitflags;
 use enum_map::{Enum, EnumMap};
 
 use crate::{
@@ -774,19 +775,19 @@ impl TileMap {
         junk_total += 6 - tile.neighbor_tiles(grid).count() as i32;
 
         tile.neighbor_tiles(grid).for_each(|neighbor_tile| {
-            let measure_tile_type = self.measure_single_tile(neighbor_tile, region);
-            measure_tile_type
-                .into_iter()
-                .for_each(|(tile_type, measure)| {
-                    if measure {
-                        match tile_type {
-                            TileType::Food => food_total += 1,
-                            TileType::Production => production_total += 1,
-                            TileType::Good => good_total += 1,
-                            TileType::Junk => junk_total += 1,
-                        }
-                    }
-                });
+            let yield_flags = self.measure_tile_yield(neighbor_tile, region);
+            if yield_flags.contains(YieldFlags::Food) {
+                food_total += 1;
+            }
+            if yield_flags.contains(YieldFlags::Production) {
+                production_total += 1;
+            }
+            if yield_flags.contains(YieldFlags::Good) {
+                good_total += 1;
+            }
+            if yield_flags.contains(YieldFlags::Junk) {
+                junk_total += 1;
+            }
             if neighbor_tile.has_river(self) {
                 river_total += 1;
             }
@@ -815,19 +816,19 @@ impl TileMap {
 
         tile.tiles_at_distance(2, grid)
             .for_each(|tile_at_distance_two| {
-                let measure_tile_type = self.measure_single_tile(tile_at_distance_two, region);
-                measure_tile_type
-                    .into_iter()
-                    .for_each(|(tile_type, measure)| {
-                        if measure {
-                            match tile_type {
-                                TileType::Food => food_total += 1,
-                                TileType::Production => production_total += 1,
-                                TileType::Good => good_total += 1,
-                                TileType::Junk => junk_total += 1,
-                            }
-                        }
-                    });
+                let yield_flags = self.measure_tile_yield(tile_at_distance_two, region);
+                if yield_flags.contains(YieldFlags::Food) {
+                    food_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Production) {
+                    production_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Good) {
+                    good_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Junk) {
+                    junk_total += 1;
+                }
                 if tile_at_distance_two.has_river(self) {
                     river_total += 1;
                 }
@@ -872,19 +873,19 @@ impl TileMap {
 
         tile.tiles_at_distance(3, grid)
             .for_each(|tile_at_distance_three| {
-                let measure_tile_type = self.measure_single_tile(tile_at_distance_three, region);
-                measure_tile_type
-                    .into_iter()
-                    .for_each(|(tile_type, measure)| {
-                        if measure {
-                            match tile_type {
-                                TileType::Food => food_total += 1,
-                                TileType::Production => production_total += 1,
-                                TileType::Good => good_total += 1,
-                                TileType::Junk => junk_total += 1,
-                            }
-                        }
-                    });
+                let yield_flags = self.measure_tile_yield(tile_at_distance_three, region);
+                if yield_flags.contains(YieldFlags::Food) {
+                    food_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Production) {
+                    production_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Good) {
+                    good_total += 1;
+                }
+                if yield_flags.contains(YieldFlags::Junk) {
+                    junk_total += 1;
+                }
                 if tile_at_distance_three.has_river(self) {
                     river_total += 1;
                 }
@@ -918,149 +919,159 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:MeasureSinglePlot
-    /// Measures single tile's type.
+    /// Measures current tile's yield and returns the corresponding flags.
     ///
-    /// Measures a single tile's type whether it is Food, Production, Good, Junk, or a combination of (Food, Production, Good).
-    /// - [`TileType::Food`] may be misleading, as this is the primary mechanism for biasing starting terrain.
+    /// Measures a single tile's yield whether it is Food, Production, Good, Junk, or a combination of (Food, Production, Good).
+    /// - [`YieldFlags::Food`] may be misleading, as this is the primary mechanism for biasing starting terrain.
     ///   It is not strictly equivalent to tile yield. That's because regions with different [`RegionType`] obtain food in various ways.
     //    Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support to compensate for food shortages.
     ///   For example, in tundra regions I have tundra tiles set as Food, but grass are not.
     ///   A desert region sets Plains as Food but Grass is not, while a Jungle region sets Grass as Food but Plains aren't.
-    /// - [`TileType::Good`] act as a hedge, and are the main way of differentiating one candidate site from another,
-    ///   so that among a group of tiles of similar terrain, the best tends to get picked.
-    /// - [`TileType::Production`] is used to identify tiles that yield production.
-    /// - [`TileType::Junk`] is used to identify tiles that yield nothing.
-    fn measure_single_tile(&self, tile: Tile, region: &Region) -> EnumMap<TileType, bool> {
+    /// - [`YieldFlags::Good`] act as a hedge, and are the main way of differentiating one candidate site from another.
+    ///   Among similar terrain tiles, they ensure the best one is selected.
+    ///   For example, if the candidate tiles have the same yield value,
+    ///   then the tile with more `"Good"` tiles within a 3-tile radius will receive a higher selection priority.
+    /// - [`YieldFlags::Production`] is used to identify tiles that yield production.
+    /// - [`YieldFlags::Junk`] is used to identify tiles that yield nothing.
+    fn measure_tile_yield(&self, tile: Tile, region: &Region) -> YieldFlags {
         let region_type = *region.region_type.get().unwrap();
-        // Notice: "Food" is not strictly equivalent to tile yield.
-        //
-        // Different regions obtain food in various ways.
-        // Tundra, Jungle, Forest, Desert, and Plains regions will receive bonus resource support
-        // to compensate for food shortages.
-        //
-        // `data` hold the results, all starting as `false`。
-        let mut data = EnumMap::default();
 
-        match tile.terrain_type(self) {
-            TerrainType::Water => {
-                if tile.feature(self) == Some(Feature::Ice) {
-                    data[TileType::Junk] = true;
-                } else if tile.base_terrain(self) == BaseTerrain::Lake {
-                    data[TileType::Food] = true;
-                    data[TileType::Good] = true;
-                } else if region.area_id.is_none() && tile.base_terrain(self) == BaseTerrain::Coast
-                {
-                    data[TileType::Good] = true;
-                }
-                return data;
+        let mut yield_flags = YieldFlags::empty();
+
+        let terrain_type = tile.terrain_type(self);
+        let base_terrain = tile.base_terrain(self);
+        let feature = tile.feature(self);
+
+        match (terrain_type, base_terrain, feature) {
+            (TerrainType::Water, _, Some(Feature::Ice)) => {
+                yield_flags |= YieldFlags::Junk;
+                return yield_flags;
             }
-            TerrainType::Mountain => {
-                data[TileType::Junk] = true;
-                return data;
+            (TerrainType::Water, BaseTerrain::Lake, _) => {
+                yield_flags |= YieldFlags::Food | YieldFlags::Good;
+                return yield_flags;
             }
-            TerrainType::Flatland | TerrainType::Hill => (),
+            (TerrainType::Water, BaseTerrain::Coast, _) if region.area_id.is_none() => {
+                yield_flags |= YieldFlags::Good;
+                return yield_flags;
+            }
+            (TerrainType::Water, _, _) => {
+                return yield_flags;
+            }
+            (TerrainType::Mountain, _, _) => {
+                yield_flags |= YieldFlags::Junk;
+                return yield_flags;
+            }
+            (TerrainType::Flatland | TerrainType::Hill, _, _) => (),
         }
 
-        // Tackle with the tile's terrain type is hill or flatland and has feature.
-        if let Some(feature) = tile.feature(self) {
+        // Handle Flatland and Hill with features first
+        if let Some(feature) = feature {
             match feature {
                 Feature::Forest => {
-                    data[TileType::Production] = true;
-                    data[TileType::Good] = true;
+                    yield_flags |= YieldFlags::Production | YieldFlags::Good;
                     if region_type == RegionType::Forest || region_type == RegionType::Tundra {
-                        data[TileType::Food] = true;
+                        yield_flags |= YieldFlags::Food;
                     }
-                    return data;
+                    return yield_flags;
                 }
                 Feature::Jungle => {
                     if region_type != RegionType::Grassland {
-                        data[TileType::Food] = true;
-                        data[TileType::Good] = true;
-                    } else if tile.terrain_type(self) == TerrainType::Hill {
-                        data[TileType::Production] = true;
+                        yield_flags |= YieldFlags::Food | YieldFlags::Good;
+                    } else if terrain_type == TerrainType::Hill {
+                        yield_flags |= YieldFlags::Production;
                     }
-                    return data;
+                    return yield_flags;
                 }
                 Feature::Marsh => {
-                    return data;
+                    return yield_flags;
                 }
                 Feature::Oasis | Feature::Floodplain => {
-                    data[TileType::Food] = true;
-                    data[TileType::Good] = true;
-                    return data;
+                    yield_flags |= YieldFlags::Food | YieldFlags::Good;
+                    return yield_flags;
                 }
                 _ => (),
             }
         }
 
-        // Tackle with the tile's terrain type is hill and has no feature.
-        if tile.terrain_type(self) == TerrainType::Hill {
-            data[TileType::Production] = true;
-            data[TileType::Good] = true;
-            return data;
+        // Handle Hill terrain with no features.
+        if terrain_type == TerrainType::Hill {
+            yield_flags |= YieldFlags::Production | YieldFlags::Good;
+            return yield_flags;
         }
 
-        // Tackle with tile's terrain type is flatland and has no feature.
-        match tile.base_terrain(self) {
+        // Handle Flatland terrain without features according to its base terrain.
+        match base_terrain {
             BaseTerrain::Grassland => {
-                data[TileType::Good] = true;
-                if region_type == RegionType::Jungle
-                    || region_type == RegionType::Forest
-                    || region_type == RegionType::Hill
-                    || region_type == RegionType::Grassland
-                    || region_type == RegionType::Hybrid
-                {
-                    data[TileType::Food] = true;
+                yield_flags |= YieldFlags::Good;
+                if matches!(
+                    region_type,
+                    RegionType::Jungle
+                        | RegionType::Forest
+                        | RegionType::Hill
+                        | RegionType::Grassland
+                        | RegionType::Hybrid
+                ) {
+                    yield_flags |= YieldFlags::Food;
                 }
-                return data;
+                return yield_flags;
             }
             BaseTerrain::Desert => {
                 if region_type != RegionType::Desert {
-                    data[TileType::Junk] = true;
+                    yield_flags |= YieldFlags::Junk;
                 }
-                return data;
+                return yield_flags;
             }
             BaseTerrain::Plain => {
-                data[TileType::Good] = true;
-                if region_type == RegionType::Tundra
-                    || region_type == RegionType::Desert
-                    || region_type == RegionType::Hill
-                    || region_type == RegionType::Plain
-                    || region_type == RegionType::Hybrid
-                {
-                    data[TileType::Food] = true;
+                yield_flags |= YieldFlags::Good;
+                if matches!(
+                    region_type,
+                    RegionType::Tundra
+                        | RegionType::Desert
+                        | RegionType::Hill
+                        | RegionType::Plain
+                        | RegionType::Hybrid
+                ) {
+                    yield_flags |= YieldFlags::Food;
                 }
-                return data;
+                return yield_flags;
             }
             BaseTerrain::Tundra => {
                 if region_type == RegionType::Tundra {
-                    data[TileType::Food] = true;
-                    data[TileType::Good] = true;
+                    yield_flags |= YieldFlags::Food | YieldFlags::Good;
                 }
-                return data;
+                return yield_flags;
             }
             BaseTerrain::Snow => {
-                data[TileType::Junk] = true;
-                return data;
+                yield_flags |= YieldFlags::Junk;
+                return yield_flags;
             }
             _ => (),
         }
 
-        data
+        yield_flags
     }
 }
 
-#[derive(Enum)]
-pub enum TileType {
-    /// Tile yield food, or tile will be placed bonus resource to yield food according to region type in the future.
-    Food,
-    /// Tile yield production.
-    Production,
-    /// "Good" tiles act as a hedge, helping differentiate candidate sites.
-    /// Among similar terrain tiles, they ensure the best one is selected.
-    /// For example, when using [`TileMap::evaluate_candidate_tile`],
-    /// the candidate tile with the most "Good" tiles within a 3-tile radius will get a higher score.
-    Good,
-    /// Tile yield nothing.
-    Junk,
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct YieldFlags: u8 {
+        /// Tile yield food, or tile will be placed bonus resource to yield food according to region type in the future.
+        const Food = 1 << 0;
+        /// Tile yield production.
+        const Production = 1 << 1;
+        /// `"Good"` tiles act as a hedge, helping differentiate candidate sites.
+        /// Among similar terrain tiles, they ensure the best one is selected.
+        /// For example, when calling [`TileMap::evaluate_candidate_tile`],
+        /// and the candidate tiles have the same yield value,
+        /// then the tile with more `"Good"` tiles within a 3-tile radius will receive a higher selection priority.
+        const Good = 1 << 2;
+        /// Tile yield nothing.
+        ///
+        /// # Notes
+        ///
+        /// Junk is mutually exclusive with other flags.
+        /// When a tile is Junk, it should not have any other flags set.
+        const Junk = 1 << 3;
+    }
 }
