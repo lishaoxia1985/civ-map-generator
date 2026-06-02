@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 use super::Name;
@@ -17,8 +15,7 @@ pub struct Era {
     base_unit_buy_cost: i16,
     embark_defense: i8,
     start_percent: i8,
-    friend_bonus: HashMap<String, Vec<String>>,
-    ally_bonus: HashMap<String, Vec<String>>,
+    city_sound: String,
     #[serde(rename = "iconRGB")]
     icon_rgb: [u8; 3],
 }

@@ -68,7 +68,7 @@ pub enum StartBias {
 pub enum NationType {
     #[default]
     Civilization,
-    /// The string represents the type of city state, e.g. "Cultural", "Maritime", etc.
+    /// The string represents the type of city state, e.g. "Cultured", "Maritime", etc.
     CityState(String),
     Barbarians,
     Spectator,

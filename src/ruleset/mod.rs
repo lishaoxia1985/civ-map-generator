@@ -20,6 +20,7 @@ use serde::de::DeserializeOwned;
 pub mod base_terrain;
 pub mod belief;
 pub mod building;
+pub mod city_state_type;
 pub mod common;
 pub mod difficulty;
 pub mod era;
@@ -40,15 +41,29 @@ pub mod unit_promotion;
 pub mod unit_type;
 
 use crate::ruleset::{
-    base_terrain::BaseTerrainInfo, belief::Belief, building::Building, common::Name,
-    difficulty::Difficulty, era::Era, feature::FeatureInfo, global_unique::GlobalUnique,
-    nation::NationInfo, natural_wonder::NaturalWonderInfo, policy::PolicyBranch, quest::Quest,
-    resource::TileResource, ruin::Ruin, specialist::Specialist, tech::TechColumn,
-    terrain_type::TerrainTypeInfo, tile_improvement::TileImprovement, unit::Unit,
-    unit_promotion::UnitPromotion, unit_type::UnitType,
+    base_terrain::BaseTerrainInfo,
+    belief::Belief,
+    building::Building,
+    city_state_type::CityStateType,
+    common::Name,
+    difficulty::Difficulty,
+    era::Era,
+    feature::FeatureInfo,
+    global_unique::GlobalUnique,
+    nation::NationInfo,
+    natural_wonder::NaturalWonderInfo,
+    policy::PolicyBranch,
+    quest::Quest,
+    resource::TileResource,
+    ruin::Ruin,
+    specialist::Specialist,
+    tech::{TechColumn, Technology},
+    terrain_type::TerrainTypeInfo,
+    tile_improvement::TileImprovement,
+    unit::Unit,
+    unit_promotion::UnitPromotion,
+    unit_type::UnitType,
 };
-
-use self::tech::Technology;
 
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> HashMap<String, T> {
     let json_string_without_comment = load_json_file_and_strip_json_comments(path);
@@ -59,30 +74,40 @@ fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> Hash
 
 #[derive(Debug)]
 pub struct Ruleset {
-    pub beliefs: HashMap<String, Belief>,
-    pub buildings: HashMap<String, Building>,
-    pub difficulties: HashMap<String, Difficulty>,
-    pub eras: HashMap<String, Era>,
-    pub global_uniques: GlobalUnique,
-    pub nations: HashMap<String, NationInfo>,
-    //pub policies: HashMap<String, Policy>,
-    pub policy_branches: HashMap<String, PolicyBranch>,
-    pub religions: Vec<String>,
-    pub ruins: HashMap<String, Ruin>,
-    pub quests: HashMap<String, Quest>,
-    pub specialists: HashMap<String, Specialist>,
-    pub technologies: HashMap<String, Technology>,
-
+    // The structs related to terrains
     pub terrain_types: HashMap<String, TerrainTypeInfo>,
     pub base_terrains: HashMap<String, BaseTerrainInfo>,
     pub features: HashMap<String, FeatureInfo>,
     pub natural_wonders: HashMap<String, NaturalWonderInfo>,
 
+    pub ruins: HashMap<String, Ruin>,
+
     pub tile_improvements: HashMap<String, TileImprovement>,
     pub tile_resources: HashMap<String, TileResource>,
+
+    pub buildings: HashMap<String, Building>,
+    pub specialists: HashMap<String, Specialist>,
+
     pub units: HashMap<String, Unit>,
     pub unit_promotions: HashMap<String, UnitPromotion>,
     pub unit_types: HashMap<String, UnitType>,
+
+    pub religions: Vec<String>,
+    pub beliefs: HashMap<String, Belief>,
+
+    pub nations: HashMap<String, NationInfo>,
+    pub city_state_types: HashMap<String, CityStateType>,
+
+    // pub policies: HashMap<String, Policy>,
+    pub policy_branches: HashMap<String, PolicyBranch>,
+
+    pub technologies: HashMap<String, Technology>,
+
+    pub quests: HashMap<String, Quest>,
+
+    pub difficulties: HashMap<String, Difficulty>,
+    pub eras: HashMap<String, Era>,
+    pub global_uniques: GlobalUnique,
 }
 
 impl Default for Ruleset {
@@ -126,6 +151,13 @@ impl Ruleset {
 
         let nations: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder.join("Nations.json").to_str().unwrap(),
+        );
+
+        let city_state_types: HashMap<_, _> = create_hashmap_from_json_file(
+            ruleset_json_folder
+                .join("CityStateTypes.json")
+                .to_str()
+                .unwrap(),
         );
 
         let policy_branches: HashMap<_, _> = create_hashmap_from_json_file(
@@ -258,34 +290,35 @@ impl Ruleset {
             serde_json::from_str(&json_string_without_comment).unwrap();
 
         Self {
-            beliefs,
-            buildings,
-            difficulties,
-            eras,
-            global_uniques,
-            nations,
-            //policies: policies,
-            policy_branches,
-            religions,
-            ruins,
-            quests,
-            specialists,
-            technologies,
             terrain_types,
             base_terrains,
             features,
             natural_wonders,
+            ruins,
             tile_improvements,
             tile_resources,
+            buildings,
+            specialists,
             units,
             unit_promotions,
             unit_types,
+            religions,
+            beliefs,
+            nations,
+            city_state_types,
+            policy_branches,
+            technologies,
+            quests,
+            difficulties,
+            eras,
+            global_uniques,
         }
     }
 }
 
 fn load_json_file_and_strip_json_comments(path: &str) -> String {
-    let json_string_with_comment = fs::read_to_string(path).unwrap();
+    let json_string_with_comment = fs::read_to_string(path)
+        .unwrap_or_else(|e| panic!("Failed to read JSON file '{}': {}", path, e));
     strip_json_comments(&json_string_with_comment, true)
 }
 
