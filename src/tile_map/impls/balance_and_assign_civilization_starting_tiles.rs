@@ -9,7 +9,10 @@ use rand::{
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     nation::Nation,
-    ruleset::{Ruleset, nation::StartBias},
+    ruleset::{
+        Ruleset,
+        nation::{NationType, StartBias},
+    },
     tile::Tile,
     tile_component::{BaseTerrain, Feature, Resource, TerrainType},
     tile_map::{Layer, TileMap, get_major_strategic_resource_quantity_values},
@@ -37,9 +40,10 @@ impl TileMap {
         let civilization_list = (0..Nation::LENGTH)
             .map(Nation::from_usize)
             .filter(|&nation| {
-                ruleset.nations[nation.as_str()].city_state_type.is_empty()
-                    && nation != Nation::Barbarians
-                    && nation != Nation::Spectator
+                matches!(
+                    ruleset.nations[nation.as_str()].nation_type,
+                    NationType::Civilization
+                )
             })
             .collect::<Vec<_>>();
 

@@ -47,7 +47,7 @@ pub struct NationInfo {
     #[serde(default)]
     pub cities: Vec<String>,
     #[serde(default)]
-    pub city_state_type: String,
+    pub nation_type: NationType,
 }
 
 impl Name for NationInfo {
@@ -62,4 +62,14 @@ pub enum StartBias {
     AlongRiver,
     RegionTypePriority(Vec<RegionType>),
     RegionTypeAvoid(Vec<RegionType>),
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub enum NationType {
+    #[default]
+    Civilization,
+    /// The string represents the type of city state, e.g. "Cultural", "Maritime", etc.
+    CityState(String),
+    Barbarians,
+    Spectator,
 }

@@ -9,6 +9,7 @@ use rand::{Rng, seq::SliceRandom};
 
 use crate::grid::Rectangle;
 use crate::nation::Nation;
+use crate::ruleset::nation::NationType;
 use crate::{
     grid::offset_coordinate::OffsetCoordinate,
     map_parameters::{MapParameters, RegionDivideMethod},
@@ -31,7 +32,12 @@ impl TileMap {
 
         let city_state_list = (0..Nation::LENGTH)
             .map(Nation::from_usize)
-            .filter(|&nation| !ruleset.nations[nation.as_str()].city_state_type.is_empty())
+            .filter(|&nation| {
+                matches!(
+                    ruleset.nations[nation.as_str()].nation_type,
+                    NationType::CityState(_)
+                )
+            })
             .collect::<Vec<_>>();
 
         let num_city_states = map_parameters.world_size_type_profile.num_city_states as usize;
