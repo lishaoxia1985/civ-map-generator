@@ -87,9 +87,9 @@ impl TileMap {
         );
 
         let [desert_top, plains_top] =
-            deserts_fractal.get_height_from_percents([desert_top_percent, plains_top_percent]);
+            deserts_fractal.heights_from_percents([desert_top_percent, plains_top_percent]);
         let [desert_bottom, plains_bottom] =
-            plains_fractal.get_height_from_percents([desert_bottom_percent, plains_bottom_percent]);
+            plains_fractal.heights_from_percents([desert_bottom_percent, plains_bottom_percent]);
 
         self.all_tiles().for_each(|tile| {
             let terrain_type = tile.terrain_type(self);

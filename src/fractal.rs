@@ -547,15 +547,25 @@ impl CvFractal {
         }
     }
 
-    /// Get a vector containing the calculated height values based on the given percentages for a fractal array.
+    /// Calculate height thresholds from percentiles of a fractal array.
     ///
     /// It takes an array of percentages. Each percentage value is clamped between 0 and 100.
+    /// Extracts all values from the fractal array except the last row and column,
+    /// flattens and sorts them, then maps each percentile to its corresponding height.
     ///
-    /// The function then extracts all values from the fractal array except its last row and last column,
-    /// flattens the array, sorts it in an unstable manner, and calculates target values based on the input percentages.
+    /// The final output is an array containing the calculated height thresholds corresponding to the input percentages.
     ///
-    /// The final output is an array containing the calculated height values corresponding to the input percentages.
-    pub fn get_height_from_percents<const N: usize>(&self, percents: [u32; N]) -> [u32; N] {
+    /// # Arguments
+    ///
+    /// * `percents`: An array of N percentage values (0-100).
+    ///
+    /// # Returns
+    ///
+    /// An array of N corresponding height thresholds.
+    ///
+    /// For example, when the input is `[72]`, the output might be `[120]`,
+    /// meaning that 72% of all values will be below the height threshold of 120, and 28% will be above it.
+    pub fn heights_from_percents<const N: usize>(&self, percents: [u32; N]) -> [u32; N] {
         let percents = percents.map(|p| p.clamp(0, 100));
 
         // Get all value from the fractal array except its last row and last column
