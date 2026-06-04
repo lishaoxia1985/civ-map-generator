@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use arrayvec::ArrayVec;
 use rand::{
     distr::{Distribution, weighted::WeightedIndex},
@@ -46,12 +48,15 @@ impl TileMap {
             }
         });
 
+        let mut region_exclusive_luxury_list = Vec::new();
+
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(region_index, map_parameters);
             self.region_list[region_index]
                 .exclusive_luxury
                 .set(resource)
                 .unwrap();
+            region_exclusive_luxury_list.push(resource);
             *self
                 .luxury_assign_to_region_count
                 .entry(resource)
@@ -139,15 +144,13 @@ impl TileMap {
         /* remaining_resource_list.shrink_to_fit(); */
         let luxury_not_being_used = remaining_resource_list;
 
-        // Filter `luxury_city_state_weights` to get region-exclusive luxury resources, because we should make sure the order.
-        let regions_exclusive: ArrayVec<Resource, 8> = luxury_city_state_weights
-            .iter()
-            .filter(|(luxury_resource, _)| {
-                self.luxury_assign_to_region_count
-                    .contains_key(luxury_resource)
-            })
-            .map(|&(luxury_resource, _)| luxury_resource)
-            .collect();
+        let mut seen = HashSet::new();
+
+        region_exclusive_luxury_list.retain(|&resource| seen.insert(resource));
+        let regions_exclusive: ArrayVec<
+            Resource,
+            { MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS },
+        > = region_exclusive_luxury_list.iter().cloned().collect();
 
         self.luxury_resource_role = LuxuryResourceRole {
             regions_exclusive,
