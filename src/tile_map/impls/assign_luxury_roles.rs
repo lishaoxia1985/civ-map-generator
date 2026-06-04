@@ -145,7 +145,11 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:AssignLuxuryToRegion
-    /// Assigns a luxury type to a region, ensuring no resource is assigned to more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] regions and no more than [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] resources are assigned to regions.
+    /// Assigns a luxury type exclusive to a region.
+    ///
+    /// In the assign process, the rules are as follows:
+    /// 1. No more than [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] regions have the same luxury type.
+    /// 2. No more than [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] luxury types are assigned to regions.
     ///
     /// View [`MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`] and [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`] for more information.
     fn assign_luxury_to_region(
@@ -320,25 +324,27 @@ impl TileMap {
 
         let num_assigned_luxury_types = self.luxury_assign_to_region_count.len();
 
-        // Check if the luxury resource is eligible to be assigned to the region.
-        // The luxury resource is eligible if:
-        // 1. The luxury assignment count is less than the maximum regions per luxury type.
-        //    Usually the maximum regions per luxury type is determined by the number of civilizations in the game.
-        //    When we use fallback options, the maximum regions per luxury type is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE` (3 in original CIV5).
-        // 2. The number of assigned luxury types should <= `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS` (8 in original CIV5).
-        //    - If num_assigned_luxury_types < `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can assign more luxury types to regions.
-        //    - If num_assigned_luxury_types = `MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS`, then we can only assign luxury types to regions that are already assigned to regions.
+        // Closure to determine if a luxury resource is eligible for assignment to the current region
         let is_eligible_luxury_resource =
             |luxury_resource: Resource,
              luxury_assignment_count: u32,
              max_regions_per_luxury_type: u32| {
-                luxury_assignment_count < max_regions_per_luxury_type
-                    && (num_assigned_luxury_types
-                        < MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
-                        || self
+                // Condition 1: The number of assignments for this specific luxury type has not reached its limit
+                let count_within_limit = luxury_assignment_count < max_regions_per_luxury_type;
+
+                // Condition 2: The total number of unique luxury types assigned to regions is below the global cap,
+                // OR the cap is reached but this specific resource is already marked as region-exclusive
+                let type_limit_ok = num_assigned_luxury_types
+                    < MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
+                    || (num_assigned_luxury_types
+                        == MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
+                        && self
                             .luxury_resource_role
                             .regions_exclusive
-                            .contains(&luxury_resource))
+                            .contains(&luxury_resource));
+
+                // The resource is eligible only if both the count limit and the type limit are satisfied
+                count_within_limit && type_limit_ok
             };
 
         let mut resource_list = Vec::new();
@@ -354,46 +360,40 @@ impl TileMap {
                 luxury_assign_to_region_count,
                 max_regions_per_exclusive_luxury,
             ) {
-                // This type still eligible.
-                // Water-based resources need to run a series of permission checks: coastal start in region, not a disallowed regions type, enough water, etc.
-                if luxury_resource == Resource::Whales
-                    || luxury_resource == Resource::Pearls
-                    || luxury_resource == Resource::Crab
-                {
-                    // The code below is commented is unnecessary in the current implementation,
-                    // because `luxury_candidates` is already filtered to only include resources that are allowed in the region type.
-                    /* if luxury_resource == "Whales" && region_type == RegionType::Jungle {
-                        // Whales are not allowed in Jungle regions.
-                        continue;
-                    } else if luxury_resource == "Pearls" && region_type == RegionType::Tundra {
-                        // Pearls are not allowed in Tundra regions.
-                        continue;
-                    } else if luxury_resource == "Crab" && region_type == RegionType::Desert {
-                        // Crabs are not allowed in Desert regions.
-                        continue;
-                    } else */
-                    if start_location_condition.along_ocean
-                        && terrain_statistic.terrain_type_count[TerrainType::Water] >= 12
-                    {
-                        // Water-based luxuries are allowed if both of the following are true:
-                        // 1. This region's start is along an ocean,
-                        // 2. This region has enough water to support water-based luxuries.
+                match (luxury_resource, region_type) {
+                    // This should never happen, because `luxury_candidates` has been filtered according to the region type.
+                    // So when region type is Jungle, there shouldn't be Pearls in `luxury_candidates`,
+                    // when region type is Tundra, there shouldn't be Furs in `luxury_candidates`,
+                    // when region type is Desert, there shouldn't be Crab in `luxury_candidates`, etc.
+                    // Please view the code relative to `luxury_candidates`.
+                    (Resource::Whales, RegionType::Jungle)
+                    | (Resource::Pearls, RegionType::Tundra)
+                    | (Resource::Crab, RegionType::Desert) => unreachable!(),
+                    (Resource::Whales | Resource::Pearls | Resource::Crab, _) => {
+                        if start_location_condition.along_ocean
+                            && terrain_statistic.terrain_type_count[TerrainType::Water] >= 12
+                        {
+                            // Water-based luxuries are allowed if both of the following are true:
+                            // 1. This region's start is along an ocean,
+                            // 2. This region has enough water to support water-based luxuries.
+                            resource_list.push(luxury_resource);
+                            let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
+                            resource_weight_list.push(adjusted_weight);
+                        }
+                    }
+                    _ => {
+                        // Land-based luxuries only need to satisfy the eligibility requirement, no extra placement condition.
                         resource_list.push(luxury_resource);
                         let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
                         resource_weight_list.push(adjusted_weight);
                     }
-                } else {
-                    // Land-based resources are automatically approved if they were in the region's option table.
-                    resource_list.push(luxury_resource);
-                    let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
-                    resource_weight_list.push(adjusted_weight);
                 }
             }
         }
 
-        // If options list is empty and region type isn't undefined and `max_regions_per_exclusive_luxury` isn't `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`, try to pick from fallback options.
-        // We don't need to run the code below when region type is undefined and `max_regions_per_exclusive_luxury` is `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`,
-        // because in this situation `luxury_candidates` is equal to fallback options, and we have already run the same function code above.
+        // If options list is empty, use `luxury_fallback_weights` as fallback options.
+        // Skip the situation when `region_type` is `Undefined` and `max_regions_per_exclusive_luxury` is equal to `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`,
+        // because in this situation `luxury_candidates` is equal to fallback options, and the code is the same as the for-loop code above.
         if resource_list.is_empty()
             && region_type != RegionType::Undefined
             && max_regions_per_exclusive_luxury
@@ -415,37 +415,35 @@ impl TileMap {
                         || luxury_resource == Resource::Pearls
                         || luxury_resource == Resource::Crab
                     {
-                        // Diffent with the code commented above, this code is necessary here,
-                        // because `luxury_fallback_weights` is not filtered according to the region type.
-                        if luxury_resource == Resource::Whales && region_type == RegionType::Jungle
-                        {
-                            // Whales are not allowed in Jungle regions.
-                            continue;
-                        } else if luxury_resource == Resource::Pearls
-                            && region_type == RegionType::Tundra
-                        {
-                            // Pearls are not allowed in Tundra regions.
-                            continue;
-                        } else if luxury_resource == Resource::Crab
-                            && region_type == RegionType::Desert
-                        {
-                            // Crabs are not allowed in Desert regions.
-                            // NOTE: In the original code, this check is not present. I think it is a bug.
-                            continue;
-                        } else if start_location_condition.along_ocean
-                            && terrain_statistic.terrain_type_count[TerrainType::Water] >= 12
-                        {
-                            // Water-based luxuries are allowed if both of the following are true:
-                            // 1. This region's start is along an ocean,
-                            // 2. This region has enough water to support water-based luxuries.
-                            resource_list.push(luxury_resource);
-                            let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
-                            resource_weight_list.push(adjusted_weight);
+                        match (luxury_resource, region_type) {
+                            // Different with the code above,
+                            // `luxury_fallback_weights` stores all the luxury types in game and not filtered according to `region_type`.
+                            // Please view the code relative to `luxury_fallback_weights`.
+                            // so we need to check and skip that situation here to avoid assigning water-based luxury resources to incompatible region types.
+                            (Resource::Whales, RegionType::Jungle)
+                            | (Resource::Pearls, RegionType::Tundra)
+                            | (Resource::Crab, RegionType::Desert) => continue,
+                            (Resource::Whales | Resource::Pearls | Resource::Crab, _) => {
+                                if start_location_condition.along_ocean
+                                    && terrain_statistic.terrain_type_count[TerrainType::Water]
+                                        >= 12
+                                {
+                                    // Water-based luxuries are allowed if both of the following are true:
+                                    // 1. This region's start is along an ocean,
+                                    // 2. This region has enough water to support water-based luxuries.
+                                    resource_list.push(luxury_resource);
+                                    let adjusted_weight =
+                                        weight / (1 + luxury_assign_to_region_count);
+                                    resource_weight_list.push(adjusted_weight);
+                                }
+                            }
+                            _ => {
+                                // Land-based luxuries only need to satisfy the eligibility requirement, no extra placement condition.
+                                resource_list.push(luxury_resource);
+                                let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
+                                resource_weight_list.push(adjusted_weight);
+                            }
                         }
-                    } else {
-                        resource_list.push(luxury_resource);
-                        let adjusted_weight = weight / (1 + luxury_assign_to_region_count);
-                        resource_weight_list.push(adjusted_weight);
                     }
                 }
             }
