@@ -452,7 +452,7 @@ impl TileMap {
         // If we get to here and still need to assign a luxury type, it means we have to force a water-based luxury in to this region, period.
         // This should be the rarest of the rare emergency assignment cases, unless modifications to the system have tightened things too far.
         if resource_list.is_empty() {
-            for &(luxury_resource, weight) in luxury_candidates.iter() {
+            for &(luxury_resource, weight) in luxury_fallback_weights.iter() {
                 let luxury_assign_to_region_count: u32 = *self
                     .luxury_assign_to_region_count
                     .get(&luxury_resource)
