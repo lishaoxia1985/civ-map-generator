@@ -46,14 +46,12 @@ impl TileMap {
             }
         });
 
-        let mut luxury_assigned_to_regions = ArrayVec::new();
         for region_index in 0..self.region_list.len() {
             let resource = self.assign_luxury_to_region(region_index, map_parameters);
             self.region_list[region_index]
                 .exclusive_luxury
                 .set(resource)
                 .unwrap();
-            luxury_assigned_to_regions.push(resource);
             *self
                 .luxury_assign_to_region_count
                 .entry(resource)
@@ -87,7 +85,11 @@ impl TileMap {
         // Get the list of candidate resources and their weight that are not assigned to regions.
         let mut luxury_candidates_and_weights: Vec<_> = luxury_city_state_weights
             .iter()
-            .filter(|(luxury_resource, _)| !luxury_assigned_to_regions.contains(luxury_resource))
+            .filter(|(luxury_resource, _)| {
+                !self
+                    .luxury_assign_to_region_count
+                    .contains_key(luxury_resource)
+            })
             .collect();
 
         let mut luxury_assigned_to_city_state = ArrayVec::new();
@@ -120,7 +122,9 @@ impl TileMap {
         let mut remaining_resource_list = luxury_city_state_weights
             .iter()
             .filter(|(luxury_resource, _)| {
-                !luxury_assigned_to_regions.contains(luxury_resource)
+                !self
+                    .luxury_assign_to_region_count
+                    .contains_key(luxury_resource)
                     && !luxury_assigned_to_city_state.contains(luxury_resource)
             })
             .map(|&(luxury_resource, _)| luxury_resource)
@@ -135,8 +139,18 @@ impl TileMap {
         /* remaining_resource_list.shrink_to_fit(); */
         let luxury_not_being_used = remaining_resource_list;
 
+        // Filter `luxury_city_state_weights` to get region-exclusive luxury resources, because we should make sure the order.
+        let regions_exclusive: ArrayVec<Resource, 8> = luxury_city_state_weights
+            .iter()
+            .filter(|(luxury_resource, _)| {
+                self.luxury_assign_to_region_count
+                    .contains_key(luxury_resource)
+            })
+            .map(|&(luxury_resource, _)| luxury_resource)
+            .collect();
+
         self.luxury_resource_role = LuxuryResourceRole {
-            regions_exclusive: luxury_assigned_to_regions,
+            regions_exclusive,
             city_states_exclusive: luxury_assigned_to_city_state,
             special_cases: luxury_assigned_to_special_case,
             random_placement: luxury_assigned_to_random,
@@ -326,22 +340,24 @@ impl TileMap {
 
         // Closure to determine if a luxury resource is eligible for assignment to the current region
         let is_eligible_luxury_resource =
-            |luxury_resource: Resource,
-             luxury_assignment_count: u32,
-             max_regions_per_luxury_type: u32| {
+            |luxury_resource: Resource, max_regions_per_luxury_type: u32| {
+                let luxury_assign_to_region_count: u32 = *self
+                    .luxury_assign_to_region_count
+                    .get(&luxury_resource)
+                    .unwrap_or(&0);
                 // Condition 1: The number of assignments for this specific luxury type has not reached its limit
-                let count_within_limit = luxury_assignment_count < max_regions_per_luxury_type;
+                let count_within_limit =
+                    luxury_assign_to_region_count < max_regions_per_luxury_type;
+
+                // When there are already assignments for this luxury type, it is considered region-exclusive,
+                // and it can continue to be assigned to more regions until it reaches the `max_regions_per_luxury_type` limit.
+                let is_region_exclusive = luxury_assign_to_region_count > 0;
 
                 // Condition 2: The total number of unique luxury types assigned to regions is below the global cap,
                 // OR the cap is reached but this specific resource is already marked as region-exclusive
                 let type_limit_ok = num_assigned_luxury_types
                     < MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
-                    || (num_assigned_luxury_types
-                        == MapParameters::NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS
-                        && self
-                            .luxury_resource_role
-                            .regions_exclusive
-                            .contains(&luxury_resource));
+                    || is_region_exclusive;
 
                 // The resource is eligible only if both the count limit and the type limit are satisfied
                 count_within_limit && type_limit_ok
@@ -355,11 +371,7 @@ impl TileMap {
                 .get(&luxury_resource)
                 .unwrap_or(&0);
 
-            if is_eligible_luxury_resource(
-                luxury_resource,
-                luxury_assign_to_region_count,
-                max_regions_per_exclusive_luxury,
-            ) {
+            if is_eligible_luxury_resource(luxury_resource, max_regions_per_exclusive_luxury) {
                 match (luxury_resource, region_type) {
                     // This should never happen, because `luxury_candidates` has been filtered according to the region type.
                     // So when region type is Jungle, there shouldn't be Pearls in `luxury_candidates`,
@@ -404,9 +416,9 @@ impl TileMap {
                     .luxury_assign_to_region_count
                     .get(&luxury_resource)
                     .unwrap_or(&0);
+
                 if is_eligible_luxury_resource(
                     luxury_resource,
-                    luxury_assign_to_region_count,
                     MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE,
                 ) {
                     // This type still eligible.
@@ -457,9 +469,9 @@ impl TileMap {
                     .luxury_assign_to_region_count
                     .get(&luxury_resource)
                     .unwrap_or(&0);
+
                 if is_eligible_luxury_resource(
                     luxury_resource,
-                    luxury_assign_to_region_count,
                     MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE,
                 ) {
                     resource_list.push(luxury_resource);
