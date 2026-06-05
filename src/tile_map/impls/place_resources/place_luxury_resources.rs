@@ -191,32 +191,15 @@ impl TileMap {
 
             let allowed_luxuries =
                 self.get_list_of_allowable_luxuries_at_city_site(starting_tile, 2);
-            // Store the luxury types that can only be owned by city states and are allowed at this city state.
-            // It should meet the following criteria:
-            // 1. The luxury type is assigned to city states. (based on the luxury role)
-            // 2. The luxury type is allowed at this city state. (based on the allowed luxuries)
-            let city_state_luxury_types: Vec<_> = self
-                .luxury_resource_role
-                .city_states_exclusive
-                .iter()
-                .filter(|luxury| allowed_luxuries.contains(luxury))
-                .copied()
-                .collect();
 
             // Store the luxury types the city state can own and the weight of each luxury type.
             // The luxury types contains as follows:
-            // 1. The luxury type can only be owned by city states and is allowed at this city state.
-            // 2. The luxury type can only be owned by regions and is allowed at this city state. (if the region is not null)
-            // 3. The random luxury type is allowed at this city state.
+            // 1. City state exclusive luxury types which are allowed at this city state.
+            // 2. Region exclusive luxury type which is allowed at this city state. (if city state is placed in a region)
+            // 3. Random placement luxury types which are allowed at this city state.
             let mut luxury_for_city_state_and_weight = Vec::new();
 
-            // Add the luxury types that can only be owned by city states and are allowed at this city state to the list.
-            city_state_luxury_types.iter().for_each(|&luxury| {
-                luxury_for_city_state_and_weight
-                    .push((luxury, 75. / city_state_luxury_types.len() as f64));
-            });
-
-            let random_types_allowed: Vec<_> = self
+            let city_state_exclusive_luxury_types: Vec<_> = self
                 .luxury_resource_role
                 .city_states_exclusive
                 .iter()
@@ -224,9 +207,25 @@ impl TileMap {
                 .copied()
                 .collect();
 
-            let mut num_allowed = random_types_allowed.len();
+            // Part 1: Add the city state exclusive luxury types that are allowed at this city state to the list, with a total weight of 75%.
+            city_state_exclusive_luxury_types
+                .iter()
+                .for_each(|&luxury| {
+                    luxury_for_city_state_and_weight
+                        .push((luxury, 75. / city_state_exclusive_luxury_types.len() as f64));
+                });
 
-            // Add the luxury types that can only be owned by regions and are allowed at this city state to the list.
+            let random_placement_luxury_types: Vec<_> = self
+                .luxury_resource_role
+                .random_placement
+                .iter()
+                .filter(|luxury| allowed_luxuries.contains(luxury))
+                .copied()
+                .collect();
+
+            let mut num_allowed = random_placement_luxury_types.len();
+
+            // Part 2: Add the region exclusive luxury type that is allowed at this city state to the list.
             if let Some(region_index) = region_index {
                 // Adding the region type in to the mix with the random types.
                 num_allowed += 1;
@@ -236,20 +235,22 @@ impl TileMap {
                 }
             }
 
-            // Add the random luxury types that are allowed at this city state to the list.
-            random_types_allowed.iter().for_each(|&luxury| {
+            // Part 3: Add the random placement luxury types that are allowed at this city state to the list.
+            random_placement_luxury_types.iter().for_each(|&luxury| {
                 luxury_for_city_state_and_weight.push((luxury, 25. / num_allowed as f64));
             });
 
             if !luxury_for_city_state_and_weight.is_empty() {
                 let dist =
-                    WeightedIndex::new(luxury_for_city_state_and_weight.iter().map(|item| item.1))
+                    WeightedIndex::new(luxury_for_city_state_and_weight.iter().map(|(_, w)| *w))
                         .unwrap();
-                // Choose luxury type.
+
+                // Randomly select a luxury type for this city state based on the weights, and place it.
                 let luxury = luxury_for_city_state_and_weight
                     [dist.sample(&mut self.random_number_generator)]
                 .0;
-                // Place luxury.
+
+                // Place luxury resource.
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
                 let mut luxury_tile_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
