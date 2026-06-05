@@ -121,7 +121,7 @@ impl TileMap {
     /// # Notes
     ///
     /// - Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
-    ///   That means if [`MapParameters::MAX_CIVILIZATION_NUM`] is greater than 22, we don't need to rewrite this function.
+    ///   That means if [`MapParameters::MAX_CIVILIZATION_COUNT`] is greater than 22, we don't need to rewrite this function.
     /// - In the original CIV5, the `chop_percent` values are intentionally set slightly lower than needed. This design choice helps ensure that the final results average out closer to the intended target.\
     ///   In our implementation, we use exact values for `chop_percent`, and use a special algorithm in [`Region::chop_into_two_regions`] to achieve more accurate results.
     ///   Please refer to [`Region::chop_into_two_regions`] for more details.
@@ -630,15 +630,6 @@ pub struct Region {
     ///
     /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
     pub start_location_condition: OnceLock<StartLocationCondition>,
-    /// The exclusive luxury resource of the region.
-    ///
-    /// In CIV5, this same luxury resource can only be found in at most 3 regions on the map.
-    ///
-    /// # Notes
-    ///
-    /// Before reading this field, you must ensure that we have run [`TileMap::assign_luxury_roles`] to set this field.
-    /// And after calling [`TileMap::assign_luxury_roles`], this luxury resource must be in [`TileMap::luxury_resource_role`]'s `luxury_assigned_to_regions` field.
-    pub exclusive_luxury: OnceLock<Resource>,
 }
 
 impl Region {
@@ -661,7 +652,6 @@ impl Region {
             region_type: OnceLock::new(),
             starting_tile: OnceLock::new(),
             start_location_condition: OnceLock::new(),
-            exclusive_luxury: OnceLock::new(),
         }
     }
 

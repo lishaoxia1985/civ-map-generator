@@ -60,10 +60,10 @@ pub struct MapParameters {
 
 impl MapParameters {
     /// The maximum number of civilizations that can be placed on the map.
-    pub const MAX_CIVILIZATION_NUM: u32 = 22;
+    pub const MAX_CIVILIZATION_COUNT: u32 = 22;
 
     /// The maximum number of city states that can be placed on the map.
-    pub const MAX_CITY_STATE_NUM: u32 = 41;
+    pub const MAX_CITY_STATE_COUNT: u32 = 41;
 
     /// The maximum number of regions that can share a regional-exclusive luxury resource type.
     ///
@@ -81,7 +81,7 @@ impl MapParameters {
     /// Because in original CIV5, the same regional luxury resource can only be found in at most 3 regions on the map.
     /// And there are a maximum of 22 civilizations (each representing a region) in the game, 3 * 8  = 24, it's enough for all civilizations.
     pub const NUM_MAX_ALLOWED_LUXURY_TYPES_FOR_REGIONS: usize =
-        Self::MAX_CIVILIZATION_NUM.div_ceil(Self::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE) as usize;
+        Self::MAX_CIVILIZATION_COUNT.div_ceil(Self::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE) as usize;
 
     /// The maximum number of distinct luxury resource types that can be exclusively assigned to city states.
     ///
@@ -515,11 +515,11 @@ pub enum ResourceSetting {
 pub struct WorldSizeTypeProfile {
     /// The number of civilizations, excluding city states.
     ///
-    /// This value must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_NUM`]]**.
+    /// This value must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
     pub num_civilizations: u32,
     /// The number of city states.
     ///
-    /// This value must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_NUM`]]**.
+    /// This value must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_COUNT`]]**.
     pub num_city_states: u32,
     /// The number of wonders that will be placed on the map.
     pub num_natural_wonders: u32,

@@ -360,7 +360,7 @@ impl TileMap {
             _ => 0,
         };
 
-        // if num_city_states_per_region is 0, the code below will not be executed.
+        // if `num_city_states_per_region` is 0, the code below will not be executed.
         for _ in 0..num_city_states_per_region {
             for region_index in 0..self.region_list.len() {
                 region_index_assignment.push(Some(region_index));
@@ -471,46 +471,46 @@ impl TileMap {
         /***** Assign city states to uninhabited landmasses ******/
 
         /***** Assign city states to regions with shared luxury resources ******/
-        let mut num_city_states_shared_luxury = 0;
-        let num_city_states_low_fertility;
-
         if num_city_states_unassigned > 0 {
             let mut num_regions_shared_luxury = 0;
             // Collect regional exclusive luxury resources which have been placed in `MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE` different regions.
-            let mut shared_luxury = Vec::new();
+            let mut shared_luxury_list = Vec::new();
             // Determine how many to place in support of regions that share their luxury type with two other regions.
-            for (&luxury_resource, &luxury_assign_to_region_count) in
-                self.luxury_assign_to_region_count.iter()
-            {
+            for &luxury in self.luxury_resource_role.regions_exclusive.iter() {
+                let luxury_assign_to_region_count =
+                    self.assigned_region_exclusive_luxury_count(luxury);
                 if luxury_assign_to_region_count
                     == MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE
                 {
                     num_regions_shared_luxury +=
                         MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE;
-                    shared_luxury.push(luxury_resource);
+                    shared_luxury_list.push(luxury);
                 }
             }
 
-            if num_regions_shared_luxury > 0
+            let num_city_states_shared_luxury = if num_regions_shared_luxury > 0
                 && num_regions_shared_luxury <= num_city_states_unassigned
             {
-                num_city_states_shared_luxury = num_regions_shared_luxury;
-                num_city_states_low_fertility =
-                    num_city_states_unassigned - num_city_states_shared_luxury;
+                num_regions_shared_luxury
             } else {
-                num_city_states_low_fertility = num_city_states_unassigned;
-            }
+                // When `num_regions_shared_luxury = 0`,
+                // or `num_regions_shared_luxury > num_city_states_unassigned`,
+                // we don't place city states for shared luxury compensation.
+                0
+            };
+
+            let num_city_states_low_fertility =
+                num_city_states_unassigned - num_city_states_shared_luxury;
 
             if num_city_states_shared_luxury > 0 {
-                // Sort the shared luxury resources by their string representation.
-                // That will make sure we get the same order every time.
-                shared_luxury.sort_by_key(|luxury| luxury.as_str());
-                for luxury_resource in shared_luxury.iter() {
-                    for (region_index, region) in self.region_list.iter().enumerate() {
-                        if region.exclusive_luxury.get() == Some(luxury_resource) {
-                            region_index_assignment.push(Some(region_index));
-                            num_city_states_unassigned -= 1;
-                        }
+                for (region_index, exclusive_luxury) in
+                    self.region_exclusive_luxury_list.iter().enumerate()
+                {
+                    // If that the region shared exclusive luxury with the other regions reaches the threshold,
+                    // we assign the city state to that region as compensation.
+                    if shared_luxury_list.contains(exclusive_luxury) {
+                        region_index_assignment.push(Some(region_index));
+                        num_city_states_unassigned -= 1;
                     }
                 }
             }

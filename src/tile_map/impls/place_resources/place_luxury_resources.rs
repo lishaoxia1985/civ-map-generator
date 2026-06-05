@@ -57,10 +57,7 @@ impl TileMap {
                 .get()
                 .unwrap();
             let starting_tile = *self.region_list[region_index].starting_tile.get().unwrap();
-            let exclusive_luxury = *self.region_list[region_index]
-                .exclusive_luxury
-                .get()
-                .unwrap();
+            let exclusive_luxury = self.region_exclusive_luxury_list[region_index];
 
             /***** Calculate the low fertility compensation for the region ******/
             // Low fertility per region rectangle tile, add a luxury.
@@ -233,10 +230,7 @@ impl TileMap {
             if let Some(region_index) = region_index {
                 // Adding the region type in to the mix with the random types.
                 num_allowed += 1;
-                let luxury = *self.region_list[region_index]
-                    .exclusive_luxury
-                    .get()
-                    .unwrap();
+                let luxury = self.region_exclusive_luxury_list[region_index];
                 if allowed_luxuries.contains(&luxury) {
                     luxury_for_city_state_and_weight.push((luxury, 25. / num_allowed as f64));
                 }
@@ -252,12 +246,11 @@ impl TileMap {
                     WeightedIndex::new(luxury_for_city_state_and_weight.iter().map(|item| item.1))
                         .unwrap();
                 // Choose luxury type.
-                let luxury_resource = luxury_for_city_state_and_weight
+                let luxury = luxury_for_city_state_and_weight
                     [dist.sample(&mut self.random_number_generator)]
                 .0;
                 // Place luxury.
-                let priority_list_indices_of_luxury =
-                    self.get_indices_for_luxury_type(luxury_resource);
+                let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
                 let mut luxury_tile_lists =
                     self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
 
@@ -269,7 +262,7 @@ impl TileMap {
                     }
                     luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
                     num_left_to_place = self.place_specific_number_of_resources(
-                        luxury_resource,
+                        luxury,
                         1,
                         num_left_to_place,
                         1.0,
@@ -292,19 +285,15 @@ impl TileMap {
         for (region_index, &current_region_low_fert_compensation) in
             region_low_fert_compensation.iter().enumerate()
         {
-            let luxury_resource = *self.region_list[region_index]
-                .exclusive_luxury
-                .get()
-                .unwrap();
+            let luxury = self.region_exclusive_luxury_list[region_index];
             let luxury_assign_to_region_count: u32 =
-                self.luxury_assign_to_region_count[&luxury_resource];
-            let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury_resource);
+                self.assigned_region_exclusive_luxury_count(luxury);
+            let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
             let mut luxury_tile_lists = self.generate_luxury_tile_lists_in_region(region_index);
 
-            let current_luxury_low_fert_compensation = *luxury_low_fert_compensation
-                .entry(luxury_resource)
-                .or_insert(0);
+            let current_luxury_low_fert_compensation =
+                *luxury_low_fert_compensation.entry(luxury).or_insert(0);
 
             // Calibrate the number of luxuries per region based on the world size and the number of civilizations.
             // The number of luxuries per region should be highest when the number of civilizations is closest to the "default" value for that map size.
@@ -346,7 +335,7 @@ impl TileMap {
                 luxury_tile_lists[i].shuffle(&mut self.random_number_generator);
 
                 num_left_to_place = self.place_specific_number_of_resources(
-                    luxury_resource,
+                    luxury,
                     1,
                     num_left_to_place,
                     ratio,
@@ -389,10 +378,9 @@ impl TileMap {
             ];
 
             for i in 0..num_random_luxury_types {
-                let luxury_resource = self.luxury_resource_role.random_placement[i];
+                let luxury = self.luxury_resource_role.random_placement[i];
 
-                let priority_list_indices_of_luxury =
-                    self.get_indices_for_luxury_type(luxury_resource);
+                let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
                 // If calculated number of randoms is low, just place 3 of each radom luxury type.
                 if num_random_luxury_types * 3 > num_random_luxury_target as usize {
@@ -421,7 +409,7 @@ impl TileMap {
                     current_list[i].shuffle(&mut self.random_number_generator);
 
                     num_left_to_place = self.place_specific_number_of_resources(
-                        luxury_resource,
+                        luxury,
                         1,
                         num_left_to_place,
                         ratio,
@@ -484,10 +472,7 @@ impl TileMap {
                             candidate_luxury_types.choose(&mut self.random_number_generator);
                     } else {
                         // No City State luxuries available. Use a type from another region.
-                        let region_luxury = *self.region_list[region_index]
-                            .exclusive_luxury
-                            .get()
-                            .unwrap();
+                        let region_luxury = self.region_exclusive_luxury_list[region_index];
                         for &luxury in self.luxury_resource_role.regions_exclusive.iter() {
                             if allowed_luxuries.contains(&luxury) && luxury != region_luxury {
                                 candidate_luxury_types.push(luxury);
@@ -550,8 +535,8 @@ impl TileMap {
     }
 
     fn place_marble(&mut self, map_parameters: &MapParameters) {
-        let luxury_resource = Resource::Marble;
-        let marble_already_placed: u32 = self.placed_resource_count(luxury_resource);
+        let luxury = Resource::Marble;
+        let marble_already_placed: u32 = self.placed_resource_count(luxury);
         let num_civilizations = map_parameters.world_size_type_profile.num_civilizations;
 
         let marble_target = match map_parameters.resource_setting {
@@ -620,7 +605,7 @@ impl TileMap {
                 && self.layer_data[Layer::Luxury][tile.index()] == 0
             {
                 // Placing this resource in this tile.
-                tile.set_resource(self, luxury_resource, 1);
+                tile.set_resource(self, luxury, 1);
                 num_left_to_place -= 1;
                 self.place_impact_and_ripples(tile, Layer::Marble, u32::MAX);
             }
@@ -1242,13 +1227,13 @@ impl TileMap {
 // TODO: This function will implement in file 'map_parameters.rs' in the future.
 fn get_region_luxury_target_numbers(
     world_size_type: WorldSizeType,
-) -> [u32; MapParameters::MAX_CIVILIZATION_NUM as usize] {
+) -> [u32; MapParameters::MAX_CIVILIZATION_COUNT as usize] {
     // This data was separated out to allow easy replacement in map scripts.
     // This table, indexed by civ-count, provides the target amount of luxuries to place in each region.
     // These vector's length is 22, which is the maximum number of civilizations in the game.
     // Max is one per region for all player counts at this size.
     match world_size_type {
-        WorldSizeType::Duel => [1; MapParameters::MAX_CIVILIZATION_NUM as usize],
+        WorldSizeType::Duel => [1; MapParameters::MAX_CIVILIZATION_COUNT as usize],
         WorldSizeType::Tiny => [
             0, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         ],

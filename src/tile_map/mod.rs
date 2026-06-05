@@ -40,7 +40,7 @@ use enum_map::{Enum, EnumMap, enum_map};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use std::{
     cmp::{max, min},
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
 };
 
 mod impls;
@@ -99,8 +99,20 @@ pub struct TileMap {
     pub starting_tile_and_city_state: BTreeMap<Tile, Nation>,
 
     /// List of regions for dividing the map among civilizations.
-    /// Capacity is limited to [`MapParameters::MAX_CIVILIZATION_NUM`].
-    region_list: ArrayVec<Region, { MapParameters::MAX_CIVILIZATION_NUM as usize }>,
+    /// Capacity is limited to [`MapParameters::MAX_CIVILIZATION_COUNT`].
+    /// The index of each element implies the region index used in other parts of the code.
+    region_list: ArrayVec<Region, { MapParameters::MAX_CIVILIZATION_COUNT as usize }>,
+
+    /// List of exclusive luxury resources for each region.
+    /// Indexed by the region index in [`Self::region_list`].
+    ///
+    /// # Notes
+    ///
+    /// The element must be in [`TileMap::luxury_resource_role`]'s `regions_exclusive` field,
+    /// and the number of the same element in list must not exceed [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`].
+    ///
+    region_exclusive_luxury_list:
+        ArrayVec<Resource, { MapParameters::MAX_CIVILIZATION_COUNT as usize }>,
 
     /// Layer data tracking placement constraints for different element types.
     ///
@@ -125,15 +137,6 @@ pub struct TileMap {
 
     /// Tracks luxury resource role assignments (region, city-state, special, random, unused).
     luxury_resource_role: LuxuryResourceRole,
-
-    /// Count of how many regions each luxury resource type has been assigned to.
-    ///
-    /// Used to adjust assignment probability - the more regions a luxury is in,
-    /// the less likely it is to be assigned to additional regions in the future.
-    ///
-    /// Keys are from [`LuxuryResourceRole::luxury_assigned_to_regions`].
-    /// Values should not exceed [`MapParameters::MAX_REGIONS_PER_EXCLUSIVE_LUXURY_TYPE`].
-    luxury_assign_to_region_count: HashMap<Resource, u32>,
 }
 
 impl TileMap {
@@ -186,7 +189,7 @@ impl TileMap {
             starting_tile_and_city_state: BTreeMap::new(),
             city_state_starting_tile_and_region_index: Vec::new(),
             luxury_resource_role: LuxuryResourceRole::default(),
-            luxury_assign_to_region_count: HashMap::new(),
+            region_exclusive_luxury_list: ArrayVec::new(),
         }
     }
 
