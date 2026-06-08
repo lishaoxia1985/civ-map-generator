@@ -131,10 +131,6 @@ pub struct TileMap {
     /// See [`Layer`] documentation for details on adding new layers.
     pub layer_data: EnumMap<Layer, Vec<u32>>,
 
-    /// City-state starting tiles with their assigned region indices.
-    /// `None` region index means the city-state is in an uninhabited area.
-    city_state_starting_tile_and_region_index: Vec<(Tile, Option<usize>)>,
-
     /// Tracks luxury resource role assignments (region, city-state, special, random, unused).
     luxury_resource_role: LuxuryResourceRole,
 }
@@ -187,7 +183,6 @@ impl TileMap {
             layer_data,
             starting_tile_and_civilization: BTreeMap::new(),
             starting_tile_and_city_state: BTreeMap::new(),
-            city_state_starting_tile_and_region_index: Vec::new(),
             luxury_resource_role: LuxuryResourceRole::default(),
             region_exclusive_luxury_list: ArrayVec::new(),
         }

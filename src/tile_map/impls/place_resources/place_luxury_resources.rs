@@ -11,7 +11,7 @@ use rand::{
 };
 
 use crate::{
-    grid::WorldSizeType,
+    grid::{self, WorldSizeType},
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::Ruleset,
     tile::Tile,
@@ -25,6 +25,8 @@ impl TileMap {
     ///
     /// Before running this function, [`TileMap::assign_luxury_roles`] function must be run.
     pub fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+        let grid = self.world_grid.grid;
+
         let world_size = self.world_grid.world_size_type;
         let resource_setting = map_parameters.resource_setting;
         let num_civilizations = map_parameters.world_size_type_profile.num_civilizations;
@@ -186,11 +188,13 @@ impl TileMap {
 
         /********** Process 2: Place Luxuries at City States **********/
         // Candidate luxuries include luxuries exclusive to City States, the luxury assigned to this City State's region (if in a region), and the randoms.
-        for i in 0..self.city_state_starting_tile_and_region_index.len() {
-            let &(starting_tile, region_index) = &self.city_state_starting_tile_and_region_index[i];
-
-            let allowed_luxuries =
-                self.get_list_of_allowable_luxuries_at_city_site(starting_tile, 2);
+        let start_tile_of_city_state_list = self
+            .starting_tile_and_city_state
+            .keys()
+            .copied()
+            .collect::<Vec<_>>();
+        for start_tile in start_tile_of_city_state_list {
+            let allowed_luxuries = self.get_list_of_allowable_luxuries_at_city_site(start_tile, 2);
 
             // Store the luxury types the city state can own and the weight of each luxury type.
             // The luxury types contains as follows:
@@ -226,7 +230,12 @@ impl TileMap {
             let mut num_allowed = random_placement_luxury_types.len();
 
             // Part 2: Add the region exclusive luxury type that is allowed at this city state to the list.
-            if let Some(region_index) = region_index {
+            // Check if start tile of city state is in a region that has exclusive luxury type.
+            if let Some(region_index) = self
+                .region_list
+                .iter()
+                .position(|region| region.rectangle.contains(start_tile.to_cell(), &grid))
+            {
                 // Adding the region type in to the mix with the random types.
                 num_allowed += 1;
                 let luxury = self.region_exclusive_luxury_list[region_index];
@@ -253,7 +262,7 @@ impl TileMap {
                 // Place luxury resource.
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
                 let mut luxury_tile_lists =
-                    self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
+                    self.generate_luxury_tile_lists_at_city_site(start_tile, 2);
 
                 let mut num_left_to_place = 1;
 

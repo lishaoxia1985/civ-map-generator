@@ -72,8 +72,6 @@ impl TileMap {
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
                     self.place_city_state(city_state, tile);
-                    self.city_state_starting_tile_and_region_index
-                        .push((tile, None));
                 } else {
                     num_city_states_discarded += 1;
                 }
@@ -86,8 +84,6 @@ impl TileMap {
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
                     self.place_city_state(city_state, tile);
-                    self.city_state_starting_tile_and_region_index
-                        .push((tile, Some(region_index)));
                 } else {
                     num_city_states_discarded += 1;
                 }
@@ -98,8 +94,6 @@ impl TileMap {
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
                     self.place_city_state(city_state, tile);
-                    self.city_state_starting_tile_and_region_index
-                        .push((tile, Some(region_index)));
                 } else {
                     num_city_states_discarded += 1;
                 }
@@ -132,8 +126,6 @@ impl TileMap {
                 let tile = self.start_tile_of_city_state(&candidate_tile_list, true, true);
                 if let Some(tile) = tile {
                     self.place_city_state(city_state, tile);
-                    self.city_state_starting_tile_and_region_index
-                        .push((tile, None));
                     num_city_states_discarded -= 1;
                 } else {
                     break;
