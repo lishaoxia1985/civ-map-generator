@@ -734,7 +734,7 @@ impl TileMap {
                         next_to_lake = true;
                         inner_two_food += 1;
                         num_native_two_food_first_ring += 1;
-                    } else {
+                    } else if base_terrain == BaseTerrain::Coast {
                         inner_ocean += 1;
                         inner_can_have_bonus += 1;
                     }
@@ -878,17 +878,15 @@ impl TileMap {
                         outer_bad_tiles += 1;
                     }
                     TerrainType::Water => {
-                        if base_terrain == BaseTerrain::Lake {
+                        if feature == Some(Feature::Ice) {
+                            outer_bad_tiles += 1;
+                        } else if base_terrain == BaseTerrain::Lake {
                             next_to_lake = true;
-                            if feature == Some(Feature::Ice) {
-                                outer_bad_tiles += 1;
-                            } else {
+                            {
                                 outer_two_food += 1;
                                 num_native_two_food_second_ring += 1;
                             }
-                        } else if feature == Some(Feature::Ice) {
-                            outer_bad_tiles += 1;
-                        } else {
+                        } else if base_terrain == BaseTerrain::Coast {
                             outer_ocean += 1;
                             outer_can_have_bonus += 1;
                         }
