@@ -699,10 +699,8 @@ impl TileMap {
                     },
                     TerrainType::Mountain => {}
                     TerrainType::Hill => {
-                        if base_terrain != BaseTerrain::Snow {
-                            if feature.is_none() {
-                                hills_open_list.push(tile);
-                            }
+                        if base_terrain != BaseTerrain::Snow && feature.is_none() {
+                            hills_open_list.push(tile);
                         }
                     }
                 }

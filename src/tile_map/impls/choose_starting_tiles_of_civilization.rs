@@ -942,30 +942,8 @@ impl TileMap {
         let base_terrain = tile.base_terrain(self);
         let feature = tile.feature(self);
 
-        match (terrain_type, base_terrain, feature) {
-            (TerrainType::Water, _, Some(Feature::Ice)) => {
-                yield_flags |= YieldFlags::Junk;
-                return yield_flags;
-            }
-            (TerrainType::Water, BaseTerrain::Lake, _) => {
-                yield_flags |= YieldFlags::Food | YieldFlags::Good;
-                return yield_flags;
-            }
-            (TerrainType::Water, BaseTerrain::Coast, _) if region.area_id.is_none() => {
-                yield_flags |= YieldFlags::Good;
-                return yield_flags;
-            }
-            (TerrainType::Water, _, _) => {
-                return yield_flags;
-            }
-            (TerrainType::Mountain, _, _) => {
-                yield_flags |= YieldFlags::Junk;
-                return yield_flags;
-            }
-            (TerrainType::Flatland | TerrainType::Hill, _, _) => (),
-        }
-
         // Handle Flatland and Hill with features first
+        // Notes: These feature below only occurs on flatland and hill
         if let Some(feature) = feature {
             match feature {
                 Feature::Forest => {
@@ -994,15 +972,31 @@ impl TileMap {
             }
         }
 
-        // Handle Hill terrain with no features.
-        if terrain_type == TerrainType::Hill {
-            yield_flags |= YieldFlags::Production | YieldFlags::Good;
-            return yield_flags;
-        }
-
-        // Handle Flatland terrain without features according to its base terrain.
-        match base_terrain {
-            BaseTerrain::Grassland => {
+        match (terrain_type, base_terrain, feature) {
+            (TerrainType::Water, _, Some(Feature::Ice)) => {
+                yield_flags |= YieldFlags::Junk;
+                return yield_flags;
+            }
+            (TerrainType::Water, BaseTerrain::Lake, _) => {
+                yield_flags |= YieldFlags::Food | YieldFlags::Good;
+                return yield_flags;
+            }
+            (TerrainType::Water, BaseTerrain::Coast, _) if region.area_id.is_none() => {
+                yield_flags |= YieldFlags::Good;
+                return yield_flags;
+            }
+            (TerrainType::Water, _, _) => {
+                return yield_flags;
+            }
+            (TerrainType::Mountain, _, _) => {
+                yield_flags |= YieldFlags::Junk;
+                return yield_flags;
+            }
+            (TerrainType::Hill, _, None) => {
+                yield_flags |= YieldFlags::Production | YieldFlags::Good;
+                return yield_flags;
+            }
+            (TerrainType::Flatland, BaseTerrain::Grassland, None) => {
                 yield_flags |= YieldFlags::Good;
                 if matches!(
                     region_type,
@@ -1016,13 +1010,13 @@ impl TileMap {
                 }
                 return yield_flags;
             }
-            BaseTerrain::Desert => {
+            (TerrainType::Flatland, BaseTerrain::Desert, None) => {
                 if region_type != RegionType::Desert {
                     yield_flags |= YieldFlags::Junk;
                 }
                 return yield_flags;
             }
-            BaseTerrain::Plain => {
+            (TerrainType::Flatland, BaseTerrain::Plain, None) => {
                 yield_flags |= YieldFlags::Good;
                 if matches!(
                     region_type,
@@ -1036,17 +1030,17 @@ impl TileMap {
                 }
                 return yield_flags;
             }
-            BaseTerrain::Tundra => {
+            (TerrainType::Flatland, BaseTerrain::Tundra, None) => {
                 if region_type == RegionType::Tundra {
                     yield_flags |= YieldFlags::Food | YieldFlags::Good;
                 }
                 return yield_flags;
             }
-            BaseTerrain::Snow => {
+            (TerrainType::Flatland, BaseTerrain::Snow, None) => {
                 yield_flags |= YieldFlags::Junk;
                 return yield_flags;
             }
-            _ => (),
+            (_, _, _) => (),
         }
 
         yield_flags
