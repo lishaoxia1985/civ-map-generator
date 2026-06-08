@@ -57,7 +57,7 @@ pub trait Generator {
 
     fn choose_civilization_starting_tiles(&mut self, map_parameters: &MapParameters) {
         self.tile_map_mut()
-            .choose_civilization_starting_tiles(map_parameters);
+            .choose_starting_tiles_of_civilization(map_parameters);
     }
 
     fn balance_and_assign_start_locations_of_civilization(

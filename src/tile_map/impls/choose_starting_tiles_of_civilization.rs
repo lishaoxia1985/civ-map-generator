@@ -20,7 +20,7 @@ use super::generate_regions::{Region, RegionType};
 impl TileMap {
     // function AssignStartingPlots:ChooseLocations
     /// Get starting tile for each civilization according to region. Every region will have a starting tile for a civilization.
-    pub fn choose_civilization_starting_tiles(&mut self, map_parameters: &MapParameters) {
+    pub fn choose_starting_tiles_of_civilization(&mut self, map_parameters: &MapParameters) {
         // Sort the region list by average fertility
         self.region_list
             .sort_by(|a, b| a.average_fertility().total_cmp(&b.average_fertility()));
