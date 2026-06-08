@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 
 use crate::{ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap};
+use bitflags::bitflags;
 
 pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
 pub const UNINITIALIZED_LANDMASS_ID: usize = usize::MAX;
@@ -70,9 +71,14 @@ impl TileMap {
             let area_size = tiles_in_area.len() as u32;
 
             if area_size >= MIN_AREA_SIZE {
+                let area_flags = match tile.terrain_type(self) {
+                    TerrainType::Water => AreaFlags::Water,
+                    TerrainType::Mountain => AreaFlags::Mountain,
+                    TerrainType::Flatland | TerrainType::Hill => AreaFlags::FlatlandOrHill,
+                };
+
                 let area = Area {
-                    is_water: tile.is_water(self),
-                    is_mountain: tile.terrain_type(self) == TerrainType::Mountain,
+                    area_flags,
                     id: current_area_id,
                     size: area_size,
                 };
@@ -126,6 +132,17 @@ impl TileMap {
                     // and update the area ID of the tiles in the current area.
                     area_list[largest_neighbor_area_id].size += area_size;
 
+                    // It often happens that the largest neighbor area is flatland and hill area,
+                    // and the current area is a small pure mountain area.
+                    // In this case, we merge the current area into the largest neighbor area,
+                    // and update the area flags of the latest merged area containing the flags of the current area.
+                    area_list[largest_neighbor_area_id].area_flags |= match tile.terrain_type(self)
+                    {
+                        TerrainType::Water => AreaFlags::Water,
+                        TerrainType::Mountain => AreaFlags::Mountain,
+                        TerrainType::Flatland | TerrainType::Hill => AreaFlags::FlatlandOrHill,
+                    };
+
                     for tile in &tiles_in_area {
                         area_id_list[tile.index()] = largest_neighbor_area_id;
                     }
@@ -141,9 +158,14 @@ impl TileMap {
             //    we assign a new area ID to it.
             let current_area_id = area_list.len();
 
+            let area_flags = match tile.terrain_type(self) {
+                TerrainType::Water => AreaFlags::Water,
+                TerrainType::Mountain => AreaFlags::Mountain,
+                TerrainType::Flatland | TerrainType::Hill => AreaFlags::FlatlandOrHill,
+            };
+
             let area = Area {
-                is_water: tile.is_water(self),
-                is_mountain: tile.terrain_type(self) == TerrainType::Mountain,
+                area_flags,
                 id: current_area_id,
                 size: area_size,
             };
@@ -241,14 +263,36 @@ impl TileMap {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Area {
-    /// Whether all tiles in the area are [`TerrainType::Water`].
-    pub is_water: bool,
-    /// Whether all tiles in the area are [`TerrainType::Mountain`].
-    pub is_mountain: bool,
+    /// Area flags. See [`AreaFlags`] for details.
+    pub area_flags: AreaFlags,
     /// Area ID. The ID is equal to the index of the area in the [`TileMap::area_list`].
     pub id: usize,
     /// Size of the area in tiles.
     pub size: u32,
+}
+
+bitflags! {
+    #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+    pub struct AreaFlags: u32 {
+        /// This implies that all tiles in the area are water.
+        ///
+        /// # Note
+        ///
+        /// This flag is mutually exclusive with `Mountain` and `FlatlandOrHill`.
+        const Water = 1 << 0;
+        /// This implies that all tiles in the area are mountain.
+        ///
+        /// # Note
+        ///
+        /// This flag is mutually exclusive with `Water`.
+        const Mountain = 1 << 1;
+        /// This implies that all tiles in the area are flatland, hill, or mixed flatland and hill.
+        ///
+        /// # Note
+        ///
+        /// This flag is mutually exclusive with `Water`.
+        const FlatlandOrHill = 1 << 2;
+    }
 }
 
 /// Represents a landmass in the map.

@@ -9,6 +9,7 @@ use rand::{Rng, seq::IndexedRandom};
 
 use crate::map_parameters::MapParameters;
 use crate::ruleset::common::Unique;
+use crate::tile_map::AreaFlags;
 use crate::{
     grid::Grid,
     ruleset::Ruleset,
@@ -34,7 +35,7 @@ impl TileMap {
         let mut land_area_id_and_size: Vec<_> = self
             .area_list
             .iter()
-            .filter(|area| !area.is_water)
+            .filter(|area| area.area_flags.contains(AreaFlags::FlatlandOrHill))
             .map(|area| (area.id, area.size))
             .collect();
 
@@ -345,7 +346,7 @@ impl TileMap {
         let mut land_area_id_and_size: Vec<_> = self
             .area_list
             .iter()
-            .filter(|area| !area.is_water)
+            .filter(|area| area.area_flags.contains(AreaFlags::FlatlandOrHill))
             .map(|area| (area.id, area.size))
             .collect();
 

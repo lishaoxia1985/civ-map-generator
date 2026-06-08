@@ -12,7 +12,7 @@ use crate::{
     map_parameters::RegionDivideMethod,
     tile::Tile,
     tile_component::*,
-    tile_map::{MapParameters, TileMap},
+    tile_map::{AreaFlags, MapParameters, TileMap},
 };
 
 impl TileMap {
@@ -38,7 +38,7 @@ impl TileMap {
                 let mut landmass_region_list: Vec<_> = self
                     .area_list
                     .iter()
-                    .filter(|area| !area.is_water)
+                    .filter(|area| area.area_flags.contains(AreaFlags::FlatlandOrHill))
                     .map(|area| Region::landmass_region(self, area.id))
                     .collect();
 
@@ -517,7 +517,7 @@ impl TileMap {
     fn get_biggest_land_area_id(&self) -> usize {
         self.area_list
             .iter()
-            .filter(|area| !area.is_water)
+            .filter(|area| area.area_flags.contains(AreaFlags::FlatlandOrHill))
             .max_by_key(|area| area.size)
             .expect("No area found!") // Ensure that there's at least one area.
             .id

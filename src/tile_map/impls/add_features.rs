@@ -5,7 +5,7 @@ use crate::{
     map_parameters::Rainfall,
     ruleset::Ruleset,
     tile_component::{BaseTerrain, Feature, TerrainType},
-    tile_map::{MapParameters, TileMap},
+    tile_map::{AreaFlags, MapParameters, TileMap},
 };
 
 impl TileMap {
@@ -412,7 +412,7 @@ impl TileMap {
     fn get_biggest_water_area_id(&self) -> usize {
         self.area_list
             .iter()
-            .filter(|area| area.is_water)
+            .filter(|area| area.area_flags.contains(AreaFlags::Water))
             .max_by_key(|area| area.size)
             .expect("No area found!") // Ensure that there's at least one area.
             .id
