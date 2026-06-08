@@ -707,83 +707,47 @@ impl TileMap {
                             && feature != Some(Feature::Atoll)
                         {
                             coast_list.push(tile);
-                            /* if tile.neighbor_tiles(map_parameters).iter().any(
-                                |neighbor_tile| {
-                                    neighbor_tile.terrain_type(self) != TerrainType::Water
-                                },
-                            ) {
-                                region_coast_next_to_land_tile_list.push(tile);
-                            } */
                         }
                     }
                     TerrainType::Flatland => {
                         if feature.is_none_or(|f| matches!(f, Feature::Forest | Feature::Jungle)) {
                             flatland_list.push(tile);
                         }
-                        if let Some(feature) = feature {
-                            match feature {
-                                Feature::Forest => {
-                                    forest_flat_list.push(tile);
-                                    if base_terrain == BaseTerrain::Tundra {
-                                        /* region_tundra_flat_including_forest_tile_list
-                                        .push(tile); */
-                                    } else {
-                                        /* region_forest_flat_but_not_tundra_tile_list
-                                        .push(tile); */
-                                    }
-                                }
-                                Feature::Jungle => {
-                                    jungle_flat_list.push(tile);
-                                }
-                                Feature::Marsh => {
-                                    marsh_list.push(tile);
-                                }
-                                Feature::Floodplain => {
-                                    /* region_flood_plain_tile_list.push(tile); */
-                                }
-                                _ => {}
+
+                        match (base_terrain, feature) {
+                            (_, Some(Feature::Forest)) => {
+                                forest_flat_list.push(tile);
                             }
-                        } else {
-                            match base_terrain {
-                                BaseTerrain::Grassland => {
-                                    if tile.is_freshwater(self) {
-                                        /* region_fresh_water_grass_flat_no_feature_tile_list
-                                        .push(tile); */
-                                    } else {
-                                        dry_grass_flat_no_feature.push(tile);
-                                    }
-                                }
-                                BaseTerrain::Desert => {
-                                    desert_flat_no_feature.push(tile);
-                                }
-                                BaseTerrain::Plain => {
-                                    plains_flat_no_feature.push(tile);
-                                }
-                                BaseTerrain::Tundra => {
-                                    tundra_flat_no_feature.push(tile);
-                                }
-                                BaseTerrain::Snow => {
-                                    snow_flat_list.push(tile);
-                                }
-                                _ => {
-                                    unreachable!()
+                            (_, Some(Feature::Jungle)) => {
+                                jungle_flat_list.push(tile);
+                            }
+                            (_, Some(Feature::Marsh)) => {
+                                marsh_list.push(tile);
+                            }
+                            (BaseTerrain::Grassland, None) => {
+                                if !tile.is_freshwater(self) {
+                                    dry_grass_flat_no_feature.push(tile);
                                 }
                             }
+                            (BaseTerrain::Desert, None) => {
+                                desert_flat_no_feature.push(tile);
+                            }
+                            (BaseTerrain::Plain, None) => {
+                                plains_flat_no_feature.push(tile);
+                            }
+                            (BaseTerrain::Tundra, None) => {
+                                tundra_flat_no_feature.push(tile);
+                            }
+                            (BaseTerrain::Snow, None) => {
+                                snow_flat_list.push(tile);
+                            }
+                            _ => {}
                         }
                     }
                     TerrainType::Mountain => {}
                     TerrainType::Hill => {
                         if base_terrain != BaseTerrain::Snow {
                             hills_list.push(tile);
-                            /* if feature == None {
-                                region_hill_open_tile_list.push(tile);
-                            } else if feature == Some(Feature::Forest) {
-                                region_hill_forest_tile_list.push(tile);
-                                region_hill_covered_tile_list.push(tile);
-                            } else if feature == Some(Feature::Jungle) {
-                                region_hill_jungle_tile_list.push(tile);
-                                region_hill_covered_tile_list.push(tile);
-                            } */
                         }
                     }
                 }
