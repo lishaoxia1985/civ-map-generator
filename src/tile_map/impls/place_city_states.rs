@@ -612,6 +612,8 @@ impl TileMap {
             let terrain_type = neighbor_tile.terrain_type(self);
             let base_terrain = neighbor_tile.base_terrain(self);
             let feature = neighbor_tile.feature(self);
+            let freshwater = neighbor_tile.is_freshwater(self);
+
             match terrain_type {
                 TerrainType::Mountain => {
                     inner_bad_tiles += 1;
@@ -635,7 +637,7 @@ impl TileMap {
                         inner_can_have_bonus += 1;
                     }
                 }
-                TerrainType::Flatland => match (base_terrain, tile.is_freshwater(self)) {
+                TerrainType::Flatland => match (base_terrain, freshwater) {
                     (BaseTerrain::Grassland, true) => {
                         inner_four_food += 1;
                         if feature != Some(Feature::Marsh) {
@@ -718,6 +720,8 @@ impl TileMap {
                 let terrain_type = tile_at_distance_two.terrain_type(self);
                 let base_terrain = tile_at_distance_two.base_terrain(self);
                 let feature = tile_at_distance_two.feature(self);
+                let freshwater = tile_at_distance_two.is_freshwater(self);
+
                 match terrain_type {
                     TerrainType::Mountain => {
                         outer_bad_tiles += 1;
@@ -740,58 +744,56 @@ impl TileMap {
                             outer_can_have_bonus += 1;
                         }
                     }
-                    TerrainType::Flatland => {
-                        match (base_terrain, tile_at_distance_two.is_freshwater(self)) {
-                            (BaseTerrain::Grassland, true) => {
-                                outer_four_food += 1;
-                                if feature != Some(Feature::Marsh) {
-                                    outer_can_have_bonus += 1;
-                                }
-                            }
-                            (BaseTerrain::Grassland, false) => {
-                                outer_three_food += 1;
-                                if feature != Some(Feature::Marsh) {
-                                    outer_can_have_bonus += 1;
-                                }
-                            }
-                            (BaseTerrain::Desert, true) => {
+                    TerrainType::Flatland => match (base_terrain, freshwater) {
+                        (BaseTerrain::Grassland, true) => {
+                            outer_four_food += 1;
+                            if feature != Some(Feature::Marsh) {
                                 outer_can_have_bonus += 1;
-                                if feature == Some(Feature::Floodplain) {
-                                    outer_four_food += 1;
-                                } else {
-                                    outer_bad_tiles += 1;
-                                }
-                            }
-                            (BaseTerrain::Desert, false) => {
-                                outer_bad_tiles += 1;
-                                outer_can_have_bonus += 1;
-                            }
-                            (BaseTerrain::Plain, true) => {
-                                outer_three_food += 1;
-                                outer_can_have_bonus += 1;
-                            }
-                            (BaseTerrain::Plain, false) => {
-                                outer_two_food += 1;
-                                outer_can_have_bonus += 1;
-                            }
-                            (BaseTerrain::Tundra, true) => {
-                                outer_three_food += 1;
-                                outer_can_have_bonus += 1;
-                            }
-                            (BaseTerrain::Tundra, false) => {
-                                outer_can_have_bonus += 1;
-                                if feature != Some(Feature::Forest) {
-                                    outer_bad_tiles += 1;
-                                }
-                            }
-                            (BaseTerrain::Snow, _) => {
-                                outer_bad_tiles += 1;
-                            }
-                            _ => {
-                                unreachable!()
                             }
                         }
-                    }
+                        (BaseTerrain::Grassland, false) => {
+                            outer_three_food += 1;
+                            if feature != Some(Feature::Marsh) {
+                                outer_can_have_bonus += 1;
+                            }
+                        }
+                        (BaseTerrain::Desert, true) => {
+                            outer_can_have_bonus += 1;
+                            if feature == Some(Feature::Floodplain) {
+                                outer_four_food += 1;
+                            } else {
+                                outer_bad_tiles += 1;
+                            }
+                        }
+                        (BaseTerrain::Desert, false) => {
+                            outer_bad_tiles += 1;
+                            outer_can_have_bonus += 1;
+                        }
+                        (BaseTerrain::Plain, true) => {
+                            outer_three_food += 1;
+                            outer_can_have_bonus += 1;
+                        }
+                        (BaseTerrain::Plain, false) => {
+                            outer_two_food += 1;
+                            outer_can_have_bonus += 1;
+                        }
+                        (BaseTerrain::Tundra, true) => {
+                            outer_three_food += 1;
+                            outer_can_have_bonus += 1;
+                        }
+                        (BaseTerrain::Tundra, false) => {
+                            outer_can_have_bonus += 1;
+                            if feature != Some(Feature::Forest) {
+                                outer_bad_tiles += 1;
+                            }
+                        }
+                        (BaseTerrain::Snow, _) => {
+                            outer_bad_tiles += 1;
+                        }
+                        _ => {
+                            unreachable!()
+                        }
+                    },
                 }
             });
 

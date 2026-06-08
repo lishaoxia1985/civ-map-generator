@@ -98,7 +98,8 @@ pub trait Generator {
     }
 
     fn normalize_start_locations_of_city_state(&mut self) {
-        self.tile_map_mut().normalize_start_locations_of_city_state();
+        self.tile_map_mut()
+            .normalize_start_locations_of_city_state();
     }
 
     fn fix_sugar_jungles(&mut self) {
