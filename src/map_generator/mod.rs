@@ -60,13 +60,13 @@ pub trait Generator {
             .choose_civilization_starting_tiles(map_parameters);
     }
 
-    fn balance_and_assign_civilization_starting_tiles(
+    fn balance_and_assign_start_locations_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
         ruleset: &Ruleset,
     ) {
         self.tile_map_mut()
-            .balance_and_assign_civilization_starting_tiles(map_parameters, ruleset);
+            .balance_and_assign_start_locations_of_civilization(map_parameters, ruleset);
     }
 
     fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
@@ -97,8 +97,8 @@ pub trait Generator {
         self.tile_map_mut().place_bonus_resources(map_parameters);
     }
 
-    fn normalize_city_state_locations(&mut self) {
-        self.tile_map_mut().normalize_city_state_locations();
+    fn normalize_start_locations_of_city_state(&mut self) {
+        self.tile_map_mut().normalize_start_locations_of_city_state();
     }
 
     fn fix_sugar_jungles(&mut self) {
@@ -141,7 +141,7 @@ pub trait Generator {
 
         map.choose_civilization_starting_tiles(map_parameters);
 
-        map.balance_and_assign_civilization_starting_tiles(map_parameters, ruleset);
+        map.balance_and_assign_start_locations_of_civilization(map_parameters, ruleset);
 
         map.place_natural_wonders(map_parameters, ruleset);
 
@@ -160,7 +160,7 @@ pub trait Generator {
 
         map.place_bonus_resources(map_parameters);
 
-        map.normalize_city_state_locations();
+        map.normalize_start_locations_of_city_state();
         /********** The End of Process 2 **********/
 
         /********** Process 3: Fix Graphics and Recalculate Areas **********/

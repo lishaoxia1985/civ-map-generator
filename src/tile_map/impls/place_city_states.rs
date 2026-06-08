@@ -557,7 +557,7 @@ impl TileMap {
     }
 
     /// Normalizes each city state locations.
-    pub fn normalize_city_state_locations(&mut self) {
+    pub fn normalize_start_locations_of_city_state(&mut self) {
         let starting_tiles: Vec<_> = self.starting_tile_and_city_state.keys().cloned().collect();
         for starting_tile in starting_tiles {
             self.normalize_city_state(starting_tile);

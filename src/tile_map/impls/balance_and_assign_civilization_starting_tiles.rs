@@ -32,7 +32,7 @@ impl TileMap {
     /// # Notes
     ///
     /// TODO: We have not implemented to create the team for the civilization.
-    pub fn balance_and_assign_civilization_starting_tiles(
+    pub fn balance_and_assign_start_locations_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
         ruleset: &Ruleset,
@@ -57,7 +57,7 @@ impl TileMap {
             .collect();
 
         for region_index in 0..self.region_list.len() {
-            self.normalize_civilization_starting_tile(map_parameters, region_index);
+            self.normalize_start_tile_of_civilization(map_parameters, region_index);
         }
 
         let disable_start_bias = false;
@@ -659,7 +659,7 @@ impl TileMap {
     /// 4. If resource_setting is [`ResourceSetting::StrategicBalance`], call [`TileMap::add_strategic_balance_resources`] to add strategic resources to the starting tile's 1-3 radius.
     /// 5. Add bonus resource for compensation to city state location's 1-2 radius if it has not enough food.
     /// 6. Set current region's [`Region::start_location_condition`](crate::tile_map::Region::start_location_condition) field.
-    fn normalize_civilization_starting_tile(
+    fn normalize_start_tile_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
         region_index: usize,
@@ -722,6 +722,21 @@ impl TileMap {
             let terrain_type = neighbor_tile.terrain_type(self);
             let base_terrain = neighbor_tile.base_terrain(self);
             let feature = neighbor_tile.feature(self);
+            let freshwater = neighbor_tile.is_freshwater(self);
+
+            if feature == Some(Feature::Jungle) {
+                jungle_count += 1;
+                num_native_two_food_first_ring += 1;
+            } else if feature == Some(Feature::Forest) {
+                forest_count += 1;
+            }
+
+            if matches!(terrain_type, TerrainType::Flatland | TerrainType::Hill)
+                && neighbor_tile.has_river(self)
+            {
+                near_river = true;
+            }
+
             match terrain_type {
                 TerrainType::Mountain => {
                     near_mountain = true;
@@ -739,36 +754,26 @@ impl TileMap {
                         inner_can_have_bonus += 1;
                     }
                 }
-                _ => {
+                TerrainType::Hill => {
+                    inner_hill += 1;
                     if feature == Some(Feature::Jungle) {
-                        jungle_count += 1;
-                        num_native_two_food_first_ring += 1;
+                        inner_two_food += 1;
+                        inner_can_have_bonus += 1;
                     } else if feature == Some(Feature::Forest) {
-                        forest_count += 1;
+                        inner_can_have_bonus += 1;
+                    } else if base_terrain == BaseTerrain::Grassland {
+                        num_grassland += 1;
+                    } else if base_terrain == BaseTerrain::Plain {
+                        num_plain += 1;
                     }
-
-                    if neighbor_tile.has_river(self) {
-                        near_river = true;
-                    }
-
-                    if terrain_type == TerrainType::Hill {
-                        inner_hill += 1;
-                        if feature == Some(Feature::Jungle) {
-                            inner_two_food += 1;
-                            inner_can_have_bonus += 1;
-                        } else if feature == Some(Feature::Forest) {
-                            inner_can_have_bonus += 1;
-                        } else if base_terrain == BaseTerrain::Grassland {
-                            num_grassland += 1;
-                        } else if base_terrain == BaseTerrain::Plain {
-                            num_plain += 1;
-                        }
-                    } else if feature == Some(Feature::Oasis) {
+                }
+                TerrainType::Flatland => {
+                    if feature == Some(Feature::Oasis) {
                         inner_three_food += 1;
                         num_native_two_food_first_ring += 1;
-                    } else if neighbor_tile.is_freshwater(self) {
-                        match base_terrain {
-                            BaseTerrain::Grassland => {
+                    } else {
+                        match (base_terrain, freshwater) {
+                            (BaseTerrain::Grassland, true) => {
                                 inner_four_food += 1;
                                 num_grassland += 1;
                                 if feature != Some(Feature::Marsh) {
@@ -781,42 +786,7 @@ impl TileMap {
                                     num_native_two_food_first_ring += 1;
                                 }
                             }
-                            BaseTerrain::Desert => {
-                                inner_can_have_bonus += 1;
-                                if feature == Some(Feature::Floodplain) {
-                                    inner_four_food += 1;
-                                    num_native_two_food_first_ring += 1;
-                                } else {
-                                    inner_bad_tiles += 1;
-                                }
-                            }
-                            BaseTerrain::Plain => {
-                                inner_three_food += 1;
-                                inner_can_have_bonus += 1;
-                                num_plain += 1;
-                                if feature == Some(Feature::Forest) {
-                                    inner_forest += 1;
-                                } else {
-                                    inner_one_hammer += 1;
-                                }
-                            }
-                            BaseTerrain::Tundra => {
-                                inner_three_food += 1;
-                                inner_can_have_bonus += 1;
-                                if feature == Some(Feature::Forest) {
-                                    inner_forest += 1;
-                                }
-                            }
-                            BaseTerrain::Snow => {
-                                inner_bad_tiles += 1;
-                            }
-                            _ => {
-                                unreachable!()
-                            }
-                        }
-                    } else {
-                        match base_terrain {
-                            BaseTerrain::Grassland => {
+                            (BaseTerrain::Grassland, false) => {
                                 inner_three_food += 1;
                                 num_grassland += 1;
                                 if feature != Some(Feature::Marsh) {
@@ -829,11 +799,30 @@ impl TileMap {
                                     num_native_two_food_first_ring += 1;
                                 }
                             }
-                            BaseTerrain::Desert => {
+                            (BaseTerrain::Desert, true) => {
+                                inner_can_have_bonus += 1;
+                                if feature == Some(Feature::Floodplain) {
+                                    inner_four_food += 1;
+                                    num_native_two_food_first_ring += 1;
+                                } else {
+                                    inner_bad_tiles += 1;
+                                }
+                            }
+                            (BaseTerrain::Desert, false) => {
                                 inner_can_have_bonus += 1;
                                 inner_bad_tiles += 1;
                             }
-                            BaseTerrain::Plain => {
+                            (BaseTerrain::Plain, true) => {
+                                inner_three_food += 1;
+                                inner_can_have_bonus += 1;
+                                num_plain += 1;
+                                if feature == Some(Feature::Forest) {
+                                    inner_forest += 1;
+                                } else {
+                                    inner_one_hammer += 1;
+                                }
+                            }
+                            (BaseTerrain::Plain, false) => {
                                 inner_two_food += 1;
                                 inner_can_have_bonus += 1;
                                 num_plain += 1;
@@ -843,7 +832,14 @@ impl TileMap {
                                     inner_one_hammer += 1;
                                 }
                             }
-                            BaseTerrain::Tundra => {
+                            (BaseTerrain::Tundra, true) => {
+                                inner_three_food += 1;
+                                inner_can_have_bonus += 1;
+                                if feature == Some(Feature::Forest) {
+                                    inner_forest += 1;
+                                }
+                            }
+                            (BaseTerrain::Tundra, false) => {
                                 inner_can_have_bonus += 1;
                                 if feature == Some(Feature::Forest) {
                                     inner_forest += 1;
@@ -851,7 +847,7 @@ impl TileMap {
                                     inner_bad_tiles += 1;
                                 }
                             }
-                            BaseTerrain::Snow => {
+                            (BaseTerrain::Snow, _) => {
                                 inner_bad_tiles += 1;
                             }
                             _ => {
@@ -872,6 +868,21 @@ impl TileMap {
                 let terrain_type = tile_at_distance_two.terrain_type(self);
                 let base_terrain = tile_at_distance_two.base_terrain(self);
                 let feature = tile_at_distance_two.feature(self);
+                let freshwater = tile_at_distance_two.is_freshwater(self);
+
+                if feature == Some(Feature::Jungle) {
+                    jungle_count += 1;
+                    num_native_two_food_second_ring += 1;
+                } else if feature == Some(Feature::Forest) {
+                    forest_count += 1;
+                }
+
+                if matches!(terrain_type, TerrainType::Flatland | TerrainType::Hill)
+                    && tile_at_distance_two.has_river(self)
+                {
+                    near_river = true;
+                }
+
                 match terrain_type {
                     TerrainType::Mountain => {
                         near_mountain = true;
@@ -891,36 +902,26 @@ impl TileMap {
                             outer_can_have_bonus += 1;
                         }
                     }
-                    _ => {
+                    TerrainType::Hill => {
+                        outer_hill += 1;
                         if feature == Some(Feature::Jungle) {
-                            jungle_count += 1;
-                            num_native_two_food_second_ring += 1;
+                            outer_two_food += 1;
+                            outer_can_have_bonus += 1;
                         } else if feature == Some(Feature::Forest) {
-                            forest_count += 1;
+                            outer_can_have_bonus += 1;
+                        } else if base_terrain == BaseTerrain::Grassland {
+                            num_grassland += 1;
+                        } else if base_terrain == BaseTerrain::Plain {
+                            num_plain += 1;
                         }
-
-                        if tile_at_distance_two.has_river(self) {
-                            near_river = true;
-                        }
-
-                        if terrain_type == TerrainType::Hill {
-                            outer_hill += 1;
-                            if feature == Some(Feature::Jungle) {
-                                outer_two_food += 1;
-                                outer_can_have_bonus += 1;
-                            } else if feature == Some(Feature::Forest) {
-                                outer_can_have_bonus += 1;
-                            } else if base_terrain == BaseTerrain::Grassland {
-                                num_grassland += 1;
-                            } else if base_terrain == BaseTerrain::Plain {
-                                num_plain += 1;
-                            }
-                        } else if feature == Some(Feature::Oasis) {
+                    }
+                    TerrainType::Flatland => {
+                        if feature == Some(Feature::Oasis) {
                             outer_three_food += 1;
                             num_native_two_food_second_ring += 1;
-                        } else if tile_at_distance_two.is_freshwater(self) {
-                            match base_terrain {
-                                BaseTerrain::Grassland => {
+                        } else {
+                            match (base_terrain, freshwater) {
+                                (BaseTerrain::Grassland, true) => {
                                     outer_four_food += 1;
                                     num_grassland += 1;
                                     if feature != Some(Feature::Marsh) {
@@ -933,42 +934,7 @@ impl TileMap {
                                         num_native_two_food_second_ring += 1;
                                     }
                                 }
-                                BaseTerrain::Desert => {
-                                    outer_can_have_bonus += 1;
-                                    if feature == Some(Feature::Floodplain) {
-                                        outer_four_food += 1;
-                                        num_native_two_food_second_ring += 1;
-                                    } else {
-                                        outer_bad_tiles += 1;
-                                    }
-                                }
-                                BaseTerrain::Plain => {
-                                    outer_three_food += 1;
-                                    outer_can_have_bonus += 1;
-                                    num_plain += 1;
-                                    if feature == Some(Feature::Forest) {
-                                        outer_forest += 1;
-                                    } else {
-                                        outer_one_hammer += 1;
-                                    }
-                                }
-                                BaseTerrain::Tundra => {
-                                    outer_three_food += 1;
-                                    outer_can_have_bonus += 1;
-                                    if feature == Some(Feature::Forest) {
-                                        outer_forest += 1;
-                                    }
-                                }
-                                BaseTerrain::Snow => {
-                                    outer_bad_tiles += 1;
-                                }
-                                _ => {
-                                    unreachable!()
-                                }
-                            }
-                        } else {
-                            match base_terrain {
-                                BaseTerrain::Grassland => {
+                                (BaseTerrain::Grassland, false) => {
                                     outer_three_food += 1;
                                     num_grassland += 1;
                                     if feature != Some(Feature::Marsh) {
@@ -981,11 +947,30 @@ impl TileMap {
                                         num_native_two_food_second_ring += 1;
                                     }
                                 }
-                                BaseTerrain::Desert => {
+                                (BaseTerrain::Desert, true) => {
+                                    outer_can_have_bonus += 1;
+                                    if feature == Some(Feature::Floodplain) {
+                                        outer_four_food += 1;
+                                        num_native_two_food_second_ring += 1;
+                                    } else {
+                                        outer_bad_tiles += 1;
+                                    }
+                                }
+                                (BaseTerrain::Desert, false) => {
                                     outer_can_have_bonus += 1;
                                     outer_bad_tiles += 1;
                                 }
-                                BaseTerrain::Plain => {
+                                (BaseTerrain::Plain, true) => {
+                                    outer_three_food += 1;
+                                    outer_can_have_bonus += 1;
+                                    num_plain += 1;
+                                    if feature == Some(Feature::Forest) {
+                                        outer_forest += 1;
+                                    } else {
+                                        outer_one_hammer += 1;
+                                    }
+                                }
+                                (BaseTerrain::Plain, false) => {
                                     outer_two_food += 1;
                                     outer_can_have_bonus += 1;
                                     num_plain += 1;
@@ -995,7 +980,14 @@ impl TileMap {
                                         outer_one_hammer += 1;
                                     }
                                 }
-                                BaseTerrain::Tundra => {
+                                (BaseTerrain::Tundra, true) => {
+                                    outer_three_food += 1;
+                                    outer_can_have_bonus += 1;
+                                    if feature == Some(Feature::Forest) {
+                                        outer_forest += 1;
+                                    }
+                                }
+                                (BaseTerrain::Tundra, false) => {
                                     outer_can_have_bonus += 1;
                                     if feature == Some(Feature::Forest) {
                                         outer_forest += 1;
@@ -1003,7 +995,7 @@ impl TileMap {
                                         outer_bad_tiles += 1;
                                     }
                                 }
-                                BaseTerrain::Snow => {
+                                (BaseTerrain::Snow, _) => {
                                     outer_bad_tiles += 1;
                                 }
                                 _ => {
