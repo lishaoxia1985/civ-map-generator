@@ -80,7 +80,7 @@ impl TileMap {
                 let region_index = self
                     .random_number_generator
                     .random_range(0..self.region_list.len());
-                let tile = self.get_city_state_start_tile_in_region(region_index);
+                let tile = self.get_start_tile_of_city_state_in_region(region_index);
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
                     self.place_city_state(city_state, tile);
@@ -90,7 +90,7 @@ impl TileMap {
             } else {
                 // Assigned to a Region.
                 let region_index = region_index.unwrap();
-                let tile = self.get_city_state_start_tile_in_region(region_index);
+                let tile = self.get_start_tile_of_city_state_in_region(region_index);
                 if let Some(tile) = tile {
                     let city_state = start_city_state_list.pop().unwrap();
                     self.place_city_state(city_state, tile);
@@ -159,8 +159,9 @@ impl TileMap {
 
     // function AssignStartingPlots:PlaceCityStateInRegion(city_state_number, region_number)
     /// Get the starting tile for a city state in a region.
-    fn get_city_state_start_tile_in_region(&mut self, region_index: usize) -> Option<Tile> {
-        let candidate_tile_list = self.get_candidate_city_state_tiles_in_region(region_index);
+    fn get_start_tile_of_city_state_in_region(&mut self, region_index: usize) -> Option<Tile> {
+        let candidate_tile_list =
+            self.get_candidate_start_tiles_of_city_state_in_region(region_index);
 
         self.start_tile_of_city_state(&candidate_tile_list, false, false)
     }
@@ -178,7 +179,10 @@ impl TileMap {
     ///
     /// Returns an array of two vectors of tiles.
     /// The first vector is the coastal tiles, and the second vector is the inland tiles.
-    fn get_candidate_city_state_tiles_in_region(&self, region_index: usize) -> [Vec<Tile>; 2] {
+    fn get_candidate_start_tiles_of_city_state_in_region(
+        &self,
+        region_index: usize,
+    ) -> [Vec<Tile>; 2] {
         let grid = self.world_grid.grid;
 
         let region = &self.region_list[region_index];
@@ -193,25 +197,23 @@ impl TileMap {
         // The center will be 2/3 of the rectangle, and the other two parts will be 1/6 each.
         const CENTER_BIAS: f64 = 2.0 / 3.0;
 
-        let (center_west_x, center_south_y, center_width, center_height);
+        let scaled_rectangle = rectangle.scaled_center_crop(CENTER_BIAS, &grid);
 
-        if taller {
-            let non_center_height =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.height() as f64).ceil() as u32;
-
-            center_west_x = rectangle.west_x();
-            center_south_y = rectangle.south_y() + non_center_height as i32;
-            center_width = rectangle.width();
-            center_height = rectangle.height() - (non_center_height * 2);
+        let (center_west_x, center_south_y, center_width, center_height) = if taller {
+            (
+                rectangle.west_x(),
+                scaled_rectangle.south_y(),
+                rectangle.width(),
+                scaled_rectangle.height(),
+            )
         } else {
-            let non_center_width =
-                ((1. - CENTER_BIAS) / 2.0 * rectangle.width() as f64).ceil() as u32;
-
-            center_west_x = rectangle.west_x() + non_center_width as i32;
-            center_south_y = rectangle.south_y();
-            center_width = rectangle.width() - (non_center_width * 2);
-            center_height = rectangle.height();
-        }
+            (
+                scaled_rectangle.west_x(),
+                rectangle.south_y(),
+                scaled_rectangle.width(),
+                rectangle.height(),
+            )
+        };
 
         let center_rectangle = Rectangle::new(
             OffsetCoordinate::new(center_west_x, center_south_y),
