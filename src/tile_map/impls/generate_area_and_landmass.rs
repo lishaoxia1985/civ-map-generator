@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{BTreeSet, VecDeque};
 
 use crate::{ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap};
 use bitflags::bitflags;
@@ -65,7 +65,7 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_area = self.generate_tile_in_area_or_landmass(tile, check_tile);
+            let tiles_in_area = self.flood_fill_connected_tiles(tile, check_tile);
 
             let current_area_id = area_list.len();
             let area_size = tiles_in_area.len() as u32;
@@ -105,19 +105,13 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_area = self.generate_tile_in_area_or_landmass(tile, check_tile);
+            let tiles_in_area = self.flood_fill_connected_tiles(tile, check_tile);
 
             let area_size = tiles_in_area.len() as u32;
 
             // Merge single-tile mountains / ice with the surrounding area
             if area_size < MIN_AREA_SIZE {
-                // Convert `tiles_in_area` into a sorted vector `tiles_in_area_ordered` to ensure a consistent order,
-                // that will help us to get the same largest area ID of the neighboring area each time
-                // when more than one area has the same size.
-                let mut tiles_in_area_ordered: Vec<_> = tiles_in_area.iter().cloned().collect();
-                tiles_in_area_ordered.sort_unstable();
-
-                let largest_neighbor_area_id = tiles_in_area_ordered
+                let largest_neighbor_area_id = tiles_in_area
                     .iter()
                     .flat_map(|&tile| tile.neighbor_tiles(grid))
                     .filter(|neighbor| {
@@ -204,7 +198,7 @@ impl TileMap {
                 continue;
             }
 
-            let tiles_in_landmass = self.generate_tile_in_area_or_landmass(tile, check_tile);
+            let tiles_in_landmass = self.flood_fill_connected_tiles(tile, check_tile);
 
             let landmass_type = if tile.is_water(self) {
                 LandmassType::Water
@@ -233,31 +227,65 @@ impl TileMap {
         self.landmass_list = landmass_list;
     }
 
-    fn generate_tile_in_area_or_landmass(
+    /// Performs a flood-fill algorithm to collect all connected tiles that satisfy a given condition.
+    ///
+    /// This function starts from `start_tile` and explores all neighboring tiles using breadth-first search (BFS).
+    /// It uses the `check_tile` closure to determine whether a neighbor tile should be included in the result set.
+    /// The function continues expanding until no more qualifying neighbors can be found.
+    ///
+    /// # Argments
+    ///
+    /// - `start_tile`: The initial tile from which to begin the flood-fill operation.
+    /// - `check_tile`: A closure that takes two tiles (neighbor tile, current tile) and returns true if the neighbor
+    ///   should be included in the area/landmass. This allows custom logic for connectivity checks.
+    ///
+    /// # Returns
+    ///
+    /// A `BTreeSet` containing all tiles that are part of the connected component starting from `start_tile`.
+    /// The set is ordered, ensuring consistent iteration order.
+    ///
+    /// # Algorithm
+    ///
+    /// 1. Initialize with the start tile in both the result set and the processing queue.
+    /// 2. While the queue is not empty:
+    ///    - Dequeue a tile and examine all its neighbors.
+    ///    - For each neighbor, check if it satisfies the condition AND hasn't been visited yet.
+    ///    - If both conditions are met, add it to the result set and enqueue it for further exploration.
+    fn flood_fill_connected_tiles(
         &self,
         start_tile: Tile,
         check_tile: impl Fn(Tile, Tile) -> bool,
-    ) -> HashSet<Tile> {
+    ) -> BTreeSet<Tile> {
         let grid = self.world_grid.grid;
 
-        // Store all the tiles that are part of the current area or landmass.
-        let mut tiles_in_area_or_landmass = HashSet::new();
-        // Store all the tiles that need to check whether their neighbors are in the current area or landmass within the following 'while {..}' loop.
+        // Collection to store all tiles that belong to the current connected component (area or landmass).
+        // Using BTreeSet ensures ordered iteration and prevents duplicate insertions.
+        let mut connected_tiles = BTreeSet::new();
+
+        // Queue for BFS traversal. Contains tiles whose neighbors still need to be examined.
         let mut queue = VecDeque::new();
 
-        tiles_in_area_or_landmass.insert(start_tile);
+        // Initialize: Add the starting tile to both the result set and the processing queue.
+        connected_tiles.insert(start_tile);
         queue.push_back(start_tile);
 
+        // BFS loop: Process each tile in the queue until all reachable tiles have been explored.
         while let Some(current_tile) = queue.pop_front() {
+            // Examine all neighboring tiles of the current tile.
             current_tile.neighbor_tiles(grid).for_each(|tile| {
-                // NOTICE: Don't switch the order of `check_tile` and `tiles_in_area_or_landmass.insert(tile)`.
-                if check_tile(tile, current_tile) && tiles_in_area_or_landmass.insert(tile) {
+                // IMPORTANT: The order of conditions matters!
+                // 1. First check if the neighbor satisfies the connectivity condition.
+                // 2. Then attempt to insert it into the set (returns false if already present).
+                // This prevents re-processing tiles that have already been visited.
+                if check_tile(tile, current_tile) && connected_tiles.insert(tile) {
+                    // Neighbor qualifies and is new, so add it to the queue for further exploration.
                     queue.push_back(tile);
                 }
             });
         }
 
-        tiles_in_area_or_landmass
+        // Return all tiles that form the connected component.
+        connected_tiles
     }
 }
 
