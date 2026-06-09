@@ -54,6 +54,8 @@ pub struct MapParameters {
     /// - If true, the civilization starting tile only can be coastal land.
     /// - If false, the civilization starting tile can be any hill/flatland tile (including coastal land tiles).
     pub civ_require_coastal_land_start: bool,
+    /// Whether to disable the start bias of the civilization.
+    pub disable_start_bias_of_civ: bool,
     /// The resource setting of the map.
     pub resource_setting: ResourceSetting,
 }
@@ -110,6 +112,7 @@ pub struct MapParametersBuilder {
     rainfall: Rainfall,
     region_divide_method: RegionDivideMethod,
     civ_require_coastal_land_start: bool,
+    disable_start_bias_of_civ: bool,
     resource_setting: ResourceSetting,
 }
 
@@ -153,6 +156,7 @@ impl MapParametersBuilder {
             rainfall: Rainfall::Normal,
             region_divide_method: RegionDivideMethod::Continent,
             civ_require_coastal_land_start: false,
+            disable_start_bias_of_civ: false,
             resource_setting: ResourceSetting::Standard,
         }
     }
@@ -233,6 +237,12 @@ impl MapParametersBuilder {
         self
     }
 
+    /// Sets whether to disable the bias of the civilization starting tile.
+    pub fn disable_start_bias_of_civ(mut self, disable: bool) -> Self {
+        self.disable_start_bias_of_civ = disable;
+        self
+    }
+
     /// Sets the resource generation settings.
     pub fn resource_setting(mut self, setting: ResourceSetting) -> Self {
         self.resource_setting = setting;
@@ -255,6 +265,7 @@ impl MapParametersBuilder {
             rainfall: self.rainfall,
             region_divide_method: self.region_divide_method,
             civ_require_coastal_land_start: self.civ_require_coastal_land_start,
+            disable_start_bias_of_civ: self.disable_start_bias_of_civ,
             resource_setting: self.resource_setting,
         }
     }

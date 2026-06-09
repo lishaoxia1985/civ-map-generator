@@ -60,10 +60,8 @@ impl TileMap {
             self.normalize_start_tile_of_civilization(map_parameters, region_index);
         }
 
-        let disable_start_bias = false;
-
         // If disbable_start_bias is true, then the starting tile will be chosen randomly.
-        if disable_start_bias {
+        if map_parameters.disable_start_bias_of_civ {
             start_civilization_list.shuffle(&mut self.random_number_generator);
             self.starting_tile_and_civilization = start_civilization_list
                 .iter()
