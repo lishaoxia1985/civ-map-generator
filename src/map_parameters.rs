@@ -209,25 +209,25 @@ impl MapParametersBuilder {
         self
     }
 
-    /// Sets the sea level configuration.
+    /// Sets the sea level configuration. It affect only terrain type generation.
     pub fn sea_level(mut self, sea_level: SeaLevel) -> Self {
         self.sea_level = sea_level;
         self
     }
 
-    /// Sets the age of the world.
+    /// Sets the age of the world. It affect only terrain type generation.
     pub fn world_age(mut self, age: WorldAge) -> Self {
         self.world_age = age;
         self
     }
 
-    /// Sets the temperature configuration.
+    /// Sets the temperature configuration. It affect only base terrain generation.
     pub fn temperature(mut self, temperature: Temperature) -> Self {
         self.temperature = temperature;
         self
     }
 
-    /// Sets the rainfall configuration.
+    /// Sets the rainfall configuration. It affect only feature generation.
     pub fn rainfall(mut self, rainfall: Rainfall) -> Self {
         self.rainfall = rainfall;
         self
@@ -438,6 +438,7 @@ pub enum MapType {
 }
 
 /// The sea level of the map. It affect only terrain type generation.
+/// The higher the sea level, the more water tiles will be generated on the map.
 #[derive(Default)]
 pub enum SeaLevel {
     /// Fewer water tiles will be generated on the map than [`SeaLevel::Normal`].
@@ -451,7 +452,7 @@ pub enum SeaLevel {
     Random,
 }
 
-/// The age of the world. It affect only base terrain generation.
+/// The age of the world. It affect only terrain type generation.
 ///
 /// This value determines:
 /// - How many tectonic plates will be used to generate terrain types on the map.
