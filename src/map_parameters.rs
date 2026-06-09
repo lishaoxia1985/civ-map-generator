@@ -47,6 +47,12 @@ pub struct MapParameters {
     pub temperature: Temperature,
     /// The rainfall of the map. It affect only feature generation.
     pub rainfall: Rainfall,
+    /// Controls whether to generate isolated islands in ocean areas based on tectonic plate ridge lines.
+    /// When enabled, special height values from the mountains fractal (peaks at 95-100%) will create
+    /// land tiles (mountains, hills, or flatlands) even in regions that would otherwise be water.
+    /// This simulates real-world volcanic islands and seamounts formed by tectonic activity,
+    /// such as Hawaii or Iceland, which appear as isolated peaks rising from the ocean floor.
+    pub enable_tectonic_islands: bool,
     /// The method used to divide the map into regions.
     pub region_divide_method: RegionDivideMethod,
     /// Whether the civilization starting tile must be coastal land.
@@ -110,6 +116,7 @@ pub struct MapParametersBuilder {
     world_age: WorldAge,
     temperature: Temperature,
     rainfall: Rainfall,
+    enable_tectonic_islands: bool,
     region_divide_method: RegionDivideMethod,
     civ_require_coastal_land_start: bool,
     disable_start_bias_of_civ: bool,
@@ -154,6 +161,7 @@ impl MapParametersBuilder {
             world_age: WorldAge::Normal,
             temperature: Temperature::Normal,
             rainfall: Rainfall::Normal,
+            enable_tectonic_islands: false,
             region_divide_method: RegionDivideMethod::Continent,
             civ_require_coastal_land_start: false,
             disable_start_bias_of_civ: false,
@@ -225,6 +233,18 @@ impl MapParametersBuilder {
         self
     }
 
+    /// Sets whether to enable tectonic islands.
+    ///
+    /// Controls whether to generate isolated islands in ocean areas based on tectonic plate ridge lines.
+    /// When enabled, special height values from the mountains fractal (peaks at 95-100%) will create
+    /// land tiles (mountains, hills, or flatlands) even in regions that would otherwise be water.
+    /// This simulates real-world volcanic islands and seamounts formed by tectonic activity,
+    /// such as Hawaii or Iceland, which appear as isolated peaks rising from the ocean floor.
+    pub fn enable_tectonic_islands(mut self, enable: bool) -> Self {
+        self.enable_tectonic_islands = enable;
+        self
+    }
+
     /// Sets the method used to divide the map into regions.
     pub fn region_divide_method(mut self, method: RegionDivideMethod) -> Self {
         self.region_divide_method = method;
@@ -263,6 +283,7 @@ impl MapParametersBuilder {
             world_age: self.world_age,
             temperature: self.temperature,
             rainfall: self.rainfall,
+            enable_tectonic_islands: self.enable_tectonic_islands,
             region_divide_method: self.region_divide_method,
             civ_require_coastal_land_start: self.civ_require_coastal_land_start,
             disable_start_bias_of_civ: self.disable_start_bias_of_civ,

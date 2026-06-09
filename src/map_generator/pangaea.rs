@@ -31,9 +31,6 @@ impl Generator for Pangaea {
 
         let extra_mountains = 0;
 
-        // TODO: `tectonic_islands` should be configurable by the user in the future.
-        let tectonic_islands = false;
-
         let adjustment = match map_parameters.world_age {
             WorldAge::Old => world_age_old,
             WorldAge::Normal => world_age_normal,
@@ -171,7 +168,7 @@ impl Generator for Pangaea {
 
             if height <= water_threshold {
                 // No hills or mountains here, but check for tectonic islands if that setting is active.
-                if tectonic_islands {
+                if map_parameters.enable_tectonic_islands {
                     // Build islands in oceans along tectonic ridge lines
                     if mountain_height == mountain_100 {
                         // Isolated peak in the ocean
