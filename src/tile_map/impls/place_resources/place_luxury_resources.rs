@@ -85,7 +85,7 @@ impl TileMap {
             let priority_list_indices_of_luxury =
                 self.get_indices_for_luxury_type(exclusive_luxury);
             let mut luxury_tile_lists_in_distance_two =
-                self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
+                self.generate_luxury_or_strategic_tile_lists_at_city_site(starting_tile, 2);
 
             let mut num_left_to_place = num_to_place as u32;
 
@@ -109,7 +109,7 @@ impl TileMap {
 
             if num_left_to_place > 0 {
                 let mut luxury_tile_lists_in_distance_three =
-                    self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
+                    self.generate_luxury_or_strategic_tile_lists_at_city_site(starting_tile, 3);
 
                 // Second pass, checking three rings with a 100% ratio.
                 for &i in priority_list_indices_of_luxury.iter() {
@@ -262,7 +262,7 @@ impl TileMap {
                 // Place luxury resource.
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
                 let mut luxury_tile_lists =
-                    self.generate_luxury_tile_lists_at_city_site(start_tile, 2);
+                    self.generate_luxury_or_strategic_tile_lists_at_city_site(start_tile, 2);
 
                 let mut num_left_to_place = 1;
 
@@ -499,7 +499,7 @@ impl TileMap {
                     let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
                     let mut luxury_tile_lists =
-                        self.generate_luxury_tile_lists_at_city_site(starting_tile, 2);
+                        self.generate_luxury_or_strategic_tile_lists_at_city_site(starting_tile, 2);
 
                     let mut num_left_to_place = 1;
 
@@ -766,158 +766,6 @@ impl TileMap {
         });
 
         lists
-    }
-
-    // AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite
-    /// Generate the candidate tile lists for placing luxury resources within the specified radius around a city site, excluding the city site itself.
-    ///
-    /// # Arguments
-    ///
-    /// - `city_site`: The tile representing the city site. This is the center of the radius.
-    /// - `radius`: The radius within which to generate candidate tiles.
-    ///   For example, if `radius` is 2, the function will consider tiles within a distance of 2 tiles from the city site, excluding the city site itself.
-    ///   In original CIV5 code, the max radius which city site can extend is 5. So `radius` should be in `[1, 5]`.
-    ///
-    /// # Returns
-    ///
-    /// - `[Vec<Tile>; 15]`: An array of vectors of tiles, where each inner vector represents a list of candidate tiles matching a specific criteria.
-    ///
-    /// # Notes
-    ///
-    /// In the original code, `clear ice near city site` and `generate luxury tile lists at city site` are combined in one method.
-    /// We have extracted the `clear ice near city site` into a separate method.
-    /// If you want to clear ice near city site, you should use [`TileMap::clear_ice_near_city_site`].\
-    /// TODO: Sometimes this function is used for strategic resources, so the name should be changed.
-    pub fn generate_luxury_tile_lists_at_city_site(
-        &self,
-        city_site: Tile,
-        radius: u32,
-    ) -> [Vec<Tile>; 15] {
-        let grid = self.world_grid.grid;
-
-        let mut region_coast_tile_list = Vec::new();
-        let mut region_hill_open_tile_list = Vec::new();
-        let mut region_hill_jungle_tile_list = Vec::new();
-        let mut region_hill_forest_tile_list = Vec::new();
-        let mut region_hill_covered_tile_list = Vec::new();
-        let mut region_tundra_flat_including_forest_tile_list = Vec::new();
-        let mut region_forest_flat_but_not_tundra_tile_list = Vec::new();
-        let mut region_desert_flat_no_feature_tile_list = Vec::new();
-        let mut region_plain_flat_no_feature_tile_list = Vec::new();
-        let mut region_fresh_water_grass_flat_no_feature_tile_list = Vec::new();
-        let mut region_dry_grass_flat_no_feature_tile_list = Vec::new();
-        let mut region_forest_flat_tile_list = Vec::new();
-        let mut region_marsh_tile_list = Vec::new();
-        let mut region_flood_plain_tile_list = Vec::new();
-        let mut region_jungle_flat_tile_list = Vec::new();
-
-        // In original CIV5 code, the max radius which city site can extend is 5.
-        // So we only consider the tiles within the radius of 5 from the city site.
-        if radius > 0 && radius < 6 {
-            for ripple_radius in 1..=radius {
-                city_site
-                    .tiles_at_distance(ripple_radius, grid)
-                    .for_each(|tile_at_distance| {
-                        let terrain_type = tile_at_distance.terrain_type(self);
-                        let base_terrain = tile_at_distance.base_terrain(self);
-                        let feature = tile_at_distance.feature(self);
-
-                        match terrain_type {
-                            TerrainType::Water => {
-                                if base_terrain == BaseTerrain::Coast
-                                    && feature != Some(Feature::Ice)
-                                    && feature != Some(Feature::Atoll)
-                                {
-                                    region_coast_tile_list.push(tile_at_distance);
-                                }
-                            }
-                            TerrainType::Flatland => {
-                                if let Some(feature) = feature {
-                                    match feature {
-                                        Feature::Forest => {
-                                            region_forest_flat_tile_list.push(tile_at_distance);
-                                            if base_terrain == BaseTerrain::Tundra {
-                                                region_tundra_flat_including_forest_tile_list
-                                                    .push(tile_at_distance);
-                                            } else {
-                                                region_forest_flat_but_not_tundra_tile_list
-                                                    .push(tile_at_distance);
-                                            }
-                                        }
-                                        Feature::Jungle => {
-                                            region_jungle_flat_tile_list.push(tile_at_distance);
-                                        }
-                                        Feature::Marsh => {
-                                            region_marsh_tile_list.push(tile_at_distance);
-                                        }
-                                        Feature::Floodplain => {
-                                            region_flood_plain_tile_list.push(tile_at_distance);
-                                        }
-                                        _ => {}
-                                    }
-                                } else {
-                                    match base_terrain {
-                                        BaseTerrain::Grassland => {
-                                            if tile_at_distance.is_freshwater(self) {
-                                                region_fresh_water_grass_flat_no_feature_tile_list
-                                                    .push(tile_at_distance);
-                                            } else {
-                                                region_dry_grass_flat_no_feature_tile_list
-                                                    .push(tile_at_distance);
-                                            }
-                                        }
-                                        BaseTerrain::Desert => {
-                                            region_desert_flat_no_feature_tile_list
-                                                .push(tile_at_distance);
-                                        }
-                                        BaseTerrain::Plain => {
-                                            region_plain_flat_no_feature_tile_list
-                                                .push(tile_at_distance);
-                                        }
-                                        BaseTerrain::Tundra => {
-                                            region_tundra_flat_including_forest_tile_list
-                                                .push(tile_at_distance);
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                            }
-                            TerrainType::Mountain => {}
-                            TerrainType::Hill => {
-                                if base_terrain != BaseTerrain::Snow {
-                                    if feature.is_none() {
-                                        region_hill_open_tile_list.push(tile_at_distance);
-                                    } else if feature == Some(Feature::Forest) {
-                                        region_hill_forest_tile_list.push(tile_at_distance);
-                                        region_hill_covered_tile_list.push(tile_at_distance);
-                                    } else if feature == Some(Feature::Jungle) {
-                                        region_hill_jungle_tile_list.push(tile_at_distance);
-                                        region_hill_covered_tile_list.push(tile_at_distance);
-                                    }
-                                }
-                            }
-                        }
-                    });
-            }
-        }
-
-        [
-            region_coast_tile_list,
-            region_marsh_tile_list,
-            region_flood_plain_tile_list,
-            region_hill_open_tile_list,
-            region_hill_covered_tile_list,
-            region_hill_jungle_tile_list,
-            region_hill_forest_tile_list,
-            region_jungle_flat_tile_list,
-            region_forest_flat_tile_list,
-            region_desert_flat_no_feature_tile_list,
-            region_plain_flat_no_feature_tile_list,
-            region_dry_grass_flat_no_feature_tile_list,
-            region_fresh_water_grass_flat_no_feature_tile_list,
-            region_tundra_flat_including_forest_tile_list,
-            region_forest_flat_but_not_tundra_tile_list,
-        ]
     }
 
     // function AssignStartingPlots:GenerateLuxuryPlotListsInRegion

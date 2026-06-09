@@ -622,7 +622,7 @@ impl TileMap {
                     PRIORITY_LIST_INDICES_OF_STRATEGIC_RESOURCES[chosen_resource_index];
 
                 let mut luxury_tile_lists =
-                    self.generate_luxury_tile_lists_at_city_site(starting_tile, 3);
+                    self.generate_luxury_or_strategic_tile_lists_at_city_site(starting_tile, 3);
 
                 let mut num_left_to_place = resource_amount;
 

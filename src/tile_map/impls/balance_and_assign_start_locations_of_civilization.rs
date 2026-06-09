@@ -28,10 +28,6 @@ impl TileMap {
     /// 1. Balance the starting tiles, such as add bonus/strategic resources, change neighbouring terrains, etc.
     ///    That will make each civilization have a fair chance to win the game.
     /// 2. Assign the starting tiles to civilizations according to civilization's bias.
-    ///
-    /// # Notes
-    ///
-    /// TODO: We have not implemented to create the team for the civilization.
     pub fn balance_and_assign_start_locations_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
@@ -68,7 +64,8 @@ impl TileMap {
                 .zip(self.region_list.iter())
                 .map(|(&civilization, region)| (*region.starting_tile.get().unwrap(), civilization))
                 .collect();
-            // TODO: Set the civilization to the team in the future.
+            // You can write the code here to set the civilization to the team,
+            // although in original CIV 5 there is a funtion but it does nothing.
             return;
         }
 
@@ -509,7 +506,9 @@ impl TileMap {
                 self.starting_tile_and_civilization
                     .insert(starting_tile, civilization);
             });
-        // TODO: Set the civilization to the team in the future.
+
+        // You can write the code here to set the civilization to the team,
+        // although in original CIV 5 there is a funtion but it does nothing.
     }
 
     // function AssignStartingPlots:FindFallbackForUnmatchedRegionPriority
