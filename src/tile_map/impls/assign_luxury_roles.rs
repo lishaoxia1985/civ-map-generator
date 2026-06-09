@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use arrayvec::ArrayVec;
 use rand::{
+    RngExt,
     distr::{Distribution, weighted::WeightedIndex},
     seq::SliceRandom,
 };
@@ -37,15 +38,25 @@ impl TileMap {
     /// This is because civs who are forced to share their luxury type with other
     /// civs may get extra city states placed in their region to compensate. View [`TileMap::assign_city_states_to_regions_or_uninhabited_landmasses`] for more information.
     pub fn assign_luxury_roles(&mut self, map_parameters: &MapParameters) {
-        // Sort the regions by their type, with `RegionType::Undefined` being sorted last.
-        // Notice: In original code, the region which has the same type should be shuffled. But here we don't do that. We will implement it in the future.
-        self.region_list.sort_by_key(|region| {
+        // Sort the regions by their type, `RegionType::Undefined` being sorted last.
+        // Please view `RegionType` for more information.
+        //
+        // # IMPORTANT: Under normal circumstances, do NOT sort `self.region_list` directly，
+        //              unless you are certain there are no side effects
+        //
+        // Reason: Many data structures use `region_index` as the key to associate with regions, such as:
+        // - `self.region_exclusive_luxury_list[region_index]` corresponds to `self.region_list[region_index]`
+        // - Other parallel arrays or maps that rely on index-based correspondence
+        //
+        // Sorting `self.region_list` would break these index-based relationships, causing data mismatch.
+        //
+        // Current sorting has no side effects because all data structures that rely on `region_index` haven't been initialized.
+        self.region_list.sort_by_cached_key(|region| {
             let region_type = *region.region_type.get().unwrap();
-            if region_type == RegionType::Undefined {
-                9 // Place undefined regions at the end
-            } else {
-                region_type as i32 // Otherwise, use the region type value for sorting
-            }
+            let random_number: u8 = self.random_number_generator.random();
+            // At first, sort by region type priority.
+            // If the regions have the same type, we will shuffle them by a random number.
+            (region_type as u8, random_number)
         });
 
         for region_index in 0..self.region_list.len() {

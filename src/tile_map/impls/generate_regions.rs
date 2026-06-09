@@ -1129,18 +1129,22 @@ impl Region {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 /// Region type.
 ///
-/// Fields are defined in order of priority, except for [`RegionType::Undefined`].
+/// The variant are defined in order of priority.
 /// The priority is typically used to sort the regions.
+/// The highest priority is [`RegionType::Tundra`] and [`RegionType::Undefined`] is the lowest priority.
+///
+/// If you add a new region type, [`RegionType::Undefined`] should be always the last variant.
+/// In the other words, [`RegionType::Undefined`] is always the lowest priority.
 pub enum RegionType {
-    Undefined, //-- 0.
-    Tundra,    //-- 1.
-    Jungle,    //-- 2.
-    Forest,    //-- 3.
-    Desert,    //-- 4.
-    Hill,      //-- 5.
-    Plain,     //-- 6.
-    Grassland, //-- 7.
-    Hybrid,    //-- 8.
+    Tundra,
+    Jungle,
+    Forest,
+    Desert,
+    Hill,
+    Plain,
+    Grassland,
+    Hybrid,
+    Undefined,
 }
 
 #[derive(PartialEq, Debug)]

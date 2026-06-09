@@ -21,22 +21,28 @@ impl TileMap {
     // function AssignStartingPlots:ChooseLocations
     /// Get starting tile for each civilization according to region. Every region will have a starting tile for a civilization.
     pub fn choose_starting_tiles_of_civilization(&mut self, map_parameters: &MapParameters) {
+        let mut sorted_region_index_list: Vec<usize> = (0..self.region_list.len()).collect();
         // Sort the region list by average fertility
-        self.region_list
-            .sort_by(|a, b| a.average_fertility().total_cmp(&b.average_fertility()));
+        sorted_region_index_list.sort_by(|&a, &b| {
+            self.region_list[a]
+                .average_fertility()
+                .total_cmp(&self.region_list[b].average_fertility())
+        });
 
         // When map_parameters.region_divide_method is `RegionDivideMethod::WholeMapRectangle` or `RegionDivideMethod::CustomRectangle`, all region's landmass_id is always `None`.
         let ignore_landmass_id = self.region_list[0].area_id.is_none();
 
-        (0..self.region_list.len()).for_each(|region_index| {
-            if ignore_landmass_id {
-                self.find_start_without_regard_to_area_id(map_parameters, region_index);
-            } else if map_parameters.civ_require_coastal_land_start {
-                self.find_coastal_land_start(map_parameters, region_index);
-            } else {
-                self.find_start(map_parameters, region_index);
-            }
-        })
+        sorted_region_index_list
+            .into_iter()
+            .for_each(|region_index| {
+                if ignore_landmass_id {
+                    self.find_start_without_regard_to_area_id(map_parameters, region_index);
+                } else if map_parameters.civ_require_coastal_land_start {
+                    self.find_coastal_land_start(map_parameters, region_index);
+                } else {
+                    self.find_start(map_parameters, region_index);
+                }
+            })
     }
 
     // function AssignStartingPlots:FindStartWithoutRegardToAreaID
