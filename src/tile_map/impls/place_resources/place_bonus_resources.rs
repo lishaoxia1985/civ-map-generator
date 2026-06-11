@@ -250,29 +250,28 @@ impl TileMap {
                 .get()
                 .unwrap();
 
-            let hill_and_flatland_tile_num = terrain_statistic.terrain_type_count
-                [TerrainType::Hill]
+            let hill_and_flatland_count = terrain_statistic.terrain_type_count[TerrainType::Hill]
                 + terrain_statistic.terrain_type_count[TerrainType::Flatland];
             // Evaluate the level of infertility in the region by comparing the rugged terrain of hills and mountains to the flat farmlands.
             let mut hills_ratio = (terrain_statistic.terrain_type_count[TerrainType::Hill]
                 + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                 as f64
-                / hill_and_flatland_tile_num as f64;
+                / hill_and_flatland_count as f64;
             let mut farm_ratio = (terrain_statistic.base_terrain_count[BaseTerrain::Grassland]
                 + terrain_statistic.base_terrain_count[BaseTerrain::Plain])
                 as f64
-                / hill_and_flatland_tile_num as f64;
+                / hill_and_flatland_count as f64;
             if let RegionDivideMethod::WholeMapRectangle = map_parameters.region_divide_method {
                 hills_ratio = (terrain_statistic.terrain_type_count[TerrainType::Hill]
                     + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                     as f64
-                    / (hill_and_flatland_tile_num
+                    / (hill_and_flatland_count
                         + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                         as f64;
                 farm_ratio = (terrain_statistic.base_terrain_count[BaseTerrain::Grassland]
                     + terrain_statistic.base_terrain_count[BaseTerrain::Plain])
                     as f64
-                    / (hill_and_flatland_tile_num
+                    / (hill_and_flatland_count
                         + terrain_statistic.terrain_type_count[TerrainType::Mountain])
                         as f64;
             }

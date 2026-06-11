@@ -67,11 +67,11 @@ impl TileMap {
                 *current_region_low_fert_compensation += 1;
             }
 
-            let region_land_num = terrain_statistic.terrain_type_count[TerrainType::Hill]
+            let hill_and_flatland_count = terrain_statistic.terrain_type_count[TerrainType::Hill]
                 + terrain_statistic.terrain_type_count[TerrainType::Flatland];
 
             // Low fertility per region land tile, add a luxury.
-            if (region.fertility_sum as f64 / region_land_num as f64) < 4.0 {
+            if (region.fertility_sum as f64 / hill_and_flatland_count as f64) < 4.0 {
                 *current_region_low_fert_compensation += 1;
             }
             /***** End of calculating the low fertility compensation for the region ******/

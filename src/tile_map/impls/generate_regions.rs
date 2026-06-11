@@ -44,19 +44,19 @@ impl TileMap {
 
                 landmass_region_list.sort_by_key(|region| region.fertility_sum);
 
-                let landmass_num = landmass_region_list.len() as u32;
+                let num_landmass = landmass_region_list.len() as u32;
 
                 // If less players than landmasses, we will ignore the extra landmasses.
-                let relevant_landmass_num = min(landmass_num, num_civilizations);
+                let num_relevant_landmass = min(num_landmass, num_civilizations);
 
-                // Create a new list containing the most fertile land areas by reversing the sorted list and selecting the top `relevant_landmass_num` items.
+                // Create a new list containing the most fertile land areas by reversing the sorted list and selecting the top `num_relevant_landmass` items.
                 let best_landmass_region_list = landmass_region_list
                     .into_iter()
                     .rev() // Reverse the iterator so the most fertile regions (which are at the end of the sorted list) come first.
-                    .take(relevant_landmass_num as usize) // Take the top `relevant_landmass_num` elements from the reversed list.
+                    .take(num_relevant_landmass as usize) // Take the top `num_relevant_landmass` elements from the reversed list.
                     .collect::<Vec<_>>();
 
-                let mut number_of_civs_on_landmass = vec![0; relevant_landmass_num as usize];
+                let mut number_of_civs_on_landmass = vec![0; num_relevant_landmass as usize];
 
                 // Calculate how to distribute civilizations across regions based on fertility
                 // The goal is to place civilizations where the fertility per civ is highest
@@ -111,27 +111,29 @@ impl TileMap {
     }
 
     // function AssignStartingPlots:DivideIntoRegions
-    /// Divides the region into subdivisions and get a vec of the subdivisions region.
+    /// Consumes `region` and divides it into sub-regions.
+    /// That will return a vec of the sub-regions.
     ///
     /// # Arguments
     ///
-    /// - `divisions_num`: The number of divisions to make.
-    /// - `region`: The region to divide.
+    /// - `num_divisions`: The number of divisions to make.
+    /// - `region`: The region to divide. It will be consumed.
     ///
     /// # Notes
     ///
-    /// - Although `divisions_num` should <= 22 in original CIV5, but in this implementation, it is not limited.
+    /// - Although `num_divisions` should <= 22 in original CIV5, but in this implementation, it is not limited.
     ///   That means if [`MapParameters::MAX_CIVILIZATION_COUNT`] is greater than 22, we don't need to rewrite this function.
     /// - In the original CIV5, the `chop_percent` values are intentionally set slightly lower than needed. This design choice helps ensure that the final results average out closer to the intended target.\
     ///   In our implementation, we use exact values for `chop_percent`, and use a special algorithm in [`Region::chop_into_two_regions`] to achieve more accurate results.
     ///   Please refer to [`Region::chop_into_two_regions`] for more details.
-    fn divide_into_regions(&mut self, divisions_num: u32, region: Region) {
+    fn divide_into_regions(&mut self, num_divisions: u32, region: Region) {
         let grid = self.world_grid.grid;
 
-        let mut stack = vec![(region, divisions_num)];
+        let mut stack = Vec::with_capacity(MapParameters::MAX_CIVILIZATION_COUNT as usize);
+        stack.push((region, num_divisions));
 
-        while let Some((mut current_region, current_divisions_num)) = stack.pop() {
-            match current_divisions_num {
+        while let Some((mut current_region, num_current_divisions)) = stack.pop() {
+            match num_current_divisions {
                 1 => {
                     // If we have only one division, it does not need to be divided further. So we just add it to the region list.
                     current_region.measure_terrain(self);
@@ -193,30 +195,30 @@ impl TileMap {
                     stack.push((first_section, 7));
                     stack.push((second_section, 12));
                 }
-                current_divisions_num if current_divisions_num % 3 == 0 => {
-                    let subdivisions = current_divisions_num / 3;
+                num_current_divisions if num_current_divisions % 3 == 0 => {
+                    let subdivisions = num_current_divisions / 3;
                     let (first_section, second_section, third_section) =
                         current_region.chop_into_three_regions(grid);
                     stack.push((first_section, subdivisions));
                     stack.push((second_section, subdivisions));
                     stack.push((third_section, subdivisions));
                 }
-                current_divisions_num if current_divisions_num % 2 == 0 => {
-                    let subdivisions = current_divisions_num / 2;
+                num_current_divisions if num_current_divisions % 2 == 0 => {
+                    let subdivisions = num_current_divisions / 2;
                     let (first_section, second_section) =
                         current_region.chop_into_two_regions(grid, 50.0);
                     stack.push((first_section, subdivisions));
                     stack.push((second_section, subdivisions));
                 }
                 _ => {
-                    // We divide the region into two parts, one part has the largest power of 2 or 3 less than or equal to half of `current_divisions_num`, and the other part has the rest.
-                    let half_divisions = current_divisions_num / 2;
+                    // We divide the region into two parts, one part has the largest power of 2 or 3 less than or equal to half of `num_current_divisions`, and the other part has the rest.
+                    let half_divisions = num_current_divisions / 2;
                     let max_power_of_two = largest_power_of_two_less_or_equal(half_divisions);
                     let max_power_of_three = largest_power_of_three_less_or_equal(half_divisions);
                     let first_subdivisions = max(max_power_of_two, max_power_of_three);
-                    let second_subdivisions = current_divisions_num - first_subdivisions;
+                    let second_subdivisions = num_current_divisions - first_subdivisions;
                     let chop_percent =
-                        first_subdivisions as f32 / current_divisions_num as f32 * 100.0;
+                        first_subdivisions as f32 / num_current_divisions as f32 * 100.0;
                     let (first_section, second_section) =
                         current_region.chop_into_two_regions(grid, chop_percent);
                     stack.push((first_section, first_subdivisions));
@@ -736,7 +738,7 @@ impl Region {
                 })
                 .expect("No suitable row found for `chop_into_two_regions`");
 
-            // Decide whether to include the current row in the first region or the second region
+            // Decide whether to include the current row in the first region
             // based on which choice gets us closer to the target fertility.
             if (first_region_fertility_sum - target_fertility)
                 > (target_fertility - (first_region_fertility_sum - current_row_fertility))
@@ -780,14 +782,14 @@ impl Region {
                 })
                 .expect("No suitable column found for `chop_into_two_regions`");
 
-            // Decide whether to include the current column in the first region or the second region
+            // Decide whether to include the current column in the first region
             // based on which choice gets us closer to the target fertility.
             if (first_region_fertility_sum - target_fertility)
                 > (target_fertility - (first_region_fertility_sum - current_column_fertility))
             {
                 rect_x -= 1;
                 // Although `first_region_fertility_sum` changes, but we don't need to use it anymore. So we comment out the code that updates it.
-                // first_region_fertility
+                // first_region_fertility_sum -= current_column_fertility;
             }
 
             first_region_width = rect_x + 1;
