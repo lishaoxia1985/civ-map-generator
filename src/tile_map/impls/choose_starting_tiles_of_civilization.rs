@@ -948,13 +948,16 @@ impl TileMap {
         let base_terrain = tile.base_terrain(self);
         let feature = tile.feature(self);
 
-        // Handle Flatland and Hill with features first
-        // Notes: These feature below only occurs on flatland and hill
+        // Handle features first
         if let Some(feature) = feature {
             match feature {
+                Feature::Ice => {
+                    yield_flags |= YieldFlags::Junk;
+                    return yield_flags;
+                }
                 Feature::Forest => {
                     yield_flags |= YieldFlags::Production | YieldFlags::Good;
-                    if region_type == RegionType::Forest || region_type == RegionType::Tundra {
+                    if matches!(region_type, RegionType::Forest | RegionType::Tundra) {
                         yield_flags |= YieldFlags::Food;
                     }
                     return yield_flags;
@@ -978,31 +981,27 @@ impl TileMap {
             }
         }
 
-        match (terrain_type, base_terrain, feature) {
-            (TerrainType::Water, _, Some(Feature::Ice)) => {
-                yield_flags |= YieldFlags::Junk;
-                return yield_flags;
-            }
-            (TerrainType::Water, BaseTerrain::Lake, _) => {
+        match (terrain_type, base_terrain) {
+            (TerrainType::Water, BaseTerrain::Lake) => {
                 yield_flags |= YieldFlags::Food | YieldFlags::Good;
                 return yield_flags;
             }
-            (TerrainType::Water, BaseTerrain::Coast, _) if region.area_id.is_none() => {
+            (TerrainType::Water, BaseTerrain::Coast) if region.area_id.is_none() => {
                 yield_flags |= YieldFlags::Good;
                 return yield_flags;
             }
-            (TerrainType::Water, _, _) => {
+            (TerrainType::Water, _) => {
                 return yield_flags;
             }
-            (TerrainType::Mountain, _, _) => {
+            (TerrainType::Mountain, _) => {
                 yield_flags |= YieldFlags::Junk;
                 return yield_flags;
             }
-            (TerrainType::Hill, _, None) => {
+            (TerrainType::Hill, _) => {
                 yield_flags |= YieldFlags::Production | YieldFlags::Good;
                 return yield_flags;
             }
-            (TerrainType::Flatland, BaseTerrain::Grassland, None) => {
+            (TerrainType::Flatland, BaseTerrain::Grassland) => {
                 yield_flags |= YieldFlags::Good;
                 if matches!(
                     region_type,
@@ -1016,13 +1015,13 @@ impl TileMap {
                 }
                 return yield_flags;
             }
-            (TerrainType::Flatland, BaseTerrain::Desert, None) => {
+            (TerrainType::Flatland, BaseTerrain::Desert) => {
                 if region_type != RegionType::Desert {
                     yield_flags |= YieldFlags::Junk;
                 }
                 return yield_flags;
             }
-            (TerrainType::Flatland, BaseTerrain::Plain, None) => {
+            (TerrainType::Flatland, BaseTerrain::Plain) => {
                 yield_flags |= YieldFlags::Good;
                 if matches!(
                     region_type,
@@ -1036,17 +1035,17 @@ impl TileMap {
                 }
                 return yield_flags;
             }
-            (TerrainType::Flatland, BaseTerrain::Tundra, None) => {
+            (TerrainType::Flatland, BaseTerrain::Tundra) => {
                 if region_type == RegionType::Tundra {
                     yield_flags |= YieldFlags::Food | YieldFlags::Good;
                 }
                 return yield_flags;
             }
-            (TerrainType::Flatland, BaseTerrain::Snow, None) => {
+            (TerrainType::Flatland, BaseTerrain::Snow) => {
                 yield_flags |= YieldFlags::Junk;
                 return yield_flags;
             }
-            (_, _, _) => (),
+            (_, _) => (),
         }
 
         yield_flags

@@ -452,16 +452,20 @@ impl TileMap {
     fn place_sexy_bonus_at_civ_starts(&mut self) {
         let grid = self.world_grid.grid;
 
-        let bonus_type_associated_with_region_type = [
-            (RegionType::Tundra, Resource::Deer),
-            (RegionType::Jungle, Resource::Bananas),
-            (RegionType::Forest, Resource::Deer),
-            (RegionType::Desert, Resource::Wheat),
-            (RegionType::Hill, Resource::Sheep),
-            (RegionType::Plain, Resource::Wheat),
-            (RegionType::Grassland, Resource::Cattle),
-            (RegionType::Hybrid, Resource::Cattle),
-        ];
+        // Map of region type to associated bonus type
+        let associated_bonus_type_for_region_type = |region_type: RegionType| -> Resource {
+            match region_type {
+                RegionType::Tundra => Resource::Deer,
+                RegionType::Jungle => Resource::Bananas,
+                RegionType::Forest => Resource::Deer,
+                RegionType::Desert => Resource::Wheat,
+                RegionType::Hill => Resource::Sheep,
+                RegionType::Plain => Resource::Wheat,
+                RegionType::Grassland => Resource::Cattle,
+                RegionType::Hybrid => Resource::Cattle,
+                RegionType::Undefined => unreachable!("RegionType::Undefined"),
+            }
+        };
 
         let mut tile_list = Vec::new();
         let mut fish_list = Vec::new();
@@ -469,11 +473,8 @@ impl TileMap {
         for i in 0..self.region_list.len() {
             let starting_tile = self.region_list[i].starting_tile.get().unwrap();
             let region_type = self.region_list[i].region_type.get().unwrap();
-            let chosen_bonus_resource = bonus_type_associated_with_region_type
-                .iter()
-                .find(|(associated_region_type, _)| associated_region_type == region_type)
-                .unwrap()
-                .1;
+            let chosen_bonus_resource = associated_bonus_type_for_region_type(*region_type);
+
             starting_tile.tiles_at_distance(3, grid).for_each(|tile| {
                 let terrain_type = tile.terrain_type(self);
                 let base_terrain = tile.base_terrain(self);
@@ -604,9 +605,11 @@ impl TileMap {
                 // The probability for 3 is 2/7 (because when 3 or 6 is generated, fish_radius is set to 3)
                 // The probability for 4 and 5 is 1/7 each
                 let mut fish_radius = self.random_number_generator.random_range(0..7);
-                if fish_radius > 5 {
-                    fish_radius = 3;
-                }
+                fish_radius = match fish_radius {
+                    0..=2 | 4..=5 => fish_radius,
+                    3 | 6 => 3,
+                    _ => unreachable!(),
+                };
                 tile.set_resource(self, Resource::Fish, 1);
                 self.place_impact_and_ripples(tile, Layer::Fish, fish_radius);
                 placed_count += 1;

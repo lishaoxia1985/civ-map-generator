@@ -611,7 +611,12 @@ pub struct Region {
     /// The rectangle that defines the region.
     pub rectangle: Rectangle,
     /// The area ID of the landmass this region belongs to.
-    /// When landmass_id is `None`, it means that we will consider all landmass in the region when we divide it into sub-regions or other operations.
+    ///
+    /// The area ID is used to determine the region's rectangle:
+    /// - `Some(area_id)`, the region's rectangle is the area's bounding rectangle.
+    ///   In this case the region divide method must be [`RegionDivideMethod::Pangaea`] or [`RegionDivideMethod::Continent`].
+    /// - `None`, the region's rectangle contains the whole map or is customer-defined.
+    ///   In this case the region divide method must be [`RegionDivideMethod::WholeMapRectangle`] or [`RegionDivideMethod::CustomRectangle`].
     pub area_id: Option<usize>,
     /// List of fertility values for each tile in the region.
     ///
@@ -663,19 +668,19 @@ impl Region {
         self.fertility_sum as f64 / self.tile_count as f64
     }
 
-    /// Get the region of the landmass according to the given `landmass_id`.
+    /// Get the region of the landmass according to the given `area_id`.
     ///
     /// # Notes
     ///
     /// We don't need to call [`Region::remove_dead_row_and_column()`] in this function,
-    /// because [`TileMap::obtain_landmass_boundaries()`] has already ensured that there are no dead rows and columns in the rectangle.
-    fn landmass_region(tile_map: &TileMap, landmass_id: usize) -> Self {
-        let rectangle = tile_map.obtain_area_rectangle(landmass_id);
+    /// because [`TileMap::obtain_area_rectangle()`] has already ensured that there are no dead rows and columns in the rectangle.
+    fn landmass_region(tile_map: &TileMap, area_id: usize) -> Self {
+        let rectangle = tile_map.obtain_area_rectangle(area_id);
 
         let fertility_list =
-            tile_map.measure_start_placement_fertility_of_landmass(landmass_id, rectangle);
+            tile_map.measure_start_placement_fertility_of_landmass(area_id, rectangle);
 
-        Self::new(rectangle, Some(landmass_id), fertility_list)
+        Self::new(rectangle, Some(area_id), fertility_list)
     }
 
     fn rectangle_region(tile_map: &TileMap, grid: HexGrid, rectangle: Rectangle) -> Self {
@@ -1129,7 +1134,7 @@ impl Region {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 /// Region type.
 ///
 /// The variant are defined in order of priority.
