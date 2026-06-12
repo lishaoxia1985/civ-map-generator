@@ -61,16 +61,18 @@ impl TileMap {
                 // Calculate how to distribute civilizations across regions based on fertility
                 // The goal is to place civilizations where the fertility per civ is highest
 
-                // First, create a list tracking each region's total fertility (initial average when 1 civ is placed)
-                let mut average_fertility_per_civ: Vec<f64> = best_landmass_region_list
-                    .iter()
-                    .map(|region| region.fertility_sum as f64)
-                    .collect();
+                // Track the expected average fertility after adding the next civilization to each region
+                // Initial value is the expected average fertility assuming one civilization is placed (fertility_sum / 1)
+                let mut expected_avg_fertility_per_civ_if_add_one: Vec<f64> =
+                    best_landmass_region_list
+                        .iter()
+                        .map(|region| region.fertility_sum as f64)
+                        .collect();
 
                 // Distribute all civilizations one by one
                 for _ in 0..num_civilizations {
                     // Find the most fertile region (where adding a civ would give highest fertility per civ)
-                    let (best_index, _) = average_fertility_per_civ
+                    let (best_index, _) = expected_avg_fertility_per_civ_if_add_one
                         .iter()
                         .enumerate()
                         .max_by(|&(_, a), &(_, b)| a.total_cmp(b))
@@ -79,9 +81,8 @@ impl TileMap {
                     // Place one civilization in this best region
                     number_of_civs_on_landmass[best_index] += 1;
 
-                    // Update this region's fertility-per-civ value:
-                    // Divide total fertility by (current civ count + 1) to represent what the average would be if we add another civ
-                    average_fertility_per_civ[best_index] =
+                    // Update this region's expected average fertility assuming one more civ is placed:
+                    expected_avg_fertility_per_civ_if_add_one[best_index] =
                         best_landmass_region_list[best_index].fertility_sum as f64
                             / (number_of_civs_on_landmass[best_index] as f64 + 1.);
                 }
