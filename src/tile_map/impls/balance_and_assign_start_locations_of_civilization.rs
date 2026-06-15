@@ -337,8 +337,7 @@ impl TileMap {
                     let candidate_regions: Vec<_> = region_index_list
                         .iter()
                         .filter(|&&region_index| {
-                            let region_type =
-                                *self.region_list[region_index].region_type.get().unwrap();
+                            let region_type = self.region_list[region_index].region_type;
                             region_type == single_region_priority
                         })
                         .copied()
@@ -386,8 +385,7 @@ impl TileMap {
                     let candidate_regions: Vec<_> = region_index_list
                         .iter()
                         .filter(|&&region_index| {
-                            let region_type =
-                                *self.region_list[region_index].region_type.get().unwrap();
+                            let region_type = self.region_list[region_index].region_type;
                             region_types_priority.contains(&region_type)
                         })
                         .copied()
@@ -464,8 +462,7 @@ impl TileMap {
                 let candidate_regions: Vec<_> = region_index_list
                     .iter()
                     .filter(|&&region_index| {
-                        let region_type =
-                            *self.region_list[region_index].region_type.get().unwrap();
+                        let region_type = self.region_list[region_index].region_type;
                         !region_types_avoid.contains(&region_type)
                     })
                     .copied()

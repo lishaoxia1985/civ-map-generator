@@ -940,7 +940,7 @@ impl TileMap {
     /// - [`YieldFlags::Production`] is used to identify tiles that yield production.
     /// - [`YieldFlags::Junk`] is used to identify tiles that yield nothing.
     fn measure_tile_yield(&self, tile: Tile, region: &Region) -> YieldFlags {
-        let region_type = *region.region_type.get().unwrap();
+        let region_type = region.region_type;
 
         let mut yield_flags = YieldFlags::empty();
 

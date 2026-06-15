@@ -52,7 +52,7 @@ impl TileMap {
         //
         // Current sorting has no side effects because all data structures that rely on `region_index` haven't been initialized.
         self.region_list.sort_by_cached_key(|region| {
-            let region_type = *region.region_type.get().unwrap();
+            let region_type = region.region_type;
             let random_number: u8 = self.random_number_generator.random();
             // At first, sort by region type priority.
             // If the regions have the same type, we will shuffle them by a random number.
@@ -174,7 +174,7 @@ impl TileMap {
         map_parameters: &MapParameters,
     ) -> Resource {
         let region = &self.region_list[region_index];
-        let region_type = *region.region_type.get().unwrap();
+        let region_type = region.region_type;
         let terrain_statistic = region.terrain_statistic.get().unwrap();
         let start_location_condition = region.start_location_condition.get().unwrap();
 

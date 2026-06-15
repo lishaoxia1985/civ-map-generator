@@ -629,7 +629,8 @@ pub struct Region {
     /// The terrain statistic of the region. Ensure that method [`Region::measure_terrain`] has been called before accessing this field.
     pub terrain_statistic: OnceLock<TerrainStatistic>,
     /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field.
-    pub region_type: OnceLock<RegionType>,
+    /// Before calling the method, use [`RegionType::Undefined`] as the placeholder.
+    pub region_type: RegionType,
     /// The starting tile of the civilization in this region. Ensure that method [`TileMap::choose_civilization_starting_tiles`] has been called before accessing this field.
     pub starting_tile: OnceLock<Tile>,
     /// The start location condition of the region.
@@ -657,7 +658,7 @@ impl Region {
             fertility_sum,
             tile_count,
             terrain_statistic: OnceLock::new(),
-            region_type: OnceLock::new(),
+            region_type: RegionType::Undefined,
             starting_tile: OnceLock::new(),
             start_location_condition: OnceLock::new(),
         }
@@ -1116,6 +1117,12 @@ impl Region {
             region_type = RegionType::Grassland;
         }
         // Hybrid: Sum of major terrain types > 80% of buildable terrain
+        //
+        // # Notes
+        //
+        // This if-statement should be always true, unless you rewrite all the logic,
+        // for example, custom new base terrain variant which can be placed on flatland or hill.
+        // if this, rewrite all the if-statement too.
         else if (base_terrain_count[BaseTerrain::Grassland]
             + base_terrain_count[BaseTerrain::Plain]
             + base_terrain_count[BaseTerrain::Desert]
@@ -1126,11 +1133,15 @@ impl Region {
             > threshold_80
         {
             region_type = RegionType::Hybrid;
-        } else {
-            region_type = RegionType::Undefined;
+        }
+        // This should be never reached, because the if-statement above should be always true.
+        else {
+            unreachable!(
+                "Region type is not set correctly. Please check the code of the function `determine_region_type`"
+            )
         }
 
-        self.region_type.set(region_type).unwrap();
+        self.region_type = region_type;
     }
 }
 

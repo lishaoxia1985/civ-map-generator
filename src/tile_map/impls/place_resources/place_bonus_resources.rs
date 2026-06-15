@@ -234,7 +234,7 @@ impl TileMap {
             .region_list
             .iter()
             .enumerate()
-            .filter(|(_, region)| *region.region_type.get().unwrap() == RegionType::Hill)
+            .filter(|(_, region)| region.region_type == RegionType::Hill)
             .map(|(index, _)| index)
             .collect();
 
@@ -472,8 +472,8 @@ impl TileMap {
 
         for i in 0..self.region_list.len() {
             let starting_tile = self.region_list[i].starting_tile.get().unwrap();
-            let region_type = self.region_list[i].region_type.get().unwrap();
-            let chosen_bonus_resource = associated_bonus_type_for_region_type(*region_type);
+            let region_type = self.region_list[i].region_type;
+            let chosen_bonus_resource = associated_bonus_type_for_region_type(region_type);
 
             starting_tile.tiles_at_distance(3, grid).for_each(|tile| {
                 let terrain_type = tile.terrain_type(self);
