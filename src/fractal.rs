@@ -118,7 +118,7 @@ impl CvFractal {
     ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
     ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
     ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
-    fn new(grid: HexGrid, flags: FractalFlags, width_exp: u32, height_exp: u32) -> Self {
+    fn empty(grid: HexGrid, flags: FractalFlags, width_exp: u32, height_exp: u32) -> Self {
         let map_size = grid.size;
 
         let fractal_width = 1 << width_exp;
@@ -168,7 +168,7 @@ impl CvFractal {
     /// # Panics
     ///
     /// Panics if `grain` is invalid.
-    pub fn create(
+    pub fn new(
         random: &mut StdRng,
         grid: HexGrid,
         grain: u32,
@@ -188,8 +188,8 @@ impl CvFractal {
             height_exp
         );
 
-        let mut fractal = Self::new(grid, flags, width_exp, height_exp);
-        fractal.frac_init_internal(random, grain, None, None);
+        let mut fractal = Self::empty(grid, flags, width_exp, height_exp);
+        fractal.frac_init(random, grain, None, None);
         fractal
     }
 
@@ -226,7 +226,7 @@ impl CvFractal {
     /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
     /// This function support to create both vertical and horizontal rifts.
     /// But we suggest to create only one of them at a time.
-    pub fn create_rifts(
+    pub fn new_with_rifts(
         random: &mut StdRng,
         grid: HexGrid,
         grain: u32,
@@ -247,8 +247,8 @@ impl CvFractal {
             height_exp
         );
 
-        let mut fractal = Self::new(grid, flags, width_exp, height_exp);
-        fractal.frac_init_internal(random, grain, None, Some(rifts));
+        let mut fractal = Self::empty(grid, flags, width_exp, height_exp);
+        fractal.frac_init(random, grain, None, Some(rifts));
         fractal
     }
 
@@ -275,7 +275,7 @@ impl CvFractal {
     /// # Panics
     ///
     /// Panics if `grain` is invalid.
-    fn frac_init_internal(
+    fn frac_init(
         &mut self,
         random: &mut StdRng,
         grain: u32,

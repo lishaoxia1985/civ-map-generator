@@ -77,7 +77,7 @@ impl TileMap {
         let flags = FractalFlags::empty();
 
         let mut mountains_fractal =
-            CvFractal::create(&mut self.random_number_generator, grid, grain, flags, 7, 6);
+            CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
 
         mountains_fractal.ridge_builder(
             &mut self.random_number_generator,
@@ -88,7 +88,7 @@ impl TileMap {
         );
 
         let mut hills_fractal =
-            CvFractal::create(&mut self.random_number_generator, grid, grain, flags, 7, 6);
+            CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
 
         hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
 
@@ -193,7 +193,7 @@ impl TileMap {
         let flags = FractalFlags::empty();
 
         let mut continents_fractal = if rift_grain > 0 && rift_grain < 4 {
-            let rift_fractal = CvFractal::create(
+            let rift_fractal = CvFractal::new(
                 &mut self.random_number_generator,
                 grid,
                 rift_grain,
@@ -202,7 +202,7 @@ impl TileMap {
                 6,
             );
 
-            CvFractal::create_rifts(
+            CvFractal::new_with_rifts(
                 &mut self.random_number_generator,
                 grid,
                 continent_grain,
@@ -212,7 +212,7 @@ impl TileMap {
                 6,
             )
         } else {
-            CvFractal::create(
+            CvFractal::new(
                 &mut self.random_number_generator,
                 grid,
                 continent_grain,
