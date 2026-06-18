@@ -112,7 +112,10 @@ pub trait Grid {
     /// Should be `[Direction; N]` where N is the number of edges/corners:
     /// - Hex grids: `[Direction; 6]`
     /// - Square grids: `[Direction; 4]`
-    type DirectionArrayType;
+    type DirectionArrayType: AsRef<[Direction]> + Clone;
+
+    /// Returns a new `Grid` with the specified `width` and `height`, preserving all other fields from the current instance.
+    fn with_dimensions(&self, width: u32, height: u32) -> Self;
 
     /// Returns the array of edge directions for the grid.
     ///

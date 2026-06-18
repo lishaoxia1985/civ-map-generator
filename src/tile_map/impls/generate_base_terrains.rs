@@ -4,6 +4,7 @@ use rand::{Rng, RngExt};
 
 use crate::{
     fractal::{CvFractal, FractalFlags},
+    grid::hex_grid::HexGrid,
     map_parameters::Temperature,
     tile_component::{BaseTerrain, TerrainType},
     tile_map::{MapParameters, TileMap},
@@ -60,29 +61,29 @@ impl TileMap {
 
         let flags = FractalFlags::empty();
 
-        let variation_fractal = CvFractal::new(
+        let variation_fractal: CvFractal<HexGrid> = CvFractal::new(
             &mut self.random_number_generator,
             grid,
             grain_amount,
             flags,
-            CvFractal::DEFAULT_WIDTH_EXP,
-            CvFractal::DEFAULT_HEIGHT_EXP,
+            CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
+            CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );
         let deserts_fractal = CvFractal::new(
             &mut self.random_number_generator,
             grid,
             grain_amount,
             flags,
-            CvFractal::DEFAULT_WIDTH_EXP,
-            CvFractal::DEFAULT_HEIGHT_EXP,
+            CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
+            CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );
         let plains_fractal = CvFractal::new(
             &mut self.random_number_generator,
             grid,
             grain_amount,
             flags,
-            CvFractal::DEFAULT_WIDTH_EXP,
-            CvFractal::DEFAULT_HEIGHT_EXP,
+            CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
+            CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );
 
         let [desert_top, plains_top] =

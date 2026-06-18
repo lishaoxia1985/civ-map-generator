@@ -57,6 +57,13 @@ impl Grid for HexGrid {
 
     type DirectionArrayType = [Direction; 6];
 
+    fn with_dimensions(&self, width: u32, height: u32) -> Self {
+        Self {
+            size: Size::new(width, height),
+            ..*self
+        }
+    }
+
     fn edge_direction_array(&self) -> [Direction; 6] {
         self.layout.orientation.edge_direction()
     }

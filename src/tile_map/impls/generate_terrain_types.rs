@@ -2,7 +2,7 @@ use rand::{Rng, RngExt};
 
 use crate::{
     fractal::{CvFractal, FractalFlags},
-    grid::WorldSizeType,
+    grid::{WorldSizeType, hex_grid::HexGrid},
     map_parameters::{SeaLevel, WorldAge},
     tile_component::TerrainType,
     tile_map::{MapParameters, TileMap},
@@ -76,7 +76,7 @@ impl TileMap {
 
         let flags = FractalFlags::empty();
 
-        let mut mountains_fractal =
+        let mut mountains_fractal: CvFractal<HexGrid> =
             CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
 
         mountains_fractal.ridge_builder(
@@ -87,7 +87,7 @@ impl TileMap {
             1,
         );
 
-        let mut hills_fractal =
+        let mut hills_fractal: CvFractal<HexGrid> =
             CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
 
         hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
@@ -166,7 +166,7 @@ impl TileMap {
         });
     }
 
-    pub fn continents_fractal(&mut self) -> CvFractal {
+    pub fn continents_fractal(&mut self) -> CvFractal<HexGrid> {
         let continent_grain = 2;
         // Default configuration with no rifts.
         // To add rifts, set `rift_grain` to a value between 1 and 3 (inclusive).
