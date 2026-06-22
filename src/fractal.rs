@@ -601,32 +601,27 @@ impl<G: Grid> CvFractal<G> {
         const HEIGHT: u32 = 16;
 
         if self.fractal_grid.wrap_x() {
-            for y in 0..=fractal_height {
+            for y in 0..=fractal_height as usize {
                 // `rift_value` is the horizontal center x-coordinate of the rift.
                 // It's in [-fractal_width / 8, fractal_width / 8 - fractal_width / 1024] range.
-                let rift_value = (rifts.fractal_array[rift_x as usize][y as usize] as i32 - 128)
+                let rift_value = (rifts.fractal_array[rift_x as usize][y] as i32 - 128)
                     * fractal_width as i32
                     / 128
                     / 8;
                 for x in 0..WIDTH {
-                    //  Rift along edge of map.
-                    let right = self
-                        .fractal_grid
-                        .normalize_offset(OffsetCoordinate::new(rift_value + x as i32, y as i32))
-                        .unwrap();
-                    let left = self
-                        .fractal_grid
-                        .normalize_offset(OffsetCoordinate::new(rift_value - x as i32, y as i32))
-                        .unwrap();
+                    // Rift along edge of map.
 
-                    self.fractal_array[right.0.x as usize][y as usize] =
-                        (self.fractal_array[right.0.x as usize][y as usize] * x
-                            + DEEP * (WIDTH - x))
-                            / WIDTH;
-                    self.fractal_array[left.0.x as usize][y as usize] =
-                        (self.fractal_array[left.0.x as usize][y as usize] * x
-                            + DEEP * (WIDTH - x))
-                            / WIDTH;
+                    // Notes: Don't use `Grid::normalize_offset` here,
+                    // because when `y = fractal_height`, the offset is not on the grid,
+                    // and `normalize_offset` will return an `Err`.
+
+                    let right_x = (rift_value + x as i32).rem_euclid(fractal_width as i32) as usize;
+                    let left_x = (rift_value - x as i32).rem_euclid(fractal_width as i32) as usize;
+
+                    self.fractal_array[right_x][y] =
+                        (self.fractal_array[right_x][y] * x + DEEP * (WIDTH - x)) / WIDTH;
+                    self.fractal_array[left_x][y] =
+                        (self.fractal_array[left_x][y] * x + DEEP * (WIDTH - x)) / WIDTH;
                 }
             }
 
@@ -636,31 +631,27 @@ impl<G: Grid> CvFractal<G> {
         }
 
         if self.fractal_grid.wrap_y() {
-            for x in 0..=fractal_width {
+            for x in 0..=fractal_width as usize {
                 // `rift_value` is the height of the rift at the given y coordinate
                 // It's in [-fractal_height / 8, fractal_height / 8 - fractal_height / 1024] range.
-                let rift_value = (rifts.fractal_array[x as usize][rift_y as usize] as i32 - 128)
+                let rift_value = (rifts.fractal_array[x][rift_y as usize] as i32 - 128)
                     * fractal_height as i32
                     / 128
                     / 8;
                 for y in 0..HEIGHT {
-                    let top = self
-                        .fractal_grid
-                        .normalize_offset(OffsetCoordinate::new(x as i32, rift_value + y as i32))
-                        .unwrap();
-                    let bottom = self
-                        .fractal_grid
-                        .normalize_offset(OffsetCoordinate::new(x as i32, rift_value - y as i32))
-                        .unwrap();
+                    // Rift along edge of map.
 
-                    self.fractal_array[x as usize][top.0.y as usize] =
-                        (self.fractal_array[x as usize][top.0.y as usize] * y
-                            + DEEP * (HEIGHT - y))
-                            / HEIGHT;
-                    self.fractal_array[x as usize][bottom.0.y as usize] =
-                        (self.fractal_array[x as usize][top.0.y as usize] * y
-                            + DEEP * (HEIGHT - y))
-                            / HEIGHT;
+                    // Notes: Don't use `Grid::normalize_offset` here,
+                    // because when `x = fractal_width`, the offset is not on the grid,
+                    // and `normalize_offset` will return an `Err`.
+                    let top_y = (rift_value + y as i32).rem_euclid(fractal_height as i32) as usize;
+                    let bottom_y =
+                        (rift_value - y as i32).rem_euclid(fractal_height as i32) as usize;
+
+                    self.fractal_array[x][top_y] =
+                        (self.fractal_array[x][top_y] * y + DEEP * (HEIGHT - y)) / HEIGHT;
+                    self.fractal_array[x][bottom_y] =
+                        (self.fractal_array[x][bottom_y] * y + DEEP * (HEIGHT - y)) / HEIGHT;
                 }
             }
 

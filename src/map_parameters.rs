@@ -328,7 +328,7 @@ impl MapParametersBuilder {
 /// use civ_map_generator::map_parameters::*;
 ///
 /// let world_size_type = WorldSizeType::Standard;
-/// let mut grid = HexGrid::new(
+/// let grid = HexGrid::new(
 ///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
 ///     HexLayout {
 ///         orientation: HexOrientation::Flat,
@@ -365,7 +365,7 @@ impl WorldGrid {
     /// use civ_map_generator::map_parameters::*;
     ///
     /// let world_size_type = WorldSizeType::Standard;
-    /// let mut grid = HexGrid::new(
+    /// let grid = HexGrid::new(
     ///     HexGrid::default_size(world_size_type), // Default dimensions based on world size classification
     ///     HexLayout {
     ///         orientation: HexOrientation::Flat,
