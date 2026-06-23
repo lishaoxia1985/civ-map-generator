@@ -17,55 +17,26 @@ use crate::grid::{
     Cell, Grid, Size, WrapFlags, direction::Direction, offset_coordinate::OffsetCoordinate,
 };
 
-/// A seed for the Voronoi diagram in the fractal grid.
-struct VoronoiSeed {
-    /// The cell of the seed in the fractal grid.
-    pub cell: Cell,
-    /// Implies the influence of the seed on its surrounding area.
-    pub weakness: u32,
-    /// Indicates the preferred direction or bias when assigning points within its influence region during the generation of the diagram.
-    pub bias_direction: Direction,
-    /// The strength of the bias direction.
-    pub directional_bias_strength: u32,
-}
-
-impl VoronoiSeed {
-    /// Generates a random seed for the fractal.
-    pub fn random_seed(random: &mut StdRng, fractal_grid: &impl Grid) -> Self {
-        let offset_coordinate = OffsetCoordinate::from([
-            random.random_range(0..fractal_grid.width()),
-            random.random_range(0..fractal_grid.height()),
-        ]);
-
-        let cell = fractal_grid.offset_to_cell(offset_coordinate).unwrap();
-
-        let weakness = random.random_range(0..6);
-
-        let bias_direction = *fractal_grid
-            .edge_direction_array()
-            .as_ref()
-            .choose(random)
-            .unwrap();
-
-        let directional_bias_strength = random.random_range(0..4);
-
-        VoronoiSeed {
-            cell,
-            weakness,
-            bias_direction,
-            directional_bias_strength,
-        }
-    }
-}
-
+/// A fractal generator for generating terrain maps using diamond-square algorithm and voronoi Algorithm.
 pub struct CvFractal<G: Grid> {
-    /// Store the map/world size, equal to the grid size which is used in the game. The grid is different from [`CvFractal::fractal_grid`].
+    /// The map/world size, equal to the grid size which is used in the game.
+    ///
+    /// **Different** from [`CvFractal::fractal_grid`], The map size can be any valid size.
     map_size: Size,
-    /// The fractal grid, different from the grid used in the game, it is used to store the fractal's values.
-    /// Width resolution of the fractal grid is `1 << width_exp`, is a power of 2.
-    /// Height resolution of the fractal grid is `1 << height_exp`, is a power of 2.
+    /// The fractal grid.
+    ///
+    /// It is the same as the grid used in the game **except** the grid's size.
+    /// The size is determined by `width_exp` and `height_exp`:
+    /// - Width resolution: `1 << width_exp` (power of 2)
+    /// - Height resolution: `1 << height_exp` (power of 2)
     fractal_grid: G,
     /// The fractal's flags. It is used to control the fractal's generation process.
+    ///
+    /// # Notes
+    ///
+    /// In original CIV 5, [`FractalFlags`] also contains the fields `WarpX` and `WarpY` flags.
+    /// In this implementation, the field [`CvFractal::fractal_grid`] controls the wrap behavior directly.
+    /// we don't need to support warp flags in [`FractalFlags`].
     flags: FractalFlags,
     /// It is an exponent related to the width of the source fractal,
     /// `width_exp = 7` means the width of the source fractal is `2^7`
@@ -76,26 +47,6 @@ pub struct CvFractal<G: Grid> {
     /// Stores the 2D fractal array, the array size is `[fractal_width + 1][fractal_height + 1]`.\
     /// **NOTICE**: The last column and last row are not part of the fractal, they are only used to calculate the fractal values.
     fractal_array: Vec<Vec<u32>>,
-}
-
-bitflags! {
-    /// Flags for the CvFractal. It is used to control the behavior of the fractal generation.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub struct FractalFlags: u8 {
-        /// When flag is set, The closer to the edge of the grid, the closer the value of the height to 0.
-        ///
-        /// # Notes
-        ///
-        /// When grid is wrapped in the X direction, ignored in the X direction.
-        /// When grid is wrapped in the Y direction, ignored in the Y direction.
-        const Polar = 0b00000001;
-        /// When flag is set, the value of the height is in `0..=99`, otherwise the value is in `0..=255`
-        const Percent = 0b00000010;
-        /// When flag is set, draws rift in center of world
-        const CenterRift = 0b00000100;
-        /// When flag is set, inverts the fractal height values, e.g. the original value is `fractal_value`, the new value is `255 - fractal_value`
-        const InvertHeights = 0b00001000;
-    }
 }
 
 impl<G: Grid> CvFractal<G> {
@@ -805,5 +756,72 @@ impl<G: Grid> CvFractal<G> {
         // get resized_image
         let resized_image = resize(&image, map_width, map_height, FilterType::Triangle);
         resized_image.save(path).unwrap();
+    }
+}
+
+bitflags! {
+    /// Flags for the CvFractal. It is used to control the behavior of the fractal generation.
+    ///
+    /// # Notes
+    ///
+    /// In original CIV 5, [`FractalFlags`] also contains the fields `WarpX` and `WarpY` flags.
+    /// In this implementation, [`CvFractal`] has a field [`CvFractal::fractal_grid`] which controls the wrap behavior.
+    /// we don't need to support warp flags in [`FractalFlags`].
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct FractalFlags: u8 {
+        /// When flag is set, The closer to the edge of the grid, the closer the value of the height to 0.
+        ///
+        /// # Notes
+        ///
+        /// When grid is wrapped in the X direction, ignored in the X direction.
+        /// When grid is wrapped in the Y direction, ignored in the Y direction.
+        const Polar = 0b00000001;
+        /// When flag is set, the value of the height is in `0..=99`, otherwise the value is in `0..=255`
+        const Percent = 0b00000010;
+        /// When flag is set, draws rift in center of world
+        const CenterRift = 0b00000100;
+        /// When flag is set, inverts the fractal height values, e.g. the original value is `fractal_value`, the new value is `255 - fractal_value`
+        const InvertHeights = 0b00001000;
+    }
+}
+
+/// A seed for the Voronoi diagram in the fractal grid.
+struct VoronoiSeed {
+    /// The cell of the seed in the fractal grid.
+    pub cell: Cell,
+    /// Implies the influence of the seed on its surrounding area.
+    pub weakness: u32,
+    /// Indicates the preferred direction or bias when assigning points within its influence region during the generation of the diagram.
+    pub bias_direction: Direction,
+    /// The strength of the bias direction.
+    pub directional_bias_strength: u32,
+}
+
+impl VoronoiSeed {
+    /// Generates a random seed for the fractal.
+    pub fn random_seed(random: &mut StdRng, fractal_grid: &impl Grid) -> Self {
+        let offset_coordinate = OffsetCoordinate::from([
+            random.random_range(0..fractal_grid.width()),
+            random.random_range(0..fractal_grid.height()),
+        ]);
+
+        let cell = fractal_grid.offset_to_cell(offset_coordinate).unwrap();
+
+        let weakness = random.random_range(0..6);
+
+        let bias_direction = *fractal_grid
+            .edge_direction_array()
+            .as_ref()
+            .choose(random)
+            .unwrap();
+
+        let directional_bias_strength = random.random_range(0..4);
+
+        VoronoiSeed {
+            cell,
+            weakness,
+            bias_direction,
+            directional_bias_strength,
+        }
     }
 }

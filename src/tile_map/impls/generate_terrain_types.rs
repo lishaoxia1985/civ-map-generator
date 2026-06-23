@@ -2,7 +2,7 @@ use rand::{Rng, RngExt};
 
 use crate::{
     fractal::{CvFractal, FractalFlags},
-    grid::{WorldSizeType, hex_grid::HexGrid},
+    grid::{WorldSizeType, WrapFlags, hex_grid::HexGrid},
     map_parameters::{SeaLevel, WorldAge},
     tile_component::TerrainType,
     tile_map::{MapParameters, TileMap},
@@ -167,7 +167,11 @@ impl TileMap {
     }
 
     pub fn continents_fractal(&mut self) -> CvFractal<HexGrid> {
+        // TODO: This should be as a customizable parameter of map in the future
         let continent_grain = 2;
+
+        // TODO: This should be as a customizable parameter of map in the future
+        //
         // Default configuration with no rifts.
         // To add rifts, set `rift_grain` to a value between 1 and 3 (inclusive).
         //
@@ -190,36 +194,54 @@ impl TileMap {
 
         let grid = self.world_grid.grid;
 
+        // TODO: This should be as a customizable parameter of map in the future
         let flags = FractalFlags::empty();
 
-        let mut continents_fractal = if rift_grain > 0 && rift_grain < 4 {
-            let rift_fractal = CvFractal::new(
-                &mut self.random_number_generator,
-                grid,
-                rift_grain,
-                flags,
-                7,
-                6,
-            );
+        let mut continents_fractal = match rift_grain {
+            1..=3 => {
+                // In original CIV 5, [`FractalFlags`] also contains the fields `WarpX` and `WarpY` flags,
+                // and it is always empty when creating the rift fractal.
+                //
+                // In this implementation, [`FractalFlags`] doen't contains the fields `WarpX` and `WarpY` flags,
+                // and grid controls the wrap behavior directly.
+                // We achieve the same result by 2 steps:
 
-            CvFractal::new_with_rifts(
+                // Step 1: create the rift grid with `wrap_flags` set to `WrapFlags::empty()`,
+                //         other fields are the same as `grid`.
+                let rift_grid = HexGrid {
+                    wrap_flags: WrapFlags::empty(),
+                    ..grid
+                };
+
+                // Step 2: create the rift fractal with `rift_grid`,
+                //         the argument `flags` of the funtion `CvFractal::new()` is always set to `FractalFlags::empty()`.
+                let rift_fractal = CvFractal::new(
+                    &mut self.random_number_generator,
+                    rift_grid,
+                    rift_grain,
+                    FractalFlags::empty(), // The flags of `rift_fractal` are always empty in original CIV 5
+                    7,
+                    6,
+                );
+
+                CvFractal::new_with_rifts(
+                    &mut self.random_number_generator,
+                    grid,
+                    continent_grain,
+                    flags,
+                    &rift_fractal,
+                    7,
+                    6,
+                )
+            }
+            _ => CvFractal::new(
                 &mut self.random_number_generator,
                 grid,
                 continent_grain,
                 flags,
-                &rift_fractal,
                 7,
                 6,
-            )
-        } else {
-            CvFractal::new(
-                &mut self.random_number_generator,
-                grid,
-                continent_grain,
-                flags,
-                7,
-                6,
-            )
+            ),
         };
 
         // Blend a bit of ridge into the fractal.
