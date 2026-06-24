@@ -1,7 +1,7 @@
 use rand::{Rng, RngExt};
 
 use crate::{
-    fractal::{CvFractal, FractalFlags},
+    fractal::{CvFractal, CvFractalBuilder, FractalFlags},
     grid::{WorldSizeType, WrapFlags, hex_grid::HexGrid},
     map_parameters::{SeaLevel, WorldAge},
     tile_component::TerrainType,
@@ -76,15 +76,10 @@ impl TileMap {
 
         let flags = FractalFlags::empty();
 
-        let mut mountains_fractal: CvFractal<HexGrid> = CvFractal::new(
-            &mut self.random_number_generator,
-            grid,
-            grain,
-            flags,
-            None,
-            7,
-            6,
-        );
+        let mut mountains_fractal = CvFractalBuilder::new(grid)
+            .grain(grain)
+            .flags(flags)
+            .build(&mut self.random_number_generator);
 
         mountains_fractal.ridge_builder(
             &mut self.random_number_generator,
@@ -94,15 +89,10 @@ impl TileMap {
             1,
         );
 
-        let mut hills_fractal: CvFractal<HexGrid> = CvFractal::new(
-            &mut self.random_number_generator,
-            grid,
-            grain,
-            flags,
-            None,
-            7,
-            6,
-        );
+        let mut hills_fractal = CvFractalBuilder::new(grid)
+            .grain(grain)
+            .flags(flags)
+            .build(&mut self.random_number_generator);
 
         hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
 
@@ -229,36 +219,21 @@ impl TileMap {
 
                 // Step 2: create the rift fractal with `rift_grid`,
                 //         the argument `flags` of the funtion `CvFractal::new()` is always set to `FractalFlags::empty()`.
-                let rift_fractal = CvFractal::new(
-                    &mut self.random_number_generator,
-                    rift_grid,
-                    rift_grain,
-                    FractalFlags::empty(), // The flags of `rift_fractal` are always empty in original CIV 5
-                    None,
-                    7,
-                    6,
-                );
+                let rift_fractal = CvFractalBuilder::new(rift_grid)
+                    .grain(rift_grain)
+                    .flags(FractalFlags::empty()) // The flags of `rift_fractal` are always empty in original CIV 5
+                    .build(&mut self.random_number_generator);
 
-                // Create the fractal with the rifts
-                CvFractal::new(
-                    &mut self.random_number_generator,
-                    grid,
-                    continent_grain,
-                    flags,
-                    Some(&rift_fractal),
-                    7,
-                    6,
-                )
+                CvFractalBuilder::new(grid)
+                    .grain(continent_grain)
+                    .flags(flags)
+                    .rift_fractal(&rift_fractal)
+                    .build(&mut self.random_number_generator)
             }
-            _ => CvFractal::new(
-                &mut self.random_number_generator,
-                grid,
-                continent_grain,
-                flags,
-                None,
-                7,
-                6,
-            ),
+            _ => CvFractalBuilder::new(grid)
+                .grain(continent_grain)
+                .flags(flags)
+                .build(&mut self.random_number_generator),
         };
 
         // Blend a bit of ridge into the fractal.

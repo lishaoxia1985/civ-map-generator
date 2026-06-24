@@ -17,6 +17,9 @@ use crate::grid::{
     Cell, Grid, Size, WrapFlags, direction::Direction, offset_coordinate::OffsetCoordinate,
 };
 
+const DEFAULT_WIDTH_EXP: u32 = 7;
+const DEFAULT_HEIGHT_EXP: u32 = 6;
+
 /// A fractal generator for generating terrain maps using diamond-square algorithm and voronoi Algorithm.
 pub struct CvFractal<G: Grid> {
     /// The map/world size, equal to the grid size which is used in the game.
@@ -50,9 +53,6 @@ pub struct CvFractal<G: Grid> {
 }
 
 impl<G: Grid> CvFractal<G> {
-    pub const DEFAULT_WIDTH_EXP: u32 = 7;
-    pub const DEFAULT_HEIGHT_EXP: u32 = 6;
-
     /// Creates a new empty fractal with the given parameters.
     ///
     /// # Arguments
@@ -60,13 +60,15 @@ impl<G: Grid> CvFractal<G> {
     /// - `grid`: The base map/world grid (distinct from [`CvFractal::fractal_grid`])
     /// - `flags`: Bit flags controlling fractal generation behavior
     /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
+    ///   - To replicate original behavior with negative values, use [`DEFAULT_WIDTH_EXP`] directly
     /// - `height_exp`: The exponent for calculating fractal height (height = 2^height_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
+    ///   - To replicate original behavior with negative values, use [`DEFAULT_HEIGHT_EXP`] directly
+    ///
+    /// # Notes
+    ///
+    /// In original CIV5, `width_exp` and `height_exp` parameter was allowed to be negative,
+    /// and when they are negative, the function will use [`DEFAULT_WIDTH_EXP`] and [`DEFAULT_HEIGHT_EXP`] respectively.
+    /// In this implementation, negative values are not allowed, you should use [`DEFAULT_WIDTH_EXP`] and [`DEFAULT_HEIGHT_EXP`] directly.
     fn empty(grid: G, flags: FractalFlags, width_exp: u32, height_exp: u32) -> Self {
         let map_size = grid.size();
 
@@ -88,56 +90,6 @@ impl<G: Grid> CvFractal<G> {
         }
     }
 
-    /// Creates a fractal with the given parameters.
-    ///
-    /// # Arguments
-    ///
-    /// - `random`: A mutable reference to a random number generator.
-    /// - `grid`: The base map/world grid (distinct from [`CvFractal::fractal_grid`])
-    /// - `grain`: Controls the level of detail or smoothness of the fractal.\
-    ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
-    ///         - If `min(width_exp, height_exp) >= 7`: `[0, 7]`
-    ///         - if `min(width_exp, height_exp) < 7`: `[0, min(width_exp, height_exp)]`
-    ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
-    ///         - Higher grain → Fewer iterations → More random noise\
-    ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
-    ///         - Lower grain → More iterations → Smoother gradients\
-    ///           When `grain = 0`, the fractal is the smoothest.
-    /// - `flags`: Bit flags controlling fractal generation behavior
-    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.
-    ///   - `rifts`'s width and height must be equal to the width and height of `self`.
-    /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
-    /// - `height_exp`: The exponent for calculating fractal height (height = 2^height_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
-    ///
-    /// # Panics
-    ///
-    /// Panics if `grain` is invalid.
-    ///
-    /// # Notes
-    ///
-    /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
-    /// This function support to create both vertical and horizontal rifts.
-    /// But we suggest to create only one of them at a time.
-    pub fn new(
-        random: &mut StdRng,
-        grid: G,
-        grain: u32,
-        flags: FractalFlags,
-        rifts: Option<&CvFractal<G>>,
-        width_exp: u32,
-        height_exp: u32,
-    ) -> Self {
-        let mut fractal = Self::empty(grid, flags, width_exp, height_exp);
-        fractal.frac_init(random, grain, None, rifts);
-        fractal
-    }
-
     /// Generate a fractal with the given parameters.
     /// # Arguments
     ///
@@ -146,7 +98,7 @@ impl<G: Grid> CvFractal<G> {
     ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
     ///         - If `min(width_exp, height_exp) >= 7`: `[0, 7]`
     ///         - if `min(width_exp, height_exp) < 7`: `[0, min(width_exp, height_exp)]`
-    ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
+    ///     - Effect on algorithm (The value determines how many iterations the diamond-square algorithm will execute):
     ///         - Higher grain → Fewer iterations → More random noise\
     ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
@@ -163,7 +115,13 @@ impl<G: Grid> CvFractal<G> {
     /// # Panics
     ///
     /// Panics if `grain` is invalid.
-    fn frac_init(
+    ///
+    /// # Notes
+    ///
+    /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
+    /// This function support to create both vertical and horizontal rifts.
+    /// But we suggest to create only one of them at a time.
+    fn generate_fractal(
         &mut self,
         random: &mut StdRng,
         grain: u32,
@@ -702,6 +660,257 @@ impl<G: Grid> CvFractal<G> {
         // get resized_image
         let resized_image = resize(&image, map_width, map_height, FilterType::Triangle);
         resized_image.save(path).unwrap();
+    }
+}
+
+/// A builder for constructing [`CvFractal`].
+///
+/// This builder allows for flexible configuration of fractal generation parameters.
+/// It separates the construction process from the final object representation,
+/// allowing for more granular control over the fractal settings.
+///
+/// # Examples
+///
+/// ## Basic Usage with Smart Defaults
+///
+/// ```rust
+/// use civ_map_generator::fractal::CvFractalBuilder;
+/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use rand::{SeedableRng, rngs::StdRng};
+///
+/// let grid = HexGrid::new(
+///     Size { width: 80, height: 40 }, // Custom grid size
+///     HexLayout {
+///         orientation: HexOrientation::Flat,
+///         size: [8., 8.],
+///         origin: [0., 0.],
+///     },
+///     Offset::Odd,
+///     WrapFlags::WrapX,
+/// );
+/// let mut rng = StdRng::seed_from_u64(42);
+///
+/// // Create a fractal with automatic grain calculation
+/// let fractal = CvFractalBuilder::new(grid).build(&mut rng);
+/// ```
+///
+/// ## Custom Configuration
+///
+/// ```rust
+/// use civ_map_generator::fractal::{CvFractalBuilder, FractalFlags};
+/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use rand::{SeedableRng, rngs::StdRng};
+///
+/// let grid = HexGrid::new(
+///     Size { width: 80, height: 40 },
+///     HexLayout {
+///         orientation: HexOrientation::Flat,
+///         size: [8., 8.],
+///         origin: [0., 0.],
+///     },
+///     Offset::Odd,
+///     WrapFlags::WrapX,
+/// );
+/// let mut rng = StdRng::seed_from_u64(42);
+///
+/// // Create a fractal with custom grain
+/// let fractal = CvFractalBuilder::new(grid)
+///     .grain(3)
+///     .build(&mut rng);
+/// ```
+///
+/// ## Fractal with Rifts
+///
+/// ```rust
+/// use civ_map_generator::fractal::CvFractalBuilder;
+/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use rand::{SeedableRng, rngs::StdRng};
+///
+/// let grid = HexGrid::new(
+///     Size { width: 80, height: 40 }, // Custom grid size
+///     HexLayout {
+///         orientation: HexOrientation::Flat,
+///         size: [8., 8.],
+///         origin: [0., 0.],
+///     }, // Hex layout
+///     Offset::Odd, // Odd offset for hexagonal grid
+///     WrapFlags::WrapX, // Wrap horizontally
+/// );
+/// let mut rng = StdRng::seed_from_u64(42);
+///
+/// // First create a rift fractal
+/// let rift_fractal = CvFractalBuilder::new(grid)
+///     .grain(1)
+///     .build(&mut rng);
+///
+/// // Then use it to create the main fractal with rifts
+/// let main_fractal = CvFractalBuilder::new(grid)
+///     .grain(2)
+///     .rift_fractal(&rift_fractal)
+///     .build(&mut rng);
+/// ```
+pub struct CvFractalBuilder<'a, G: Grid> {
+    grid: G,
+    grain: u32,
+    flags: FractalFlags,
+    width_exp: u32,
+    height_exp: u32,
+    rift_fractal: Option<&'a CvFractal<G>>,
+}
+
+impl<'a, G: Grid> CvFractalBuilder<'a, G> {
+    /// Creates a new `CvFractalBuilder` with the required grid parameter.
+    ///
+    /// # Arguments
+    ///
+    /// - `grid`: The base map/world grid (distinct from the fractal's internal grid)
+    ///
+    /// # Default Values
+    ///
+    /// - `grain`: 2
+    ///   - This provides a good default that creates moderately detailed fractals
+    ///   - Can be overridden using [`CvFractalBuilder::grain`]
+    /// - `flags`: Empty flags (`FractalFlags::empty()`)
+    ///   - Can be overridden using [`CvFractalBuilder::flags`]
+    /// - `width_exp`: [`DEFAULT_WIDTH_EXP`] (7)
+    ///   - Can be overridden using [`CvFractalBuilder::width_exp`]
+    /// - `height_exp`: [`DEFAULT_HEIGHT_EXP`] (6)
+    ///   - Can be overridden using [`CvFractalBuilder::height_exp`]
+    /// - `rift_fractal`: None (no rifts)
+    ///   - Can be overridden using [`CvFractalBuilder::rift_fractal`]`
+    pub fn new(grid: G) -> Self {
+        Self {
+            grid,
+            grain: 2,
+            flags: FractalFlags::empty(),
+            width_exp: DEFAULT_WIDTH_EXP,
+            height_exp: DEFAULT_HEIGHT_EXP,
+            rift_fractal: None,
+        }
+    }
+
+    /// Sets the grain value for the fractal generation.
+    ///
+    /// # Arguments
+    ///
+    /// - `grain`: Controls the level of detail or smoothness of the fractal.\
+    ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
+    ///         - If `min(width_exp, height_exp) >= 7`: `[0, 7]`
+    ///         - if `min(width_exp, height_exp) < 7`: `[0, min(width_exp, height_exp)]`
+    ///     - Effect on algorithm (The value determines how many iterations the diamond-square algorithm will execute):
+    ///         - Higher grain → Fewer iterations → More random noise\
+    ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
+    ///         - Lower grain → More iterations → Smoother gradients\
+    ///           When `grain = 0`, the fractal is the smoothest.
+    ///
+    /// # Notes
+    ///
+    /// Its default valid range is `[0, 6]` if you don't specify the values of `width_exp` and `height_exp`.
+    pub fn grain(mut self, grain: u32) -> Self {
+        self.grain = grain;
+        self
+    }
+
+    /// Sets the flags for fractal generation behavior.
+    ///
+    /// # Arguments
+    ///
+    /// - `flags`: Bit flags controlling fractal generation behavior
+    pub fn flags(mut self, flags: FractalFlags) -> Self {
+        self.flags = flags;
+        self
+    }
+
+    /// Sets the width exponent for the fractal grid.
+    ///
+    /// # Arguments
+    ///
+    /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
+    ///
+    /// # Notes
+    ///
+    /// It will effect the valid range of `grain` if you specify it.
+    pub fn width_exp(mut self, width_exp: u32) -> Self {
+        self.width_exp = width_exp;
+        self
+    }
+
+    /// Sets the height exponent for the fractal grid.
+    ///
+    /// # Arguments
+    ///
+    /// - `height_exp`: The exponent for calculating fractal height (height = 2^height_exp)
+    ///
+    /// # Notes
+    ///
+    /// It will effect the valid range of `grain` if you specify it.
+    pub fn height_exp(mut self, height_exp: u32) -> Self {
+        self.height_exp = height_exp;
+        self
+    }
+
+    /// Sets the rift fractal for generating rifts in the main fractal.
+    ///
+    /// # Arguments
+    ///
+    /// - `rift_fractal`: A fractal to control the rifts generation.
+    ///
+    /// # Notes
+    ///
+    /// - The rift fractal's dimensions must match the main fractal's dimensions.
+    /// - Original CIV5 only supports vertical rifts when the fractal is WrapX.
+    /// - This implementation supports both vertical and horizontal rifts.
+    /// - It's recommended to create only one type of rift at a time.
+    pub fn rift_fractal(mut self, rift_fractal: &'a CvFractal<G>) -> Self {
+        self.rift_fractal = Some(rift_fractal);
+        self
+    }
+
+    /// Finalizes the construction and returns the `CvFractal` instance.
+    ///
+    /// # Arguments
+    ///
+    /// - `random`: A mutable reference to a random number generator
+    ///
+    /// # Panics
+    ///
+    /// Panics if rift fractal dimensions don't match the main fractal dimensions
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use civ_map_generator::fractal::CvFractalBuilder;
+    /// use civ_map_generator::grid::{*, hex_grid::*};
+    /// use rand::{SeedableRng, rngs::StdRng};
+    ///
+    /// let grid = HexGrid::new(
+    ///     Size { width: 80, height: 40 }, // Custom grid size
+    ///     HexLayout {
+    ///         orientation: HexOrientation::Flat,
+    ///         size: [8., 8.],
+    ///         origin: [0., 0.],
+    ///     }, // Hex layout
+    ///     Offset::Odd, // Odd offset for hexagonal grid
+    ///     WrapFlags::WrapX, // Wrap horizontally
+    /// );
+    /// let mut rng = StdRng::seed_from_u64(42);
+    ///
+    /// // Use default grain (automatically calculated)
+    /// let fractal = CvFractalBuilder::new(grid).build(&mut rng);
+    ///
+    /// // Or set custom grain
+    /// let fractal = CvFractalBuilder::new(grid)
+    ///     .grain(3)
+    ///     .build(&mut rng);
+    /// ```
+    pub fn build(self, random: &mut StdRng) -> CvFractal<G> {
+        let mut fractal = CvFractal::empty(self.grid, self.flags, self.width_exp, self.height_exp);
+
+        let rifts = self.rift_fractal;
+
+        fractal.generate_fractal(random, self.grain, None, rifts);
+
+        fractal
     }
 }
 

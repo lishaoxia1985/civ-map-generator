@@ -73,6 +73,7 @@ pub mod tile_component;
 pub mod tile_map;
 
 // Re-export commonly used items for convenience
+pub use fractal::{CvFractalBuilder, FractalFlags};
 pub use map_generator::Generator;
 pub use map_parameters::{MapParameters, MapParametersBuilder};
 pub use ruleset::Ruleset;

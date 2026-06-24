@@ -2,7 +2,7 @@ use glam::{DVec2, IVec2};
 use rand::RngExt;
 
 use crate::{
-    fractal::{CvFractal, FractalFlags},
+    fractal::{CvFractalBuilder, FractalFlags},
     generate_common_methods,
     grid::WorldSizeType,
     map_parameters::{MapParameters, SeaLevel, WorldAge},
@@ -76,15 +76,10 @@ impl Generator for Pangaea {
 
         let flags = FractalFlags::empty();
 
-        let mut mountains_fractal = CvFractal::new(
-            &mut tile_map.random_number_generator,
-            grid,
-            4,
-            flags,
-            None,
-            7,
-            6,
-        );
+        let mut mountains_fractal = CvFractalBuilder::new(grid)
+            .grain(4)
+            .flags(flags)
+            .build(&mut tile_map.random_number_generator);
 
         mountains_fractal.ridge_builder(
             &mut tile_map.random_number_generator,
@@ -94,15 +89,10 @@ impl Generator for Pangaea {
             1,
         );
 
-        let mut hills_fractal = CvFractal::new(
-            &mut tile_map.random_number_generator,
-            grid,
-            grain,
-            flags,
-            None,
-            7,
-            6,
-        );
+        let mut hills_fractal = CvFractalBuilder::new(grid)
+            .grain(grain)
+            .flags(flags)
+            .build(&mut tile_map.random_number_generator);
 
         hills_fractal.ridge_builder(
             &mut tile_map.random_number_generator,
