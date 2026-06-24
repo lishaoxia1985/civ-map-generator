@@ -76,8 +76,15 @@ impl TileMap {
 
         let flags = FractalFlags::empty();
 
-        let mut mountains_fractal: CvFractal<HexGrid> =
-            CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
+        let mut mountains_fractal: CvFractal<HexGrid> = CvFractal::new(
+            &mut self.random_number_generator,
+            grid,
+            grain,
+            flags,
+            None,
+            7,
+            6,
+        );
 
         mountains_fractal.ridge_builder(
             &mut self.random_number_generator,
@@ -87,8 +94,15 @@ impl TileMap {
             1,
         );
 
-        let mut hills_fractal: CvFractal<HexGrid> =
-            CvFractal::new(&mut self.random_number_generator, grid, grain, flags, 7, 6);
+        let mut hills_fractal: CvFractal<HexGrid> = CvFractal::new(
+            &mut self.random_number_generator,
+            grid,
+            grain,
+            flags,
+            None,
+            7,
+            6,
+        );
 
         hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
 
@@ -220,16 +234,18 @@ impl TileMap {
                     rift_grid,
                     rift_grain,
                     FractalFlags::empty(), // The flags of `rift_fractal` are always empty in original CIV 5
+                    None,
                     7,
                     6,
                 );
 
-                CvFractal::new_with_rifts(
+                // Create the fractal with the rifts
+                CvFractal::new(
                     &mut self.random_number_generator,
                     grid,
                     continent_grain,
                     flags,
-                    &rift_fractal,
+                    Some(&rift_fractal),
                     7,
                     6,
                 )
@@ -239,6 +255,7 @@ impl TileMap {
                 grid,
                 continent_grain,
                 flags,
+                None,
                 7,
                 6,
             ),

@@ -76,8 +76,15 @@ impl Generator for Pangaea {
 
         let flags = FractalFlags::empty();
 
-        let mut mountains_fractal =
-            CvFractal::new(&mut tile_map.random_number_generator, grid, 4, flags, 7, 6);
+        let mut mountains_fractal = CvFractal::new(
+            &mut tile_map.random_number_generator,
+            grid,
+            4,
+            flags,
+            None,
+            7,
+            6,
+        );
 
         mountains_fractal.ridge_builder(
             &mut tile_map.random_number_generator,
@@ -92,6 +99,7 @@ impl Generator for Pangaea {
             grid,
             grain,
             flags,
+            None,
             7,
             6,
         );

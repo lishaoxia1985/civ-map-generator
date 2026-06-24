@@ -66,6 +66,7 @@ impl TileMap {
             grid,
             grain_amount,
             flags,
+            None,
             CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
             CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );
@@ -74,6 +75,7 @@ impl TileMap {
             grid,
             grain_amount,
             flags,
+            None,
             CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
             CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );
@@ -82,6 +84,7 @@ impl TileMap {
             grid,
             grain_amount,
             flags,
+            None,
             CvFractal::<HexGrid>::DEFAULT_WIDTH_EXP,
             CvFractal::<HexGrid>::DEFAULT_HEIGHT_EXP,
         );

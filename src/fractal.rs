@@ -95,65 +95,17 @@ impl<G: Grid> CvFractal<G> {
     /// - `random`: A mutable reference to a random number generator.
     /// - `grid`: The base map/world grid (distinct from [`CvFractal::fractal_grid`])
     /// - `grain`: Controls the level of detail or smoothness of the fractal.\
-    ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
+    ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
+    ///         - If `min(width_exp, height_exp) >= 7`: `[0, 7]`
+    ///         - if `min(width_exp, height_exp) < 7`: `[0, min(width_exp, height_exp)]`
     ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
     ///         - Higher grain → Fewer iterations → More random noise\
-    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
-    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    ///           When `grain = 0`, the fractal is the smoothest.
     /// - `flags`: Bit flags controlling fractal generation behavior
-    /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_WIDTH_EXP`] directly
-    /// - `height_exp`: The exponent for calculating fractal height (height = 2^height_exp)
-    ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
-    ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_HEIGHT_EXP`]
-    ///   - To replicate original behavior with negative values, use [`CvFractal::DEFAULT_HEIGHT_EXP`] directly
-    ///
-    /// # Panics
-    ///
-    /// Panics if `grain` is invalid.
-    pub fn new(
-        random: &mut StdRng,
-        grid: G,
-        grain: u32,
-        flags: FractalFlags,
-        width_exp: u32,
-        height_exp: u32,
-    ) -> Self {
-        let min_exp = min(width_exp, height_exp);
-        let min_allowed = min_exp.saturating_sub(7);
-        debug_assert!(
-            grain >= min_allowed && grain <= min_exp,
-            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
-            min_allowed,
-            min_exp,
-            grain,
-            width_exp,
-            height_exp
-        );
-
-        let mut fractal = Self::empty(grid, flags, width_exp, height_exp);
-        fractal.frac_init(random, grain, None, None);
-        fractal
-    }
-
-    ///  Creates a fractal with rifts.
-    ///
-    /// # Arguments
-    ///
-    /// - `random`: Random number generator
-    /// - `grid`: The base map/world grid (distinct from [`CvFractal::fractal_grid`])
-    /// - `grain`: Controls the level of detail or smoothness of the fractal.\
-    ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
-    ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
-    ///         - Higher grain → Fewer iterations → More random noise\
-    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
-    ///         - Lower grain → More iterations → Smoother gradients\
-    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
-    /// - `flags`: Bit flags controlling fractal generation behavior
-    /// - `rift`: a reference to a [`CvFractal`] to control the rifts generation of the fractal
+    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.
+    ///   - `rifts`'s width and height must be equal to the width and height of `self`.
     /// - `width_exp`: The exponent for calculating fractal width (width = 2^width_exp)
     ///   - Type: `u32` (unlike original CIV5 which allowed negatives)
     ///   - Original behavior: Negative values would default to [`CvFractal::DEFAULT_WIDTH_EXP`]
@@ -172,29 +124,17 @@ impl<G: Grid> CvFractal<G> {
     /// Original CIV5 only supports to create vertical rifts when the fractal is WrapX.
     /// This function support to create both vertical and horizontal rifts.
     /// But we suggest to create only one of them at a time.
-    pub fn new_with_rifts(
+    pub fn new(
         random: &mut StdRng,
         grid: G,
         grain: u32,
         flags: FractalFlags,
-        rifts: &CvFractal<G>,
+        rifts: Option<&CvFractal<G>>,
         width_exp: u32,
         height_exp: u32,
     ) -> Self {
-        let min_exp = min(width_exp, height_exp);
-        let min_allowed = min_exp.saturating_sub(7);
-        debug_assert!(
-            grain >= min_allowed && grain <= min_exp,
-            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
-            min_allowed,
-            min_exp,
-            grain,
-            width_exp,
-            height_exp
-        );
-
         let mut fractal = Self::empty(grid, flags, width_exp, height_exp);
-        fractal.frac_init(random, grain, None, Some(rifts));
+        fractal.frac_init(random, grain, None, rifts);
         fractal
     }
 
@@ -203,12 +143,14 @@ impl<G: Grid> CvFractal<G> {
     ///
     /// - `random`: Random number generator.
     /// - `grain`: Controls the level of detail or smoothness of the fractal.\
-    ///     - Valid range: `[min(width_exp, height_exp).saturating_sub(7), min(width_exp, height_exp)]`
+    ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
+    ///         - If `min(width_exp, height_exp) >= 7`: `[0, 7]`
+    ///         - if `min(width_exp, height_exp) < 7`: `[0, min(width_exp, height_exp)]`
     ///     - Effect on algorithm: The value determines how many iterations the diamond-square algorithm will execute.
     ///         - Higher grain → Fewer iterations → More random noise\
-    ///           When `grain = min(width_exp, height_exp)`, the fractal is completely random.
+    ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
-    ///           When `grain = min(width_exp, height_exp).saturating_sub(7)`, the fractal is the smoothest.
+    ///           When `grain = 0`, the fractal is the smoothest.
     /// - `img`: Optional image to use as a source for the fractal.
     ///   At first the fractal is divided into a grid of small squares,
     ///   the points where adjacent grid lines meet are called **the vertices of the grid**,
@@ -232,19 +174,23 @@ impl<G: Grid> CvFractal<G> {
         let fractal_height = self.fractal_grid.size().height;
 
         let min_exp = min(self.width_exp, self.height_exp);
-        let min_allowed = min_exp.saturating_sub(7);
-        debug_assert!(
-            grain >= min_allowed && grain <= min_exp,
-            "grain should be in range [{}, {}] (inclusive), but got grain = {}, width_exp = {}, height_exp = {}",
-            min_allowed,
-            min_exp,
-            grain,
-            self.width_exp,
-            self.height_exp
-        );
+
+        // Maximum allowed value of `grain`, which also serves as the maximum iteration count for the Diamond-Square algorithm.
+        let max_allowed = if min_exp >= 7 { 7 } else { min_exp };
+
+        let grain = if grain > max_allowed {
+            eprintln!(
+                "Warning: grain value {} exceeds maximum allowed value {}. Clamping to {}.",
+                grain, max_allowed, max_allowed
+            );
+            max_allowed
+        } else {
+            grain
+        };
 
         // Convert to usize for the following calculations.
-        let smooth = (min_exp - grain) as usize;
+        // `smooth` is the iteration count for the Diamond-Square algorithm.
+        let smooth = (max_allowed - grain) as usize;
 
         // At first, We should divide the fractal into a grid of small (2^smooth) * (2^smooth) squares,
         // When the fractal is divided into a grid of small squares, the points where adjacent grid lines meet are called `the vertices of the grid`(abbreviated as `Vertices`).
