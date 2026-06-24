@@ -103,14 +103,23 @@ impl<G: Grid> CvFractal<G> {
     ///           When `grain` equals the maximum allowed value (7 or `min(width_exp, height_exp)`), the fractal is completely random.
     ///         - Lower grain → More iterations → Smoother gradients\
     ///           When `grain = 0`, the fractal is the smoothest.
-    /// - `img`: Optional image to use as a source for the fractal.
-    ///   At first the fractal is divided into a grid of small squares,
-    ///   the points where adjacent grid lines meet are called **the vertices of the grid**,
-    ///   we assign an initial value to each vertex for later use in the diamond-square algorithm.
-    ///     - When `img` is `None`, the initial value of each vertex is randomly generated.
-    ///     - When `img` is `Some`, the initial value of each vertex is determined by `img`.
-    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.
+    /// - `hint_image`: Optional image to use as an initial source for the fractal.\
+    ///     The fractal is first divided into smaller sub-grids according to the argument `grain`.
+    ///     The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
+    ///     - When `hint_image` is `None`, each sub-grid-corner is initialized with a random value.
+    ///     - When `hint_image` is `Some`, each sub-grid-corner is sampled from `hint_image`.
+    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.\
     ///     - `rifts`'s width and height must be equal to the width and height of `self`.
+    ///
+    /// # Algorithm Steps
+    ///
+    /// 1. Divide the fractal into smaller sub-grids according to `grain`.
+    /// 2. Initialize the four corner points of each sub-grid as control points:
+    ///    - If `hint_image` is `None`, assign random values.
+    ///    - If `hint_image` is `Some`, sample values from `hint_image`.
+    /// 3. Run the diamond-square algorithm iteratively within each sub-grid to compute
+    ///    the height values of all remaining (non-sub-grid-corner) points.
+    /// 4. Tackle other fractal effects, such as add rifts...
     ///
     /// # Panics
     ///
@@ -125,7 +134,7 @@ impl<G: Grid> CvFractal<G> {
         &mut self,
         random: &mut StdRng,
         grain: u32,
-        img: Option<&DynamicImage>,
+        hint_image: Option<&DynamicImage>,
         rifts: Option<&CvFractal<G>>,
     ) {
         let fractal_width = self.fractal_grid.size().width;
@@ -150,10 +159,10 @@ impl<G: Grid> CvFractal<G> {
         // `smooth` is the iteration count for the Diamond-Square algorithm.
         let smooth = (max_allowed - grain) as usize;
 
-        // At first, We should divide the fractal into a grid of small (2^smooth) * (2^smooth) squares,
-        // When the fractal is divided into a grid of small squares, the points where adjacent grid lines meet are called `the vertices of the grid`(abbreviated as `Vertices`).
-        // `hint_width` is the num of `Vertices` in every row after dividing.
-        // Notice: when the fractal is WrapX, we don't consider the last row,
+        // At first, divide the fractal into smaller sub-grids ((2^smooth) * (2^smooth) squares),
+        // The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.
+        // `hint_width` is the num of `sub-grid-corner` in every row after dividing.
+        // Notes: when the fractal is WrapX, we don't consider the last row,
         //      because the last row of the fractal is the same as the first row,
         //      We preprocess this case at the beginning of every iter stage in Diamond-Square algorithm.
         let hint_width = (fractal_width >> smooth)
@@ -162,8 +171,8 @@ impl<G: Grid> CvFractal<G> {
             } else {
                 1
             };
-        // `hint_height` is the num of `Vertices` in every column after dividing.
-        // Notice: when the fractal is WrapY, we don't consider the last column,
+        // `hint_height` is the num of `sub-grid-corner` in every column after dividing.
+        // Notes: when the fractal is WrapY, we don't consider the last column,
         //      because the last column of the fractal is the same as the first column,
         //      We preprocess this case at the beginning of every iter in Diamond-Square algorithm.
         let hint_height = (fractal_height >> smooth)
@@ -173,7 +182,8 @@ impl<G: Grid> CvFractal<G> {
                 1
             };
 
-        if let Some(img) = img {
+        // Initialize the four corner points of each sub-grid as control points by sampling values from `hint_image` or assign random values.
+        if let Some(img) = hint_image {
             // Resize the image to the hint size if necessary, and convert it to grayscale.
             let gray_hint_img = if hint_width != img.width() || hint_height != img.height() {
                 eprintln!(
@@ -215,7 +225,7 @@ impl<G: Grid> CvFractal<G> {
         }
 
         for pass in (0..smooth).rev() {
-            /*********** start to preprocess fractal_array[][] at the beginning of every iter stage in Diamond-Square algorithm. ***********/
+            /*********** start to preprocess fractal_array[][] at the beginning of every iter stage in Diamond-Square algorithm ***********/
 
             // If wrapping in the Y direction is needed, copy the bottom row to the top
             if self.fractal_grid.wrap_flags().contains(WrapFlags::WrapY) {
@@ -271,10 +281,10 @@ impl<G: Grid> CvFractal<G> {
             /********** the end of preprocess fractal_array[][] **********/
 
             // Use this value to exclude the vertices which have already get spots in the previous iter.
-            // Generate a value with the lowest `iPass+1` bits set to 1 and the rest set to 0.
+            // Generate a value with the lowest `pass + 1` bits set to 1 and the rest set to 0.
             let screen = (1 << (pass + 1)) - 1;
             // Use Diamond-Square algorithm to get spots
-            // At first, We divide the fractal into a grid of smaller (2^pass) * (2^pass) squares,
+            // At first, We divide the fractal into smaller sub-grids ((2^smooth) * (2^smooth) squares),
             // Notice! it's different with original Diamond-Square algorithm:
             //      1. Diamond Step and Square Step are in the independent iter of each other in the original,
             //         in this code them are in the same iter.
@@ -753,9 +763,10 @@ pub struct CvFractalBuilder<'a, G: Grid> {
     grid: G,
     grain: u32,
     flags: FractalFlags,
+    hint_image: Option<&'a DynamicImage>,
+    rift_fractal: Option<&'a CvFractal<G>>,
     width_exp: u32,
     height_exp: u32,
-    rift_fractal: Option<&'a CvFractal<G>>,
 }
 
 impl<'a, G: Grid> CvFractalBuilder<'a, G> {
@@ -783,9 +794,10 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
             grid,
             grain: 2,
             flags: FractalFlags::empty(),
+            hint_image: None,
+            rift_fractal: None,
             width_exp: DEFAULT_WIDTH_EXP,
             height_exp: DEFAULT_HEIGHT_EXP,
-            rift_fractal: None,
         }
     }
 
@@ -821,6 +833,36 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
         self
     }
 
+    /// Sets the hint image for fractal generation.
+    /// 
+    /// # Arguments
+    /// 
+    /// - `hint_image`: A hint image for fractal generation.
+    ///   The fractal is first divided into smaller sub-grids according to the argument `grain`.
+    ///   The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
+    ///   The sub-grid-corner is sampled from `hint_image` for the initial control points.
+    pub fn hint_image(mut self, hint_image: &'a DynamicImage) -> Self {
+        self.hint_image = Some(hint_image);
+        self
+    }
+
+    /// Sets the rift fractal for generating rifts in the main fractal.
+    ///
+    /// # Arguments
+    ///
+    /// - `rift_fractal`: A fractal to control the rifts generation.
+    ///
+    /// # Notes
+    ///
+    /// - The rift fractal's dimensions must match the main fractal's dimensions.
+    /// - Original CIV5 only supports vertical rifts when the fractal is WrapX.
+    /// - This implementation supports both vertical and horizontal rifts.
+    /// - It's recommended to create only one type of rift at a time.
+    pub fn rift_fractal(mut self, rift_fractal: &'a CvFractal<G>) -> Self {
+        self.rift_fractal = Some(rift_fractal);
+        self
+    }
+
     /// Sets the width exponent for the fractal grid.
     ///
     /// # Arguments
@@ -846,23 +888,6 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
     /// It will effect the valid range of `grain` if you specify it.
     pub fn height_exp(mut self, height_exp: u32) -> Self {
         self.height_exp = height_exp;
-        self
-    }
-
-    /// Sets the rift fractal for generating rifts in the main fractal.
-    ///
-    /// # Arguments
-    ///
-    /// - `rift_fractal`: A fractal to control the rifts generation.
-    ///
-    /// # Notes
-    ///
-    /// - The rift fractal's dimensions must match the main fractal's dimensions.
-    /// - Original CIV5 only supports vertical rifts when the fractal is WrapX.
-    /// - This implementation supports both vertical and horizontal rifts.
-    /// - It's recommended to create only one type of rift at a time.
-    pub fn rift_fractal(mut self, rift_fractal: &'a CvFractal<G>) -> Self {
-        self.rift_fractal = Some(rift_fractal);
         self
     }
 
