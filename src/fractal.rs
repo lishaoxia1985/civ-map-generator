@@ -104,8 +104,8 @@ impl<G: Grid> CvFractal<G> {
     ///         - Lower grain → More iterations → Smoother gradients\
     ///           When `grain = 0`, the fractal is the smoothest.
     /// - `hint_image`: Optional image to use as an initial source for the fractal.\
-    ///     The fractal is first divided into smaller sub-grids according to the argument `grain`.
-    ///     The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
+    ///   The fractal is first divided into smaller sub-grids according to the argument `grain`.
+    ///   The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
     ///     - When `hint_image` is `None`, each sub-grid-corner is initialized with a random value.
     ///     - When `hint_image` is `Some`, each sub-grid-corner is sampled from `hint_image`.
     /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.\
@@ -834,9 +834,9 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
     }
 
     /// Sets the hint image for fractal generation.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// - `hint_image`: A hint image for fractal generation.
     ///   The fractal is first divided into smaller sub-grids according to the argument `grain`.
     ///   The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
@@ -851,13 +851,19 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
     /// # Arguments
     ///
     /// - `rift_fractal`: A fractal to control the rifts generation.
+    ///   Its dimensions must be equal to the fractal's dimensions.
+    ///
+    /// # Panics
+    ///
+    /// Panics if rift fractal dimensions don't match the main fractal dimensions
     ///
     /// # Notes
     ///
-    /// - The rift fractal's dimensions must match the main fractal's dimensions.
+    /// - Rifts are only applied when the main fractal's grid is Wrapped (i.e., WrapX or WrapY).
+    ///   If the grid is non-Wrap, rifts will have no effect.
     /// - Original CIV5 only supports vertical rifts when the fractal is WrapX.
-    /// - This implementation supports both vertical and horizontal rifts.
-    /// - It's recommended to create only one type of rift at a time.
+    ///   This implementation supports both vertical and horizontal rifts.
+    ///   It's recommended to create only one type of rift at a time.
     pub fn rift_fractal(mut self, rift_fractal: &'a CvFractal<G>) -> Self {
         self.rift_fractal = Some(rift_fractal);
         self
