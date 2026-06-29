@@ -98,7 +98,7 @@ impl<G: Grid> CvFractal<G> {
     /// # Arguments
     ///
     /// - `random`: Random number generator.
-    /// - `grain`: Controls the level of detail or smoothness of the fractal.\
+    /// - `grain`: Controls the level of detail or smoothness of the fractal.
     ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
     ///         - `[0, 7.min(width_exp).min(height_exp)]`
     ///     - Effect on algorithm (The value determines how many iterations the diamond-square algorithm will execute):
@@ -108,10 +108,10 @@ impl<G: Grid> CvFractal<G> {
     ///           When `grain = 0`, the fractal is the smoothest.
     /// - `hint_image`: Optional image to use as an initial source for the fractal.\
     ///   The fractal array is first divided into smaller sub-grids according to the argument `grain`.
-    ///   The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.\
+    ///   The four corner points of each sub-grid serve as initial control points for the diamond-square algorithm.
     ///     - When `hint_image` is `None`, each sub-grid-corner is initialized with a random value.
     ///     - When `hint_image` is `Some`, each sub-grid-corner is sampled from `hint_image`.
-    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.\
+    /// - `rifts`: Optional fractal to use as a source for the fractal to add rifts. When `rifts` is `None`, no rifts are added.
     ///     - `rifts`'s width and height must be equal to the width and height of `self`.
     ///
     /// # Algorithm Steps
@@ -259,9 +259,8 @@ impl<G: Grid> CvFractal<G> {
             if self.flags.contains(FractalFlags::CenterRift) {
                 if self.fractal_grid.wrap_flags().contains(WrapFlags::WrapY) {
                     for x in 0..=fractal_width as usize {
-                        for y in 0..=(fractal_height / 6) as usize {
-                            let factor =
-                                ((fractal_height / 12) as i32 - y as i32).unsigned_abs() + 1;
+                        for y in 0..(fractal_height / 6) as usize {
+                            let factor = (fractal_height / 12).abs_diff(y as u32) + 1;
                             self.fractal_array[x][y] /= factor;
                             self.fractal_array[x][(fractal_height / 2) as usize + y] /= factor;
                         }
@@ -270,9 +269,8 @@ impl<G: Grid> CvFractal<G> {
 
                 if self.fractal_grid.wrap_flags().contains(WrapFlags::WrapX) {
                     for y in 0..=fractal_height as usize {
-                        for x in 0..=(fractal_width / 6) as usize {
-                            let factor =
-                                ((fractal_width / 12) as i32 - x as i32).unsigned_abs() + 1;
+                        for x in 0..(fractal_width / 6) as usize {
+                            let factor = (fractal_width / 12).abs_diff(x as u32) + 1;
                             self.fractal_array[x][y] /= factor;
                             self.fractal_array[(fractal_width / 2) as usize + x][y] /= factor;
                         }
@@ -806,7 +804,7 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
     ///
     /// # Arguments
     ///
-    /// - `grain`: Controls the level of detail or smoothness of the fractal.\
+    /// - `grain`: Controls the level of detail or smoothness of the fractal.
     ///     - Valid range (If the provided value exceeds the maximum allowed value, it will be clamped to the maximum allowed value):
     ///         - `[0, 7.min(width_exp).min(height_exp)]`
     ///     - Effect on algorithm (The value determines how many iterations the diamond-square algorithm will execute):
