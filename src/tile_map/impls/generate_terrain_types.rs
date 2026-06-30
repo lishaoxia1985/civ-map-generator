@@ -96,7 +96,7 @@ impl TileMap {
 
         hills_fractal.ridge_builder(&mut self.random_number_generator, num_plates, flags, 1, 2);
 
-        let [water_threshold] = continents_fractal.heights_from_percents([water_percent]);
+        let [water_threshold] = continents_fractal.height_thresholds_from_percents([water_percent]);
 
         let [
             pass_threshold,
@@ -104,7 +104,7 @@ impl TileMap {
             hills_top1,
             hills_bottom2,
             hills_top2,
-        ] = hills_fractal.heights_from_percents([
+        ] = hills_fractal.height_thresholds_from_percents([
             hills_near_mountains,
             hills_bottom1,
             hills_top1,
@@ -121,7 +121,7 @@ impl TileMap {
             _mountain_98,
             mountain_97,
             mountain_95,
-        ] = mountains_fractal.heights_from_percents([
+        ] = mountains_fractal.height_thresholds_from_percents([
             mountains,
             hills_near_mountains,
             hills_clumps,
@@ -137,10 +137,10 @@ impl TileMap {
             let x = x as u32;
             let y = y as u32;
 
-            let height = continents_fractal.get_height(x, y);
+            let height = continents_fractal.height(x, y);
 
-            let mountain_height = mountains_fractal.get_height(x, y);
-            let hill_height = hills_fractal.get_height(x, y);
+            let mountain_height = mountains_fractal.height(x, y);
+            let hill_height = hills_fractal.height(x, y);
 
             if height <= water_threshold {
                 tile.set_terrain_type(self, TerrainType::Water);

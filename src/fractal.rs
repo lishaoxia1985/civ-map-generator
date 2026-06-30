@@ -364,15 +364,15 @@ impl<G: Grid> CvFractal<G> {
         }
     }
 
-    /// Get the height of a point in the fractal array.
-    pub fn get_height(&self, x: u32, y: u32) -> u32 {
+    /// Get the height of a point in the fractal.
+    pub fn height(&self, x: u32, y: u32) -> u32 {
         debug_assert!(
             x < self.map_size.width,
-            "'x' is out of the range of the grid width"
+            "'x' is out of the range of the map grid width"
         );
         debug_assert!(
             y < self.map_size.height,
-            "'y' is out of the range of the grid height"
+            "'y' is out of the range of the map grid height"
         );
 
         let fractal_exp = self.fractal_exp;
@@ -424,7 +424,7 @@ impl<G: Grid> CvFractal<G> {
     ///
     /// For example, when the input is `[72]`, the output might be `[120]`,
     /// meaning that 72% of all values will be below the height threshold of 120, and 28% will be above it.
-    pub fn heights_from_percents<const N: usize>(&self, percents: [u32; N]) -> [u32; N] {
+    pub fn height_thresholds_from_percents<const N: usize>(&self, percents: [u32; N]) -> [u32; N] {
         let percents = percents.map(|p| p.clamp(0, 100));
 
         // Get all value from the fractal array except its last row and last column
@@ -584,13 +584,13 @@ impl<G: Grid> CvFractal<G> {
                     let mut modified_distance = self
                         .fractal_grid
                         .distance_to(current_cell, current_voronoi_seed.cell);
-                    // Checking if ridge_flags is not empty
-                    // If it is empty, we don't need to modify the distance
-                    // If it is not empty, we need to modify the distance
-                    // The distance is modified by the weakness of the seed, the bias direction, and the directional bias strength
-                    // The weakness of the seed is used to make the influence of the seed on its surrounding area more random
-                    // The bias direction is used to make the influence of the seed more directional
-                    // The directional bias strength is used to make the influence of the seed more directional
+                    // Checking if `ridge_flags` is not empty
+                    // - it is empty, we don't need to modify the distance
+                    // - it is not empty, we need to modify the distance
+                    //   The distance is modified by the weakness of the seed, the bias direction, and the directional bias strength
+                    //   The weakness of the seed is used to make the influence of the seed on its surrounding area more random
+                    //   The bias direction is used to make the influence of the seed more directional
+                    //   The directional bias strength is used to make the influence of the seed more directional
                     if !ridge_flags.is_empty() {
                         // make the influence of the seed on its surrounding area more random
                         modified_distance += current_voronoi_seed.weakness as i32;
@@ -638,7 +638,7 @@ impl<G: Grid> CvFractal<G> {
         let width = self.map_size.width;
         let height = self.map_size.height;
         let pixels: Vec<u8> = (0..height)
-            .flat_map(|y| (0..width).map(move |x| self.get_height(x, y) as u8))
+            .flat_map(|y| (0..width).map(move |x| self.height(x, y) as u8))
             .collect();
 
         let _ = image::save_buffer(

@@ -73,10 +73,10 @@ impl TileMap {
             .flags(flags)
             .build(&mut self.random_number_generator);
 
-        let [desert_top, plains_top] =
-            deserts_fractal.heights_from_percents([desert_top_percent, plains_top_percent]);
-        let [desert_bottom, plains_bottom] =
-            plains_fractal.heights_from_percents([desert_bottom_percent, plains_bottom_percent]);
+        let [desert_top, plains_top] = deserts_fractal
+            .height_thresholds_from_percents([desert_top_percent, plains_top_percent]);
+        let [desert_bottom, plains_bottom] = plains_fractal
+            .height_thresholds_from_percents([desert_bottom_percent, plains_bottom_percent]);
 
         self.all_tiles().for_each(|tile| {
             let terrain_type = tile.terrain_type(self);
@@ -104,11 +104,11 @@ impl TileMap {
                     // Set default base terrain of all land tiles to `BaseTerrain::Grassland` because the default base terrain is `BaseTerrain::Ocean` in the tile map.
                     tile.set_base_terrain(self, BaseTerrain::Grassland);
 
-                    let deserts_height = deserts_fractal.get_height(x, y);
-                    let plains_height = plains_fractal.get_height(x, y);
+                    let deserts_height = deserts_fractal.height(x, y);
+                    let plains_height = plains_fractal.height(x, y);
 
                     let mut latitude = tile.latitude(grid);
-                    latitude += (128. - variation_fractal.get_height(x, y) as f64) / (255.0 * 5.0);
+                    latitude += (128. - variation_fractal.height(x, y) as f64) / (255.0 * 5.0);
                     latitude = latitude.clamp(0., 1.);
 
                     if latitude >= snow_latitude {
