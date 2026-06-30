@@ -364,13 +364,14 @@ impl<G: Grid> CvFractal<G> {
         }
     }
 
-    pub fn get_height(&self, x: i32, y: i32) -> u32 {
+    /// Get the height of a point in the fractal array.
+    pub fn get_height(&self, x: u32, y: u32) -> u32 {
         debug_assert!(
-            0 <= x && x < self.map_size.width as i32,
+            x < self.map_size.width,
             "'x' is out of the range of the grid width"
         );
         debug_assert!(
-            0 <= y && y < self.map_size.height as i32,
+            y < self.map_size.height,
             "'y' is out of the range of the grid height"
         );
 
@@ -637,7 +638,7 @@ impl<G: Grid> CvFractal<G> {
         let width = self.map_size.width;
         let height = self.map_size.height;
         let pixels: Vec<u8> = (0..height)
-            .flat_map(|y| (0..width).map(move |x| self.get_height(x as i32, y as i32) as u8))
+            .flat_map(|y| (0..width).map(move |x| self.get_height(x, y) as u8))
             .collect();
 
         let _ = image::save_buffer(

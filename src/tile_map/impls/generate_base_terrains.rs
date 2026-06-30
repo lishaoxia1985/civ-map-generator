@@ -98,6 +98,8 @@ impl TileMap {
                 TerrainType::Flatland | TerrainType::Hill | TerrainType::Mountain => {
                     // Generate base terrain for land tiles.
                     let [x, y] = tile.to_offset(grid).to_array();
+                    let x = x as u32;
+                    let y = y as u32;
 
                     // Set default base terrain of all land tiles to `BaseTerrain::Grassland` because the default base terrain is `BaseTerrain::Ocean` in the tile map.
                     tile.set_base_terrain(self, BaseTerrain::Grassland);

@@ -146,6 +146,8 @@ impl Generator for Pangaea {
 
         tile_map.all_tiles().for_each(|tile| {
             let [x, y] = tile.to_offset(grid).to_array();
+            let x = x as u32;
+            let y = y as u32;
             let height = continents_fractal.get_height(x, y);
 
             let mountain_height = mountains_fractal.get_height(x, y);
@@ -153,7 +155,7 @@ impl Generator for Pangaea {
 
             let mut h = water_threshold as f64;
 
-            let delta = IVec2::from([x, y]).as_dvec2() - center_position;
+            let delta = IVec2::from([x as i32, y as i32]).as_dvec2() - center_position;
             let d = (delta / axis).length_squared();
 
             if d <= 1. {
