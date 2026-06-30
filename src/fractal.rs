@@ -526,6 +526,40 @@ impl<G: Grid> CvFractal<G> {
         }
     }
 
+    /// Generates ridge (mountain range) terrain features using a modified Voronoi algorithm
+    /// and blends the results with the existing fractal heightmap.
+    ///
+    /// This function distributes random seed points across the grid and calculates the ratio
+    /// of the modified distance to the nearest seed versus the second-nearest seed for each cell.
+    /// This ratio is used to produce ridge-like topographical features with directional and
+    /// randomized variations. The final output is a weighted average of the new ridge heights
+    /// and the current values in `fractal_array`.
+    ///
+    /// # Arguments
+    ///
+    /// - `random`: A mutable reference to the random number generator (&mut StdRng) used for
+    ///   generating seed positions and perturbation factors.
+    /// - `num_voronoi_seeds`: The desired number of Voronoi seeds to generate. Internally,
+    ///   this value is clamped to a minimum of 3 to ensure the algorithm functions correctly.
+    /// - `ridge_flags`: Flags (FractalFlags) that control the ridge generation behavior.
+    ///   If not empty, this enables the seed's "weakness" (random perturbation) and
+    ///   "directional bias", resulting in more natural or directionally aligned ridge formations.
+    /// - `blend_ridge`: The weight applied to the newly generated ridge heights during the blending step.
+    /// - `blend_fract`: The weight applied to the existing fractal heightmap during the blending step.
+    ///
+    /// # Algorithm Details
+    ///
+    /// 1. Seed Generation: Seeds are generated randomly in a loop. If a new seed is placed
+    ///    within a grid distance of 7 from any existing seed, it is discarded and regenerated
+    ///    to ensure a well-distributed layout.
+    /// 2. Distance Modification: For each cell in the grid, distances to all seeds are computed.
+    ///    If ridge_flags is active, the distance is perturbed by the seed's weakness value and
+    ///    adjusted based on whether the cell's relative direction aligns with or opposes the seed's
+    ///    directional bias.
+    /// 3. Ridge Height Calculation: The closest and second-closest modified distances are identified.
+    ///    The ridge height is then determined using the formula: (255 * closest_distance) / next_closest_distance.
+    /// 4. Height Blending: The calculated ridge height is blended with the current fractal height
+    ///    of the cell using a weighted average based on blend_ridge and blend_fract, and the fractal_array is updated accordingly.
     pub fn ridge_builder(
         &mut self,
         random: &mut StdRng,
