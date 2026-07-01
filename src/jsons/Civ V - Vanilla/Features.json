@@ -2,7 +2,6 @@
 	// Terrain features
 	{
 		"name": "Forest",
-		"type": "TerrainFeature",
 		"production": 1,
 		"food": 1,
 		"movementCost": 2,
@@ -37,7 +36,6 @@
 	},
 	{
 		"name": "Jungle",
-		"type": "TerrainFeature",
 		"food": 2,
 		"movementCost": 2,
 		"overrideStats": true,
@@ -63,7 +61,6 @@
 	},
 	{
 		"name": "Marsh",
-		"type": "TerrainFeature",
 		"food": -1,
 		"movementCost": 3,
 		"unbuildable": true,
@@ -86,7 +83,6 @@
 	},
 	{
 		"name": "Fallout",
-		"type": "TerrainFeature",
 		"movementCost": 2,
 		"unbuildable": true,
 		"uniques": [
@@ -103,7 +99,6 @@
 	},
 	{
 		"name": "Oasis",
-		"type": "TerrainFeature",
 		"food": 3,
 		"gold": 1,
 		"movementCost": 1,
@@ -124,7 +119,6 @@
 	},
 	{
 		"name": "Floodplain",
-		"type": "TerrainFeature",
 		"food": 2,
 		"movementCost": 1,
 		"defenceBonus": -0.1,
@@ -141,7 +135,6 @@
 	},
 	{
 		"name": "Ice",
-		"type": "TerrainFeature",
 		"impassable": true,
 		"overrideStats": true,
 		"requiredTerrain": {
@@ -156,7 +149,6 @@
 	},
 	{
 		"name": "Atoll",
-		"type": "TerrainFeature",
 		"movementCost": 1,
 		"food": 1,
 		"production": 1,
