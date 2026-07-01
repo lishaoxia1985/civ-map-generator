@@ -26,8 +26,8 @@ impl TileMap {
         let plains_percent = 50;
 
         // Set default base terrain bands.
-        // TODO: This should be moved to the map parameters and be configurable by the user in the future.
-        // Notice: The number should be sorted in ascending order.
+        // TODO: It can be configured by json.
+        //       But we don't do it there because of performance.
         let [
             mut grass_latitude,
             desert_bottom_latitude,
@@ -73,10 +73,10 @@ impl TileMap {
             .flags(flags)
             .build(&mut self.random_number_generator);
 
-        let [desert_top, plains_top] = deserts_fractal
-            .height_thresholds_from_percents([desert_top_percent, plains_top_percent]);
-        let [desert_bottom, plains_bottom] = plains_fractal
-            .height_thresholds_from_percents([desert_bottom_percent, plains_bottom_percent]);
+        let [desert_top, desert_bottom] = deserts_fractal
+            .height_thresholds_from_percents([desert_top_percent, desert_bottom_percent]);
+        let [plains_top, plains_bottom] = plains_fractal
+            .height_thresholds_from_percents([plains_top_percent, plains_bottom_percent]);
 
         self.all_tiles().for_each(|tile| {
             let terrain_type = tile.terrain_type(self);

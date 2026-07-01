@@ -109,10 +109,9 @@ impl Tile {
     ///
     /// This method will panic if the tile is out of bounds for the given map size.
     pub fn latitude(&self, grid: HexGrid) -> f64 {
-        // We don't need to check if the index is valid here, as it has already been checked in `to_offset_coordinate`
         let y = self.to_offset(grid).0.y;
         let half_height = grid.height() as f64 / 2.0;
-        ((half_height - y as f64) / half_height).abs()
+        (1.0 - y as f64 / half_height).abs()
     }
 
     /// Returns the terrain type of the tile at the given index.
