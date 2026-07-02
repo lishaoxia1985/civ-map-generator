@@ -13,7 +13,13 @@ impl TileMap {
     ///
     /// # Notes
     ///
-    /// Feature generation is based on algorithms from *Civilization VI*.
+    /// - Feature generation is based on algorithms from *Civilization VI*.
+    /// - In the original *Civilization V*, at the end of feature generation, two additional steps were required:
+    ///   - Convert the base terrain of all tiles featuring a jungle to [`BaseTerrain::Plain`].
+    ///     Since our implementation is based on *Civilization VI* algorithms, the base terrain is already
+    ///     modified to [`BaseTerrain::Plain`] when placing the jungle feature, so this step is no longer needed.
+    ///   - Soften arctic base terrains at rivers. This logic has been moved to [`TileMap::add_rivers`]
+    ///     because softening is more closely related to river generation.
     pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
         let rainfall = match map_parameters.rainfall {
@@ -227,10 +233,6 @@ impl TileMap {
         /* **********start to add atolls********** */
         self.add_atolls();
         /* **********the end of add atolls********** */
-
-        /* **********start to soften arctic base terrains at rivers********** */
-        self.adjust_base_terrains();
-        /* **********the end of soften arctic base terrains at rivers********** */
     }
 
     /// Add [`Feature::Atoll`] to the tile map.
@@ -403,27 +405,6 @@ impl TileMap {
             // Place the Atoll on the tile
             if let Some(tile) = tile {
                 tile.set_feature(self, Feature::Atoll);
-            }
-        }
-    }
-
-    /// Softens arctic base terrains located at rivers.
-    ///
-    /// # Notes
-    ///
-    /// In the original *Civilization V*, this step also converted the base terrain of all tiles
-    /// featuring a jungle to [`BaseTerrain::Plain`]. However, because our implementation is based
-    /// on *Civilization VI* algorithms, the base terrain of a tile is already modified to
-    /// [`BaseTerrain::Plain`] when placing the jungle feature. Therefore, this function now
-    /// exclusively handles the softening of arctic terrains at rivers.
-    pub fn adjust_base_terrains(&mut self) {
-        for tile in self.all_tiles() {
-            if tile.has_river(self) {
-                if tile.base_terrain(self) == BaseTerrain::Tundra {
-                    tile.set_base_terrain(self, BaseTerrain::Plain);
-                } else if tile.base_terrain(self) == BaseTerrain::Snow {
-                    tile.set_base_terrain(self, BaseTerrain::Tundra);
-                }
             }
         }
     }

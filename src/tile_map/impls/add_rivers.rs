@@ -13,6 +13,14 @@ use crate::{
 
 impl TileMap {
     /// Adds rivers to the map.
+    ///
+    /// # Notes
+    ///
+    /// At the end of river generation, this method also softens arctic base terrains adjacent to rivers.
+    ///
+    /// In the original *Civilization V*, this softening step was performed after feature generation.
+    /// However, in our implementation, this logic has been moved to the river generation phase because it is more closely related to rivers.
+    /// See the [`TileMap::add_features`] documentation for more details.
     pub fn add_rivers(&mut self) {
         let grid = self.world_grid.grid;
 
@@ -89,6 +97,9 @@ impl TileMap {
                 }
             });
         });
+
+        //At last, soften arctic base terrains at rivers.
+        self.adjust_base_terrains();
     }
 
     /// This function is called to create a river.
@@ -600,6 +611,25 @@ impl TileMap {
             .flatten()
             .filter(|river_edge| river_edge.tile.area_id(self) == current_area_id)
             .count() as u32
+    }
+
+    /// Softens arctic base terrains located at rivers.
+    ///
+    /// # Notes
+    ///
+    /// In the original *Civilization V*, softening arctic terrains at rivers was performed after feature generation.
+    /// However, in our implementation, this logic has been moved to the river generation phase because softening is more closely related to river generation.
+    /// View the [`TileMap::add_features`] documentation for more details.
+    pub fn adjust_base_terrains(&mut self) {
+        for tile in self.all_tiles() {
+            if tile.has_river(self) {
+                if tile.base_terrain(self) == BaseTerrain::Tundra {
+                    tile.set_base_terrain(self, BaseTerrain::Plain);
+                } else if tile.base_terrain(self) == BaseTerrain::Snow {
+                    tile.set_base_terrain(self, BaseTerrain::Tundra);
+                }
+            }
+        }
     }
 }
 
