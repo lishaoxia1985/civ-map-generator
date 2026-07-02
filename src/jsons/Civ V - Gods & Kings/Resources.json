@@ -68,7 +68,7 @@
 		"requiredTerrain": [
 			{
 				"terrainType": ["Flatland","Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			}
 		],
@@ -246,7 +246,7 @@
 			},
 			{
 				"terrainType": ["Flatland"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			},
 			{
@@ -346,7 +346,12 @@
 			{
 				"terrainType": ["Flatland"],
 				"baseTerrain": ["Grassland"],
-				"feature": ["Marsh","Jungle"]
+				"feature": ["Marsh"]
+			},
+			{
+				"terrainType": ["Flatland"],
+				"baseTerrain": ["Plain"],
+				"feature": ["Jungle"]
 			},
 			{
 				"terrainType": ["Flatland"],
@@ -425,7 +430,12 @@
 			{
 				"terrainType": ["Flatland"],
 				"baseTerrain": ["Grassland"],
-				"feature": ["Jungle","Marsh"]
+				"feature": ["Marsh"]
+			},
+			{
+				"terrainType": ["Flatland"],
+				"baseTerrain": ["Plain"],
+				"feature": ["Jungle"]
 			}
 		],
 		"gold": 2,
@@ -442,7 +452,7 @@
 		"requiredTerrain": [
 			{
 				"terrainType": ["Flatland", "Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			},
 			{
@@ -488,7 +498,7 @@
 			},
 			{
 				"terrainType": ["Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			}
 		],
@@ -518,7 +528,7 @@
 			},
 			{
 				"terrainType": ["Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			},
 			{
@@ -604,7 +614,7 @@
 			},
 			{
 				"terrainType": ["Flatland"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			}
 		],
@@ -623,7 +633,12 @@
 			{
 				"terrainType": ["Flatland"],
 				"baseTerrain": ["Grassland"],
-				"feature": ["Jungle","Marsh"]
+				"feature": ["Marsh"]
+			},
+			{
+				"terrainType": ["Flatland"],
+				"baseTerrain": ["Plain"],
+				"feature": ["Jungle"]
 			},
 			{
 				"terrainType": ["Flatland"],
@@ -670,7 +685,12 @@
 			{
 				"terrainType": ["Flatland"],
 				"baseTerrain": ["Grassland"],
-				"feature": ["Jungle","Marsh"]
+				"feature": ["Marsh"]
+			},
+			{
+				"terrainType": ["Flatland"],
+				"baseTerrain": ["Plain"],
+				"feature": ["Jungle"]
 			},
 			{
 				"terrainType": ["Flatland"],
@@ -782,7 +802,7 @@
 		"requiredTerrain": [
 			{
 				"terrainType": ["Flatland", "Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			},
 			{
@@ -847,7 +867,7 @@
 		"requiredTerrain": [
 			{
 				"terrainType": ["Flatland", "Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			},
 			{
@@ -927,7 +947,12 @@
 			{
 				"terrainType": ["Flatland"],
 				"baseTerrain": ["Grassland"],
-				"feature": ["Jungle","Marsh"]
+				"feature": ["Marsh"]
+			},
+			{
+				"terrainType": ["Flatland"],
+				"baseTerrain": ["Plain"],
+				"feature": ["Jungle"]
 			},
 			{
 				"terrainType": ["Hill"],
@@ -936,7 +961,7 @@
 			},
 			{
 				"terrainType": ["Hill"],
-				"baseTerrain": ["Grassland"],
+				"baseTerrain": ["Plain"],
 				"feature": ["Jungle"]
 			}		
 		],

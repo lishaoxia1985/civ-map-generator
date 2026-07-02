@@ -10,6 +10,10 @@ use crate::{
 
 impl TileMap {
     /// Add features to the tile map.
+    ///
+    /// # Notes
+    ///
+    /// Feature generation is based on algorithms from *Civilization VI*.
     pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
         let grid = self.world_grid.grid;
         let rainfall = match map_parameters.rainfall {
@@ -164,11 +168,11 @@ impl TileMap {
                 {
                     let mut score = 300;
 
-                    let a = tile
+                    let neighbor_jungle_count = tile
                         .neighbor_tiles(grid)
                         .filter(|tile| tile.feature(self) == Some(Feature::Jungle))
                         .count();
-                    match a {
+                    match neighbor_jungle_count {
                         0 => (),
                         1 => score += 50,
                         2 | 3 => score += 150,
@@ -177,17 +181,8 @@ impl TileMap {
                     };
                     if self.random_number_generator.random_range(0..300) <= score {
                         tile.set_feature(self, Feature::Jungle);
-                        if tile.terrain_type(self) == TerrainType::Hill
-                            && matches!(
-                                tile.base_terrain(self),
-                                BaseTerrain::Grassland | BaseTerrain::Plain
-                            )
-                        {
-                            tile.set_base_terrain(self, BaseTerrain::Plain);
-                        } else {
-                            tile.set_terrain_type(self, TerrainType::Flatland);
-                            tile.set_base_terrain(self, BaseTerrain::Plain);
-                        }
+
+                        tile.set_base_terrain(self, BaseTerrain::Plain);
 
                         jungle_count += 1;
                         continue;
@@ -232,6 +227,10 @@ impl TileMap {
         /* **********start to add atolls********** */
         self.add_atolls();
         /* **********the end of add atolls********** */
+
+        /* **********start to soften arctic base terrains at rivers********** */
+        self.adjust_base_terrains();
+        /* **********the end of soften arctic base terrains at rivers********** */
     }
 
     /// Add [`Feature::Atoll`] to the tile map.
@@ -404,6 +403,27 @@ impl TileMap {
             // Place the Atoll on the tile
             if let Some(tile) = tile {
                 tile.set_feature(self, Feature::Atoll);
+            }
+        }
+    }
+
+    /// Softens arctic base terrains located at rivers.
+    ///
+    /// # Notes
+    ///
+    /// In the original *Civilization V*, this step also converted the base terrain of all tiles
+    /// featuring a jungle to [`BaseTerrain::Plain`]. However, because our implementation is based
+    /// on *Civilization VI* algorithms, the base terrain of a tile is already modified to
+    /// [`BaseTerrain::Plain`] when placing the jungle feature. Therefore, this function now
+    /// exclusively handles the softening of arctic terrains at rivers.
+    pub fn adjust_base_terrains(&mut self) {
+        for tile in self.all_tiles() {
+            if tile.has_river(self) {
+                if tile.base_terrain(self) == BaseTerrain::Tundra {
+                    tile.set_base_terrain(self, BaseTerrain::Plain);
+                } else if tile.base_terrain(self) == BaseTerrain::Snow {
+                    tile.set_base_terrain(self, BaseTerrain::Tundra);
+                }
             }
         }
     }

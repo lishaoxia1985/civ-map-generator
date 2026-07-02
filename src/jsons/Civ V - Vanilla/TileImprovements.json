@@ -254,7 +254,7 @@
 		"requiredTerrain": [
 			{
 			  "terrainType": ["Flatland","Hill"],
-			  "baseTerrain": ["Grassland"],
+			  "baseTerrain": ["Plain"],
 			  "feature": ["Jungle"],
 			  "extraConditions": ["Can be built outside your borders","Excluded from map editor"]
 			}

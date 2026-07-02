@@ -34,7 +34,7 @@
 			}
 		]
 	},
-	{
+	{ // Notice: When placing a jungle, the base terrain of the tile will be changed to Plain.
 		"name": "Jungle",
 		"food": 2,
 		"movementCost": 2,
@@ -43,7 +43,7 @@
 		"defenceBonus": 0.25,
 		"requiredTerrain": {
 			 "terrainType": ["Flatland","Hill"],
-			 "baseTerrain": ["Grassland"]
+			 "baseTerrain": ["Grassland","Plain"]
 		},
 		"uniques": [
 			"Rough terrain",
