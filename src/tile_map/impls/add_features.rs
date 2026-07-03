@@ -29,6 +29,7 @@ impl TileMap {
             Rainfall::Random => self.random_number_generator.random_range(-5..=5),
         };
 
+        // Can be negative to shift the equator south/downwards.
         let equator_adjustment = 0;
         let mut jungle_percent = 12;
         let mut forest_percent = 18;
@@ -40,7 +41,9 @@ impl TileMap {
         marsh_percent += rainfall / 2;
         oasis_percent += rainfall / 4;
 
-        let equator = equator_adjustment;
+        // By default, the equator is at the vertical center of the map.
+        // Use `equator_adjustment` to offset it.
+        let equator = grid.size.height as i32 / 2 + equator_adjustment;
 
         let jungle_max_percent = jungle_percent;
         let forest_max_percent = forest_percent;
@@ -52,18 +55,22 @@ impl TileMap {
         let mut marsh_count = 0;
         let mut oasis_count = 0;
         let mut num_land_tiles = 0;
-        let jungle_bottom = equator - (jungle_percent as f64 * 0.5).ceil() as i32;
-        let jungle_top = equator + (jungle_percent as f64 * 0.5).ceil() as i32;
+
+        // Equivalent to: (jungle_percent / 2.0).ceil() as i32
+        let half_jungle_percent = (jungle_percent + 1) / 2;
+        let jungle_bottom = equator - half_jungle_percent;
+        let jungle_top = equator + half_jungle_percent;
 
         for tile in self.all_tiles() {
-            let latitude = tile.latitude(grid);
-
             /* **********start to add ice********** */
+            let latitude = tile.latitude(grid);
             let ice_required_terrain = &ruleset.features["Ice"].required_terrain;
 
             if tile.is_impassable(self, ruleset) {
                 continue;
-            } else if tile.terrain_type(self) == TerrainType::Water {
+            }
+
+            if tile.terrain_type(self) == TerrainType::Water {
                 if !tile.has_river(self)
                     && ice_required_terrain
                         .terrain_type
@@ -159,6 +166,7 @@ impl TileMap {
                 };
                 /* **********the end of add march********** */
                 /* **********start to add jungle********** */
+                let [_, y] = tile.to_offset(grid).to_array();
                 let jungle_required_terrain = &ruleset.features["Jungle"].required_terrain;
 
                 if jungle_required_terrain
@@ -169,8 +177,7 @@ impl TileMap {
                         .contains(&tile.base_terrain(self))
                     && (jungle_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
                         <= jungle_max_percent
-                    && (latitude >= jungle_bottom as f64 / 100.
-                        && latitude <= jungle_top as f64 / 100.)
+                    && (y >= jungle_bottom && y <= jungle_top)
                 {
                     let mut score = 300;
 
