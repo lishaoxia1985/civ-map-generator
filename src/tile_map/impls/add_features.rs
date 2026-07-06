@@ -45,18 +45,18 @@ impl TileMap {
         // Use `equator_adjustment` to offset it.
         let equator = grid.size.height as i32 / 2 + equator_adjustment;
 
-        let jungle_max_percent = jungle_percent;
-        let forest_max_percent = forest_percent;
-        let marsh_max_percent = marsh_percent;
-        let oasis_max_percent = oasis_percent;
+        let jungle_max_percent = jungle_percent as u32;
+        let forest_max_percent = forest_percent as u32;
+        let marsh_max_percent = marsh_percent as u32;
+        let oasis_max_percent = oasis_percent as u32;
 
         let mut forest_count = 0;
         let mut jungle_count = 0;
         let mut marsh_count = 0;
         let mut oasis_count = 0;
-        let mut num_land_tiles = 0;
+        let mut land_tile_count = 0;
 
-        // Equivalent to: (jungle_percent / 2.0).ceil() as i32
+        // Equivalent to: (jungle_percent as f64 / 2.0).ceil() as i32
         let half_jungle_percent = (jungle_percent + 1) / 2;
         let jungle_bottom = equator - half_jungle_percent;
         let jungle_top = equator + half_jungle_percent;
@@ -80,31 +80,33 @@ impl TileMap {
                         .contains(&tile.base_terrain(self))
                     && latitude > 0.78
                 {
-                    let mut score = self.random_number_generator.random_range(0..100) as f64;
-                    score += latitude * 100.;
+                    let mut score = self.random_number_generator.random_range(0..100);
+                    score += (latitude * 100.) as i32;
                     if tile
                         .neighbor_tiles(grid)
                         .any(|tile| tile.terrain_type(self) != TerrainType::Water)
                     {
-                        score /= 2.0;
+                        score /= 2;
                     }
                     let a = tile
                         .neighbor_tiles(grid)
                         .filter(|tile| tile.feature(self) == Some(Feature::Ice))
                         .count();
-                    score += 10. * a as f64;
-                    if score > 130. {
+                    score += 10 * a as i32;
+                    if score > 130 {
                         tile.set_feature(self, Feature::Ice);
                     }
                 }
             }
             /* **********the end of add ice********** */
             else {
+                // Count land tiles for percentages.
+                land_tile_count += 1;
+
                 /* **********start to add Floodplain********** */
                 let floodplain_required_terrain = &ruleset.features["Floodplain"].required_terrain;
                 let oasis_required_terrain = &ruleset.features["Oasis"].required_terrain;
 
-                num_land_tiles += 1;
                 if tile.has_river(self)
                     && floodplain_required_terrain
                         .terrain_type
@@ -124,8 +126,7 @@ impl TileMap {
                     && oasis_required_terrain
                         .base_terrain
                         .contains(&tile.base_terrain(self))
-                    && (oasis_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
-                        <= oasis_max_percent
+                    && (oasis_count * 100_u32).div_ceil(land_tile_count) <= oasis_max_percent
                     && self.random_number_generator.random_range(0..4) == 1
                 {
                     tile.set_feature(self, Feature::Oasis);
@@ -142,8 +143,7 @@ impl TileMap {
                     && marsh_required_terrain
                         .base_terrain
                         .contains(&tile.base_terrain(self))
-                    && (marsh_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
-                        <= marsh_max_percent
+                    && (marsh_count * 100_u32).div_ceil(land_tile_count) <= marsh_max_percent
                 {
                     let mut score = 300;
 
@@ -175,8 +175,7 @@ impl TileMap {
                     && jungle_required_terrain
                         .base_terrain
                         .contains(&tile.base_terrain(self))
-                    && (jungle_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
-                        <= jungle_max_percent
+                    && (jungle_count * 100_u32).div_ceil(land_tile_count) <= jungle_max_percent
                     && (y >= jungle_bottom && y <= jungle_top)
                 {
                     let mut score = 300;
@@ -211,8 +210,7 @@ impl TileMap {
                     && forest_required_terrain
                         .base_terrain
                         .contains(&tile.base_terrain(self))
-                    && (forest_count as f64 * 100. / num_land_tiles as f64).ceil() as i32
-                        <= forest_max_percent
+                    && (forest_count * 100_u32).div_ceil(land_tile_count) <= forest_max_percent
                 {
                     let mut score = 300;
 
