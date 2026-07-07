@@ -373,18 +373,16 @@ impl TileMap {
             let num_random_luxury_target =
                 (target_luxury + extra_luxury).saturating_sub(num_placed_luxuries);
 
-            let mut num_this_luxury_to_place;
-
             // This table weights the amount of random luxuries to place, with first-selected getting heavier weighting.
-            let random_luxury_ratios_table = [
-                vec![1.],
-                vec![0.55, 0.45],
-                vec![0.40, 0.33, 0.27],
-                vec![0.35, 0.25, 0.25, 0.15],
-                vec![0.25, 0.25, 0.20, 0.15, 0.15],
-                vec![0.20, 0.20, 0.20, 0.15, 0.15, 0.10],
-                vec![0.20, 0.20, 0.15, 0.15, 0.10, 0.10, 0.10],
-                vec![0.20, 0.15, 0.15, 0.10, 0.10, 0.10, 0.10, 0.10],
+            const RANDOM_LUXURY_RATIOS_TABLE: &[&[f64]] = &[
+                &[1.],
+                &[0.55, 0.45],
+                &[0.40, 0.33, 0.27],
+                &[0.35, 0.25, 0.25, 0.15],
+                &[0.25, 0.25, 0.20, 0.15, 0.15],
+                &[0.20, 0.20, 0.20, 0.15, 0.15, 0.10],
+                &[0.20, 0.20, 0.15, 0.15, 0.10, 0.10, 0.10],
+                &[0.20, 0.15, 0.15, 0.10, 0.10, 0.10, 0.10, 0.10],
             ];
 
             for i in 0..num_random_luxury_types {
@@ -393,18 +391,19 @@ impl TileMap {
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
                 // If calculated number of randoms is low, just place 3 of each radom luxury type.
-                if num_random_luxury_types * 3 > num_random_luxury_target as usize {
-                    num_this_luxury_to_place = 3;
-                } else if num_random_luxury_types > 8 {
-                    num_this_luxury_to_place = max(3, num_random_luxury_target.div_ceil(10));
-                } else {
-                    // num_random_luxury_types <= 8
-                    let luxury_minimum = max(3, loop_target.saturating_sub(i as u32));
-                    let luxury_share_of_remaining = (num_random_luxury_target as f64
-                        * random_luxury_ratios_table[num_random_luxury_types - 1][i])
-                        .ceil() as u32;
-                    num_this_luxury_to_place = max(luxury_minimum, luxury_share_of_remaining);
-                }
+                let num_this_luxury_to_place =
+                    if num_random_luxury_types > num_random_luxury_target as usize / 3 {
+                        3
+                    } else if num_random_luxury_types > 8 {
+                        max(3, num_random_luxury_target.div_ceil(10))
+                    } else {
+                        // num_random_luxury_types <= 8
+                        let luxury_minimum = max(3, loop_target.saturating_sub(i as u32));
+                        let luxury_share_of_remaining = (num_random_luxury_target as f64
+                            * RANDOM_LUXURY_RATIOS_TABLE[num_random_luxury_types - 1][i])
+                            .ceil() as u32;
+                        max(luxury_minimum, luxury_share_of_remaining)
+                    };
 
                 let mut current_list = self.generate_luxury_resource_tile_lists_in_map();
                 // Place this luxury type.
@@ -1113,7 +1112,7 @@ fn get_region_luxury_target_numbers(
 ///
 /// The first number represents the target for the total number of luxuries in the world.
 /// This does **not** include the "second type" of luxuries added at each civilization's start location.
-/// The "second type" of luxuries is the luxuries which is placed during in Process 5 of [`TileMap::place_luxury_resources`] function.
+/// The "second type" of luxuries is the luxuries which is placed during **Process 5** of [`TileMap::place_luxury_resources`] function.
 ///
 /// The second number influences the minimum number of random luxuries that should be placed.
 /// It is important to note that it is just one factor in the formula for placing luxuries,
@@ -1122,32 +1121,24 @@ fn get_world_luxury_target_numbers(
     world_size_type: WorldSizeType,
     resource_setting: ResourceSetting,
 ) -> [u32; 2] {
-    match resource_setting {
-        ResourceSetting::Sparse => match world_size_type {
-            WorldSizeType::Duel => [14, 3],
-            WorldSizeType::Tiny => [24, 4],
-            WorldSizeType::Small => [36, 4],
-            WorldSizeType::Standard => [48, 5],
-            WorldSizeType::Large => [60, 5],
-            WorldSizeType::Huge => [76, 6],
-        },
-
-        ResourceSetting::Abundant => match world_size_type {
-            WorldSizeType::Duel => [24, 3],
-            WorldSizeType::Tiny => [40, 4],
-            WorldSizeType::Small => [60, 4],
-            WorldSizeType::Standard => [80, 5],
-            WorldSizeType::Large => [100, 5],
-            WorldSizeType::Huge => [128, 6],
-        },
-
-        _ => match world_size_type {
-            WorldSizeType::Duel => [18, 3],
-            WorldSizeType::Tiny => [30, 4],
-            WorldSizeType::Small => [45, 4],
-            WorldSizeType::Standard => [60, 5],
-            WorldSizeType::Large => [75, 5],
-            WorldSizeType::Huge => [95, 6],
-        },
+    match (resource_setting, world_size_type) {
+        (ResourceSetting::Sparse, WorldSizeType::Duel) => [14, 3],
+        (ResourceSetting::Sparse, WorldSizeType::Tiny) => [24, 4],
+        (ResourceSetting::Sparse, WorldSizeType::Small) => [36, 4],
+        (ResourceSetting::Sparse, WorldSizeType::Standard) => [48, 5],
+        (ResourceSetting::Sparse, WorldSizeType::Large) => [60, 5],
+        (ResourceSetting::Sparse, WorldSizeType::Huge) => [76, 6],
+        (ResourceSetting::Abundant, WorldSizeType::Duel) => [24, 3],
+        (ResourceSetting::Abundant, WorldSizeType::Tiny) => [40, 4],
+        (ResourceSetting::Abundant, WorldSizeType::Small) => [60, 4],
+        (ResourceSetting::Abundant, WorldSizeType::Standard) => [80, 5],
+        (ResourceSetting::Abundant, WorldSizeType::Large) => [100, 5],
+        (ResourceSetting::Abundant, WorldSizeType::Huge) => [128, 6],
+        (_, WorldSizeType::Duel) => [18, 3],
+        (_, WorldSizeType::Tiny) => [30, 4],
+        (_, WorldSizeType::Small) => [45, 4],
+        (_, WorldSizeType::Standard) => [60, 5],
+        (_, WorldSizeType::Large) => [75, 5],
+        (_, WorldSizeType::Huge) => [95, 6],
     }
 }

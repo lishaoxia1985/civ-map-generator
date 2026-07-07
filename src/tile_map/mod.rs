@@ -575,23 +575,20 @@ impl TileMap {
             "'max_radius' must be greater than or equal to 'min_radius'!"
         );
 
+        let has_impact = matches!(
+            layer,
+            Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
+        );
+
+        // `layer` must be `None` or one of `Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)`.
         debug_assert!(
-            layer.is_none()
-                || matches!(
-                    layer,
-                    Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
-                ),
+            layer.is_none() || has_impact,
             "If 'layer' is specified, it must be one of: Strategic, Luxury, Bonus, Fish."
         );
 
         if tile_list.is_empty() {
             return amount;
         }
-
-        let has_impact = matches!(
-            layer,
-            Some(Layer::Strategic | Layer::Luxury | Layer::Bonus | Layer::Fish)
-        );
 
         // Store how many resources are left to place
         let mut num_left_to_place = amount;
@@ -607,22 +604,25 @@ impl TileMap {
         // `num_resources` is the minimum of `amount` and `num_candidate_tiles`.
         let num_resources = min(amount, num_candidate_tiles);
 
+        let mut tile_list_iter = tile_list.iter();
+
         for _ in 1..=num_resources {
-            for &tile in tile_list.iter() {
+            while let Some(&tile) = tile_list_iter.next() {
                 if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
                     // Place resource on tile if it doesn't have a resource already
                     if tile.resource(self).is_none() {
                         tile.set_resource(self, resource, quantity);
                         num_left_to_place -= 1;
+
+                        // Place impact and ripples if `has_impact` is true
+                        if has_impact {
+                            let radius = self
+                                .random_number_generator
+                                .random_range(min_radius..=max_radius);
+                            self.place_impact_and_ripples(tile, layer.unwrap(), radius)
+                        }
+                        break;
                     }
-                    // Place impact and ripples if `has_impact` is true
-                    if has_impact {
-                        let radius = self
-                            .random_number_generator
-                            .random_range(min_radius..=max_radius);
-                        self.place_impact_and_ripples(tile, layer.unwrap(), radius)
-                    }
-                    break;
                 }
             }
         }
