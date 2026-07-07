@@ -40,7 +40,7 @@ impl TileMap {
             .collect();
 
         // Sort by `area_size` in descending order
-        land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
+        land_area_id_and_size.sort_by_key(|&(_, area_size)| Reverse(area_size));
 
         /***** Tackle with the natural wonders which require 2 adjacent tiles *****/
         // When a natural wonder requires occupying 2 adjacent tiles,
@@ -49,8 +49,8 @@ impl TileMap {
         // This direction is the chosen adjacent tile's direction relative to the current tile.
         //
         // Notice: Now it is only used for `Great Barrier Reef`,
-        //         in original game, neighbor_tile_direction is not randomly selected.
-        //         it is always Direction::SouthEast.
+        //         in original game, `neighbor_tile_direction` is not randomly selected.
+        //         it is always `Direction::SouthEast`.
         let neighbor_tile_direction = *grid
             .edge_direction_array()
             .choose(&mut self.random_number_generator)
@@ -351,7 +351,7 @@ impl TileMap {
             .collect();
 
         // Sort by `area_size` in descending order
-        land_area_id_and_size.sort_by_key(|&(_, area_size)| (Reverse(area_size)));
+        land_area_id_and_size.sort_by_key(|&(_, area_size)| Reverse(area_size));
 
         /***** Tackle with the natural wonders which require 2 adjacent tiles *****/
         // When a natural wonder requires occupying 2 adjacent tiles,
@@ -360,8 +360,8 @@ impl TileMap {
         // This direction is the chosen adjacent tile's direction relative to the current tile.
         //
         // Notice: Now it is only used for `Great Barrier Reef`,
-        //         in original game, neighbor_tile_direction is not randomly selected.
-        //         it is always Direction::SouthEast.
+        //         in original game, `neighbor_tile_direction` is not randomly selected.
+        //         it is always `Direction::SouthEast`.
         let neighbor_tile_direction = *grid
             .edge_direction_array()
             .choose(&mut self.random_number_generator)
