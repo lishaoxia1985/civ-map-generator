@@ -101,8 +101,7 @@ impl TileMap {
                     num_left_to_place,
                     0.5,
                     None,
-                    0,
-                    0,
+                    (0, 0),
                     &luxury_tile_lists_in_distance_two[i],
                 );
             }
@@ -124,8 +123,7 @@ impl TileMap {
                         num_left_to_place,
                         1.0,
                         None,
-                        0,
-                        0,
+                        (0, 0),
                         &luxury_tile_lists_in_distance_three[i],
                     );
                 }
@@ -136,11 +134,8 @@ impl TileMap {
                 // Now we place one `luxury_assigned_to_random` instead.
                 //
                 // These `luxury_assigned_to_random` will affect Process 4. (Please view Process 4)
-
                 let mut randoms_to_place = 1;
-                let resource_assigned_to_random =
-                    self.luxury_resource_role.random_placement.clone();
-                for &random_luxury in resource_assigned_to_random.iter() {
+                for &random_luxury in self.luxury_resource_role.random_placement.clone().iter() {
                     let priority_list_indices_of_luxury =
                         self.get_indices_for_luxury_type(random_luxury);
 
@@ -156,8 +151,7 @@ impl TileMap {
                             1,
                             1.0,
                             None,
-                            0,
-                            0,
+                            (0, 0),
                             &luxury_tile_lists_in_distance_two[i],
                         );
                     }
@@ -277,8 +271,7 @@ impl TileMap {
                         num_left_to_place,
                         1.0,
                         None,
-                        0,
-                        0,
+                        (0, 0),
                         &luxury_tile_lists[i],
                     );
                 }
@@ -350,8 +343,7 @@ impl TileMap {
                     num_left_to_place,
                     ratio,
                     Some(Layer::Luxury),
-                    0,
-                    max_radius,
+                    (0, max_radius),
                     &luxury_tile_lists[i],
                 );
             }
@@ -385,9 +377,13 @@ impl TileMap {
                 &[0.20, 0.15, 0.15, 0.10, 0.10, 0.10, 0.10, 0.10],
             ];
 
-            for i in 0..num_random_luxury_types {
-                let luxury = self.luxury_resource_role.random_placement[i];
-
+            for (i, &luxury) in self
+                .luxury_resource_role
+                .random_placement
+                .clone()
+                .iter()
+                .enumerate()
+            {
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
                 // If calculated number of randoms is low, just place 3 of each radom luxury type.
@@ -423,8 +419,7 @@ impl TileMap {
                         num_left_to_place,
                         ratio,
                         Some(Layer::Luxury),
-                        4,
-                        6,
+                        (4, 6),
                         &current_list[i],
                     );
                 }
@@ -513,8 +508,7 @@ impl TileMap {
                             num_left_to_place,
                             1.,
                             None,
-                            0,
-                            0,
+                            (0, 0),
                             &luxury_tile_lists[i],
                         );
                     }

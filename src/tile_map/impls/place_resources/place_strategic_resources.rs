@@ -47,15 +47,13 @@ impl TileMap {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 65,
-                min_radius: 1,
-                max_radius: 1,
+                radius_range: (1, 1),
             },
             ResourceToPlace {
                 resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 35,
-                min_radius: 0,
-                max_radius: 1,
+                radius_range: (0, 1),
             },
         ];
         self.process_resource_list(9, Layer::Strategic, &marsh_list, &resources_to_place);
@@ -65,22 +63,19 @@ impl TileMap {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 40,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
             ResourceToPlace {
                 resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 15,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
             ResourceToPlace {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 45,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
         ];
         self.process_resource_list(
@@ -95,22 +90,19 @@ impl TileMap {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 60,
-                min_radius: 1,
-                max_radius: 1,
+                radius_range: (1, 1),
             },
             ResourceToPlace {
                 resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 15,
-                min_radius: 2,
-                max_radius: 3,
+                radius_range: (2, 3),
             },
             ResourceToPlace {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 25,
-                min_radius: 2,
-                max_radius: 3,
+                radius_range: (2, 3),
             },
         ];
         self.process_resource_list(17, Layer::Strategic, &snow_flat_list, &resources_to_place);
@@ -120,15 +112,13 @@ impl TileMap {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 65,
-                min_radius: 0,
-                max_radius: 1,
+                radius_range: (0, 1),
             },
             ResourceToPlace {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 35,
-                min_radius: 1,
-                max_radius: 1,
+                radius_range: (1, 1),
             },
         ];
         self.process_resource_list(
@@ -143,22 +133,19 @@ impl TileMap {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 26,
-                min_radius: 0,
-                max_radius: 2,
+                radius_range: (0, 2),
             },
             ResourceToPlace {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 35,
-                min_radius: 1,
-                max_radius: 3,
+                radius_range: (1, 3),
             },
             ResourceToPlace {
                 resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 39,
-                min_radius: 2,
-                max_radius: 3,
+                radius_range: (2, 3),
             },
         ];
         self.process_resource_list(22, Layer::Strategic, &hills_list, &resources_to_place);
@@ -168,15 +155,13 @@ impl TileMap {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 30,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
             ResourceToPlace {
                 resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 70,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
         ];
         self.process_resource_list(33, Layer::Strategic, &jungle_flat_list, &resources_to_place);
@@ -186,15 +171,13 @@ impl TileMap {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 30,
-                min_radius: 1,
-                max_radius: 2,
+                radius_range: (1, 2),
             },
             ResourceToPlace {
                 resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 70,
-                min_radius: 1,
-                max_radius: 1,
+                radius_range: (1, 1),
             },
         ];
         self.process_resource_list(39, Layer::Strategic, &forest_flat_list, &resources_to_place);
@@ -203,8 +186,7 @@ impl TileMap {
             resource: Resource::Horses,
             quantity: horse_amt,
             weight: 100,
-            min_radius: 2,
-            max_radius: 5,
+            radius_range: (2, 5),
         }];
         self.process_resource_list(
             33,
@@ -217,8 +199,7 @@ impl TileMap {
             resource: Resource::Horses,
             quantity: horse_amt,
             weight: 100,
-            min_radius: 1,
-            max_radius: 4,
+            radius_range: (1, 4),
         }];
         self.process_resource_list(
             33,
@@ -244,8 +225,7 @@ impl TileMap {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -261,8 +241,7 @@ impl TileMap {
                 resource: Resource::Iron,
                 quantity: iron_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -278,8 +257,7 @@ impl TileMap {
                 resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -295,8 +273,7 @@ impl TileMap {
                 resource: Resource::Horses,
                 quantity: horse_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -312,8 +289,7 @@ impl TileMap {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -329,8 +305,7 @@ impl TileMap {
                 resource: Resource::Coal,
                 quantity: coal_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -346,8 +321,7 @@ impl TileMap {
                 resource: Resource::Oil,
                 quantity: oil_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -363,8 +337,7 @@ impl TileMap {
                 resource: Resource::Aluminum,
                 quantity: alum_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -380,8 +353,7 @@ impl TileMap {
                 resource: Resource::Uranium,
                 quantity: uran_amt,
                 weight: 100,
-                min_radius: 0,
-                max_radius: 0,
+                radius_range: (0, 0),
             }];
             self.process_resource_list(
                 u32::MAX,
@@ -417,8 +389,7 @@ impl TileMap {
             num_to_place,
             0.2,
             Some(Layer::Strategic),
-            4,
-            7,
+            (4, 7),
             coast_list,
         );
     }
@@ -637,8 +608,7 @@ impl TileMap {
                         1,
                         1.0,
                         None,
-                        0,
-                        0,
+                        (0, 0),
                         &luxury_tile_lists[i],
                     );
                 }

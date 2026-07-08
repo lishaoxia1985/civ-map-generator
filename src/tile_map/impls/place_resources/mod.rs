@@ -74,8 +74,7 @@ impl TileMap {
                 &resource_list_to_place[dist.sample(&mut self.random_number_generator)];
             let resource = current_resource_to_place.resource;
             let quantity = current_resource_to_place.quantity;
-            let min_radius = current_resource_to_place.min_radius;
-            let max_radius = current_resource_to_place.max_radius;
+            let (min_radius, max_radius) = current_resource_to_place.radius_range;
             let radius = self
                 .random_number_generator
                 .random_range(min_radius..=max_radius);
@@ -263,8 +262,7 @@ struct ResourceToPlace {
     pub quantity: u32,
     /// Determine the probability of placing the resource on a tile.
     pub weight: u32,
-    /// Related to `resource_impact` when we place resources on tiles.
-    pub min_radius: u32,
-    /// Related to `resource_impact` when we place resources on tiles.
-    pub max_radius: u32,
+    /// A tuple `(min_radius, max_radius)` defining the radius range for the resource's impact/ripple effect when placed.
+    /// - `min_radius` should >= `max_radius`.
+    pub radius_range: (u32, u32),
 }

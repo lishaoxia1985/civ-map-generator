@@ -545,8 +545,8 @@ impl TileMap {
     /// - `layer`: The specific map layer for resource collision detection. layer is only one of the following:
     ///   - `None`: The resource can be placed on any tile in `tile_list` that does not already have a resource.
     ///   - `Some(T)`: `T` is only one of [`Layer::Strategic`], [`Layer::Luxury`], [`Layer::Bonus`], or [`Layer::Fish`]. Checks for conflicts specifically within this layer.
-    /// - `min_radius`: The minimum radius for the resource's impact/ripple effect. Ignored if `layer` is `None`.
-    /// - `max_radius`: The maximum radius for the resource's impact/ripple effect. Ignored if `layer` is `None`.
+    /// - `radius_range`: A tuple `(min_radius, max_radius)` defining the radius range for the resource's impact/ripple effect. Ignored if `layer` is `None`.
+    ///   - `min_radius` should >= `max_radius`. If not, the function will panic in debug builds.
     /// - `tile_list`: A slice of tiles eligible for resource placement.
     ///
     /// # Returns
@@ -566,10 +566,11 @@ impl TileMap {
         amount: u32,
         ratio: f64,
         layer: Option<Layer>,
-        min_radius: u32,
-        max_radius: u32,
+        radius_range: (u32, u32),
         tile_list: &[Tile],
     ) -> u32 {
+        let (min_radius, max_radius) = radius_range;
+
         debug_assert!(
             max_radius >= min_radius,
             "'max_radius' must be greater than or equal to 'min_radius'!"
@@ -607,7 +608,7 @@ impl TileMap {
         let mut tile_list_iter = tile_list.iter();
 
         for _ in 1..=num_resources {
-            while let Some(&tile) = tile_list_iter.next() {
+            for &tile in tile_list_iter.by_ref() {
                 if !has_impact || self.layer_data[layer.unwrap()][tile.index()] == 0 {
                     // Place resource on tile if it doesn't have a resource already
                     if tile.resource(self).is_none() {

@@ -44,8 +44,7 @@ impl TileMap {
             resource: Resource::Deer,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 2,
+            radius_range: (1, 2),
         }];
         self.process_resource_list(
             (8. * bonus_multiplier) as u32,
@@ -58,8 +57,7 @@ impl TileMap {
             resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
-            min_radius: 0,
-            max_radius: 2,
+            radius_range: (0, 2),
         }];
         self.process_resource_list(
             (10.0 * bonus_multiplier) as u32,
@@ -72,8 +70,7 @@ impl TileMap {
             resource: Resource::Deer,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 2,
+            radius_range: (1, 2),
         }];
         self.process_resource_list(
             (12.0 * bonus_multiplier) as u32,
@@ -86,8 +83,7 @@ impl TileMap {
             resource: Resource::Bananas,
             quantity: 1,
             weight: 100,
-            min_radius: 0,
-            max_radius: 3,
+            radius_range: (0, 3),
         }];
         self.process_resource_list(
             (14.0 * bonus_multiplier) as u32,
@@ -100,8 +96,7 @@ impl TileMap {
             resource: Resource::Wheat,
             quantity: 1,
             weight: 100,
-            min_radius: 2,
-            max_radius: 3,
+            radius_range: (2, 3),
         }];
         self.process_resource_list(
             (50.0 * bonus_multiplier) as u32,
@@ -114,8 +109,7 @@ impl TileMap {
             resource: Resource::Bison,
             quantity: 1,
             weight: 100,
-            min_radius: 2,
-            max_radius: 3,
+            radius_range: (2, 3),
         }];
         self.process_resource_list(
             (60.0 * bonus_multiplier) as u32,
@@ -128,8 +122,7 @@ impl TileMap {
             resource: Resource::Cattle,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 2,
+            radius_range: (1, 2),
         }];
         self.process_resource_list(
             (18.0 * bonus_multiplier) as u32,
@@ -142,8 +135,7 @@ impl TileMap {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 1,
+            radius_range: (1, 1),
         }];
         self.process_resource_list(
             (30.0 * bonus_multiplier) as u32,
@@ -156,8 +148,7 @@ impl TileMap {
             resource: Resource::Bison,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 1,
+            radius_range: (1, 1),
         }];
         self.process_resource_list(
             (50.0 * bonus_multiplier) as u32,
@@ -170,8 +161,7 @@ impl TileMap {
             resource: Resource::Sheep,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 1,
+            radius_range: (1, 1),
         }];
         self.process_resource_list(
             (13.0 * bonus_multiplier) as u32,
@@ -184,8 +174,7 @@ impl TileMap {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 2,
+            radius_range: (1, 2),
         }];
         self.process_resource_list(
             (15.0 * bonus_multiplier) as u32,
@@ -198,8 +187,7 @@ impl TileMap {
             resource: Resource::Stone,
             quantity: 1,
             weight: 100,
-            min_radius: 1,
-            max_radius: 2,
+            radius_range: (1, 2),
         }];
         self.process_resource_list(
             (19.0 * bonus_multiplier) as u32,
@@ -212,8 +200,7 @@ impl TileMap {
             resource: Resource::Deer,
             quantity: 1,
             weight: 100,
-            min_radius: 3,
-            max_radius: 4,
+            radius_range: (3, 4),
         }];
         self.process_resource_list(
             (25.0 * bonus_multiplier) as u32,
@@ -350,8 +337,7 @@ impl TileMap {
                     resource: Resource::Sheep,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 0,
-                    max_radius: 1,
+                    radius_range: (0, 1),
                 }];
                 self.process_resource_list(
                     (9. / infertility_quotient) as u32,
@@ -366,8 +352,7 @@ impl TileMap {
                     resource: Resource::Bananas,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 1,
-                    max_radius: 2,
+                    radius_range: (1, 2),
                 }];
                 self.process_resource_list(
                     (14. / infertility_quotient) as u32,
@@ -382,8 +367,7 @@ impl TileMap {
                     resource: Resource::Deer,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 0,
-                    max_radius: 1,
+                    radius_range: (0, 1),
                 }];
                 self.process_resource_list(
                     (14. / infertility_quotient) as u32,
@@ -398,8 +382,7 @@ impl TileMap {
                     resource: Resource::Wheat,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 0,
-                    max_radius: 2,
+                    radius_range: (0, 2),
                 }];
                 self.process_resource_list(
                     (18. / infertility_quotient) as u32,
@@ -414,8 +397,7 @@ impl TileMap {
                     resource: Resource::Cattle,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 0,
-                    max_radius: 2,
+                    radius_range: (0, 2),
                 }];
                 self.process_resource_list(
                     (20. / infertility_quotient) as u32,
@@ -430,8 +412,7 @@ impl TileMap {
                     resource: Resource::Deer,
                     quantity: 1,
                     weight: 100,
-                    min_radius: 1,
-                    max_radius: 2,
+                    radius_range: (1, 2),
                 }];
                 self.process_resource_list(
                     (24. / infertility_quotient) as u32,
@@ -541,8 +522,7 @@ impl TileMap {
                     1,
                     1.,
                     None,
-                    0,
-                    0,
+                    (0, 0),
                     &tile_list,
                 );
                 // Hills region, attempt to give them a second Sexy Sheep.
@@ -553,8 +533,7 @@ impl TileMap {
                         1,
                         1.,
                         None,
-                        0,
-                        0,
+                        (0, 0),
                         &tile_list,
                     );
                 }
@@ -566,8 +545,7 @@ impl TileMap {
                     1,
                     1.,
                     None,
-                    0,
-                    0,
+                    (0, 0),
                     &fish_list,
                 );
             }

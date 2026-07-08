@@ -1421,8 +1421,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &iron_list,
             );
             if num_left_to_place == 0 {
@@ -1438,8 +1437,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &horse_list,
             );
             if num_left_to_place == 0 {
@@ -1455,8 +1453,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &oil_list,
             );
             if num_left_to_place == 0 {
@@ -1472,8 +1469,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &iron_fallback,
             );
         }
@@ -1486,8 +1482,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &horse_fallback,
             );
         }
@@ -1500,8 +1495,7 @@ impl TileMap {
                 1,
                 1.0,
                 None,
-                0,
-                0,
+                (0, 0),
                 &oil_fallback,
             );
         }
