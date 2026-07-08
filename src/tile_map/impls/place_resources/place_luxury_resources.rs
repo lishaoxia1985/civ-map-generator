@@ -365,8 +365,9 @@ impl TileMap {
             let num_random_luxury_target =
                 (target_luxury + extra_luxury).saturating_sub(num_placed_luxuries);
 
-            // This table weights the amount of random luxuries to place, with first-selected getting heavier weighting.
-            const RANDOM_LUXURY_RATIOS_TABLE: &[&[f64]] = &[
+            // This list weights the amount of random luxuries to place, with first-selected getting heavier weighting.
+            // The weights are normalized to sum to 1.
+            const RANDOM_LUXURY_WEIGHT_LIST: [&[f64]; 8] = [
                 &[1.],
                 &[0.55, 0.45],
                 &[0.40, 0.33, 0.27],
@@ -377,33 +378,45 @@ impl TileMap {
                 &[0.20, 0.15, 0.15, 0.10, 0.10, 0.10, 0.10, 0.10],
             ];
 
-            for (i, &luxury) in self
+            // Calculate the number of luxuries to place for each random luxury type.
+            let num_luxury_to_place_list =
+                if num_random_luxury_types > num_random_luxury_target as usize / 3 {
+                    vec![3; num_random_luxury_types]
+                } else if num_random_luxury_types > 8 {
+                    vec![max(3, num_random_luxury_target.div_ceil(10)); num_random_luxury_types]
+                } else {
+                    // Get the weight list according to the number of random luxury types.
+                    let weight_list = RANDOM_LUXURY_WEIGHT_LIST[num_random_luxury_types - 1];
+                    // According to the weight list, calculate the number of luxuries to place for each random luxury type.
+                    weight_list
+                        .iter()
+                        .enumerate()
+                        .map(|(i, &weight)| {
+                            let num_luxury_minimum_assignment =
+                                max(3, loop_target.saturating_sub(i as u32 + 1));
+
+                            let num_luxury_assignment_according_to_weight =
+                                (num_random_luxury_target as f64 * weight).ceil() as u32;
+                            max(
+                                num_luxury_minimum_assignment,
+                                num_luxury_assignment_according_to_weight,
+                            )
+                        })
+                        .collect::<Vec<u32>>()
+                };
+
+            for (&luxury, &num_luxury_to_place) in self
                 .luxury_resource_role
                 .random_placement
                 .clone()
                 .iter()
-                .enumerate()
+                .zip(num_luxury_to_place_list.iter())
             {
                 let priority_list_indices_of_luxury = self.get_indices_for_luxury_type(luxury);
 
-                // If calculated number of randoms is low, just place 3 of each radom luxury type.
-                let num_this_luxury_to_place =
-                    if num_random_luxury_types > num_random_luxury_target as usize / 3 {
-                        3
-                    } else if num_random_luxury_types > 8 {
-                        max(3, num_random_luxury_target.div_ceil(10))
-                    } else {
-                        // num_random_luxury_types <= 8
-                        let luxury_minimum = max(3, loop_target.saturating_sub(i as u32));
-                        let luxury_share_of_remaining = (num_random_luxury_target as f64
-                            * RANDOM_LUXURY_RATIOS_TABLE[num_random_luxury_types - 1][i])
-                            .ceil() as u32;
-                        max(luxury_minimum, luxury_share_of_remaining)
-                    };
-
                 let mut current_list = self.generate_luxury_resource_tile_lists_in_map();
-                // Place this luxury type.
-                let mut num_left_to_place = num_this_luxury_to_place;
+
+                let mut num_left_to_place = num_luxury_to_place;
 
                 const RATIO: [f64; 4] = [0.25, 0.25, 0.25, 0.3];
 
