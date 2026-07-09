@@ -71,6 +71,10 @@ pub struct MapParameters {
     ///
     /// Its length must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
     pub civilization_list: Vec<Nation>,
+    /// The city states in the map.
+    ///
+    /// Its length must be in the range of **[0, [`MapParameters::MAX_CITY_STATE_COUNT`]]**.
+    pub city_state_list: Vec<Nation>,
     /// Whether the civilization starting tile must be coastal land.
     ///
     /// - If true, the civilization starting tile only can be coastal land.
@@ -136,6 +140,7 @@ pub struct MapParametersBuilder {
     enable_tectonic_islands: bool,
     region_divide_method: RegionDivideMethod,
     civilization_list: Vec<Nation>,
+    city_state_list: Vec<Nation>,
     civ_require_coastal_land_start: bool,
     disable_start_bias_of_civ: bool,
     resource_setting: ResourceSetting,
@@ -185,6 +190,7 @@ impl MapParametersBuilder {
             enable_tectonic_islands: false,
             region_divide_method: RegionDivideMethod::Continent,
             civilization_list: vec![], // That will be filled in later by `MapParameters::build()`.
+            city_state_list: vec![],   // That will be filled in later by `MapParameters::build()`.
             civ_require_coastal_land_start: false,
             disable_start_bias_of_civ: false,
             resource_setting: ResourceSetting::Standard,
@@ -215,9 +221,10 @@ impl MapParametersBuilder {
     ///
     /// # Notes
     ///
-    /// If you set `civilization_list` by [`Self::civilization_list`],
-    /// and the length of the civilization list is not equal to profile's `num_civilizations` submitted by this method,
-    /// the `num_civilizations` in the profile will be automatically updated to the length of the civilization list when [`Self::build()`] is called.
+    /// - If you set `civilization_list` by [`Self::civilization_list`],
+    ///   the `num_civilizations` in the profile will be automatically updated to the length of the civilization list when [`Self::build()`] is called.
+    /// - If you set `city_state_list` by [`Self::city_state_list`],
+    ///   the `num_city_states` in the profile will be automatically updated to the length of the city-state list when [`Self::build()`] is called.
     pub fn world_size_type_profile(mut self, profile: WorldSizeTypeProfile) -> Self {
         // TODO: We may need to validate that the provided profile is consistent with the world size type of the world grid.
         // For example, the world size is too small for the number of civilizations specified in the profile.
@@ -289,14 +296,59 @@ impl MapParametersBuilder {
     ///
     /// # Arguments
     ///
-    /// - `civ_list`: List of civilizations to place on the map.
-    ///   Its length must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
+    /// - `civ_list`: The list of civilizations to place on the map.  
+    ///   The length must be within the range **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.  
+    ///   This ensures at least two civilizations are explicitly defined.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the length of `civ_list` is outside the range **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
     ///
     /// # Notes
     ///
-    /// If you do not specify any civilizations by this function, the map will generate randomly according to [`WorldSizeTypeProfile::num_civilizations`] settings in the [`Self::world_size_type_profile`].
+    /// If this function is not called, the map generator will randomly select civilizations based on
+    /// the [`WorldSizeTypeProfile::num_civilizations`], which can be set by [`Self::world_size_type_profile`].
     pub fn civilization_list(mut self, civ_list: Vec<Nation>) -> Self {
+        assert!(
+            civ_list.len() >= 2 && civ_list.len() <= MapParameters::MAX_CIVILIZATION_COUNT as usize
+        );
+
         self.civilization_list = civ_list;
+        self
+    }
+
+    /// Set the list of city-states to be placed on the map.
+    /// **Usually you don't need to use this function to specify city-states to be placed on the map.**
+    ///
+    /// That's because in original Civ5 and Civ 6, city-states are select randomly according to the [`WorldSizeTypeProfile::num_city_states`],
+    /// which can be set by [`Self::world_size_type_profile`].
+    ///
+    /// However, this function allows you to specify the city-states to be placed on the map.
+    ///
+    /// # Arguments
+    ///
+    /// - `city_state_list`: List of city-states to be placed on the map.
+    ///   The length must be within the range **[1, [`MapParameters::MAX_CITY_STATE_COUNT`]]**.
+    ///   That ensures at least one city-state is placed on the map by the function.
+    ///   If you want to disable city-state placement, see the `#Notes` section for guidance.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the length of `city_state_list` is outside the range **[1, [`MapParameters::MAX_CITY_STATE_COUNT`]]**.
+    ///
+    /// # Notes
+    ///
+    /// - If the function is not called, the map generator will randomly select city states based on
+    ///   the [`WorldSizeTypeProfile::num_city_states`], which can be set by [`Self::world_size_type_profile`].
+    /// - If you want to disable city states, you shouldn't use this function with an empty list (it will panic).
+    ///   Instead, you can use [`Self::world_size_type_profile`] and set [`WorldSizeTypeProfile::num_city_states`] to `0`.
+    pub fn city_state_list(mut self, city_state_list: Vec<Nation>) -> Self {
+        assert!(
+            !city_state_list.is_empty()
+                && city_state_list.len() <= MapParameters::MAX_CITY_STATE_COUNT as usize
+        );
+
+        self.city_state_list = city_state_list;
         self
     }
 
@@ -320,18 +372,16 @@ impl MapParametersBuilder {
 
     /// Finalizes the construction and returns the `MapParameters` instance.
     pub fn build(self) -> MapParameters {
-        let num_civilizations = self.civilization_list.len() as u32;
+        let mut rng = StdRng::seed_from_u64(self.seed);
 
-        let (world_size_type_profile, civilization_list) = if num_civilizations != 0 {
-            (
-                WorldSizeTypeProfile {
-                    num_civilizations,
-                    ..self.world_size_type_profile
-                },
-                self.civilization_list,
-            )
+        let num_civilizations;
+        let civilization_list;
+
+        if !self.civilization_list.is_empty() {
+            num_civilizations = self.civilization_list.len() as u32;
+            civilization_list = self.civilization_list;
         } else {
-            let mut rng = StdRng::seed_from_u64(self.seed);
+            num_civilizations = self.world_size_type_profile.num_civilizations;
 
             let all_civilizations = (0..Nation::LENGTH)
                 .map(Nation::from_usize)
@@ -343,15 +393,41 @@ impl MapParametersBuilder {
                 })
                 .collect::<Vec<_>>();
 
-            let selected = all_civilizations
-                .sample(
-                    &mut rng,
-                    self.world_size_type_profile.num_civilizations as usize,
-                )
+            civilization_list = all_civilizations
+                .sample(&mut rng, num_civilizations as usize)
                 .copied()
                 .collect();
+        };
 
-            (self.world_size_type_profile, selected)
+        let num_city_states;
+        let city_state_list;
+
+        if !self.city_state_list.is_empty() {
+            num_city_states = self.city_state_list.len() as u32;
+            city_state_list = self.city_state_list;
+        } else {
+            num_city_states = self.world_size_type_profile.num_city_states;
+
+            let all_city_states = (0..Nation::LENGTH)
+                .map(Nation::from_usize)
+                .filter(|&nation| {
+                    matches!(
+                        self.ruleset.nations[nation.as_str()].nation_type,
+                        NationType::CityState(_)
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            city_state_list = all_city_states
+                .sample(&mut rng, num_city_states as usize)
+                .copied()
+                .collect();
+        }
+
+        let world_size_type_profile = WorldSizeTypeProfile {
+            num_civilizations,
+            num_city_states,
+            ..self.world_size_type_profile
         };
 
         MapParameters {
@@ -370,6 +446,7 @@ impl MapParametersBuilder {
             enable_tectonic_islands: self.enable_tectonic_islands,
             region_divide_method: self.region_divide_method,
             civilization_list,
+            city_state_list,
             civ_require_coastal_land_start: self.civ_require_coastal_land_start,
             disable_start_bias_of_civ: self.disable_start_bias_of_civ,
             resource_setting: self.resource_setting,
