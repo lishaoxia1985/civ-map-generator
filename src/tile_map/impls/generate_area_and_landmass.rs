@@ -1,6 +1,8 @@
 use std::collections::{BTreeSet, VecDeque};
 
-use crate::{ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap};
+use crate::{
+    MapParameters, ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap,
+};
 use bitflags::bitflags;
 
 pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
@@ -10,17 +12,19 @@ impl TileMap {
     /// Recalculates Area and Landmass in the map.
     ///
     /// This function is called when the map is generated or when the [`TerrainType`] of certain tiles changes.
-    pub fn recalculate_areas(&mut self, ruleset: &Ruleset) {
-        self.calculate_areas(ruleset);
+    pub fn recalculate_areas(&mut self, map_parameters: &MapParameters) {
+        self.calculate_areas(map_parameters);
         self.calculate_landmasses();
     }
 
-    fn calculate_areas(&mut self, ruleset: &Ruleset) {
+    fn calculate_areas(&mut self, map_parameters: &MapParameters) {
         const MIN_AREA_SIZE: u32 = 7;
 
         let grid = self.world_grid.grid;
         let height = grid.size.height;
         let width = grid.size.width;
+
+        let ruleset = &map_parameters.ruleset;
 
         let size = (height * width) as usize;
 
@@ -233,7 +237,7 @@ impl TileMap {
     /// It uses the `check_tile` closure to determine whether a neighbor tile should be included in the result set.
     /// The function continues expanding until no more qualifying neighbors can be found.
     ///
-    /// # Argments
+    /// # Arguments
     ///
     /// - `start_tile`: The initial tile from which to begin the flood-fill operation.
     /// - `check_tile`: A closure that takes two tiles (neighbor tile, current tile) and returns true if the neighbor

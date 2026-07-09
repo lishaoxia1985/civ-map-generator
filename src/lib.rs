@@ -13,7 +13,7 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}, ruleset::Ruleset};
+//! use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 //!
 //! // Create default world grid
 //! let world_grid = WorldGrid::default();
@@ -23,11 +23,8 @@
 //!     .seed(42)  // Optional: set seed for reproducible maps
 //!     .build();
 //!
-//! // Load game rules
-//! let ruleset = Ruleset::default();
-//!
 //! // Generate the map
-//! let map = generate_map(&map_parameters, &ruleset);
+//! let map = generate_map(&map_parameters);
 //! ```
 //!
 //! ## Adding Custom Map Types
@@ -86,8 +83,7 @@ use map_parameters::MapType;
 ///
 /// # Arguments
 ///
-/// * `map_parameters` - Configuration parameters for map generation
-/// * `ruleset` - Game rules and definitions
+/// * `map_parameters` - Configuration parameters for map generation.
 ///
 /// # Returns
 ///
@@ -96,17 +92,16 @@ use map_parameters::MapType;
 /// # Examples
 ///
 /// ```
-/// use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}, ruleset::Ruleset};
+/// use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 ///
 /// let world_grid = WorldGrid::default();
 /// let map_parameters = MapParametersBuilder::new(world_grid).build();
-/// let ruleset = Ruleset::default();
-/// let map = generate_map(&map_parameters, &ruleset);
+/// let map = generate_map(&map_parameters);
 /// ```
-pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMap {
+pub fn generate_map(map_parameters: &MapParameters) -> TileMap {
     match map_parameters.map_type {
-        MapType::Fractal => Fractal::generate(map_parameters, ruleset),
-        MapType::Pangaea => Pangaea::generate(map_parameters, ruleset),
+        MapType::Fractal => Fractal::generate(map_parameters),
+        MapType::Pangaea => Pangaea::generate(map_parameters),
     }
 }
 
@@ -115,7 +110,6 @@ mod tests {
     use crate::{
         generate_map,
         map_parameters::{MapParametersBuilder, WorldGrid},
-        ruleset::Ruleset,
     };
 
     /// Tests for consistent map generation output when provided with the same random seed.
@@ -123,11 +117,10 @@ mod tests {
     fn test_generate_map_deterministic() {
         let world_grid = WorldGrid::default();
         let map_parameters = MapParametersBuilder::new(world_grid).seed(12345).build();
-        let ruleset = Ruleset::default();
 
         for _ in 0..10 {
-            let map_a = generate_map(&map_parameters, &ruleset);
-            let map_b = generate_map(&map_parameters, &ruleset);
+            let map_a = generate_map(&map_parameters);
+            let map_b = generate_map(&map_parameters);
             assert_eq!(map_a, map_b, "Maps should be identical with same seed");
         }
     }
@@ -136,16 +129,9 @@ mod tests {
     #[test]
     fn test_different_seeds_produce_different_maps() {
         let world_grid = WorldGrid::default();
-        let ruleset = Ruleset::default();
 
-        let map_a = generate_map(
-            &MapParametersBuilder::new(world_grid).seed(111).build(),
-            &ruleset,
-        );
-        let map_b = generate_map(
-            &MapParametersBuilder::new(world_grid).seed(222).build(),
-            &ruleset,
-        );
+        let map_a = generate_map(&MapParametersBuilder::new(world_grid).seed(111).build());
+        let map_b = generate_map(&MapParametersBuilder::new(world_grid).seed(222).build());
 
         assert_ne!(
             map_a, map_b,

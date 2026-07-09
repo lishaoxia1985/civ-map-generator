@@ -22,7 +22,8 @@ impl TileMap {
     /// Generate natural wonders on the map.
     ///
     /// This function is like to Civ6's natural wonder generation. We edit it to fit our game which is like Civ5.
-    pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+    pub fn place_natural_wonders(&mut self, map_parameters: &MapParameters) {
+        let ruleset = &map_parameters.ruleset;
         let grid = self.world_grid.grid;
 
         // Get the number of natural wonders to place based on the world size
@@ -333,7 +334,8 @@ impl TileMap {
     /// Generate natural wonders on the map.
     ///
     /// This function is likely to Civ6's natural wonder generation. So we don't use this function for the current game which is more like Civ5.
-    pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+    pub fn generate_natural_wonders(&mut self, map_parameters: &MapParameters) {
+        let ruleset = &map_parameters.ruleset;
         let grid = self.world_grid.grid;
 
         // Get the number of natural wonders to place based on the world size

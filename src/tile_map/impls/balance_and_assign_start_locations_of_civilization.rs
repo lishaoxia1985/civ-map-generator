@@ -10,7 +10,7 @@ use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     nation::Nation,
     ruleset::{
-        Ruleset,
+        self, Ruleset,
         nation::{NationType, StartBias},
     },
     tile::Tile,
@@ -31,26 +31,10 @@ impl TileMap {
     pub fn balance_and_assign_start_locations_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
-        ruleset: &Ruleset,
     ) {
-        let civilization_list = (0..Nation::LENGTH)
-            .map(Nation::from_usize)
-            .filter(|&nation| {
-                matches!(
-                    ruleset.nations[nation.as_str()].nation_type,
-                    NationType::Civilization
-                )
-            })
-            .collect::<Vec<_>>();
-
-        // Take the civilization randomly as the starting civilization in the map.
-        let mut start_civilization_list: Vec<_> = civilization_list
-            .sample(
-                &mut self.random_number_generator,
-                map_parameters.world_size_type_profile.num_civilizations as usize,
-            )
-            .copied()
-            .collect();
+        let ruleset = &map_parameters.ruleset;
+        // Get the starting civilization in the map.
+        let mut start_civilization_list: Vec<_> = map_parameters.civilization_list.clone();
 
         for region_index in 0..self.region_list.len() {
             self.normalize_start_tile_of_civilization(map_parameters, region_index);

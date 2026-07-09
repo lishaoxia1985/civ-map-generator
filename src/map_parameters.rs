@@ -3,13 +3,25 @@
 use core::debug_assert;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::grid::{
-    GridSize, Rectangle, Size, WorldSizeType, WrapFlags,
-    hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
+use enum_map::Enum;
+use rand::{SeedableRng, rngs::StdRng, seq::IndexedRandom};
+
+use crate::{
+    Ruleset,
+    grid::{
+        GridSize, Rectangle, Size, WorldSizeType, WrapFlags,
+        hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
+    },
+    nation::Nation,
+    ruleset::nation::NationType,
 };
 
 /// The parameters for generating a map.
 pub struct MapParameters {
+    /// The ruleset used to generate the map and play the game.
+    ///
+    /// The ruleset contains all the rules for the game. e.g. the civilizations, city states, resources, technology, policies and other game elements.
+    pub ruleset: Ruleset,
     /// The seed used to generate the map.
     ///
     /// This seed is used to ensure that the map is reproducible and can be generated again with the same parameters.
@@ -55,6 +67,10 @@ pub struct MapParameters {
     pub enable_tectonic_islands: bool,
     /// The method used to divide the map into regions.
     pub region_divide_method: RegionDivideMethod,
+    /// The civilizations in the map, excluding city states and barbarians.
+    ///
+    /// Its length must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
+    pub civilization_list: Vec<Nation>,
     /// Whether the civilization starting tile must be coastal land.
     ///
     /// - If true, the civilization starting tile only can be coastal land.
@@ -105,6 +121,7 @@ impl MapParameters {
 /// It separates the construction process from the final object representation,
 /// allowing for more granular control over the map parameters.
 pub struct MapParametersBuilder {
+    ruleset: Ruleset,
     seed: u64,
     world_grid: WorldGrid,
     map_type: MapType,
@@ -118,6 +135,7 @@ pub struct MapParametersBuilder {
     rainfall: Rainfall,
     enable_tectonic_islands: bool,
     region_divide_method: RegionDivideMethod,
+    civilization_list: Vec<Nation>,
     civ_require_coastal_land_start: bool,
     disable_start_bias_of_civ: bool,
     resource_setting: ResourceSetting,
@@ -142,13 +160,16 @@ impl MapParametersBuilder {
     ///
     /// **Practical Application**: To avoid edge cases where the same tile appears on both sides of the screen simultaneously, it is recommended to maintain a **sufficient margin** between the grid dimensions and the screen dimensions (e.g., ensuring the grid is significantly larger than the viewport) for both Wrap X and Wrap Y scenarios.
     pub fn new(world_grid: WorldGrid) -> Self {
+        let ruleset = Ruleset::default();
+
+        let seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis() as u64;
+
         Self {
-            seed: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .try_into()
-                .unwrap(),
+            ruleset,
+            seed,
             world_grid,
             map_type: Default::default(),
             world_size_type_profile: WorldSizeTypeProfile::from_world_size_type(
@@ -163,6 +184,7 @@ impl MapParametersBuilder {
             rainfall: Rainfall::Normal,
             enable_tectonic_islands: false,
             region_divide_method: RegionDivideMethod::Continent,
+            civilization_list: vec![], // That will be filled in later by `MapParameters::build()`.
             civ_require_coastal_land_start: false,
             disable_start_bias_of_civ: false,
             resource_setting: ResourceSetting::Standard,
@@ -170,6 +192,12 @@ impl MapParametersBuilder {
     }
 
     // --- Chainable Setter Methods ---
+
+    /// Set the ruleset to use for the map generation and game rules.
+    pub fn ruleset(mut self, ruleset: Ruleset) -> Self {
+        self.ruleset = ruleset;
+        self
+    }
 
     /// Sets the seed for the map generation.
     pub fn seed(mut self, seed: u64) -> Self {
@@ -184,6 +212,12 @@ impl MapParametersBuilder {
     }
 
     /// Sets the profile related to the world size type.
+    ///
+    /// # Notes
+    ///
+    /// If you set `civilization_list` by [`Self::civilization_list`],
+    /// and the length of the civilization list is not equal to profile's `num_civilizations` submitted by this method,
+    /// the `num_civilizations` in the profile will be automatically updated to the length of the civilization list when [`Self::build()`] is called.
     pub fn world_size_type_profile(mut self, profile: WorldSizeTypeProfile) -> Self {
         // TODO: We may need to validate that the provided profile is consistent with the world size type of the world grid.
         // For example, the world size is too small for the number of civilizations specified in the profile.
@@ -251,6 +285,21 @@ impl MapParametersBuilder {
         self
     }
 
+    /// Sets the list of civilizations which will be placed on the map, excluding city states and barbarians.
+    ///
+    /// # Arguments
+    ///
+    /// - `civ_list`: List of civilizations to place on the map.
+    ///   Its length must be in the range of **[2, [`MapParameters::MAX_CIVILIZATION_COUNT`]]**.
+    ///
+    /// # Notes
+    ///
+    /// If you do not specify any civilizations by this function, the map will generate randomly according to [`WorldSizeTypeProfile::num_civilizations`] settings in the [`Self::world_size_type_profile`].
+    pub fn civilization_list(mut self, civ_list: Vec<Nation>) -> Self {
+        self.civilization_list = civ_list;
+        self
+    }
+
     /// Sets whether the civilization starting tile is required to be coastal land.
     pub fn civ_require_coastal_land_start(mut self, require: bool) -> Self {
         self.civ_require_coastal_land_start = require;
@@ -271,11 +320,46 @@ impl MapParametersBuilder {
 
     /// Finalizes the construction and returns the `MapParameters` instance.
     pub fn build(self) -> MapParameters {
+        let num_civilizations = self.civilization_list.len() as u32;
+
+        let (world_size_type_profile, civilization_list) = if num_civilizations != 0 {
+            (
+                WorldSizeTypeProfile {
+                    num_civilizations,
+                    ..self.world_size_type_profile
+                },
+                self.civilization_list,
+            )
+        } else {
+            let mut rng = StdRng::seed_from_u64(self.seed);
+
+            let all_civilizations = (0..Nation::LENGTH)
+                .map(Nation::from_usize)
+                .filter(|&nation| {
+                    matches!(
+                        self.ruleset.nations[nation.as_str()].nation_type,
+                        NationType::Civilization
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            let selected = all_civilizations
+                .sample(
+                    &mut rng,
+                    self.world_size_type_profile.num_civilizations as usize,
+                )
+                .copied()
+                .collect();
+
+            (self.world_size_type_profile, selected)
+        };
+
         MapParameters {
+            ruleset: self.ruleset,
             map_type: self.map_type,
             world_grid: self.world_grid,
             seed: self.seed,
-            world_size_type_profile: self.world_size_type_profile,
+            world_size_type_profile,
             num_large_lakes: self.num_large_lakes,
             max_lake_area_size: self.max_lake_area_size,
             coast_expand_chance: self.coast_expand_chance,
@@ -285,6 +369,7 @@ impl MapParametersBuilder {
             rainfall: self.rainfall,
             enable_tectonic_islands: self.enable_tectonic_islands,
             region_divide_method: self.region_divide_method,
+            civilization_list,
             civ_require_coastal_land_start: self.civ_require_coastal_land_start,
             disable_start_bias_of_civ: self.disable_start_bias_of_civ,
             resource_setting: self.resource_setting,

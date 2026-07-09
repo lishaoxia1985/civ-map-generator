@@ -1,6 +1,6 @@
 //! This module defines the `Generator` trait for map generation and provides common methods for map generators.
 
-use crate::{map_parameters::MapParameters, ruleset::Ruleset, tile_map::TileMap};
+use crate::{map_parameters::MapParameters, tile_map::TileMap};
 
 pub mod fractal;
 pub mod pangaea;
@@ -23,8 +23,8 @@ pub trait Generator {
         self.tile_map_mut().shift_terrain_types();
     }
 
-    fn recalculate_areas(&mut self, ruleset: &Ruleset) {
-        self.tile_map_mut().recalculate_areas(ruleset);
+    fn recalculate_areas(&mut self, map_parameters: &MapParameters) {
+        self.tile_map_mut().recalculate_areas(map_parameters);
     }
 
     fn generate_lakes(&mut self, map_parameters: &MapParameters) {
@@ -47,8 +47,8 @@ pub trait Generator {
         self.tile_map_mut().add_lakes(map_parameters);
     }
 
-    fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.tile_map_mut().add_features(map_parameters, ruleset);
+    fn add_features(&mut self, map_parameters: &MapParameters) {
+        self.tile_map_mut().add_features(map_parameters);
     }
 
     fn generate_regions(&mut self, map_parameters: &MapParameters) {
@@ -63,29 +63,25 @@ pub trait Generator {
     fn balance_and_assign_start_locations_of_civilization(
         &mut self,
         map_parameters: &MapParameters,
-        ruleset: &Ruleset,
     ) {
         self.tile_map_mut()
-            .balance_and_assign_start_locations_of_civilization(map_parameters, ruleset);
+            .balance_and_assign_start_locations_of_civilization(map_parameters);
     }
 
-    fn place_natural_wonders(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.tile_map_mut()
-            .place_natural_wonders(map_parameters, ruleset);
+    fn place_natural_wonders(&mut self, map_parameters: &MapParameters) {
+        self.tile_map_mut().place_natural_wonders(map_parameters);
     }
 
     fn assign_luxury_roles(&mut self, map_parameters: &MapParameters) {
         self.tile_map_mut().assign_luxury_roles(map_parameters);
     }
 
-    fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.tile_map_mut()
-            .place_city_states(map_parameters, ruleset);
+    fn place_city_states(&mut self, map_parameters: &MapParameters) {
+        self.tile_map_mut().place_city_states(map_parameters);
     }
 
-    fn place_luxury_resources(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
-        self.tile_map_mut()
-            .place_luxury_resources(map_parameters, ruleset);
+    fn place_luxury_resources(&mut self, map_parameters: &MapParameters) {
+        self.tile_map_mut().place_luxury_resources(map_parameters);
     }
 
     fn place_strategic_resources(&mut self, map_parameters: &MapParameters) {
@@ -106,7 +102,7 @@ pub trait Generator {
         self.tile_map_mut().fix_sugar_jungles();
     }
 
-    fn generate(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMap
+    fn generate(map_parameters: &MapParameters) -> TileMap
     where
         Self: Sized,
     {
@@ -118,7 +114,7 @@ pub trait Generator {
 
         map.shift_terrain_types();
 
-        map.recalculate_areas(ruleset);
+        map.recalculate_areas(map_parameters);
 
         map.generate_lakes(map_parameters);
 
@@ -130,11 +126,11 @@ pub trait Generator {
 
         map.add_lakes(map_parameters);
 
-        map.recalculate_areas(ruleset);
+        map.recalculate_areas(map_parameters);
 
-        map.add_features(map_parameters, ruleset);
+        map.add_features(map_parameters);
 
-        map.recalculate_areas(ruleset);
+        map.recalculate_areas(map_parameters);
         /********** The End of Process 1 **********/
 
         /********** Process 2: Place Civs, Natural Wonders, City-States and Resources **********/
@@ -142,20 +138,15 @@ pub trait Generator {
 
         map.choose_civilization_starting_tiles(map_parameters);
 
-        map.balance_and_assign_start_locations_of_civilization(map_parameters, ruleset);
+        map.balance_and_assign_start_locations_of_civilization(map_parameters);
 
-        map.place_natural_wonders(map_parameters, ruleset);
+        map.place_natural_wonders(map_parameters);
 
         map.assign_luxury_roles(map_parameters);
 
-        map.place_city_states(map_parameters, ruleset);
+        map.place_city_states(map_parameters);
 
-        /* We have replace this code with `TileMap::generate_bonus_resource_tile_lists_in_map`,
-        `TileMap::generate_luxury_resource_tile_lists_in_map` and `TileMap::generate_strategic_resource_tile_lists_in_map`.
-        So the commented code is unnecessary. */
-        /* self:GenerateGlobalResourcePlotLists() */
-
-        map.place_luxury_resources(map_parameters, ruleset);
+        map.place_luxury_resources(map_parameters);
 
         map.place_strategic_resources(map_parameters);
 
@@ -167,7 +158,7 @@ pub trait Generator {
         /********** Process 3: Fix Graphics and Recalculate Areas **********/
         map.fix_sugar_jungles();
 
-        map.recalculate_areas(ruleset);
+        map.recalculate_areas(map_parameters);
         /********** The End of Process 3 **********/
 
         map.into_inner()

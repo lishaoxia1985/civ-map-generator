@@ -9,13 +9,12 @@ A Civilization series game map generator library. The algorithm is primarily bas
 ## Example
 
 ```rust
-use crate::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}, ruleset::Ruleset};
+use crate::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 
 fn main() {
     let world_grid = WorldGrid::default();
     let map_parameters = MapParametersBuilder::new(world_grid).build();
-    let ruleset = Ruleset::default();
-    let map = generate_map(&map_parameters, &ruleset);
+    let map = generate_map(&map_parameters);
 }
 ```
 

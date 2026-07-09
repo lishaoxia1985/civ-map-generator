@@ -20,8 +20,10 @@ impl TileMap {
     ///     modified to [`BaseTerrain::Plain`] when placing the jungle feature, so this step is no longer needed.
     ///   - Soften arctic base terrains at rivers. This logic has been moved to [`TileMap::add_rivers`]
     ///     because softening is more closely related to river generation.
-    pub fn add_features(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+    pub fn add_features(&mut self, map_parameters: &MapParameters) {
+        let ruleset = &map_parameters.ruleset;
         let grid = self.world_grid.grid;
+
         let rainfall = match map_parameters.rainfall {
             Rainfall::Arid => -4,
             Rainfall::Normal => 0,

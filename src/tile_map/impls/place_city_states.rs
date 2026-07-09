@@ -26,11 +26,13 @@ impl TileMap {
     /// This function depends on [`TileMap::assign_luxury_roles`] being executed first.
     /// This is because some city state placements are made as compensation for situations where
     /// multiple regions are assigned the same luxury resource type.
-    pub fn place_city_states(&mut self, map_parameters: &MapParameters, ruleset: &Ruleset) {
+    pub fn place_city_states(&mut self, map_parameters: &MapParameters) {
+        let ruleset = &map_parameters.ruleset;
+
         let city_states_assignment =
             self.assign_city_states_to_regions_or_uninhabited_landmasses(map_parameters);
 
-        let city_state_list = (0..Nation::LENGTH)
+        let all_city_states = (0..Nation::LENGTH)
             .map(Nation::from_usize)
             .filter(|&nation| {
                 matches!(
@@ -42,7 +44,7 @@ impl TileMap {
 
         let num_city_states = map_parameters.world_size_type_profile.num_city_states as usize;
 
-        let mut start_city_state_list: Vec<_> = city_state_list
+        let mut start_city_state_list: Vec<_> = all_city_states
             .sample(&mut self.random_number_generator, num_city_states)
             .copied()
             .collect();
