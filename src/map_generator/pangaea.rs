@@ -6,7 +6,7 @@ use crate::{
     generate_common_methods,
     grid::WorldSizeType,
     map_parameters::{MapParameters, SeaLevel, WorldAge},
-    tile_component::TerrainType,
+    ruleset::enums::TerrainType,
     tile_map::TileMap,
 };
 

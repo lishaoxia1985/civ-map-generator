@@ -5,7 +5,7 @@ use rand::{Rng, RngExt};
 use crate::{
     fractal::{CvFractal, CvFractalBuilder, FractalFlags},
     map_parameters::Temperature,
-    tile_component::{BaseTerrain, TerrainType},
+    ruleset::enums::*,
     tile_map::{MapParameters, TileMap},
 };
 

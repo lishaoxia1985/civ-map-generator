@@ -13,9 +13,8 @@ use rand::{
 use crate::{
     grid::{self, WorldSizeType},
     map_parameters::{MapParameters, ResourceSetting},
-    ruleset::Ruleset,
+    ruleset::{Ruleset, enums::*},
     tile::Tile,
-    tile_component::*,
     tile_map::{Layer, TileMap},
 };
 

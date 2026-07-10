@@ -4,7 +4,7 @@ use crate::{
     fractal::{CvFractal, CvFractalBuilder, FractalFlags},
     grid::{WorldSizeType, WrapFlags, hex_grid::HexGrid},
     map_parameters::{SeaLevel, WorldAge},
-    tile_component::TerrainType,
+    ruleset::enums::TerrainType,
     tile_map::{MapParameters, TileMap},
 };
 

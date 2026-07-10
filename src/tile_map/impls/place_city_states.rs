@@ -8,14 +8,13 @@ use rand::seq::IndexedRandom;
 use rand::{Rng, seq::SliceRandom};
 
 use crate::grid::Rectangle;
-use crate::nation::Nation;
+use crate::ruleset::enums::*;
 use crate::ruleset::nation::NationType;
 use crate::{
     grid::offset_coordinate::OffsetCoordinate,
     map_parameters::{MapParameters, RegionDivideMethod},
     ruleset::Ruleset,
     tile::Tile,
-    tile_component::{BaseTerrain, Feature, TerrainType},
     tile_map::{Layer, TileMap},
 };
 

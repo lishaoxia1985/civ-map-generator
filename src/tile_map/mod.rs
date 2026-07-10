@@ -31,9 +31,8 @@
 use crate::{
     grid::{direction::Direction, hex_grid::*},
     map_parameters::{MapParameters, ResourceSetting, WorldGrid},
-    nation::Nation,
+    ruleset::enums::*,
     tile::Tile,
-    tile_component::*,
 };
 use arrayvec::ArrayVec;
 use enum_map::{Enum, EnumMap, enum_map};

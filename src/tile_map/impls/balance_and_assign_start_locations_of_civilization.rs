@@ -8,13 +8,12 @@ use rand::{
 
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
-    nation::Nation,
     ruleset::{
         self, Ruleset,
+        enums::*,
         nation::{NationType, StartBias},
     },
     tile::Tile,
-    tile_component::{BaseTerrain, Feature, Resource, TerrainType},
     tile_map::{Layer, TileMap, get_major_strategic_resource_quantity_values},
 };
 

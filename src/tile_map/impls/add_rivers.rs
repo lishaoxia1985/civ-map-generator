@@ -6,8 +6,8 @@ use crate::{
         direction::Direction,
         hex_grid::{HexGrid, HexOrientation},
     },
+    ruleset::enums::*,
     tile::Tile,
-    tile_component::{BaseTerrain, TerrainType},
     tile_map::{River, RiverEdge, TileMap},
 };
 

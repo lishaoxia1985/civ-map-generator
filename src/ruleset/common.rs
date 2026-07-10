@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use crate::tile_component::{BaseTerrain, Feature, TerrainType};
+use crate::ruleset::enums::*;
 
 pub trait Name {
     fn name(&self) -> String;

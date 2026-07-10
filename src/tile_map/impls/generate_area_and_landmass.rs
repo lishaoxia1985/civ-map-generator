@@ -1,7 +1,10 @@
 use std::collections::{BTreeSet, VecDeque};
 
 use crate::{
-    MapParameters, ruleset::Ruleset, tile::Tile, tile_component::TerrainType, tile_map::TileMap,
+    MapParameters,
+    ruleset::{Ruleset, enums::TerrainType},
+    tile::Tile,
+    tile_map::TileMap,
 };
 use bitflags::bitflags;
 

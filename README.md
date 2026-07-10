@@ -9,7 +9,7 @@ A Civilization series game map generator library. The algorithm is primarily bas
 ## Example
 
 ```rust
-use crate::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
+use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 
 fn main() {
     let world_grid = WorldGrid::default();

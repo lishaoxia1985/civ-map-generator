@@ -10,8 +10,7 @@ use rand::{
 use crate::{
     grid::WorldSizeType,
     map_parameters::MapParameters,
-    ruleset::terrain_type,
-    tile_component::{Resource, TerrainType},
+    ruleset::{enums::*, terrain_type},
     tile_map::{TileMap, impls::generate_regions::RegionType},
 };
 

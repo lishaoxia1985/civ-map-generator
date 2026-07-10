@@ -23,6 +23,7 @@ pub mod building;
 pub mod city_state_type;
 pub mod common;
 pub mod difficulty;
+pub mod enums;
 pub mod era;
 pub mod feature;
 pub mod global_unique;

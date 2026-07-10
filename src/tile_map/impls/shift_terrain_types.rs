@@ -1,7 +1,7 @@
 use crate::{
     grid::{Grid, offset_coordinate::OffsetCoordinate},
+    ruleset::enums::TerrainType,
     tile::Tile,
-    tile_component::TerrainType,
     tile_map::TileMap,
 };
 

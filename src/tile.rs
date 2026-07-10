@@ -10,8 +10,7 @@ use crate::{
         offset_coordinate::OffsetCoordinate,
     },
     map_parameters::MapParameters,
-    ruleset::Ruleset,
-    tile_component::{BaseTerrain, Feature, NaturalWonder, Resource, TerrainType},
+    ruleset::{Ruleset, enums::*},
     tile_map::{Layer, Region, TileMap},
 };
 

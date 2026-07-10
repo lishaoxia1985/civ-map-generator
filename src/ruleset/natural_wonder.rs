@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    ruleset::common::{RequiredTerrain, Yields},
-    tile_component::{BaseTerrain, TerrainType},
+use crate::ruleset::{
+    common::{RequiredTerrain, Yields},
+    enums::*,
 };
 
 use super::Name;

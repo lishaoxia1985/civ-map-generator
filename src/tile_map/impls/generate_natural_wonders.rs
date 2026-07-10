@@ -9,12 +9,12 @@ use rand::{Rng, seq::IndexedRandom};
 
 use crate::map_parameters::MapParameters;
 use crate::ruleset::common::Unique;
+use crate::ruleset::enums::*;
 use crate::tile_map::AreaFlags;
 use crate::{
     grid::Grid,
     ruleset::Ruleset,
     tile::Tile,
-    tile_component::*,
     tile_map::{Layer, TileMap},
 };
 

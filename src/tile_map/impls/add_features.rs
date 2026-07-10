@@ -3,8 +3,7 @@ use rand::{Rng, RngExt, seq::SliceRandom};
 use crate::{
     grid::WorldSizeType,
     map_parameters::Rainfall,
-    ruleset::Ruleset,
-    tile_component::{BaseTerrain, Feature, TerrainType},
+    ruleset::{Ruleset, enums::*},
     tile_map::{AreaFlags, MapParameters, TileMap},
 };
 

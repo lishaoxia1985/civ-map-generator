@@ -1,6 +1,6 @@
 use crate::{
+    ruleset::enums::*,
     tile::Tile,
-    tile_component::{BaseTerrain, Feature, Resource, TerrainType},
     tile_map::{Layer, TileMap},
 };
 

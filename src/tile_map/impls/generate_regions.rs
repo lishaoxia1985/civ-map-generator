@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     grid::{Rectangle, WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
     map_parameters::RegionDivideMethod,
+    ruleset::enums::*,
     tile::Tile,
-    tile_component::*,
     tile_map::{AreaFlags, MapParameters, TileMap},
 };
 

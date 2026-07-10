@@ -1,7 +1,4 @@
-use crate::{
-    tile_component::{BaseTerrain, Feature, Resource, TerrainType},
-    tile_map::TileMap,
-};
+use crate::{ruleset::enums::*, tile_map::TileMap};
 
 impl TileMap {
     /// Fix Sugar graphics. That because in origin CIV5, `Sugar` could not be made visible enough in jungle, so turn any sugar jungle to marsh.

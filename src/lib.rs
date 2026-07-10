@@ -43,7 +43,6 @@
 //! - **`map_generator`**: Map generation algorithms (Fractal, Pangaea)
 //! - **`ruleset`**: Game rule definitions loaded from JSON files
 //! - **`tile_map`**: Map data structure and generation pipeline
-//! - **`tile_component`**: Tile components (terrain, features, resources, etc.)
 //!
 //! ## Current Limitations
 //!
@@ -63,10 +62,8 @@ pub mod fractal;
 pub mod grid;
 pub mod map_generator;
 pub mod map_parameters;
-pub mod nation;
 pub mod ruleset;
 pub mod tile;
-pub mod tile_component;
 pub mod tile_map;
 
 // Re-export commonly used items for convenience

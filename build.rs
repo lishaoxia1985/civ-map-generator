@@ -21,54 +21,77 @@ fn main() {
         .join("jsons")
         .join("Civ V - Gods & Kings");
 
-    /* Tile Component Rust File Generation */
-    let tile_component_path = Path::new("src/tile_component");
+    /* Ruleset enums Rust File Generation */
+    let enums_path = Path::new("src/ruleset/enums");
 
     create_enum_from_json(
         json_path.join("TerrainTypes.json").to_str().unwrap(),
-        tile_component_path
-            .join("terrain_type.rs")
-            .to_str()
-            .unwrap(),
+        enums_path.join("terrain_type.rs").to_str().unwrap(),
         "TerrainType",
     );
 
     create_enum_from_json(
         json_path.join("BaseTerrains.json").to_str().unwrap(),
-        tile_component_path
-            .join("base_terrain.rs")
-            .to_str()
-            .unwrap(),
+        enums_path.join("base_terrain.rs").to_str().unwrap(),
         "BaseTerrain",
     );
 
     create_enum_from_json(
         json_path.join("Features.json").to_str().unwrap(),
-        tile_component_path.join("feature.rs").to_str().unwrap(),
+        enums_path.join("feature.rs").to_str().unwrap(),
         "Feature",
     );
 
     create_enum_from_json(
         json_path.join("NaturalWonders.json").to_str().unwrap(),
-        tile_component_path
-            .join("natural_wonder.rs")
-            .to_str()
-            .unwrap(),
+        enums_path.join("natural_wonder.rs").to_str().unwrap(),
         "NaturalWonder",
     );
 
     create_enum_from_json(
         json_path.join("Resources.json").to_str().unwrap(),
-        tile_component_path.join("resource.rs").to_str().unwrap(),
+        enums_path.join("resource.rs").to_str().unwrap(),
         "Resource",
     );
-    /* Tile Component Rust File Generation */
 
     create_enum_from_json(
         json_path.join("Nations.json").to_str().unwrap(),
-        Path::new("src/nation.rs").to_str().unwrap(),
+        enums_path.join("nation.rs").to_str().unwrap(),
         "Nation",
     );
+
+    // Generate mod.rs file to re-export all enums
+    generate_mod_file(enums_path);
+}
+
+/// Generates a mod.rs file that re-exports all generated enum types
+///
+/// This allows for convenient imports via `use crate::ruleset::enums::*;`
+fn generate_mod_file(output_dir: &Path) {
+    let mod_path = output_dir.join("mod.rs");
+    let mut file = File::create(&mod_path)
+        .unwrap_or_else(|_| panic!("Failed to create mod file: {}", mod_path.display()));
+
+    // Write header comment
+    writeln!(file, "// Auto-generated file. Do not edit manually.").unwrap();
+    writeln!(file, "// This file re-exports all generated enum types").unwrap();
+    writeln!(file).unwrap();
+
+    // List of all enum files to re-export
+    let enum_files = [
+        ("terrain_type", "TerrainType"),
+        ("base_terrain", "BaseTerrain"),
+        ("feature", "Feature"),
+        ("natural_wonder", "NaturalWonder"),
+        ("resource", "Resource"),
+        ("nation", "Nation"),
+    ];
+
+    // Generate pub use statements
+    for (file_name, enum_name) in &enum_files {
+        writeln!(file, "pub mod {};", file_name).unwrap();
+        writeln!(file, "pub use {}::{};", file_name, enum_name).unwrap();
+    }
 }
 
 fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
