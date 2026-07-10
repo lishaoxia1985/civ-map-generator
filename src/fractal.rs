@@ -221,7 +221,6 @@ impl<G: Grid> CvFractal<G> {
             for x in 0..hint_width as usize {
                 for y in 0..hint_height as usize {
                     self.fractal_array[x << smooth][y << smooth] = random.random_range(0..256);
-                    // Fractal Gen 1
                 }
             }
         }
@@ -280,9 +279,6 @@ impl<G: Grid> CvFractal<G> {
 
             /********** the end of preprocess fractal_array[][] **********/
 
-            // Use this value to exclude the vertices which have already get spots in the previous iter.
-            // Generate a value with the lowest `pass + 1` bits set to 1 and the rest set to 0.
-            let screen = (1 << (pass + 1)) - 1;
             // Use Diamond-Square algorithm to get spots
             // At first, We divide the fractal array into smaller sub-grids ((2^smooth) * (2^smooth) squares),
             // Notice! it's different with original Diamond-Square algorithm:
@@ -307,9 +303,22 @@ impl<G: Grid> CvFractal<G> {
                     // Interpolate
                     let mut sum = 0;
                     let randness = 1 << (7 - smooth + pass) as i32;
-                    // `(x << pass) & screen != 0` is equivalent to `(x << pass) % (1 << (pass + 1)) != 0`
-                    // `(y << pass) & screen != 0` is equivalent to `(y << pass) % (1 << (pass +1)) != 0`
-                    match ((x << pass) & screen != 0, (y << pass) & screen != 0) {
+
+                    // Skips vertices where both `(x << pass) % (1 << (pass + 1))` and `(y << pass) % (1 << (pass + 1))`
+                    // are zero, as these were processed in prior iterations (values already set).
+                    // Current iteration handles only unprocessed vertices.
+                    //
+                    // The following assertions (verified but commented out) confirm the equivalence:
+                    //   - `(x << pass) % (1 << (pass + 1)) != 0`  ↔  `x & 1 != 0`
+                    //   - `(y << pass) % (1 << (pass + 1)) != 0`  ↔  `y & 1 != 0`
+                    //
+                    // let screen = (1 << (pass + 1)) - 1; // Generate a value with the lowest `pass + 1` bits set to 1 and the rest set to 0.
+                    // assert!(((x << pass) & screen != 0) == (x & 1 != 0));
+                    // assert!(((y << pass) & screen != 0) == (y & 1 != 0));
+                    // assert!(((x << pass) & screen != 0) == ((x << pass) % (1 << (pass + 1)) != 0));
+                    // assert!(((y << pass) & screen != 0) == ((y << pass) % (1 << (pass + 1)) != 0));
+
+                    match (x & 1 != 0, y & 1 != 0) {
                         (true, true) => {
                             // (center)
                             sum += self.fractal_array[(x - 1) << pass][(y - 1) << pass] as i32;
