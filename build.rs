@@ -9,59 +9,64 @@ fn main() {
         return;
     }
 
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/TerrainTypes.json");
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/BaseTerrains.json");
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Features.json");
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/NaturalWonders.json");
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/TileResources.json");
-    println!("cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/Nations.json");
+    // Define JSON files to monitor for changes
+    let monitored_files = [
+        "TerrainTypes.json",
+        "BaseTerrains.json",
+        "Features.json",
+        "NaturalWonders.json",
+        "TileResources.json",
+        "Nations.json",
+    ];
 
-    let json_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+    // Declare files that should trigger rebuilds when changed
+    for file in &monitored_files {
+        println!(
+            "cargo:rerun-if-changed=src/jsons/Civ V - Gods & Kings/{}",
+            file
+        );
+    }
+
+    let json_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("jsons")
         .join("Civ V - Gods & Kings");
 
+    // Define mapping between JSON files and Rust enum outputs
+    let enum_mappings = [
+        ("TerrainTypes.json", "terrain_type.rs", "TerrainType"),
+        ("BaseTerrains.json", "base_terrain.rs", "BaseTerrain"),
+        ("Features.json", "feature.rs", "Feature"),
+        ("NaturalWonders.json", "natural_wonder.rs", "NaturalWonder"),
+        ("TileResources.json", "resource.rs", "Resource"), // Corrected filename mismatch
+        ("Nations.json", "nation.rs", "Nation"),
+    ];
+
     /* Ruleset enums Rust File Generation */
-    let enums_path = Path::new("src/ruleset/enums");
+    let enums_dir = Path::new("src/ruleset/enums");
 
-    create_enum_from_json(
-        json_path.join("TerrainTypes.json").to_str().unwrap(),
-        enums_path.join("terrain_type.rs").to_str().unwrap(),
-        "TerrainType",
-    );
+    for (json_file, rust_file, enum_name) in enum_mappings {
+        let json_path = json_dir.join(json_file);
+        let rust_path = enums_dir.join(rust_file);
 
-    create_enum_from_json(
-        json_path.join("BaseTerrains.json").to_str().unwrap(),
-        enums_path.join("base_terrain.rs").to_str().unwrap(),
-        "BaseTerrain",
-    );
+        // Validate JSON file existence
+        if !json_path.exists() {
+            panic!("JSON file not found: {}", json_path.display());
+        }
 
-    create_enum_from_json(
-        json_path.join("Features.json").to_str().unwrap(),
-        enums_path.join("feature.rs").to_str().unwrap(),
-        "Feature",
-    );
-
-    create_enum_from_json(
-        json_path.join("NaturalWonders.json").to_str().unwrap(),
-        enums_path.join("natural_wonder.rs").to_str().unwrap(),
-        "NaturalWonder",
-    );
-
-    create_enum_from_json(
-        json_path.join("Resources.json").to_str().unwrap(),
-        enums_path.join("resource.rs").to_str().unwrap(),
-        "Resource",
-    );
-
-    create_enum_from_json(
-        json_path.join("Nations.json").to_str().unwrap(),
-        enums_path.join("nation.rs").to_str().unwrap(),
-        "Nation",
-    );
+        create_enum_from_json(
+            json_path
+                .to_str()
+                .expect("JSON path contains invalid UTF-8"),
+            rust_path
+                .to_str()
+                .expect("Rust path contains invalid UTF-8"),
+            enum_name,
+        );
+    }
 
     // Generate mod.rs file to re-export all enums
-    generate_mod_file(enums_path);
+    generate_mod_file(enums_dir);
 }
 
 /// Generates a mod.rs file that re-exports all generated enum types
