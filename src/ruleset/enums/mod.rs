@@ -1,5 +1,5 @@
 // Auto-generated file. Do not edit manually.
-// This file re-exports all generated enum types
+// Re-exports all generated enum types
 
 pub mod terrain_type;
 pub use terrain_type::TerrainType;

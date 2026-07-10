@@ -130,57 +130,56 @@ impl Ruleset {
     /// Views the folder in the path [`src/jsons/Civ V - Gods & Kings`] for more information.
     pub fn new(ruleset_json_folder: PathBuf) -> Self {
         let beliefs: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Beliefs.json").to_str().unwrap(),
+            ruleset_json_folder.join("Belief.json").to_str().unwrap(),
         );
 
         //serde buildings
         let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder.join("Buildings.json").to_str().unwrap(),
+            ruleset_json_folder.join("Building.json").to_str().unwrap(),
         );
         let mut buildings: Vec<Building> =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
         let difficulties: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("Difficulties.json")
+                .join("Difficulty.json")
                 .to_str()
                 .unwrap(),
         );
 
         let eras: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Eras.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Era.json").to_str().unwrap());
 
         let nations: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Nations.json").to_str().unwrap(),
+            ruleset_json_folder.join("Nation.json").to_str().unwrap(),
         );
 
         let city_state_types: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("CityStateTypes.json")
+                .join("CityStateType.json")
                 .to_str()
                 .unwrap(),
         );
 
         let policy_branches: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Policies.json").to_str().unwrap(),
+            ruleset_json_folder.join("Policy.json").to_str().unwrap(),
         );
 
-        let quests: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Quests.json").to_str().unwrap(),
-        );
+        let quests: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json").to_str().unwrap());
 
         // serde religions
         let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder.join("Religions.json").to_str().unwrap(),
+            ruleset_json_folder.join("Religion.json").to_str().unwrap(),
         );
         let religions: Vec<String> = serde_json::from_str(&json_string_without_comment).unwrap();
 
         let ruins: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Ruins.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Ruin.json").to_str().unwrap());
 
         let specialists: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("Specialists.json")
+                .join("Specialist.json")
                 .to_str()
                 .unwrap(),
         );
@@ -188,57 +187,60 @@ impl Ruleset {
         // serde terrains
         let terrain_types: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("TerrainTypes.json")
+                .join("TerrainType.json")
                 .to_str()
                 .unwrap(),
         );
 
         let base_terrains: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("BaseTerrains.json")
+                .join("BaseTerrain.json")
                 .to_str()
                 .unwrap(),
         );
 
         let features: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Features.json").to_str().unwrap(),
+            ruleset_json_folder.join("Feature.json").to_str().unwrap(),
         );
 
         let natural_wonders: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("NaturalWonders.json")
+                .join("NaturalWonder.json")
                 .to_str()
                 .unwrap(),
         );
 
         let tile_improvements: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("TileImprovements.json")
+                .join("TileImprovement.json")
                 .to_str()
                 .unwrap(),
         );
 
         let tile_resources: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Resources.json").to_str().unwrap(),
+            ruleset_json_folder.join("Resource.json").to_str().unwrap(),
         );
 
         let units: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Units.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Unit.json").to_str().unwrap());
 
         let unit_promotions: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder
-                .join("UnitPromotions.json")
+                .join("UnitPromotion.json")
                 .to_str()
                 .unwrap(),
         );
 
         let unit_types: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("UnitTypes.json").to_str().unwrap(),
+            ruleset_json_folder.join("UnitType.json").to_str().unwrap(),
         );
 
         // serde tech_columnes
         let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder.join("Techs.json").to_str().unwrap(),
+            ruleset_json_folder
+                .join("Technology.json")
+                .to_str()
+                .unwrap(),
         );
         let mut tech_columnes: Vec<TechColumn> =
             serde_json::from_str(&json_string_without_comment).unwrap();
@@ -283,7 +285,7 @@ impl Ruleset {
         // serde global_uniques
         let json_string_without_comment = load_json_file_and_strip_json_comments(
             ruleset_json_folder
-                .join("GlobalUniques.json")
+                .join("GlobalUnique.json")
                 .to_str()
                 .unwrap(),
         );

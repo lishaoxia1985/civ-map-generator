@@ -11,12 +11,12 @@ fn main() {
 
     // Define JSON files to monitor for changes
     let monitored_files = [
-        "TerrainTypes.json",
-        "BaseTerrains.json",
-        "Features.json",
-        "NaturalWonders.json",
-        "TileResources.json",
-        "Nations.json",
+        "TerrainType.json",
+        "BaseTerrain.json",
+        "Feature.json",
+        "NaturalWonder.json",
+        "Resource.json",
+        "Nation.json",
     ];
 
     // Declare files that should trigger rebuilds when changed
@@ -32,20 +32,27 @@ fn main() {
         .join("jsons")
         .join("Civ V - Gods & Kings");
 
-    // Define mapping between JSON files and Rust enum outputs
-    let enum_mappings = [
-        ("TerrainTypes.json", "terrain_type.rs", "TerrainType"),
-        ("BaseTerrains.json", "base_terrain.rs", "BaseTerrain"),
-        ("Features.json", "feature.rs", "Feature"),
-        ("NaturalWonders.json", "natural_wonder.rs", "NaturalWonder"),
-        ("TileResources.json", "resource.rs", "Resource"), // Corrected filename mismatch
-        ("Nations.json", "nation.rs", "Nation"),
-    ];
-
-    /* Ruleset enums Rust File Generation */
     let enums_dir = Path::new("src/ruleset/enums");
 
-    for (json_file, rust_file, enum_name) in enum_mappings {
+    // Dynamically generate enum mappings
+    let enum_mappings: Vec<(&str, String, String)> = monitored_files
+        .iter()
+        .map(|&json_file| {
+            let enum_name = json_file.strip_suffix(".json").unwrap();
+            let rust_file = to_snake_case(enum_name);
+
+            (
+                json_file,
+                format!("{}.rs", rust_file),
+                enum_name.to_string(),
+            )
+        })
+        .collect();
+
+    // Generate Rust files
+    // For example:
+    //   When `json_file` is "TerrainType.json", `rust_file` is "terrain_type.rs", and `enum_name` is "TerrainType".
+    for (json_file, rust_file, enum_name) in enum_mappings.iter() {
         let json_path = json_dir.join(json_file);
         let rust_path = enums_dir.join(rust_file);
 
@@ -61,44 +68,55 @@ fn main() {
             rust_path
                 .to_str()
                 .expect("Rust path contains invalid UTF-8"),
-            enum_name,
+            enum_name.as_str(),
         );
     }
 
-    // Generate mod.rs file to re-export all enums
-    generate_mod_file(enums_dir);
+    // Generate mod.rs using dynamic enum list
+    generate_mod_file(enums_dir, &enum_mappings);
 }
 
-/// Generates a mod.rs file that re-exports all generated enum types
-///
-/// This allows for convenient imports via `use crate::ruleset::enums::*;`
-fn generate_mod_file(output_dir: &Path) {
+/// Generates mod.rs file that re-exports all generated enum types
+fn generate_mod_file(output_dir: &Path, mappings: &[(&str, String, String)]) {
     let mod_path = output_dir.join("mod.rs");
     let mut file = File::create(&mod_path)
-        .unwrap_or_else(|_| panic!("Failed to create mod file: {}", mod_path.display()));
+        .unwrap_or_else(|e| panic!("Failed to create {}: {}", mod_path.display(), e));
 
-    // Write header comment
     writeln!(file, "// Auto-generated file. Do not edit manually.").unwrap();
-    writeln!(file, "// This file re-exports all generated enum types").unwrap();
+    writeln!(file, "// Re-exports all generated enum types").unwrap();
     writeln!(file).unwrap();
 
-    // List of all enum files to re-export
-    let enum_files = [
-        ("terrain_type", "TerrainType"),
-        ("base_terrain", "BaseTerrain"),
-        ("feature", "Feature"),
-        ("natural_wonder", "NaturalWonder"),
-        ("resource", "Resource"),
-        ("nation", "Nation"),
-    ];
-
-    // Generate pub use statements
-    for (file_name, enum_name) in &enum_files {
-        writeln!(file, "pub mod {};", file_name).unwrap();
-        writeln!(file, "pub use {}::{};", file_name, enum_name).unwrap();
+    for (_, rust_file, enum_name) in mappings {
+        let module_name = rust_file.strip_suffix(".rs").unwrap();
+        writeln!(file, "pub mod {};", module_name).unwrap();
+        writeln!(file, "pub use {}::{};", module_name, enum_name).unwrap();
     }
 }
 
+/// Converts PascalCase to snake_case (e.g., `NaturalWonder` -> `natural_wonder`)
+fn to_snake_case(name: &str) -> String {
+    let mut result = String::with_capacity(name.len() * 2);
+    let mut prev_lower = false;
+
+    for (i, c) in name.char_indices() {
+        if c.is_uppercase() {
+            // Handle consecutive uppercase letters (e.g., XMLParser -> xml_parser)
+            if i > 0 && prev_lower {
+                result.push('_');
+            }
+            result.push(c.to_ascii_lowercase());
+            prev_lower = false;
+        } else {
+            result.push(c);
+            prev_lower = true;
+        }
+    }
+
+    // Clean potential leading/trailing underscores
+    result.trim_matches('_').to_string()
+}
+
+/// Creates an enum from a JSON file.
 fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
     let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
 
