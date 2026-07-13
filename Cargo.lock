@@ -198,7 +198,7 @@ dependencies = [
 
 [[package]]
 name = "civ_map_generator"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "arrayvec",
  "bitflags",
