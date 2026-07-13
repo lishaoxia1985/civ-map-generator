@@ -35,9 +35,3 @@ impl Name for FeatureInfo {
         self.name.to_owned()
     }
 }
-
-impl FeatureInfo {
-    pub fn has_unique(&self, unique: &str) -> bool {
-        self.uniques.iter().any(|x| x == unique)
-    }
-}

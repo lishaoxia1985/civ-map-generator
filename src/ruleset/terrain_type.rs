@@ -34,9 +34,3 @@ impl Name for TerrainTypeInfo {
         self.name.to_owned()
     }
 }
-
-impl TerrainTypeInfo {
-    pub fn has_unique(&self, unique: &str) -> bool {
-        self.uniques.iter().any(|x| x == unique)
-    }
-}

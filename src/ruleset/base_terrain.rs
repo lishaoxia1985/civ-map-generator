@@ -45,9 +45,3 @@ impl Name for BaseTerrainInfo {
         self.name.to_owned()
     }
 }
-
-impl BaseTerrainInfo {
-    pub fn has_unique(&self, unique: &str) -> bool {
-        self.uniques.iter().any(|x| x == unique)
-    }
-}
