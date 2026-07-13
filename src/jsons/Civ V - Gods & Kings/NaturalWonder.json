@@ -2,7 +2,6 @@
     // Natural Wonders
     {
         "name": "Great Barrier Reef",
-        "type": "NaturalWonder",
         "food": 2,
         "production": 1,
         "gold": 1,
@@ -27,7 +26,6 @@
     },
     {
         "name": "Old Faithful",
-        "type": "NaturalWonder",
         "science": 2,
         "happiness": 3,
         "requiredTerrain": {
@@ -50,7 +48,6 @@
     },
     {
         "name": "El Dorado",
-        "type": "NaturalWonder",
         "culture": 5,
         "overrideStats": true,
         "requiredTerrain": {
@@ -74,7 +71,6 @@
     },
     { // This will count as "Fresh water" in civ 6
         "name": "Fountain of Youth",
-        "type": "NaturalWonder",
         "happiness": 10,
         "overrideStats": true,
         "requiredTerrain": {
@@ -98,7 +94,6 @@
     },
     {
         "name": "Grand Mesa",
-        "type": "NaturalWonder",
         "production": 2,
         "gold": 3,
         "requiredTerrain": {
@@ -120,7 +115,6 @@
     },
     {
         "name": "Mount Fuji",
-        "type": "NaturalWonder",
         "gold": 2,
         "culture": 3,
         "faith": 3,
@@ -147,7 +141,6 @@
     },
     {
         "name": "Krakatoa",
-        "type": "NaturalWonder",
         "science": 5,
         "requiredTerrain": {
             "terrainType": ["Water"],
@@ -171,7 +164,6 @@
     },
     {
         "name": "Rock of Gibraltar",
-        "type": "NaturalWonder",
         "food": 2,
         "gold": 5,
         "requiredTerrain": {
@@ -195,7 +187,6 @@
     },
     {
         "name": "Cerro de Potosi",
-        "type": "NaturalWonder",
         "gold": 10,
         "requiredTerrain": {
             "terrainType": ["Flatland","Mountain","Hill"],
@@ -214,7 +205,6 @@
     },
     {
         "name": "Barringer Crater",
-        "type": "NaturalWonder",
         "gold": 2,
         "science": 3,
         "requiredTerrain": {
@@ -237,7 +227,6 @@
     // G&K Wonders
     {
         "name": "Mount Kailash",
-        "type": "NaturalWonder",
         "faith": 6,
         "happiness": 2,
         "requiredTerrain": {
@@ -259,7 +248,6 @@
     },
     {
         "name": "Mount Sinai",
-        "type": "NaturalWonder",
         "faith": 8,
         "requiredTerrain": {
             "terrainType": ["Flatland","Mountain","Hill"],
@@ -281,7 +269,6 @@
     },
     {
         "name": "Sri Pada",
-        "type": "NaturalWonder",
         "food": 2,
         "faith": 4,
         "happiness": 2,
@@ -304,7 +291,6 @@
     },
     {
         "name": "Uluru",
-        "type": "NaturalWonder",
         "food": 2,
         "faith": 6,
         "requiredTerrain": {
@@ -328,7 +314,6 @@
 	// BNW wonders
 	{
 		"name": "King Solomon's Mines",
-		"type": "NaturalWonder",
 		"production": 6,
 		"overrideStats": true,
         "requiredTerrain": {
@@ -352,7 +337,6 @@
      //        that's because original Civ 5 doesn't have a 'BaseTerrain' called 'Lake'.
      //        We don't need to add "Provide fresh water to adjacent land tiles" unique to it because it's already included in the 'Lake' base terrain.
 		"name": "Lake Victoria",
-		"type": "NaturalWonder",
 		"food": 6,
         "requiredTerrain": {
             "terrainType": ["Flatland","Mountain","Hill"],
@@ -371,7 +355,6 @@
 	},
 	{
 		"name": "Mount Kilimanjaro",
-		"type": "NaturalWonder",
 		"food": 3,
 		"culture": 2,
 		"requiredTerrain": {

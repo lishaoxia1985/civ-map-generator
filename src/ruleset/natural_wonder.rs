@@ -11,7 +11,6 @@ use super::Name;
 #[serde(rename_all = "camelCase")]
 pub struct NaturalWonderInfo {
     pub name: String,
-    pub r#type: String,
     #[serde(flatten)]
     pub yields: Yields,
     #[serde(default)]
