@@ -6,7 +6,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Unit {
+pub struct UnitInfo {
     pub name: String,
     pub unit_type: String,
     pub movement: i8,
@@ -36,7 +36,7 @@ pub struct Unit {
     pub attack_sound: String,
 }
 
-impl Name for Unit {
+impl Name for UnitInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

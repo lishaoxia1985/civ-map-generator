@@ -13,16 +13,17 @@ pub struct PolicyBranch {
     pub policies: Vec<Policy>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+// TODO: Will not derive `Clone` in the future.
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Policy {
     pub name: String,
     pub uniques: Vec<String>,
     #[serde(default)]
     pub requires: Vec<String>,
     #[serde(default)]
-    pub row: i8,
+    pub row: u8,
     #[serde(default)]
-    pub column: i8,
+    pub column: u8,
 }
 
 impl Name for PolicyBranch {

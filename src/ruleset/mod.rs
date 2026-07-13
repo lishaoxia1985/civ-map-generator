@@ -53,7 +53,7 @@ use crate::ruleset::{
     global_unique::GlobalUnique,
     nation::NationInfo,
     natural_wonder::NaturalWonderInfo,
-    policy::PolicyBranch,
+    policy::{Policy, PolicyBranch},
     quest::Quest,
     resource::ResourceInfo,
     ruin::Ruin,
@@ -61,7 +61,7 @@ use crate::ruleset::{
     tech::{TechColumn, Technology},
     terrain_type::TerrainTypeInfo,
     tile_improvement::TileImprovementInfo,
-    unit::Unit,
+    unit::UnitInfo,
     unit_promotion::UnitPromotionInfo,
     unit_type::UnitTypeInfo,
 };
@@ -90,7 +90,7 @@ pub struct Ruleset {
     pub buildings: HashMap<String, BuildingInfo>,
     pub specialists: HashMap<String, Specialist>,
 
-    pub units: HashMap<String, Unit>,
+    pub units: HashMap<String, UnitInfo>,
     pub unit_promotions: HashMap<String, UnitPromotionInfo>,
     pub unit_types: HashMap<String, UnitTypeInfo>,
 
@@ -100,8 +100,8 @@ pub struct Ruleset {
     pub nations: HashMap<String, NationInfo>,
     pub city_state_types: HashMap<String, CityStateTypeInfo>,
 
-    // pub policies: HashMap<String, Policy>,
     pub policy_branches: HashMap<String, PolicyBranch>,
+    pub policies: HashMap<String, Policy>,
 
     pub technologies: HashMap<String, Technology>,
 
@@ -282,6 +282,13 @@ impl Ruleset {
             .map(|x| (x.name.to_owned(), x))
             .collect();
 
+        // TODO: Will not use `clone` here in the future.
+        let policies: HashMap<String, Policy> = policy_branches
+            .values()
+            .flat_map(|policy_branch: &PolicyBranch| policy_branch.policies.clone())
+            .map(|x| (x.name.to_owned(), x))
+            .collect();
+
         Self {
             terrain_types,
             base_terrains,
@@ -300,6 +307,7 @@ impl Ruleset {
             nations,
             city_state_types,
             policy_branches,
+            policies,
             technologies,
             quests,
             difficulties,

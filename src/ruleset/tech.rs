@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TechColumn {
-    pub column_number: i8,
+    pub column_number: u8,
     pub era: String,
     pub tech_cost: i16,
     pub building_cost: i16,
@@ -16,9 +16,9 @@ pub struct Technology {
     pub name: String,
     #[serde(default)]
     pub cost: i16,
-    pub row: i8,
+    pub row: u8,
     #[serde(default)]
-    pub column: i8,
+    pub column: u8,
     #[serde(default)]
     pub era: String,
     #[serde(default)]
