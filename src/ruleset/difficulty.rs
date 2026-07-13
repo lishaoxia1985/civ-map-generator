@@ -4,7 +4,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Difficulty {
+pub struct DifficultyInfo {
     name: String,
     base_happiness: i8,
     extra_happiness_per_luxury: i8,
@@ -35,7 +35,7 @@ pub struct Difficulty {
     clear_barbarian_camp_reward: i8,
 }
 
-impl Name for Difficulty {
+impl Name for DifficultyInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

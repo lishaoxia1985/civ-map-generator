@@ -11,12 +11,20 @@ fn main() {
 
     // Define JSON files to monitor for changes
     let monitored_files = [
-        "TerrainType.json",
         "BaseTerrain.json",
+        "Belief.json",
+        "Building.json",
+        "CityStateType.json",
+        "Difficulty.json",
+        "Era.json",
         "Feature.json",
+        "Nation.json",
         "NaturalWonder.json",
         "Resource.json",
-        "Nation.json",
+        "TerrainType.json",
+        "TileImprovement.json",
+        "Unit.json",
+        "UnitPromotion.json",
     ];
 
     // Declare files that should trigger rebuilds when changed
@@ -153,7 +161,7 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
                 .collect::<Vec<String>>()
                 .join("")
                 .chars()
-                .filter(|c| c.is_ascii_alphabetic())
+                .filter(|c| c.is_ascii_alphanumeric())
                 .collect();
             variant
         })

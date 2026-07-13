@@ -4,7 +4,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UnitPromotion {
+pub struct UnitPromotionInfo {
     name: String,
     #[serde(default)]
     prerequisites: Vec<String>,
@@ -13,7 +13,7 @@ pub struct UnitPromotion {
     unit_types: Vec<String>,
 }
 
-impl Name for UnitPromotion {
+impl Name for UnitPromotionInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

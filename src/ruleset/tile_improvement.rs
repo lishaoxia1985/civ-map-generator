@@ -8,7 +8,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TileImprovement {
+pub struct TileImprovementInfo {
     pub name: String,
     #[serde(flatten)]
     pub yields: Yields,
@@ -27,7 +27,7 @@ pub struct TileImprovement {
     pub civilopedia_text: Vec<HashMap<String, String>>,
 }
 
-impl Name for TileImprovement {
+impl Name for TileImprovementInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

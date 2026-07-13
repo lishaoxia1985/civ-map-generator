@@ -43,26 +43,26 @@ pub mod unit_type;
 
 use crate::ruleset::{
     base_terrain::BaseTerrainInfo,
-    belief::Belief,
-    building::Building,
-    city_state_type::CityStateType,
+    belief::BeliefInfo,
+    building::BuildingInfo,
+    city_state_type::CityStateTypeInfo,
     common::Name,
-    difficulty::Difficulty,
-    era::Era,
+    difficulty::DifficultyInfo,
+    era::EraInfo,
     feature::FeatureInfo,
     global_unique::GlobalUnique,
     nation::NationInfo,
     natural_wonder::NaturalWonderInfo,
     policy::PolicyBranch,
     quest::Quest,
-    resource::TileResource,
+    resource::ResourceInfo,
     ruin::Ruin,
     specialist::Specialist,
     tech::{TechColumn, Technology},
     terrain_type::TerrainTypeInfo,
-    tile_improvement::TileImprovement,
+    tile_improvement::TileImprovementInfo,
     unit::Unit,
-    unit_promotion::UnitPromotion,
+    unit_promotion::UnitPromotionInfo,
     unit_type::UnitType,
 };
 
@@ -80,24 +80,24 @@ pub struct Ruleset {
     pub base_terrains: HashMap<String, BaseTerrainInfo>,
     pub features: HashMap<String, FeatureInfo>,
     pub natural_wonders: HashMap<String, NaturalWonderInfo>,
+    pub resources: HashMap<String, ResourceInfo>,
 
     pub ruins: HashMap<String, Ruin>,
 
-    pub tile_improvements: HashMap<String, TileImprovement>,
-    pub tile_resources: HashMap<String, TileResource>,
+    pub tile_improvements: HashMap<String, TileImprovementInfo>,
 
-    pub buildings: HashMap<String, Building>,
+    pub buildings: HashMap<String, BuildingInfo>,
     pub specialists: HashMap<String, Specialist>,
 
     pub units: HashMap<String, Unit>,
-    pub unit_promotions: HashMap<String, UnitPromotion>,
+    pub unit_promotions: HashMap<String, UnitPromotionInfo>,
     pub unit_types: HashMap<String, UnitType>,
 
     pub religions: Vec<String>,
-    pub beliefs: HashMap<String, Belief>,
+    pub beliefs: HashMap<String, BeliefInfo>,
 
     pub nations: HashMap<String, NationInfo>,
-    pub city_state_types: HashMap<String, CityStateType>,
+    pub city_state_types: HashMap<String, CityStateTypeInfo>,
 
     // pub policies: HashMap<String, Policy>,
     pub policy_branches: HashMap<String, PolicyBranch>,
@@ -106,8 +106,8 @@ pub struct Ruleset {
 
     pub quests: HashMap<String, Quest>,
 
-    pub difficulties: HashMap<String, Difficulty>,
-    pub eras: HashMap<String, Era>,
+    pub difficulties: HashMap<String, DifficultyInfo>,
+    pub eras: HashMap<String, EraInfo>,
     pub global_uniques: GlobalUnique,
 }
 
@@ -137,7 +137,7 @@ impl Ruleset {
         let json_string_without_comment = load_json_file_and_strip_json_comments(
             ruleset_json_folder.join("Building.json").to_str().unwrap(),
         );
-        let mut buildings: Vec<Building> =
+        let mut buildings: Vec<BuildingInfo> =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
         let difficulties: HashMap<_, _> = create_hashmap_from_json_file(
@@ -217,7 +217,7 @@ impl Ruleset {
                 .unwrap(),
         );
 
-        let tile_resources: HashMap<_, _> = create_hashmap_from_json_file(
+        let resources: HashMap<_, _> = create_hashmap_from_json_file(
             ruleset_json_folder.join("Resource.json").to_str().unwrap(),
         );
 
@@ -299,7 +299,7 @@ impl Ruleset {
             natural_wonders,
             ruins,
             tile_improvements,
-            tile_resources,
+            resources,
             buildings,
             specialists,
             units,

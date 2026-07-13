@@ -7,7 +7,7 @@ use crate::ruleset::common::{RequiredTerrain, Yields};
 use super::Name;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Building {
+pub struct BuildingInfo {
     pub name: String,
     #[serde(default)]
     pub is_national_wonder: bool,
@@ -50,7 +50,7 @@ pub struct Building {
     pub quote: String,
 }
 
-impl Name for Building {
+impl Name for BuildingInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

@@ -8,7 +8,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TileResource {
+pub struct ResourceInfo {
     pub name: String,
     pub resource_type: String,
     #[serde(default)]
@@ -29,7 +29,7 @@ pub struct TileResource {
     pub minor_deposit_amount: HashMap<String, i8>,
 }
 
-impl Name for TileResource {
+impl Name for ResourceInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

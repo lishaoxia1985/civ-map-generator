@@ -4,7 +4,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Era {
+pub struct EraInfo {
     name: String,
     research_agreement_cost: i16,
     starting_settler_count: i8,
@@ -20,7 +20,7 @@ pub struct Era {
     icon_rgb: [u8; 3],
 }
 
-impl Name for Era {
+impl Name for EraInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }
