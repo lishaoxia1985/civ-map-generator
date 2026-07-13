@@ -25,6 +25,7 @@ fn main() {
         "TileImprovement.json",
         "Unit.json",
         "UnitPromotion.json",
+        "UnitType.json",
     ];
 
     // Declare files that should trigger rebuilds when changed

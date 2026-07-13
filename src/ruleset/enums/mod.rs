@@ -29,3 +29,5 @@ pub mod unit;
 pub use unit::Unit;
 pub mod unit_promotion;
 pub use unit_promotion::UnitPromotion;
+pub mod unit_type;
+pub use unit_type::UnitType;
