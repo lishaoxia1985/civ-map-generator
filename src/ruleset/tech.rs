@@ -7,7 +7,6 @@ pub struct TechColumn {
     pub era: String,
     pub tech_cost: i16,
     pub building_cost: i16,
-    #[serde(default)]
     pub wonder_cost: i16,
     pub techs: Vec<Technology>,
 }
