@@ -66,7 +66,8 @@ use crate::ruleset::{
     unit_type::UnitTypeInfo,
 };
 
-fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: &str) -> HashMap<String, T> {
+fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: PathBuf) -> HashMap<String, T> {
+    let path = path.to_str().expect("JSON path contains invalid UTF-8");
     let json_string_without_comment = load_json_file_and_strip_json_comments(path);
     let map: Vec<T> = serde_json::from_str(&json_string_without_comment)
         .unwrap_or_else(|e| panic!("Failed to parse JSON file '{}': {}", path, e));
@@ -129,159 +130,77 @@ impl Ruleset {
     /// The folder should the same structure as the folder [`src/jsons/Civ V - Gods & Kings`].
     /// Views the folder in the path [`src/jsons/Civ V - Gods & Kings`] for more information.
     pub fn new(ruleset_json_folder: PathBuf) -> Self {
-        let terrain_types: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("TerrainType.json")
-                .to_str()
-                .unwrap(),
-        );
+        /* **********Loading standard ruleset JSON file********** */
 
-        let base_terrains: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("BaseTerrain.json")
-                .to_str()
-                .unwrap(),
-        );
+        let terrain_types: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("TerrainType.json"));
 
-        let features: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Feature.json").to_str().unwrap(),
-        );
+        let base_terrains: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("BaseTerrain.json"));
 
-        let natural_wonders: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("NaturalWonder.json")
-                .to_str()
-                .unwrap(),
-        );
+        let features: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Feature.json"));
 
-        let resources: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Resource.json").to_str().unwrap(),
-        );
+        let natural_wonders: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("NaturalWonder.json"));
+
+        let resources: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Resource.json"));
 
         let ruins: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Ruin.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Ruin.json"));
 
-        let tile_improvements: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("TileImprovement.json")
-                .to_str()
-                .unwrap(),
-        );
+        let tile_improvements: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("TileImprovement.json"));
 
-        let specialists: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("Specialist.json")
-                .to_str()
-                .unwrap(),
-        );
+        let specialists: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Specialist.json"));
 
         let units: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Unit.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Unit.json"));
 
-        let unit_promotions: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("UnitPromotion.json")
-                .to_str()
-                .unwrap(),
-        );
+        let unit_promotions: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("UnitPromotion.json"));
 
-        let unit_types: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("UnitType.json").to_str().unwrap(),
-        );
+        let unit_types: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("UnitType.json"));
 
-        let beliefs: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Belief.json").to_str().unwrap(),
-        );
+        let beliefs: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Belief.json"));
 
-        let mut buildings: HashMap<_, BuildingInfo> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Building.json").to_str().unwrap(),
-        );
+        // Note: We will set building's cost later, so now it is mutable.
+        let mut buildings: HashMap<_, BuildingInfo> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Building.json"));
 
-        let difficulties: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("Difficulty.json")
-                .to_str()
-                .unwrap(),
-        );
+        let difficulties: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Difficulty.json"));
 
         let eras: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Era.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Era.json"));
 
-        let nations: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Nation.json").to_str().unwrap(),
-        );
+        let nations: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Nation.json"));
 
-        let city_state_types: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder
-                .join("CityStateType.json")
-                .to_str()
-                .unwrap(),
-        );
+        let city_state_types: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("CityStateType.json"));
 
-        let policy_branches: HashMap<_, _> = create_hashmap_from_json_file(
-            ruleset_json_folder.join("Policy.json").to_str().unwrap(),
-        );
+        let policy_branches: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("Policy.json"));
 
         let quests: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json").to_str().unwrap());
+            create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json"));
 
-        // serde religions
+        /* **********End of Loading standard ruleset JSON file********** */
+
+        /* **********The JSON file below we should tackle by special way********** */
+
+        // serde `Religion`
         let json_string_without_comment = load_json_file_and_strip_json_comments(
             ruleset_json_folder.join("Religion.json").to_str().unwrap(),
         );
         let religions: Vec<String> = serde_json::from_str(&json_string_without_comment).unwrap();
 
-        // serde tech_columnes
-        let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder
-                .join("Technology.json")
-                .to_str()
-                .unwrap(),
-        );
-        let mut tech_columnes: Vec<TechColumn> =
-            serde_json::from_str(&json_string_without_comment).unwrap();
-
-        tech_columnes.iter_mut().for_each(|tech_column| {
-            // Set tech cost
-            for technology in tech_column.techs.iter_mut() {
-                // We only set the cost for technology that the cost is not set.
-                // 0 means the cost is not set yet by `JSON`
-                if technology.cost == 0 {
-                    technology.cost = tech_column.tech_cost
-                }
-                technology.column = tech_column.column_number;
-                technology.era.clone_from(&tech_column.era);
-
-                // Set building cost
-                for building in buildings.values_mut() {
-                    // We only set the cost if the condition below is met:
-                    // 1. The building has a required tech
-                    // 2. The building's cost is not set yet (0 means that the cost is not set yet by `JSON`)
-                    // 3. The building can be built by the player
-                    if building.required_tech == technology.name
-                        && building.cost == 0
-                        && !building
-                            .uniques
-                            .iter()
-                            .any(|unique| unique == "Unbuildable")
-                    {
-                        if building.is_wonder || building.is_national_wonder {
-                            building.cost = tech_column.wonder_cost;
-                        } else {
-                            building.cost = tech_column.building_cost;
-                        }
-                    }
-                }
-            }
-        });
-
-        let technologies: HashMap<String, Technology> = tech_columnes
-            .into_iter()
-            .flat_map(|x| x.techs)
-            .map(|x| (x.name.to_owned(), x))
-            .collect();
-
-        // serde global_uniques
+        // serde `global_uniques`
         let json_string_without_comment = load_json_file_and_strip_json_comments(
             ruleset_json_folder
                 .join("GlobalUnique.json")
@@ -291,14 +210,86 @@ impl Ruleset {
         let global_uniques: GlobalUnique =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
+        // serde `TechColumn`
+        let json_string_without_comment = load_json_file_and_strip_json_comments(
+            ruleset_json_folder
+                .join("Technology.json")
+                .to_str()
+                .unwrap(),
+        );
+        let mut tech_columnes: Vec<TechColumn> =
+            serde_json::from_str(&json_string_without_comment).unwrap();
+
+        // Store techs and related wonders and buildings costs in a map for faster lookup
+        let mut tech_and_wonder_or_building_cost = HashMap::new();
+
+        tech_columnes.iter_mut().for_each(|tech_column| {
+            for technology in tech_column.techs.iter_mut() {
+                // We only set the cost for technology when the cost is not set.
+                // 0 means the cost is not set yet by `JSON`.
+                if technology.cost == 0 {
+                    technology.cost = tech_column.tech_cost;
+                }
+
+                // Assign column index and era to the technology.
+                technology.column = tech_column.column_number;
+                technology.era = tech_column.era.clone();
+
+                tech_and_wonder_or_building_cost.insert(
+                    &technology.name,
+                    (tech_column.wonder_cost, tech_column.building_cost),
+                );
+            }
+        });
+
+        // Set building cost
+        //
+        // We only set the cost if the condition below is met:
+        // 1. The building has a required tech
+        // 2. The building's cost is not set yet (0 means that the cost is not set yet by `JSON`)
+        // 3. The building can be built by the player
+        for building in buildings.values_mut() {
+            if building.cost != 0
+                || building
+                    .required_terrain
+                    .extra_conditions
+                    .iter()
+                    .any(|condition| condition == "Unbuildable")
+            {
+                continue;
+            }
+
+            // Get wonder cost and building cost according to the required technologies
+            let Some(&(wonder_cost, building_cost)) =
+                tech_and_wonder_or_building_cost.get(&building.required_tech)
+            else {
+                unreachable!(
+                    "Building {} requires tech {}, which is not in the tech column",
+                    building.name, building.required_tech
+                );
+            };
+
+            building.cost = if building.is_wonder || building.is_national_wonder {
+                wonder_cost
+            } else {
+                building_cost
+            };
+        }
+
+        let technologies: HashMap<String, Technology> = tech_columnes
+            .into_iter()
+            .flat_map(|x| x.techs)
+            .map(|x| (x.name.to_owned(), x))
+            .collect();
+
         Self {
             terrain_types,
             base_terrains,
             features,
             natural_wonders,
+            resources,
             ruins,
             tile_improvements,
-            resources,
             buildings,
             specialists,
             units,
