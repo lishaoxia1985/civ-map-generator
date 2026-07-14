@@ -200,8 +200,9 @@ fn load_json_file_and_strip_json_comments(path: &str) -> String {
 
 /// Take a JSON string with comments and return the version without comments
 /// which can be parsed well by serde_json as the standard JSON string.
-/// Support line comment(//...) and block comment(/*...*/)
-/// When preserve_locations is true this function will replace all the comments with spaces, so that JSON parsing
+/// Support line comment(//...) and block comment(/\*...\*/)
+///
+/// When `preserve_locations` is true this function will replace all the comments with spaces, so that JSON parsing
 /// errors can point to the right location.
 pub fn strip_json_comments(json_with_comments: &str, preserve_locations: bool) -> String {
     let mut json_without_comments = String::new();

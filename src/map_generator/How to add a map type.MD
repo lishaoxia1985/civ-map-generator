@@ -47,16 +47,16 @@ pub enum MapType {
 }
 ```
 
-## 5. Register in generate_map Function
+## 5. Register in \`generate_map\` Function
 
 Add handling for the new map type in the `generate_map` function in `src/lib.rs`:
 
 ```rust
-pub fn generate_map(map_parameters: &MapParameters, ruleset: &Ruleset) -> TileMap {
+pub fn generate_map(map_parameters: &MapParameters) -> TileMap {
     match map_parameters.map_type {
-        MapType::Fractal => Fractal::generate(map_parameters, ruleset),
-        MapType::Pangaea => Pangaea::generate(map_parameters, ruleset),
-        MapType::InlandSea => InlandSea::generate(map_parameters, ruleset), // Add this line
+        MapType::Fractal => Fractal::generate(map_parameters),
+        MapType::Pangaea => Pangaea::generate(map_parameters),
+        MapType::InlandSea => InlandSea::generate(map_parameters), // Add this line
     }
 }
 ```

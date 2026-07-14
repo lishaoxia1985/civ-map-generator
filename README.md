@@ -4,7 +4,7 @@ A Civilization series game map generator library. The algorithm is primarily bas
 
 ## Adding a Map Type
 
-[How to add a map type](./src/map_generator/How%20to%20add%20a%20map%20type.MD)
+[How to add a map type](https://github.com/lishaoxia1985/civ-map-generator/blob/master/src/map_generator/How%20to%20add%20a%20map%20type.MD)
 
 ## Example
 
