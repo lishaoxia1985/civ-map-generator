@@ -4,7 +4,7 @@ use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Quest {
+pub struct QuestInfo {
     name: String,
     description: String,
     #[serde(default)]
@@ -17,7 +17,7 @@ pub struct Quest {
     duration: i8,
 }
 
-impl Name for Quest {
+impl Name for QuestInfo {
     fn name(&self) -> String {
         self.name.to_owned()
     }

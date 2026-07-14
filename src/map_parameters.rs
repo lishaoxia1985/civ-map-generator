@@ -12,7 +12,10 @@ use crate::{
         GridSize, Rectangle, Size, WorldSizeType, WrapFlags,
         hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
     },
-    ruleset::{enums::Nation, nation::NationType},
+    ruleset::{
+        enums::{EnumStr, Nation},
+        nation::NationType,
+    },
 };
 
 /// The parameters for generating a map.

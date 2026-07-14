@@ -20,7 +20,9 @@ fn main() {
         "Feature.json",
         "Nation.json",
         "NaturalWonder.json",
+        "Quest.json",
         "Resource.json",
+        "Specialist.json",
         "TerrainType.json",
         "TileImprovement.json",
         "Unit.json",
@@ -115,7 +117,7 @@ fn generate_mod_file(output_dir: &Path, mappings: &[(&str, String, String)]) {
     )
     .unwrap();
     writeln!(file, "    fn as_str(&self) -> &'static str;").unwrap();
-    writeln!(file, "").unwrap();
+    writeln!(file).unwrap();
     writeln!(
         file,
         "    /// Converts string to enum variant **PANICS on invalid input**"
