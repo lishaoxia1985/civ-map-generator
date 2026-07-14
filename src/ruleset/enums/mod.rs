@@ -31,3 +31,16 @@ pub mod unit_promotion;
 pub use unit_promotion::UnitPromotion;
 pub mod unit_type;
 pub use unit_type::UnitType;
+
+/// Trait for infallible conversion between enum variants and string representations
+/// **PANICS** if string does not match any variant
+pub trait EnumStr {
+    /// Converts enum variant to its canonical string representation
+    fn as_str(&self) -> &'static str;
+
+    /// Converts string to enum variant **PANICS on invalid input**
+    ///
+    /// # Panics
+    /// Panics if `s` does not match any variant's string representation
+    fn from_str(s: &str) -> Self;
+}
