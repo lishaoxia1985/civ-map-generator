@@ -1,21 +1,7 @@
-use std::collections::HashMap;
-
+use crate::{grid::*, map_parameters::MapParameters, ruleset::enums::*, tile::Tile, tile_map::*};
 use bitflags::bitflags;
 use enum_map::{Enum, EnumMap};
-
-use crate::{
-    grid::{
-        Rectangle,
-        hex_grid::{HexOrientation, Offset},
-        offset_coordinate::OffsetCoordinate,
-    },
-    map_parameters::MapParameters,
-    ruleset::enums::*,
-    tile::Tile,
-    tile_map::{Layer, TileMap},
-};
-
-use super::generate_regions::{Region, RegionType};
+use std::collections::HashMap;
 
 impl TileMap {
     // function AssignStartingPlots:ChooseLocations

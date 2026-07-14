@@ -1,22 +1,17 @@
 //! This module defines the [MapParameters] struct that contains all the parameters for generating maps.
 
-use core::debug_assert;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use enum_map::Enum;
-use rand::{SeedableRng, rngs::StdRng, seq::IndexedRandom};
-
 use crate::{
     Ruleset,
-    grid::{
-        GridSize, Rectangle, Size, WorldSizeType, WrapFlags,
-        hex_grid::{HexGrid, HexLayout, HexOrientation, Offset},
-    },
+    grid::*,
     ruleset::{
         enums::{EnumStr, Nation},
         nation::NationType,
     },
 };
+use core::debug_assert;
+use enum_map::Enum;
+use rand::{SeedableRng, rngs::StdRng, seq::IndexedRandom};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// The parameters for generating a map.
 pub struct MapParameters {
@@ -97,7 +92,7 @@ impl MapParameters {
 
     /// The maximum number of regions that can share a regional-exclusive luxury resource type.
     ///
-    /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::LuxuryResourceRole::luxury_assigned_to_regions).
+    /// All the regional exclusive luxury resources are in the [`LuxuryResourceRole::luxury_assigned_to_regions`](crate::tile_map::LuxuryResourceRole::regions_exclusive).
     ///
     /// For example, when set to 3, each regionally-exclusive luxury resource type will be
     /// distributed to no more than 3 distinct regions in the game world.

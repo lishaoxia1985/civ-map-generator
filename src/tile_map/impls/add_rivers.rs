@@ -1,15 +1,10 @@
-use rand::{Rng, RngExt, seq::IndexedRandom};
-
 use crate::{
-    grid::{
-        Grid,
-        direction::Direction,
-        hex_grid::{HexGrid, HexOrientation},
-    },
+    grid::*,
     ruleset::enums::*,
     tile::Tile,
     tile_map::{River, RiverEdge, TileMap},
 };
+use rand::{Rng, RngExt, seq::IndexedRandom};
 
 impl TileMap {
     /// Adds rivers to the map.

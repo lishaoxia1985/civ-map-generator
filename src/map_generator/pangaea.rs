@@ -1,6 +1,3 @@
-use glam::{DVec2, IVec2};
-use rand::RngExt;
-
 use crate::{
     fractal::{CvFractalBuilder, FractalFlags},
     generate_common_methods,
@@ -9,6 +6,8 @@ use crate::{
     ruleset::enums::TerrainType,
     tile_map::TileMap,
 };
+use glam::{DVec2, IVec2};
+use rand::RngExt;
 
 use super::Generator;
 

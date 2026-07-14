@@ -1,21 +1,19 @@
-use std::{
-    cmp::max,
-    collections::{HashMap, HashSet},
-};
-
-use enum_map::Enum;
-use rand::{
-    Rng, RngExt,
-    distr::{Distribution, weighted::WeightedIndex},
-    seq::{IndexedRandom, SliceRandom},
-};
-
 use crate::{
     grid::{self, WorldSizeType},
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::{Ruleset, enums::*},
     tile::Tile,
     tile_map::{Layer, TileMap},
+};
+use enum_map::Enum;
+use rand::{
+    Rng, RngExt,
+    distr::{Distribution, weighted::WeightedIndex},
+    seq::{IndexedRandom, SliceRandom},
+};
+use std::{
+    cmp::max,
+    collections::{HashMap, HashSet},
 };
 
 impl TileMap {

@@ -1,20 +1,15 @@
 //! This module provides functionality for generating and manipulating fractal maps which can be used in games like Civilization.
 
-use std::{
-    cmp::{max, min},
-    path::Path,
-};
-
+use crate::grid::*;
 use bitflags::bitflags;
-
 use image::{
     DynamicImage, GrayImage, ImageBuffer,
     imageops::{FilterType, resize},
 };
 use rand::{RngExt, rngs::StdRng, seq::IndexedRandom};
-
-use crate::grid::{
-    Cell, Grid, Size, WrapFlags, direction::Direction, offset_coordinate::OffsetCoordinate,
+use std::{
+    cmp::{max, min},
+    path::Path,
 };
 
 const DEFAULT_WIDTH_EXP: u32 = 7;

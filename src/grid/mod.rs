@@ -63,15 +63,17 @@
 //!
 //! This module only supports **rectangular** grids. Other shapes are not considered.
 
-use direction::Direction;
-use offset_coordinate::OffsetCoordinate;
-
 use bitflags::bitflags;
 
-pub mod direction;
-pub mod hex_grid;
-pub mod offset_coordinate;
-pub mod square_grid;
+mod direction;
+mod hex_grid;
+mod offset_coordinate;
+mod square_grid;
+
+pub use direction::*;
+pub use hex_grid::*;
+pub use offset_coordinate::*;
+pub use square_grid::*;
 
 /// Grid trait defining the interface for grid structures.
 ///

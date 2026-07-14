@@ -1,23 +1,15 @@
-use std::{cmp::max, collections::BTreeSet};
-
+use crate::{
+    map_parameters::*,
+    ruleset::{self, Ruleset, enums::*, nation::*},
+    tile::Tile,
+    tile_map::*,
+};
 use enum_map::Enum;
 use rand::{
     Rng, RngExt,
     seq::{IndexedRandom, SliceRandom},
 };
-
-use crate::{
-    map_parameters::{MapParameters, ResourceSetting},
-    ruleset::{
-        self, Ruleset,
-        enums::*,
-        nation::{NationType, StartBias},
-    },
-    tile::Tile,
-    tile_map::{Layer, TileMap, get_major_strategic_resource_quantity_values},
-};
-
-use super::generate_regions::{RegionType, StartLocationCondition};
+use std::{cmp::max, collections::BTreeSet};
 
 impl TileMap {
     // function AssignStartingPlots:BalanceAndAssign

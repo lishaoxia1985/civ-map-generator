@@ -2,7 +2,7 @@ use rand::{Rng, RngExt};
 
 use crate::{
     fractal::{CvFractal, CvFractalBuilder, FractalFlags},
-    grid::{WorldSizeType, WrapFlags, hex_grid::HexGrid},
+    grid::*,
     map_parameters::{SeaLevel, WorldAge},
     ruleset::enums::TerrainType,
     tile_map::{MapParameters, TileMap},

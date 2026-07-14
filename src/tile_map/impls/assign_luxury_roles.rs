@@ -1,18 +1,16 @@
-use std::collections::HashSet;
-
-use arrayvec::ArrayVec;
-use rand::{
-    RngExt,
-    distr::{Distribution, weighted::WeightedIndex},
-    seq::SliceRandom,
-};
-
 use crate::{
     grid::WorldSizeType,
     map_parameters::MapParameters,
     ruleset::{enums::*, terrain_type},
     tile_map::{TileMap, impls::generate_regions::RegionType},
 };
+use arrayvec::ArrayVec;
+use rand::{
+    RngExt,
+    distr::{Distribution, weighted::WeightedIndex},
+    seq::SliceRandom,
+};
+use std::collections::HashSet;
 
 impl TileMap {
     // function AssignStartingPlots:AssignLuxuryRoles

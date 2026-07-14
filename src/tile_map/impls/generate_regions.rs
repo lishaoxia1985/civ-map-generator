@@ -1,18 +1,12 @@
+use crate::{
+    grid::*, map_parameters::RegionDivideMethod, ruleset::enums::*, tile::Tile, tile_map::*,
+};
+use enum_map::EnumMap;
+use serde::{Deserialize, Serialize};
 use std::{
     cmp::{max, min},
     iter::Once,
     sync::OnceLock,
-};
-
-use enum_map::EnumMap;
-use serde::{Deserialize, Serialize};
-
-use crate::{
-    grid::{Rectangle, WrapFlags, hex_grid::HexGrid, offset_coordinate::OffsetCoordinate},
-    map_parameters::RegionDivideMethod,
-    ruleset::enums::*,
-    tile::Tile,
-    tile_map::{AreaFlags, MapParameters, TileMap},
 };
 
 impl TileMap {

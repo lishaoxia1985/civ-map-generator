@@ -1,5 +1,3 @@
-use std::collections::{BTreeSet, VecDeque};
-
 use crate::{
     MapParameters,
     ruleset::{Ruleset, enums::TerrainType},
@@ -7,6 +5,7 @@ use crate::{
     tile_map::TileMap,
 };
 use bitflags::bitflags;
+use std::collections::{BTreeSet, VecDeque};
 
 pub const UNINITIALIZED_AREA_ID: usize = usize::MAX;
 pub const UNINITIALIZED_LANDMASS_ID: usize = usize::MAX;

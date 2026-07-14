@@ -3,6 +3,10 @@ use crate::{
     tile::Tile,
     tile_map::{Layer, TileMap},
 };
+use rand::{
+    Rng, RngExt,
+    distr::{Distribution, weighted::WeightedIndex},
+};
 
 mod place_bonus_resources;
 mod place_luxury_resources;
@@ -11,10 +15,6 @@ mod place_strategic_resources;
 pub(crate) use place_bonus_resources::*;
 pub(crate) use place_luxury_resources::*;
 pub(crate) use place_strategic_resources::*;
-use rand::{
-    Rng, RngExt,
-    distr::{Distribution, weighted::WeightedIndex},
-};
 
 impl TileMap {
     // function AssignStartingPlots:ProcessResourceList

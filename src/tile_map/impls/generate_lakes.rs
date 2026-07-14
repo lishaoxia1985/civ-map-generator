@@ -1,10 +1,5 @@
+use crate::{ruleset::enums::*, tile::Tile, tile_map::*};
 use rand::{Rng, RngExt};
-
-use crate::{
-    ruleset::enums::*,
-    tile::Tile,
-    tile_map::{MapParameters, TileMap, impls::generate_area_and_landmass::LandmassType},
-};
 
 impl TileMap {
     /// Generate [`BaseTerrain::Lake`] on the map.

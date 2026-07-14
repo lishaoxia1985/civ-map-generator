@@ -1,11 +1,10 @@
-use rand::{Rng, RngExt, seq::SliceRandom};
-
 use crate::{
     grid::WorldSizeType,
     map_parameters::Rainfall,
     ruleset::{Ruleset, enums::*},
     tile_map::{AreaFlags, MapParameters, TileMap},
 };
+use rand::{Rng, RngExt, seq::SliceRandom};
 
 impl TileMap {
     /// Add features to the tile map.

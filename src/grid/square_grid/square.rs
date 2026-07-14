@@ -1,8 +1,6 @@
-use std::ops::{Add, Sub};
-
+use crate::grid::*;
 use glam::{IVec2, Vec2};
-
-use crate::grid::{direction::Direction, offset_coordinate::OffsetCoordinate};
+use std::ops::{Add, Sub};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Square(IVec2);

@@ -28,12 +28,7 @@
 //! Different layers have different ripple behaviors.
 //! See [`TileMap::layer_data`] and [`TileMap::place_impact_and_ripples`] for detailed implementation.
 
-use crate::{
-    grid::{direction::Direction, hex_grid::*},
-    map_parameters::{MapParameters, ResourceSetting, WorldGrid},
-    ruleset::enums::*,
-    tile::Tile,
-};
+use crate::{grid::*, map_parameters::*, ruleset::enums::*, tile::Tile};
 use arrayvec::ArrayVec;
 use enum_map::{Enum, EnumMap, enum_map};
 use rand::{RngExt, SeedableRng, rngs::StdRng};

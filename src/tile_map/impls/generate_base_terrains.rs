@@ -1,13 +1,11 @@
-use std::cmp::max;
-
-use rand::{Rng, RngExt};
-
 use crate::{
     fractal::{CvFractal, CvFractalBuilder, FractalFlags},
     map_parameters::Temperature,
     ruleset::enums::*,
     tile_map::{MapParameters, TileMap},
 };
+use rand::{Rng, RngExt};
+use std::cmp::max;
 
 impl TileMap {
     /// Generate base terrains except for [`BaseTerrain::Lake`].

@@ -1,9 +1,4 @@
-use crate::{
-    grid::{Grid, offset_coordinate::OffsetCoordinate},
-    ruleset::enums::TerrainType,
-    tile::Tile,
-    tile_map::TileMap,
-};
+use crate::{grid::*, ruleset::enums::TerrainType, tile::Tile, tile_map::TileMap};
 
 impl TileMap {
     /// Shift terrain types to align the most water-heavy portions of the map with the edges.

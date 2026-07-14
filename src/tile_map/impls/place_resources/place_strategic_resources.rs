@@ -1,5 +1,3 @@
-use rand::{Rng, RngExt, seq::SliceRandom};
-
 use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::enums::*,
@@ -9,6 +7,7 @@ use crate::{
         impls::place_resources::ResourceToPlace,
     },
 };
+use rand::{Rng, RngExt, seq::SliceRandom};
 
 impl TileMap {
     /// Places strategic resources on the map.

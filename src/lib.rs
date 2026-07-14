@@ -57,6 +57,8 @@
 //! - [Red Blob Games - Hexagonal Grids](https://www.redblobgames.com/grids/hexagons/)
 
 ////////////////////////////////////////////////////////////////////////////////
+use map_generator::{fractal::Fractal, pangaea::Pangaea};
+use map_parameters::MapType;
 
 pub mod fractal;
 pub mod grid;
@@ -72,9 +74,6 @@ pub use map_generator::Generator;
 pub use map_parameters::{MapParameters, MapParametersBuilder};
 pub use ruleset::Ruleset;
 pub use tile_map::TileMap;
-
-use map_generator::{fractal::Fractal, pangaea::Pangaea};
-use map_parameters::MapType;
 
 /// Generates a map based on the provided parameters and ruleset.
 ///

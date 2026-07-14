@@ -1,21 +1,18 @@
-use std::cmp::min;
-
-use std::collections::{BTreeMap, HashSet};
-
-use enum_map::Enum;
-use rand::RngExt;
-use rand::seq::IndexedRandom;
-use rand::{Rng, seq::SliceRandom};
-
-use crate::grid::Rectangle;
-use crate::ruleset::enums::*;
-use crate::ruleset::nation::NationType;
 use crate::{
-    grid::offset_coordinate::OffsetCoordinate,
-    map_parameters::{MapParameters, RegionDivideMethod},
-    ruleset::Ruleset,
+    grid::*,
+    map_parameters::*,
+    ruleset::{Ruleset, enums::*, nation::NationType},
     tile::Tile,
-    tile_map::{Layer, TileMap},
+    tile_map::*,
+};
+use enum_map::Enum;
+use rand::{
+    Rng, RngExt,
+    seq::{IndexedRandom, SliceRandom},
+};
+use std::{
+    cmp::min,
+    collections::{BTreeMap, HashSet},
 };
 
 impl TileMap {

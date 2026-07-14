@@ -1,22 +1,13 @@
-use std::cmp::Reverse;
-
-use std::collections::HashSet;
-
-use enum_map::EnumMap;
-use rand::RngExt;
-use rand::prelude::SliceRandom;
-use rand::{Rng, seq::IndexedRandom};
-
-use crate::map_parameters::MapParameters;
-use crate::ruleset::common::Unique;
-use crate::ruleset::enums::*;
-use crate::tile_map::AreaFlags;
 use crate::{
     grid::Grid,
-    ruleset::Ruleset,
+    map_parameters::MapParameters,
+    ruleset::{common::Unique, enums::*, *},
     tile::Tile,
-    tile_map::{Layer, TileMap},
+    tile_map::*,
 };
+use enum_map::EnumMap;
+use rand::{Rng, RngExt, prelude::SliceRandom, seq::IndexedRandom};
+use std::{cmp::Reverse, collections::HashSet};
 
 impl TileMap {
     /// Generate natural wonders on the map.
