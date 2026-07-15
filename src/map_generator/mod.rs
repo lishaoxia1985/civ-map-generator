@@ -1,4 +1,4 @@
-//! This module defines the `Generator` trait for map generation and provides common methods for map generators.
+//! This module defines the [`Generator`] trait for map generation and provides common methods for map generators.
 
 use crate::{map_parameters::MapParameters, tile_map::TileMap};
 

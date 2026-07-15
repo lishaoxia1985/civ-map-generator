@@ -1,11 +1,10 @@
 //! This module defines the [MapParameters] struct that contains all the parameters for generating maps.
 
 use crate::{
-    Ruleset,
     grid::*,
     ruleset::{
         enums::{EnumStr, Nation},
-        nation::NationType,
+        *,
     },
 };
 use core::debug_assert;
@@ -463,7 +462,7 @@ impl MapParametersBuilder {
 /// 1. [`WorldGrid::from_grid`] constructor - Creates from a custom-sized grid,
 ///    automatically determining the [`WorldSizeType`] based on grid dimensions:
 /// ```rust
-/// use civ_map_generator::grid::{*,hex_grid::*};
+/// use civ_map_generator::grid::*;
 /// use civ_map_generator::map_parameters::*;
 ///
 /// let grid = HexGrid::new(
@@ -483,7 +482,7 @@ impl MapParametersBuilder {
 /// 2. Explicit [`WorldSizeType`] specification - Creates with default grid dimensions
 ///    for a standardized world size:
 /// ```rust
-/// use civ_map_generator::grid::{*,hex_grid::*};
+/// use civ_map_generator::grid::*;
 /// use civ_map_generator::map_parameters::*;
 ///
 /// let world_size_type = WorldSizeType::Standard;
@@ -520,7 +519,7 @@ impl WorldGrid {
     /// Direct initialization with the `new` function outside of this pattern is not supported:
     ///
     /// ```rust
-    /// use civ_map_generator::grid::{*,hex_grid::*};
+    /// use civ_map_generator::grid::*;
     /// use civ_map_generator::map_parameters::*;
     ///
     /// let world_size_type = WorldSizeType::Standard;

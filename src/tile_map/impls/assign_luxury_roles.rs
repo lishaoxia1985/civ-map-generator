@@ -1,7 +1,7 @@
 use crate::{
     grid::WorldSizeType,
     map_parameters::MapParameters,
-    ruleset::{enums::*, terrain_type},
+    ruleset::enums::*,
     tile_map::{TileMap, impls::generate_regions::RegionType},
 };
 use arrayvec::ArrayVec;

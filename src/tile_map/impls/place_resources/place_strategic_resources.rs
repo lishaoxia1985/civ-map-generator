@@ -2,10 +2,7 @@ use crate::{
     map_parameters::{MapParameters, ResourceSetting},
     ruleset::enums::*,
     tile::Tile,
-    tile_map::{
-        Layer, TileMap, get_major_strategic_resource_quantity_values,
-        impls::place_resources::ResourceToPlace,
-    },
+    tile_map::{impls::place_resources::ResourceToPlace, *},
 };
 use rand::{Rng, RngExt, seq::SliceRandom};
 

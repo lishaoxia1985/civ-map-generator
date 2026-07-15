@@ -725,7 +725,7 @@ impl<G: Grid> CvFractal<G> {
 ///
 /// ```rust
 /// use civ_map_generator::fractal::CvFractalBuilder;
-/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use civ_map_generator::grid::*;
 /// use rand::{SeedableRng, rngs::StdRng};
 ///
 /// let grid = HexGrid::new(
@@ -748,7 +748,7 @@ impl<G: Grid> CvFractal<G> {
 ///
 /// ```rust
 /// use civ_map_generator::fractal::{CvFractalBuilder, FractalFlags};
-/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use civ_map_generator::grid::*;
 /// use rand::{SeedableRng, rngs::StdRng};
 ///
 /// let grid = HexGrid::new(
@@ -773,7 +773,7 @@ impl<G: Grid> CvFractal<G> {
 ///
 /// ```rust
 /// use civ_map_generator::fractal::CvFractalBuilder;
-/// use civ_map_generator::grid::{*, hex_grid::*};
+/// use civ_map_generator::grid::*;
 /// use rand::{SeedableRng, rngs::StdRng};
 ///
 /// let grid = HexGrid::new(
@@ -935,7 +935,7 @@ impl<'a, G: Grid> CvFractalBuilder<'a, G> {
     ///
     /// ```rust
     /// use civ_map_generator::fractal::CvFractalBuilder;
-    /// use civ_map_generator::grid::{*, hex_grid::*};
+    /// use civ_map_generator::grid::*;
     /// use rand::{SeedableRng, rngs::StdRng};
     ///
     /// let grid = HexGrid::new(

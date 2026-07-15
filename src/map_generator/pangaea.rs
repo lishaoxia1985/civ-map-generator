@@ -1,15 +1,14 @@
+use super::Generator;
 use crate::{
     fractal::{CvFractalBuilder, FractalFlags},
     generate_common_methods,
     grid::WorldSizeType,
-    map_parameters::{MapParameters, SeaLevel, WorldAge},
-    ruleset::enums::TerrainType,
+    map_parameters::*,
+    ruleset::enums::*,
     tile_map::TileMap,
 };
 use glam::{DVec2, IVec2};
 use rand::RngExt;
-
-use super::Generator;
 
 pub struct Pangaea(TileMap);
 

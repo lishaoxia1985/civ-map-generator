@@ -527,18 +527,14 @@ impl TileMap {
 /// - `a`: The upper bound value (inclusive)
 ///
 /// # Returns
-/// - The largest power of 2 ≤ `a`.
+///
+/// - The largest power of 2 ≤ `a`. For example:
+///   - If a is 5, then 4 will be returned.
+///   - If a is 10, then 8 will be returned.
 ///
 /// # Panics
 ///
 /// This function will panic if `a` is 0.
-///
-/// # Examples
-///
-/// ```, ignored
-/// assert_eq!(largest_power_of_two_less_or_equal(5), 4);  // 4 is 2^2
-/// assert_eq!(largest_power_of_two_less_or_equal(8), 8);  // 8 is 2^3
-/// ```
 const fn largest_power_of_two_less_or_equal(a: u32) -> u32 {
     if a == 0 {
         panic!("a must not be zero");
@@ -554,18 +550,13 @@ const fn largest_power_of_two_less_or_equal(a: u32) -> u32 {
 ///
 /// # Returns
 ///
-/// - The largest power of 3 ≤ `a`, 1 if 1 ≤ a < 3.
+/// - The largest power of 3 ≤ `a`, returns `1` if 1 ≤ `a` < 3. For example:
+///   - If a is 5, then 3 will be returned.
+///   - If a is 10, then 9 will be returned.
 ///
 /// # Panics
 ///
 /// This function will panic if `a` is 0.
-///
-/// # Examples
-///
-/// ```, ignored
-/// assert_eq!(largest_power_of_three_less_or_equal(5), 3);  // 3 is 3^1
-/// assert_eq!(largest_power_of_three_less_or_equal(9), 9);  // 9 is 3^2
-/// ```
 const fn largest_power_of_three_less_or_equal(a: u32) -> u32 {
     if a < 3 {
         return if a >= 1 {

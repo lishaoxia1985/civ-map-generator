@@ -9,61 +9,46 @@
 //! The [`Ruleset::new`] method will panic if any JSON file cannot be loaded or parsed.
 //! For production use, consider implementing proper error handling with `Result` types.
 
+use serde::de::DeserializeOwned;
 use std::{
     collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
 
-use serde::de::DeserializeOwned;
-
-pub mod base_terrain;
-pub mod belief;
-pub mod building;
-pub mod city_state_type;
-pub mod common;
-pub mod difficulty;
+// Notes: we don't  re-export the mod `enums` by `pub use`,
+// so we make it publically.
 pub mod enums;
-pub mod era;
-pub mod feature;
-pub mod global_unique;
-pub mod nation;
-pub mod natural_wonder;
-pub mod policy;
-pub mod quest;
-pub mod resource;
-pub mod ruin;
-pub mod specialist;
-pub mod tech;
-pub mod terrain_type;
-pub mod tile_improvement;
-pub mod unit;
-pub mod unit_promotion;
-pub mod unit_type;
 
-use crate::ruleset::{
-    base_terrain::BaseTerrainInfo,
-    belief::BeliefInfo,
-    building::BuildingInfo,
-    city_state_type::CityStateTypeInfo,
-    common::Name,
-    difficulty::DifficultyInfo,
-    era::EraInfo,
-    feature::FeatureInfo,
-    global_unique::GlobalUnique,
-    nation::NationInfo,
-    natural_wonder::NaturalWonderInfo,
-    policy::{Policy, PolicyBranchInfo},
-    quest::QuestInfo,
-    resource::ResourceInfo,
-    ruin::Ruin,
-    specialist::SpecialistInfo,
-    tech::{TechColumn, Technology},
-    terrain_type::TerrainTypeInfo,
-    tile_improvement::TileImprovementInfo,
-    unit::UnitInfo,
-    unit_promotion::UnitPromotionInfo,
-    unit_type::UnitTypeInfo,
+// The modules we re-export at the following code.
+mod base_terrain;
+mod belief;
+mod building;
+mod city_state_type;
+mod common;
+mod difficulty;
+mod era;
+mod feature;
+mod global_unique;
+mod nation;
+mod natural_wonder;
+mod policy;
+mod quest;
+mod resource;
+mod ruin;
+mod specialist;
+mod tech;
+mod terrain_type;
+mod tile_improvement;
+mod unit;
+mod unit_promotion;
+mod unit_type;
+
+pub use crate::ruleset::{
+    base_terrain::*, belief::*, building::*, city_state_type::*, common::*, difficulty::*, era::*,
+    feature::*, global_unique::*, nation::*, natural_wonder::*, policy::*, quest::*, resource::*,
+    ruin::*, specialist::*, tech::*, terrain_type::*, tile_improvement::*, unit::*,
+    unit_promotion::*, unit_type::*,
 };
 
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: PathBuf) -> HashMap<String, T> {

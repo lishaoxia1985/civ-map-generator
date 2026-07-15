@@ -1,6 +1,6 @@
 use crate::{
     map_parameters::*,
-    ruleset::{self, Ruleset, enums::*, nation::*},
+    ruleset::{enums::*, *},
     tile::Tile,
     tile_map::*,
 };

@@ -376,7 +376,7 @@ pub trait Grid {
     /// - For WarpY grids: `distance` should be ≤ `self.height() / 2`.
     ///
     /// If you need distances beyond these limits (not recommended), filter results like this:
-    /// ```rust, ignore
+    /// ```rust,ignore
     /// let cells = grid.cells_at_distance(center, distance)
     ///     .filter(|cell| {
     ///     grid.distance_to(center, *cell) == distance as i32
@@ -407,7 +407,7 @@ pub trait Grid {
     /// - For WarpY grids: `distance` should be ≤ `self.height() / 2`.
     ///
     /// If you need distances beyond these limits (not recommended), remove duplicate results like this:
-    /// ```rust, ignore
+    /// ```rust,ignore
     /// let cells = grid.cells_within_distance(center, distance)
     ///     .collect::<HashSet<_>>();
     /// ```
