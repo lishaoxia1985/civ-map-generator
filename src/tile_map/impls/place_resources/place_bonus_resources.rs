@@ -1,11 +1,8 @@
 use crate::{
     map_parameters::{MapParameters, RegionDivideMethod, ResourceSetting},
-    ruleset::enums::*,
+    ruleset::{RegionType, enums::*},
     tile::Tile,
-    tile_map::{
-        Layer, TileMap,
-        impls::{generate_regions::RegionType, place_resources::ResourceToPlace},
-    },
+    tile_map::{Layer, TileMap, impls::place_resources::ResourceToPlace},
 };
 use rand::{Rng, RngExt, seq::SliceRandom};
 

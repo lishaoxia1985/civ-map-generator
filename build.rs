@@ -28,6 +28,7 @@ fn main() {
         "Unit.json",
         "UnitPromotion.json",
         "UnitType.json",
+        "VictoryType.json",
     ];
 
     // Declare files that should trigger rebuilds when changed

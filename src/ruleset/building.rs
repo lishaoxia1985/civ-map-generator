@@ -1,10 +1,10 @@
+use super::{
+    Name,
+    common::{RequiredTerrain, Yields},
+};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
-
-use crate::ruleset::common::{RequiredTerrain, Yields};
-
-use super::Name;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildingInfo {

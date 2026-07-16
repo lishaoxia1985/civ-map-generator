@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
-
 use super::Name;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,5 +1,9 @@
 use crate::{
-    grid::*, map_parameters::RegionDivideMethod, ruleset::enums::*, tile::Tile, tile_map::*,
+    grid::*,
+    map_parameters::RegionDivideMethod,
+    ruleset::{RegionType, enums::*},
+    tile::Tile,
+    tile_map::*,
 };
 use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
@@ -1128,27 +1132,6 @@ impl Region {
 
         self.region_type = region_type;
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-/// Region type.
-///
-/// The variant are defined in order of priority.
-/// The priority is typically used to sort the regions.
-/// The highest priority is [`RegionType::Tundra`] and [`RegionType::Undefined`] is the lowest priority.
-///
-/// If you add a new region type, [`RegionType::Undefined`] should be always the last variant.
-/// In the other words, [`RegionType::Undefined`] is always the lowest priority.
-pub enum RegionType {
-    Tundra,
-    Jungle,
-    Forest,
-    Desert,
-    Hill,
-    Plain,
-    Grassland,
-    Hybrid,
-    Undefined,
 }
 
 #[derive(PartialEq, Debug)]

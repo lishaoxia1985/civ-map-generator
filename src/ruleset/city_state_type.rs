@@ -1,6 +1,5 @@
+use super::Name;
 use serde::{Deserialize, Serialize};
-
-use crate::ruleset::common::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

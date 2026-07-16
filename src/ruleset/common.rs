@@ -1,9 +1,7 @@
-use std::sync::LazyLock;
-
+use super::enums::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-
-use crate::ruleset::enums::*;
+use std::sync::LazyLock;
 
 pub trait Name {
     fn name(&self) -> String;

@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use super::Name;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BeliefInfo {

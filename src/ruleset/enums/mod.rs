@@ -35,6 +35,8 @@ pub mod unit_promotion;
 pub use unit_promotion::UnitPromotion;
 pub mod unit_type;
 pub use unit_type::UnitType;
+pub mod victory_type;
+pub use victory_type::VictoryType;
 
 /// Trait for infallible conversion between enum variants and string representations
 /// **PANICS** if string does not match any variant

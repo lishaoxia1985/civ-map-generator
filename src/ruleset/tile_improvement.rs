@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-
+use super::{
+    Name,
+    common::{RequiredTerrain, Yields},
+};
 use serde::{Deserialize, Serialize};
-
-use crate::ruleset::common::{RequiredTerrain, Yields};
-
-use super::Name;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

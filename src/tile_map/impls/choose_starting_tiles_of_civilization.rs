@@ -1,4 +1,10 @@
-use crate::{grid::*, map_parameters::MapParameters, ruleset::enums::*, tile::Tile, tile_map::*};
+use crate::{
+    grid::*,
+    map_parameters::MapParameters,
+    ruleset::{RegionType, enums::*},
+    tile::Tile,
+    tile_map::*,
+};
 use bitflags::bitflags;
 use enum_map::{Enum, EnumMap};
 use std::collections::HashMap;

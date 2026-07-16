@@ -1,8 +1,5 @@
+use super::{Name, enums::VictoryType};
 use serde::{Deserialize, Serialize};
-
-use crate::tile_map::RegionType;
-
-use super::Name;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -14,8 +11,7 @@ pub struct NationInfo {
     pub adjective: Vec<String>,
     #[serde(default)]
     pub start_bias: Option<StartBias>,
-    #[serde(default)]
-    pub preferred_victory_type: String,
+    pub preferred_victory_type: Option<VictoryType>,
     #[serde(default)]
     pub start_intro_part1: String,
     #[serde(default)]
@@ -62,6 +58,27 @@ pub enum StartBias {
     AlongRiver,
     RegionTypePriority(Vec<RegionType>),
     RegionTypeAvoid(Vec<RegionType>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// Region type.
+///
+/// The variant are defined in order of priority.
+/// The priority is typically used to sort the regions.
+/// The highest priority is [`RegionType::Tundra`] and [`RegionType::Undefined`] is the lowest priority.
+///
+/// If you add a new region type, [`RegionType::Undefined`] should be always the last variant.
+/// In the other words, [`RegionType::Undefined`] is always the lowest priority.
+pub enum RegionType {
+    Tundra,
+    Jungle,
+    Forest,
+    Desert,
+    Hill,
+    Plain,
+    Grassland,
+    Hybrid,
+    Undefined,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]

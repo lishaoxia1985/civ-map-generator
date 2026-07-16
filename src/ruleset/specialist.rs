@@ -1,10 +1,6 @@
-use std::collections::HashMap;
-
+use super::{Name, common::Yields};
 use serde::{Deserialize, Serialize};
-
-use crate::ruleset::common::Yields;
-
-use super::Name;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,8 +1,8 @@
 use crate::{
     grid::WorldSizeType,
     map_parameters::MapParameters,
-    ruleset::enums::*,
-    tile_map::{TileMap, impls::generate_regions::RegionType},
+    ruleset::{RegionType, enums::*},
+    tile_map::TileMap,
 };
 use arrayvec::ArrayVec;
 use rand::{

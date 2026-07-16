@@ -1,14 +1,13 @@
-use std::collections::HashMap;
-
+use super::{Name, enums::VictoryType};
 use serde::{Deserialize, Serialize};
-
-use super::Name;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PolicyBranchInfo {
     pub name: String,
     pub era: String,
-    pub prioritie: Option<HashMap<String, i8>>,
+    /// The priority that Civilization choose this policy branch is up to its victory type.
+    pub priorities: HashMap<VictoryType, u8>,
     pub uniques: Vec<String>,
     pub policies: Vec<Policy>,
 }

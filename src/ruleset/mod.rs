@@ -43,12 +43,13 @@ mod tile_improvement;
 mod unit;
 mod unit_promotion;
 mod unit_type;
+mod victory_type;
 
 pub use crate::ruleset::{
     base_terrain::*, belief::*, building::*, city_state_type::*, common::*, difficulty::*, era::*,
     feature::*, global_unique::*, nation::*, natural_wonder::*, policy::*, quest::*, resource::*,
     ruin::*, specialist::*, tech::*, terrain_type::*, tile_improvement::*, unit::*,
-    unit_promotion::*, unit_type::*,
+    unit_promotion::*, unit_type::*, victory_type::*,
 };
 
 fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: PathBuf) -> HashMap<String, T> {
@@ -94,6 +95,7 @@ pub struct Ruleset {
 
     pub difficulties: HashMap<String, DifficultyInfo>,
     pub eras: HashMap<String, EraInfo>,
+    pub victory_types: HashMap<String, VictoryTypeInfo>,
     pub global_uniques: GlobalUnique,
 }
 
@@ -174,6 +176,9 @@ impl Ruleset {
 
         let quests: HashMap<_, _> =
             create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json"));
+
+        let victory_types: HashMap<_, _> =
+            create_hashmap_from_json_file(ruleset_json_folder.join("VictoryType.json"));
 
         /* **********End of Loading standard ruleset JSON file********** */
 
@@ -296,6 +301,7 @@ impl Ruleset {
             technologies,
             quests,
             difficulties,
+            victory_types,
             eras,
             global_uniques,
         }

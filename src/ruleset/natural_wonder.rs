@@ -1,11 +1,9 @@
-use serde::{Deserialize, Serialize};
-
-use crate::ruleset::{
+use super::{
+    Name,
     common::{RequiredTerrain, Yields},
     enums::*,
 };
-
-use super::Name;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
