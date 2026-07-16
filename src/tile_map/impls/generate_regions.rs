@@ -616,13 +616,13 @@ pub struct Region {
     /// The type of the region. Ensure that method [`Region::determine_region_type`] has been called before accessing this field.
     /// Before calling the method, use [`RegionType::Undefined`] as the placeholder.
     pub region_type: RegionType,
-    /// The starting tile of the civilization in this region. Ensure that method [`TileMap::choose_civilization_starting_tiles`] has been called before accessing this field.
+    /// The starting tile of the civilization in this region. Ensure that method [`TileMap::choose_starting_tiles_of_civilization`] has been called before accessing this field.
     pub starting_tile: OnceLock<Tile>,
     /// The start location condition of the region.
     ///
     /// # Notes
     ///
-    /// Before reading this field, you must ensure that we have run [`TileMap::normalize_civilization_starting_tile`] to set this field.
+    /// Before reading this field, you must ensure that we have run [`TileMap::normalize_start_tile_of_civilization`] to set this field.
     pub start_location_condition: OnceLock<StartLocationCondition>,
 }
 

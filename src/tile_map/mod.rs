@@ -219,7 +219,7 @@ impl TileMap {
     /// # Notes
     ///
     /// You can place impact and ripples to forbid other elements to appear around a specific tile, even if you are not adding an element to this tile.
-    /// See [`TileMap::normalize_civilization_starting_tile`] for an example.
+    /// See [`TileMap::normalize_start_tile_of_civilization`] for an example.
     ///
     /// # Panics
     ///
@@ -632,7 +632,7 @@ impl TileMap {
     ///
     /// In the original code, `clear ice near city site` and `generate luxury plot lists at city site` are combined in one method.
     /// We have extracted the `generate luxury plot lists at city site` into a separate method.
-    /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_tile_lists_at_city_site`].
+    /// If you want to generate luxury plot lists at city site, you need to call [`TileMap::generate_luxury_or_strategic_tile_lists_at_city_site`].
     pub fn clear_ice_near_city_site(&mut self, city_site: Tile, radius: u32) {
         let grid = self.world_grid.grid;
 

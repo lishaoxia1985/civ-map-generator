@@ -55,7 +55,7 @@ pub trait Generator {
         self.tile_map_mut().generate_regions(map_parameters);
     }
 
-    fn choose_civilization_starting_tiles(&mut self, map_parameters: &MapParameters) {
+    fn choose_starting_tiles_of_civilization(&mut self, map_parameters: &MapParameters) {
         self.tile_map_mut()
             .choose_starting_tiles_of_civilization(map_parameters);
     }
@@ -136,7 +136,7 @@ pub trait Generator {
         /********** Process 2: Place Civs, Natural Wonders, City-States and Resources **********/
         map.generate_regions(map_parameters);
 
-        map.choose_civilization_starting_tiles(map_parameters);
+        map.choose_starting_tiles_of_civilization(map_parameters);
 
         map.balance_and_assign_start_locations_of_civilization(map_parameters);
 
