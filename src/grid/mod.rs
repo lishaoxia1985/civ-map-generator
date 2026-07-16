@@ -446,47 +446,6 @@ pub trait Grid {
     /// }
     /// ```
     fn estimate_direction(&self, start: Cell, dest: Cell) -> Option<Direction>;
-
-    /// Create a rectangle region starting at `origin` with the specified `width` and `height` in the grid.
-    ///
-    /// # Arguments
-    ///
-    /// - `origin`: The bottom-left (south-west) corner of the rectangle in offset coordinates
-    /// - `width`: Width of the rectangle in cells
-    /// - `height`: Height of the rectangle in cells
-    /// - `grid`: The grid context for boundary checking
-    ///
-    /// # Returns
-    ///
-    /// A [`Rectangle`] object that can iterate over all contained cells
-    fn rectangle_region(&self, origin: OffsetCoordinate, width: u32, height: u32) -> Rectangle
-    where
-        Self: Sized,
-    {
-        Rectangle::new(origin, width, height, self)
-    }
-
-    /// Create a rectangle region starting at `origin`(bottom-left corner) and ending at `top-right corner` in the grid.
-    ///
-    /// # Arguments
-    ///
-    /// - `origin`: The bottom-left (south-west) corner of the rectangle in offset coordinates
-    /// - `top_right_corner`: The top-right (north-east) corner of the rectangle in offset coordinates
-    /// - `grid`: The grid context for boundary checking and wrap handling
-    ///
-    /// # Returns
-    ///
-    /// A [`Rectangle`] object that can iterate over all contained cells
-    fn rectangle_region_from_corners(
-        &self,
-        origin: OffsetCoordinate,
-        top_right_corner: OffsetCoordinate,
-    ) -> Rectangle
-    where
-        Self: Sized,
-    {
-        Rectangle::from_corners(origin, top_right_corner, self)
-    }
 }
 
 /// Represents the dimensions of a grid or map.
