@@ -172,7 +172,7 @@ impl Ruleset {
             create_hashmap_from_json_file(ruleset_json_folder.join("CityStateType.json"));
 
         let policy_branches: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Policy.json"));
+            create_hashmap_from_json_file(ruleset_json_folder.join("PolicyBranch.json"));
 
         let quests: HashMap<_, _> =
             create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json"));

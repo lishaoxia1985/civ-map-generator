@@ -19,6 +19,8 @@ pub mod nation;
 pub use nation::Nation;
 pub mod natural_wonder;
 pub use natural_wonder::NaturalWonder;
+pub mod policy_branch;
+pub use policy_branch::PolicyBranch;
 pub mod quest;
 pub use quest::Quest;
 pub mod resource;

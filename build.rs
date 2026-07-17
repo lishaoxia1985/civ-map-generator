@@ -20,6 +20,7 @@ fn main() {
         "Feature.json",
         "Nation.json",
         "NaturalWonder.json",
+        "PolicyBranch.json",
         "Quest.json",
         "Resource.json",
         "Specialist.json",
