@@ -6,6 +6,12 @@ use crate::{
 };
 use rand::{Rng, RngExt, seq::IndexedRandom};
 
+const RIVER_SOURCE_RANGE_DEFAULT: u32 = 4;
+const SEA_WATER_RANGE_DEFAULT: u32 = 3;
+/// `TILES_PER_RIVER_EDGE` specifies the number of tiles required before a river edge can appear.
+/// When `TILES_PER_RIVER_EDGE` is set to 12, it indicates that for every 12 tiles, there can be 1 river edge.
+const TILES_PER_RIVER_EDGE: u32 = 12;
+
 impl TileMap {
     /// Adds rivers to the map.
     ///
@@ -18,79 +24,94 @@ impl TileMap {
     /// See the [`TileMap::add_features`] documentation for more details.
     pub fn add_rivers(&mut self) {
         let grid = self.world_grid.grid;
-
-        let river_source_range_default = 4;
-        let sea_water_range_default = 3;
-        // `TILES_PER_RIVER_EDGE` specifies the number of tiles required before a river edge can appear.
-        // When `TILES_PER_RIVER_EDGE` is set to 12, it indicates that for every 12 tiles, there can be 1 river edge.
-        const TILES_PER_RIVER_EDGE: u32 = 12;
-
-        (0..4).for_each(|index| {
-            let (river_source_range, sea_water_range) = if index <= 1 {
-                (river_source_range_default, sea_water_range_default)
-            } else {
-                (
-                    (river_source_range_default / 2),
-                    (sea_water_range_default / 2),
-                )
-            };
-
-            self.all_tiles().for_each(|tile| {
-                let terrain_type = tile.terrain_type(self);
-                let area_id = tile.area_id(self);
-                // Check if the tile can be a river starting location.
-                let pass_condition = match index {
-                    0 => {
-                        // Mountain and Hill are the 1st priority for river starting locations.
-                        matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill)
-                    }
-                    1 => {
-                        // Land tiles that are not near the coast are the 2nd priority for river starting locations.
-                        terrain_type != TerrainType::Water
-                            && !tile.is_coastal_land(self)
-                            && self.random_number_generator.random_range(0..8) == 0
-                    }
-                    2 => {
-                        // If there are still not enough rivers generated, the algorithm should run again using Mountain and Hill as the river starting locations.
-                        let num_tiles = self.area_list[area_id].size;
-                        let num_river_edges = self.river_edge_count(area_id);
-                        matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill)
-                            && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
-                    }
-                    3 => {
-                        // At last if there are still not enough rivers generated, the algorithm should run again using any Land tiles as the river starting locations.
-                        let num_tiles = self.area_list[area_id].size;
-                        let num_river_edges = self.river_edge_count(area_id);
-                        terrain_type != TerrainType::Water
-                            && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
-                    }
-                    _ => unreachable!(),
-                };
-
-                // Tile should meet these conditions:
-                // 1. It should meet the pass condition
-                // 2. It should be not a natural wonder
-                // 3. It should not be adjacent to a natural wonder
-                // 4. all tiles around it in a given distance `river_source_range` (including self) should be not fresh water
-                // 5. all tiles around it in a given distance `sea_water_range` (including self) should be not water
-                if pass_condition
+        // Returns a list of anchor tiles and their corresponding inland corner tiles.
+        // Anchor tiles should meet that are neither water nor natural wonders,
+        // and its neighbors are all not natural wonders,
+        // and it has at least one inland corner tile.
+        let anchor_tile_and_inland_corner_list: Vec<(Tile, Vec<Tile>)> = self
+            .all_tiles()
+            .filter_map(|tile| {
+                let inland_corner_list = self.get_inland_corner_list(tile);
+                if tile.terrain_type(self) != TerrainType::Water
                     && tile.natural_wonder(self).is_none()
                     && !tile
                         .neighbor_tiles(grid)
                         .any(|neighbor_tile| neighbor_tile.natural_wonder(self).is_some())
-                    && !tile
-                        .tiles_in_distance(river_source_range, grid)
-                        .any(|tile| tile.is_freshwater(self))
-                    && !tile
-                        .tiles_in_distance(sea_water_range, grid)
-                        .any(|tile| tile.terrain_type(self) == TerrainType::Water)
+                    && !inland_corner_list.is_empty()
                 {
-                    let start_tile = self.get_inland_corner(tile);
-                    if let Some(start_tile) = start_tile {
-                        self.do_river(start_tile, None);
-                    }
+                    Some((tile, inland_corner_list))
+                } else {
+                    None
                 }
-            });
+            })
+            .collect();
+
+        (0..4).for_each(|index| {
+            anchor_tile_and_inland_corner_list.iter().for_each(
+                |(anchor_tile, inland_corner_list)| {
+                    let terrain_type = anchor_tile.terrain_type(self);
+                    let area_id = anchor_tile.area_id(self);
+                    // Check if the anchor tile can be a river starting location.
+                    // Note: River starting location is different from river start tile.
+                    //       River start tile is one of the inland corner tiles according to the anchor tile.
+                    //       It may be the anchor tile itself, or not.
+                    let pass_condition = match index {
+                        0 => {
+                            // Mountain and Hill are the 1st priority for river starting locations.
+                            matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill)
+                        }
+                        1 => {
+                            // Land tiles that are not near the coast are the 2nd priority for river starting locations.
+                            terrain_type != TerrainType::Water
+                                && !anchor_tile.is_coastal_land(self)
+                                && self.random_number_generator.random_range(0..8) == 0
+                        }
+                        2 => {
+                            // If there are still not enough rivers generated, the algorithm should run again using Mountain and Hill as the river starting locations.
+                            let num_tiles = self.area_list[area_id].size;
+                            let num_river_edges = self.river_edge_count(area_id);
+                            matches!(terrain_type, TerrainType::Mountain | TerrainType::Hill)
+                                && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
+                        }
+                        3 => {
+                            // At last if there are still not enough rivers generated, the algorithm should run again using any Land tiles as the river starting locations.
+                            let num_tiles = self.area_list[area_id].size;
+                            let num_river_edges = self.river_edge_count(area_id);
+                            terrain_type != TerrainType::Water
+                                && (num_river_edges <= num_tiles / TILES_PER_RIVER_EDGE)
+                        }
+                        _ => unreachable!(),
+                    };
+
+                    let (river_source_range, sea_water_range) = match index {
+                        0 | 1 => (RIVER_SOURCE_RANGE_DEFAULT, SEA_WATER_RANGE_DEFAULT),
+                        2 | 3 => (RIVER_SOURCE_RANGE_DEFAULT / 2, SEA_WATER_RANGE_DEFAULT / 2),
+                        _ => unreachable!("Invalid index"),
+                    };
+
+                    // Anchor Tile should meet these conditions:
+                    // 1. It should meet the pass condition (already verified in the previous candidate tile selection)
+                    // 2. It should be not a natural wonder (already verified in the previous candidate tile selection)
+                    // 3. It should not be adjacent to a natural wonder (already verified in the previous candidate tile selection)
+                    // 4. all tiles around it in a given distance `river_source_range` (including self) should be not fresh water
+                    // 5. all tiles around it in a given distance `sea_water_range` (including self) should be not water
+                    if pass_condition
+                        && !anchor_tile
+                            .tiles_in_distance(river_source_range, grid)
+                            .any(|tile| tile.is_freshwater(self))
+                        && !anchor_tile
+                            .tiles_in_distance(sea_water_range, grid)
+                            .any(|tile| tile.terrain_type(self) == TerrainType::Water)
+                    {
+                        // choose an inland corner tile as the start tile randomly
+                        if let Some(&start_tile) =
+                            inland_corner_list.choose(&mut self.random_number_generator)
+                        {
+                            self.do_river(start_tile, None);
+                        }
+                    }
+                },
+            );
         });
 
         //At last, soften arctic base terrains at rivers.
@@ -493,7 +514,7 @@ impl TileMap {
                     // we choose `original_flow_direction` as `best_flow_direction`.
                     best_flow_direction = Some(original_flow_direction);
                 } else {
-                    // If `original_flow_direction` is not in `next_possible_flow_directions`,,
+                    // If `original_flow_direction` is not in `next_possible_flow_directions`,
                     // we randomly choose one direction from `next_possible_flow_directions` as `best_flow_direction`.
                     best_flow_direction = next_possible_flow_directions
                         .choose(&mut self.random_number_generator)
@@ -557,46 +578,38 @@ impl TileMap {
         sum
     }
 
-    /// Retrieves a valid inland corner tile based on the provided anchor tile.
+    /// Retrieves a vector contain all valid inland corner tiles based on the provided anchor tile.
     ///
     /// An *inland corner* is defined as a tile where all neighbors in edge directions `0..3`
     /// exist and are not water. This function evaluates the current tile and its neighbors
-    /// in directions `3..6` as potential candidates, returning one valid corner at random.
+    /// in directions `3..6` as potential candidates, returning all valid inland corners.
     ///
     /// # Arguments
     ///
-    /// - `tile`: The anchor tile used to generate candidates.
+    /// - `tile`: The anchor tile used to generate the inland corner tiles.
     ///
     /// # Returns
     ///
-    /// `Some(Tile)` containing a randomly selected valid inland corner, or `None` if no candidates qualify.
-    fn get_inland_corner(&mut self, tile: Tile) -> Option<Tile> {
+    /// A vector containing all valid inland corners according to the anchor tile.
+    fn get_inland_corner_list(&mut self, tile: Tile) -> Vec<Tile> {
         let grid = self.world_grid.grid;
         let edge_dirs = grid.edge_direction_array();
         // Construct an iterator over potential candidates: the current tile plus its neighbors in directions 3..6
-        let candidates = std::iter::once(tile).chain(
-            edge_dirs[3..6]
-                .iter()
-                .filter_map(|&dir| tile.neighbor_tile(dir, grid)),
-        );
-
-        // Filter candidates to retain only those that qualify as inland corners.
-        // We collect into a Vec to allow for random selection among all valid options.
-        let valid_corners: Vec<Tile> = candidates
+        std::iter::once(tile)
+            .chain(
+                edge_dirs[3..6]
+                    .iter()
+                    .filter_map(|&dir| tile.neighbor_tile(dir, grid)),
+            )
             .filter(|&candidate| {
                 // A valid inland corner must have non-water neighbors in all directions 0..3
                 edge_dirs[0..3].iter().all(|&dir| {
                     candidate
                         .neighbor_tile(dir, grid)
-                        .is_some_and(|tile| tile.terrain_type(self) != TerrainType::Water)
+                        .is_some_and(|t| t.terrain_type(self) != TerrainType::Water)
                 })
             })
-            .collect();
-
-        // Randomly select and return one of the valid corners, if any exist
-        valid_corners
-            .choose(&mut self.random_number_generator)
-            .copied()
+            .collect()
     }
 
     /// Returns the number of river edges in the current area according to `area_id`
