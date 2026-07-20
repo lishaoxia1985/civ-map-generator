@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,10 +13,4 @@ pub struct VictoryTypeInfo {
     pub defeat_string: String,
     #[serde(default)]
     pub hidden_in_victory_screen: bool,
-}
-
-impl Name for VictoryTypeInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

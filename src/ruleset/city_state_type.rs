@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -8,10 +7,4 @@ pub struct CityStateTypeInfo {
     pub friend_bonus_uniques: Vec<String>,
     pub ally_bonus_uniques: Vec<String>,
     pub color: [u8; 3],
-}
-
-impl Name for CityStateTypeInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

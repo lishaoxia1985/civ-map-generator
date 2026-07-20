@@ -9,6 +9,8 @@
 //! The [`Ruleset::new`] method will panic if any JSON file cannot be loaded or parsed.
 //! For production use, consider implementing proper error handling with `Result` types.
 
+use crate::ruleset::enums::*;
+use enum_map::{EnumArray, EnumMap};
 use serde::de::DeserializeOwned;
 use std::{
     collections::HashMap,
@@ -16,7 +18,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-// Notes: we don't  re-export the mod `enums` by `pub use`,
+// Notes: we don't re-export the mod `enums` by `pub use`,
 // so we make it publically.
 pub mod enums;
 
@@ -52,50 +54,59 @@ pub use crate::ruleset::{
     unit_promotion::*, unit_type::*, victory_type::*,
 };
 
-fn create_hashmap_from_json_file<T: DeserializeOwned + Name>(path: PathBuf) -> HashMap<String, T> {
-    let path = path.to_str().expect("JSON path contains invalid UTF-8");
-    let json_string_without_comment = load_json_file_and_strip_json_comments(path);
-    let map: Vec<T> = serde_json::from_str(&json_string_without_comment)
-        .unwrap_or_else(|e| panic!("Failed to parse JSON file '{}': {}", path, e));
-    map.into_iter().map(|x| (x.name(), x)).collect()
+/// Creates an [`EnumMap`] from a JSON file.
+fn create_enum_map_from_json_file<M, T>(path: PathBuf) -> EnumMap<M, T>
+where
+    M: EnumStr + EnumArray<T>,
+    T: DeserializeOwned,
+{
+    let path_str = path.to_str().expect("JSON path contains invalid UTF-8");
+
+    let json_string_without_comment = load_json_file_and_strip_json_comments(path_str);
+    let items: Vec<T> = serde_json::from_str(&json_string_without_comment)
+        .unwrap_or_else(|e| panic!("Failed to parse JSON file '{}': {}", path_str, e));
+
+    let mut items_iter = items.into_iter();
+
+    EnumMap::from_fn(|_| items_iter.next().expect("Not enough items in JSON file"))
 }
 
 #[derive(Debug)]
 pub struct Ruleset {
     // The structs related to terrains
-    pub terrain_types: HashMap<String, TerrainTypeInfo>,
-    pub base_terrains: HashMap<String, BaseTerrainInfo>,
-    pub features: HashMap<String, FeatureInfo>,
-    pub natural_wonders: HashMap<String, NaturalWonderInfo>,
-    pub resources: HashMap<String, ResourceInfo>,
+    pub terrain_types: EnumMap<TerrainType, TerrainTypeInfo>,
+    pub base_terrains: EnumMap<BaseTerrain, BaseTerrainInfo>,
+    pub features: EnumMap<Feature, FeatureInfo>,
+    pub natural_wonders: EnumMap<NaturalWonder, NaturalWonderInfo>,
+    pub resources: EnumMap<Resource, ResourceInfo>,
 
-    pub ruins: HashMap<String, Ruin>,
+    pub ruins: EnumMap<Ruin, RuinInfo>,
 
-    pub tile_improvements: HashMap<String, TileImprovementInfo>,
+    pub tile_improvements: EnumMap<TileImprovement, TileImprovementInfo>,
 
-    pub buildings: HashMap<String, BuildingInfo>,
-    pub specialists: HashMap<String, SpecialistInfo>,
+    pub buildings: EnumMap<Building, BuildingInfo>,
+    pub specialists: EnumMap<Specialist, SpecialistInfo>,
 
-    pub units: HashMap<String, UnitInfo>,
-    pub unit_promotions: HashMap<String, UnitPromotionInfo>,
-    pub unit_types: HashMap<String, UnitTypeInfo>,
+    pub units: EnumMap<Unit, UnitInfo>,
+    pub unit_promotions: EnumMap<UnitPromotion, UnitPromotionInfo>,
+    pub unit_types: EnumMap<UnitType, UnitTypeInfo>,
 
     pub religions: Vec<String>,
-    pub beliefs: HashMap<String, BeliefInfo>,
+    pub beliefs: EnumMap<Belief, BeliefInfo>,
 
-    pub nations: HashMap<String, NationInfo>,
-    pub city_state_types: HashMap<String, CityStateTypeInfo>,
+    pub nations: EnumMap<Nation, NationInfo>,
+    pub city_state_types: EnumMap<CityStateType, CityStateTypeInfo>,
 
-    pub policy_branches: HashMap<String, PolicyBranchInfo>,
+    pub policy_branches: EnumMap<PolicyBranch, PolicyBranchInfo>,
     pub policies: HashMap<String, Policy>,
 
     pub technologies: HashMap<String, Technology>,
 
-    pub quests: HashMap<String, QuestInfo>,
+    pub quests: EnumMap<Quest, QuestInfo>,
 
-    pub difficulties: HashMap<String, DifficultyInfo>,
-    pub eras: HashMap<String, EraInfo>,
-    pub victory_types: HashMap<String, VictoryTypeInfo>,
+    pub difficulties: EnumMap<Difficulty, DifficultyInfo>,
+    pub eras: EnumMap<Era, EraInfo>,
+    pub victory_types: EnumMap<VictoryType, VictoryTypeInfo>,
     pub global_uniques: GlobalUnique,
 }
 
@@ -119,66 +130,66 @@ impl Ruleset {
     pub fn new(ruleset_json_folder: PathBuf) -> Self {
         /* **********Loading standard ruleset JSON file********** */
 
-        let terrain_types: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("TerrainType.json"));
+        let terrain_types: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("TerrainType.json"));
 
-        let base_terrains: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("BaseTerrain.json"));
+        let base_terrains: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("BaseTerrain.json"));
 
-        let features: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Feature.json"));
+        let features: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Feature.json"));
 
-        let natural_wonders: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("NaturalWonder.json"));
+        let natural_wonders: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("NaturalWonder.json"));
 
-        let resources: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Resource.json"));
+        let resources: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Resource.json"));
 
-        let ruins: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Ruin.json"));
+        let ruins: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Ruin.json"));
 
-        let tile_improvements: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("TileImprovement.json"));
+        let tile_improvements: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("TileImprovement.json"));
 
-        let specialists: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Specialist.json"));
+        let specialists: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Specialist.json"));
 
-        let units: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Unit.json"));
+        let units: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Unit.json"));
 
-        let unit_promotions: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("UnitPromotion.json"));
+        let unit_promotions: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("UnitPromotion.json"));
 
-        let unit_types: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("UnitType.json"));
+        let unit_types: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("UnitType.json"));
 
-        let beliefs: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Belief.json"));
+        let beliefs: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Belief.json"));
 
         // Note: We will set building's cost later, so now it is mutable.
-        let mut buildings: HashMap<_, BuildingInfo> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Building.json"));
+        let mut buildings: EnumMap<_, BuildingInfo> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Building.json"));
 
-        let difficulties: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Difficulty.json"));
+        let difficulties: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Difficulty.json"));
 
-        let eras: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Era.json"));
+        let eras: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Era.json"));
 
-        let nations: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Nation.json"));
+        let nations: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Nation.json"));
 
-        let city_state_types: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("CityStateType.json"));
+        let city_state_types: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("CityStateType.json"));
 
-        let policy_branches: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("PolicyBranch.json"));
+        let policy_branches: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("PolicyBranch.json"));
 
-        let quests: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("Quest.json"));
+        let quests: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Quest.json"));
 
-        let victory_types: HashMap<_, _> =
-            create_hashmap_from_json_file(ruleset_json_folder.join("VictoryType.json"));
+        let victory_types: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("VictoryType.json"));
 
         /* **********End of Loading standard ruleset JSON file********** */
 

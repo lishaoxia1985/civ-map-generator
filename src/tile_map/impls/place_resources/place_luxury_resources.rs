@@ -1078,7 +1078,7 @@ impl TileMap {
     fn num_placed_luxury_resources(&self, ruleset: &Ruleset) -> u32 {
         (0..Resource::LENGTH)
             .map(Resource::from_usize)
-            .filter(|res| ruleset.resources[res.as_str()].resource_type == "Luxury")
+            .filter(|&res| ruleset.resources[res].resource_type == "Luxury")
             .map(|res| self.placed_resource_count(res))
             .sum()
     }

@@ -1,4 +1,4 @@
-use super::{Name, enums::VictoryType};
+use super::enums::VictoryType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -23,10 +23,4 @@ pub struct Policy {
     pub row: u8,
     #[serde(default)]
     pub column: u8,
-}
-
-impl Name for PolicyBranchInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

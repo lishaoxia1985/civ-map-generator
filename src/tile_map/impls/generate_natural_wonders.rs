@@ -58,7 +58,7 @@ impl TileMap {
             }
 
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
-                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
+                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder];
 
                 let required_terrain = &natural_wonder_info.required_terrain;
 
@@ -199,8 +199,7 @@ impl TileMap {
 
                     for &tile in tile_list.iter() {
                         if self.layer_data[Layer::NaturalWonder][tile.index()] == 0 {
-                            let natural_wonder_info =
-                                &ruleset.natural_wonders[natural_wonder.as_str()];
+                            let natural_wonder_info = &ruleset.natural_wonders[natural_wonder];
 
                             // At first, we should remove feature from the tile
                             tile.clear_feature(self);
@@ -370,7 +369,7 @@ impl TileMap {
             }
 
             for (natural_wonder, tile_list) in natural_wonder_and_tile_list.iter_mut() {
-                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
+                let natural_wonder_info = &ruleset.natural_wonders[natural_wonder];
 
                 let required_terrain = &natural_wonder_info.required_terrain;
 
@@ -537,7 +536,7 @@ impl TileMap {
                         .unwrap();
 
                     if !placed_natural_wonder_tiles.contains(&max_score_tile) {
-                        let natural_wonder_info = &ruleset.natural_wonders[natural_wonder.as_str()];
+                        let natural_wonder_info = &ruleset.natural_wonders[natural_wonder];
 
                         // At first, we should remove feature from the tile
                         max_score_tile.clear_feature(self);

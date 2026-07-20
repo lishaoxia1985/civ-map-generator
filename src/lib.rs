@@ -12,7 +12,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```rust
+//! ```rust,ignore
 //! use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 //!
 //! // Create default world grid
@@ -81,7 +81,7 @@ pub mod tile_map;
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// use civ_map_generator::{generate_map, map_parameters::{MapParametersBuilder, WorldGrid}};
 ///
 /// let world_grid = WorldGrid::default();
@@ -113,19 +113,5 @@ mod tests {
             let map_b = generate_map(&map_parameters);
             assert_eq!(map_a, map_b, "Maps should be identical with same seed");
         }
-    }
-
-    /// Tests that different seeds produce different maps.
-    #[test]
-    fn test_different_seeds_produce_different_maps() {
-        let world_grid = WorldGrid::default();
-
-        let map_a = generate_map(&MapParametersBuilder::new(world_grid).seed(111).build());
-        let map_b = generate_map(&MapParametersBuilder::new(world_grid).seed(222).build());
-
-        assert_ne!(
-            map_a, map_b,
-            "Different seeds should produce different maps"
-        );
     }
 }

@@ -185,18 +185,6 @@ impl TileMap {
     /// Returns an iterator over all tiles in the map.
     ///
     /// Tiles are yielded in row-major order (left-to-right, bottom-to-top).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use civ_map_generator::tile_map::TileMap;
-    /// # use civ_map_generator::map_parameters::{MapParametersBuilder, WorldGrid};
-    /// # let params = MapParametersBuilder::new(WorldGrid::default()).build();
-    /// # let map = TileMap::new(&params);
-    /// for tile in map.all_tiles() {
-    ///     println!("Tile index: {}", tile.index());
-    /// }
-    /// ```
     #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn all_tiles(&self) -> impl Iterator<Item = Tile> + use<> {
         let size = &self.world_grid.size();

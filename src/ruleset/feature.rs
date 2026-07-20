@@ -1,7 +1,4 @@
-use super::{
-    Name,
-    common::{RequiredTerrain, Yields},
-};
+use super::common::{RequiredTerrain, Yields};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -27,10 +24,4 @@ pub struct FeatureInfo {
     pub uniques: Vec<String>,
     #[serde(default)]
     pub civilopedia_text: Vec<HashMap<String, String>>,
-}
-
-impl Name for FeatureInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

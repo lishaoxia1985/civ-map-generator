@@ -1,4 +1,4 @@
-use super::{Name, enums::VictoryType};
+use super::enums::VictoryType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,12 +44,6 @@ pub struct NationInfo {
     pub cities: Vec<String>,
     #[serde(default)]
     pub nation_type: NationType,
-}
-
-impl Name for NationInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

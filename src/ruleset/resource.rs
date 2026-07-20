@@ -1,7 +1,4 @@
-use super::{
-    Name,
-    common::{RequiredTerrain, Yields},
-};
+use super::common::{RequiredTerrain, Yields};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -26,10 +23,4 @@ pub struct ResourceInfo {
     pub major_deposit_amount: HashMap<String, i8>,
     #[serde(default)]
     pub minor_deposit_amount: HashMap<String, i8>,
-}
-
-impl Name for ResourceInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

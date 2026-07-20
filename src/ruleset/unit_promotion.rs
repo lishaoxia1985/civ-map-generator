@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -10,10 +9,4 @@ pub struct UnitPromotionInfo {
     uniques: Vec<String>,
     #[serde(default)]
     unit_types: Vec<String>,
-}
-
-impl Name for UnitPromotionInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

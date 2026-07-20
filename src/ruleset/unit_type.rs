@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -6,10 +5,4 @@ use serde::{Deserialize, Serialize};
 pub struct UnitTypeInfo {
     name: String,
     movement_type: String,
-}
-
-impl Name for UnitTypeInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

@@ -313,13 +313,13 @@ impl Tile {
 
     /// Checks if the tile is impassable.
     pub fn is_impassable(&self, tile_map: &TileMap, ruleset: &Ruleset) -> bool {
-        ruleset.terrain_types[self.terrain_type(tile_map).as_str()].impassable
+        ruleset.terrain_types[self.terrain_type(tile_map)].impassable
             || self
                 .feature(tile_map)
-                .is_some_and(|feature| ruleset.features[feature.as_str()].impassable)
-            || self.natural_wonder(tile_map).is_some_and(|natural_wonder| {
-                ruleset.natural_wonders[natural_wonder.as_str()].impassable
-            })
+                .is_some_and(|feature| ruleset.features[feature].impassable)
+            || self
+                .natural_wonder(tile_map)
+                .is_some_and(|natural_wonder| ruleset.natural_wonders[natural_wonder].impassable)
     }
 
     /// Check if the tile is freshwater

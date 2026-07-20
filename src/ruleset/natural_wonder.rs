@@ -1,5 +1,4 @@
 use super::{
-    Name,
     common::{RequiredTerrain, Yields},
     enums::*,
 };
@@ -24,12 +23,6 @@ pub struct NaturalWonderInfo {
     pub turns_into_terrain: TurnsIntoTerrain,
     #[serde(default)]
     pub uniques: Vec<String>,
-}
-
-impl Name for NaturalWonderInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

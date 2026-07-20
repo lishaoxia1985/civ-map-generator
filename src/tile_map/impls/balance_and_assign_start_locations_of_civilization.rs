@@ -59,7 +59,7 @@ impl TileMap {
         let mut region_index_list = (0..self.region_list.len()).collect::<BTreeSet<_>>();
 
         for &civilization in start_civilization_list.iter() {
-            let nation_info = &ruleset.nations[civilization.as_str()];
+            let nation_info = &ruleset.nations[civilization];
             let Some(start_bias) = &nation_info.start_bias else {
                 continue;
             };
@@ -269,7 +269,7 @@ impl TileMap {
             let mut civs_fallback_priority = Vec::new();
 
             for &civilization in civs_needing_region_priority.iter() {
-                let nation_info = &ruleset.nations[civilization.as_str()];
+                let nation_info = &ruleset.nations[civilization];
                 let Some(StartBias::RegionTypePriority(region_types_priority)) =
                     &nation_info.start_bias
                 else {
@@ -290,7 +290,7 @@ impl TileMap {
                 // Notice: priority list always doesn't have 'RegionType::Undefined' as the element,
                 //         so we don't need to tackle this case.
                 civs_needing_single_priority.sort_by_key(|&civilization| {
-                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let nation_info = &ruleset.nations[civilization];
                     let Some(StartBias::RegionTypePriority(region_types_priority)) =
                         &nation_info.start_bias
                     else {
@@ -300,7 +300,7 @@ impl TileMap {
                 });
 
                 for &civilization in civs_needing_single_priority.iter() {
-                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let nation_info = &ruleset.nations[civilization];
                     let Some(StartBias::RegionTypePriority(region_types_priority)) =
                         &nation_info.start_bias
                     else {
@@ -340,7 +340,7 @@ impl TileMap {
             if !civs_needing_multi_priority.is_empty() {
                 // Sort `civs_needing_multi_priority` by the length of their region priority list, shorter ones first.
                 civs_needing_multi_priority.sort_by_key(|&civilization| {
-                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let nation_info = &ruleset.nations[civilization];
                     let Some(StartBias::RegionTypePriority(region_types_priority)) =
                         &nation_info.start_bias
                     else {
@@ -350,7 +350,7 @@ impl TileMap {
                 });
 
                 for &civilization in civs_needing_multi_priority.iter() {
-                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let nation_info = &ruleset.nations[civilization];
                     let Some(StartBias::RegionTypePriority(region_types_priority)) =
                         &nation_info.start_bias
                     else {
@@ -389,7 +389,7 @@ impl TileMap {
             //         then we will assign it to a region with the most preferred terrain for that region priority.
             if !civs_fallback_priority.is_empty() {
                 for &civilization in civs_fallback_priority.iter() {
-                    let nation_info = &ruleset.nations[civilization.as_str()];
+                    let nation_info = &ruleset.nations[civilization];
                     let Some(StartBias::RegionTypePriority(region_types_priority)) =
                         &nation_info.start_bias
                     else {
@@ -417,8 +417,8 @@ impl TileMap {
         // Handle Region Avoid
         if !civs_needing_region_avoid.is_empty() {
             // Sort `civs_needing_region_avoid` by the length of `region_types_avoid`.
-            civs_needing_region_avoid.sort_by_key(|civilization| {
-                let nation_info = &ruleset.nations[civilization.as_str()];
+            civs_needing_region_avoid.sort_by_key(|&civilization| {
+                let nation_info = &ruleset.nations[civilization];
                 let Some(StartBias::RegionTypeAvoid(region_types_avoid)) = &nation_info.start_bias
                 else {
                     unreachable!()
@@ -428,7 +428,7 @@ impl TileMap {
 
             // process in reverse order, so most needs goes first.
             for &civilization in civs_needing_region_avoid.iter().rev() {
-                let nation_info = &ruleset.nations[civilization.as_str()];
+                let nation_info = &ruleset.nations[civilization];
                 let Some(StartBias::RegionTypeAvoid(region_types_avoid)) = &nation_info.start_bias
                 else {
                     unreachable!()

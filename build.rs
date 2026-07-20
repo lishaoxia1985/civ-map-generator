@@ -23,6 +23,7 @@ fn main() {
         "PolicyBranch.json",
         "Quest.json",
         "Resource.json",
+        "Ruin.json",
         "Specialist.json",
         "TerrainType.json",
         "TileImprovement.json",
@@ -171,7 +172,12 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
     // Extract 'name' field from each JSON object
     let names: Vec<&str> = value_list
         .iter()
-        .map(|terrain| terrain.get("name").and_then(|v| v.as_str()).unwrap_or(""))
+        .map(|value| {
+            value
+                .get("name")
+                .and_then(|v| v.as_str())
+                .expect("Can't get name")
+        })
         .collect();
 
     let mut output = String::new();

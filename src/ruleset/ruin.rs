@@ -1,9 +1,8 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Ruin {
+pub struct RuinInfo {
     name: String,
     notification: String,
     uniques: Vec<String>,
@@ -11,10 +10,4 @@ pub struct Ruin {
     color: String,
     #[serde(default)]
     excluded_difficulties: Vec<String>,
-}
-
-impl Name for Ruin {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

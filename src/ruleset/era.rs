@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,10 +16,4 @@ pub struct EraInfo {
     city_sound: String,
     #[serde(rename = "iconRGB")]
     icon_rgb: [u8; 3],
-}
-
-impl Name for EraInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

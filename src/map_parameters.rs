@@ -2,10 +2,7 @@
 
 use crate::{
     grid::*,
-    ruleset::{
-        enums::{EnumStr, Nation},
-        *,
-    },
+    ruleset::{enums::Nation, *},
 };
 use core::debug_assert;
 use enum_map::Enum;
@@ -383,7 +380,7 @@ impl MapParametersBuilder {
                 .map(Nation::from_usize)
                 .filter(|&nation| {
                     matches!(
-                        self.ruleset.nations[nation.as_str()].nation_type,
+                        self.ruleset.nations[nation].nation_type,
                         NationType::Civilization
                     )
                 })
@@ -408,7 +405,7 @@ impl MapParametersBuilder {
                 .map(Nation::from_usize)
                 .filter(|&nation| {
                     matches!(
-                        self.ruleset.nations[nation.as_str()].nation_type,
+                        self.ruleset.nations[nation].nation_type,
                         NationType::CityState(_)
                     )
                 })

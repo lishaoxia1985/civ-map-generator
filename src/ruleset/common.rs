@@ -3,10 +3,6 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 
-pub trait Name {
-    fn name(&self) -> String;
-}
-
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Yields {
     #[serde(default)]

@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -32,10 +31,4 @@ pub struct UnitInfo {
     pub promotions: Vec<String>,
     #[serde(default)]
     pub attack_sound: String,
-}
-
-impl Name for UnitInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

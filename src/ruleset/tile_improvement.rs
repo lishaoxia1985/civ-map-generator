@@ -1,7 +1,4 @@
-use super::{
-    Name,
-    common::{RequiredTerrain, Yields},
-};
+use super::common::{RequiredTerrain, Yields};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -24,10 +21,4 @@ pub struct TileImprovementInfo {
     pub shortcut_key: Option<char>,
     #[serde(default)]
     pub civilopedia_text: Vec<HashMap<String, String>>,
-}
-
-impl Name for TileImprovementInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

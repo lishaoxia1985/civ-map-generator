@@ -25,6 +25,8 @@ pub mod quest;
 pub use quest::Quest;
 pub mod resource;
 pub use resource::Resource;
+pub mod ruin;
+pub use ruin::Ruin;
 pub mod specialist;
 pub use specialist::Specialist;
 pub mod terrain_type;

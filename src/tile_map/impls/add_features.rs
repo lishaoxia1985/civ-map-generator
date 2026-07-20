@@ -64,7 +64,7 @@ impl TileMap {
         for tile in self.all_tiles() {
             /* **********start to add ice********** */
             let latitude = tile.latitude(grid);
-            let ice_required_terrain = &ruleset.features["Ice"].required_terrain;
+            let ice_required_terrain = &ruleset.features[Feature::Ice].required_terrain;
 
             if tile.is_impassable(self, ruleset) {
                 continue;
@@ -104,8 +104,9 @@ impl TileMap {
                 land_tile_count += 1;
 
                 /* **********start to add Floodplain********** */
-                let floodplain_required_terrain = &ruleset.features["Floodplain"].required_terrain;
-                let oasis_required_terrain = &ruleset.features["Oasis"].required_terrain;
+                let floodplain_required_terrain =
+                    &ruleset.features[Feature::Floodplain].required_terrain;
+                let oasis_required_terrain = &ruleset.features[Feature::Oasis].required_terrain;
 
                 if tile.has_river(self)
                     && floodplain_required_terrain
@@ -135,7 +136,7 @@ impl TileMap {
                 }
                 /* **********the end of add oasis********** */
                 /* **********start to add march********** */
-                let marsh_required_terrain = &ruleset.features["Marsh"].required_terrain;
+                let marsh_required_terrain = &ruleset.features[Feature::Marsh].required_terrain;
 
                 if marsh_required_terrain
                     .terrain_type
@@ -167,7 +168,7 @@ impl TileMap {
                 /* **********the end of add march********** */
                 /* **********start to add jungle********** */
                 let [_, y] = tile.to_offset(grid).to_array();
-                let jungle_required_terrain = &ruleset.features["Jungle"].required_terrain;
+                let jungle_required_terrain = &ruleset.features[Feature::Jungle].required_terrain;
 
                 if jungle_required_terrain
                     .terrain_type
@@ -202,7 +203,7 @@ impl TileMap {
                 }
                 /* **********the end of add jungle********** */
                 /* **********start to add forest********** */
-                let forest_required_terrain = &ruleset.features["Forest"].required_terrain;
+                let forest_required_terrain = &ruleset.features[Feature::Forest].required_terrain;
 
                 if forest_required_terrain
                     .terrain_type

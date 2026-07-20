@@ -1,7 +1,4 @@
-use super::{
-    Name,
-    common::{RequiredTerrain, Yields},
-};
+use super::common::{RequiredTerrain, Yields};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -48,12 +45,6 @@ pub struct BuildingInfo {
     pub uniques: Vec<String>,
     #[serde(default)]
     pub quote: String,
-}
-
-impl Name for BuildingInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

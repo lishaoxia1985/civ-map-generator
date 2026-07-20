@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,10 +13,4 @@ pub struct QuestInfo {
     minimum_civs: i8,
     #[serde(default)]
     duration: i8,
-}
-
-impl Name for QuestInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

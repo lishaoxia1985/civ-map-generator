@@ -1,4 +1,4 @@
-use super::{Name, common::Yields};
+use super::common::Yields;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -34,10 +34,4 @@ pub struct BaseTerrainInfo {
     pub uniques: Vec<String>,
     #[serde(default)]
     pub civilopedia_text: Vec<HashMap<String, String>>,
-}
-
-impl Name for BaseTerrainInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }

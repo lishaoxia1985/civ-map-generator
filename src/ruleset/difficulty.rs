@@ -1,4 +1,3 @@
-use super::Name;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,10 +31,4 @@ pub struct DifficultyInfo {
     ais_exchange_techs: bool,
     turn_barbarians_can_enter_player_tiles: i16,
     clear_barbarian_camp_reward: i8,
-}
-
-impl Name for DifficultyInfo {
-    fn name(&self) -> String {
-        self.name.to_owned()
-    }
 }
