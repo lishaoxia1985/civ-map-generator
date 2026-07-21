@@ -100,6 +100,13 @@ fn main() {
     let policy_rust_path = enums_dir.join(format!("{}.rs", POLICY_RUST_FILE_NAME));
     create_policy_enum_from_json(policy_json_path, policy_rust_path);
 
+    //
+    const RELIGION_JSON_FILE: &str = "Religion.json";
+    const RELIGION_RUST_FILE_NAME: &str = "religion";
+    let religion_json_path = json_dir.join(RELIGION_JSON_FILE);
+    let religion_rust_path = enums_dir.join(format!("{}.rs", RELIGION_RUST_FILE_NAME));
+    create_religion_enum_from_json(religion_json_path, religion_rust_path);
+
     /**********************************************
     End of enum generation. Successfully processed JSON arrays where 'name' fields are
     NESTED in child structures (e.g., 'metadata.name') for enum variant creation.
@@ -112,6 +119,7 @@ fn main() {
 
     rust_file_names.push(TECHNOLOGY_RUST_FILE_NAME);
     rust_file_names.push(POLICY_RUST_FILE_NAME);
+    rust_file_names.push(RELIGION_RUST_FILE_NAME);
 
     // Generate mod.rs using dynamic enum list
     generate_mod_file(enums_dir, &rust_file_names);
@@ -361,6 +369,47 @@ fn create_policy_enum_from_json(json_path: PathBuf, dest_path: PathBuf) {
         .collect();
 
     // Convert policy names to valid Rust enum variants
+    // - Capitalize first letter of each word
+    // - Remove whitespace and non-alphanumeric characters
+    let enum_variants: Vec<String> = names
+        .iter()
+        .map(|name| {
+            name.split_whitespace()
+                .map(|word| {
+                    let mut chars = word.chars();
+                    chars
+                        .next()
+                        .map(|c| c.to_uppercase().chain(chars).collect::<String>())
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<String>>()
+                .join("")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect()
+        })
+        .collect();
+
+    // Generate Rust enum code
+    let output = generate_enum_code(enum_name, &enum_variants, &names);
+
+    // Write generated code to destination file
+    let mut file = File::create(dest_path).expect("Failed to create output file");
+    file.write_all(output.as_bytes())
+        .expect("Failed to write to file");
+}
+
+fn create_religion_enum_from_json(json_path: PathBuf, dest_path: PathBuf) {
+    let enum_name = "Religion";
+
+    // Load and preprocess JSON file (remove comments)
+    let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
+
+    // Parse JSON into a vector of religions
+    let names: Vec<&str> =
+        serde_json::from_str(&json_string_without_comment).expect("Failed to parse JSON file");
+
+    // Convert religion names to valid Rust enum variants
     // - Capitalize first letter of each word
     // - Remove whitespace and non-alphanumeric characters
     let enum_variants: Vec<String> = names

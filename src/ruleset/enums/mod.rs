@@ -45,6 +45,8 @@ mod technology;
 pub use technology::*;
 mod policy;
 pub use policy::*;
+mod religion;
+pub use religion::*;
 
 /// Trait for infallible conversion between enum variants and string representations
 /// **PANICS** if string does not match any variant
