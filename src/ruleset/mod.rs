@@ -60,11 +60,9 @@ where
     M: EnumStr + EnumArray<T>,
     T: DeserializeOwned,
 {
-    let path_str = path.to_str().expect("JSON path contains invalid UTF-8");
-
-    let json_string_without_comment = load_json_file_and_strip_json_comments(path_str);
-    let items: Vec<T> = serde_json::from_str(&json_string_without_comment)
-        .unwrap_or_else(|e| panic!("Failed to parse JSON file '{}': {}", path_str, e));
+    let json_string_without_comment = load_json_file_and_strip_json_comments(path);
+    let items: Vec<T> =
+        serde_json::from_str(&json_string_without_comment).expect("Failed to parse JSON file");
 
     let mut items_iter = items.into_iter();
 
@@ -100,7 +98,7 @@ pub struct Ruleset {
     pub policy_branches: EnumMap<PolicyBranch, PolicyBranchInfo>,
     pub policies: HashMap<String, Policy>,
 
-    pub technologies: HashMap<String, Technology>,
+    pub technologies: HashMap<String, TechnologyInfo>,
 
     pub quests: EnumMap<Quest, QuestInfo>,
 
@@ -196,30 +194,21 @@ impl Ruleset {
         /* **********The JSON file below we should tackle by special way********** */
 
         // serde `Religion`
-        let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder.join("Religion.json").to_str().unwrap(),
-        );
+        let json_string_without_comment =
+            load_json_file_and_strip_json_comments(ruleset_json_folder.join("Religion.json"));
         let religions: Vec<String> = serde_json::from_str(&json_string_without_comment).unwrap();
 
         // serde `global_uniques`
-        let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder
-                .join("GlobalUnique.json")
-                .to_str()
-                .unwrap(),
-        );
+        let json_string_without_comment =
+            load_json_file_and_strip_json_comments(ruleset_json_folder.join("GlobalUnique.json"));
         let global_uniques: GlobalUnique =
             serde_json::from_str(&json_string_without_comment).unwrap();
 
         // serde `TechColumn`
-        let json_string_without_comment = load_json_file_and_strip_json_comments(
-            ruleset_json_folder
-                .join("Technology.json")
-                .to_str()
-                .unwrap(),
-        );
-        let mut tech_columnes: Vec<TechColumn> =
-            serde_json::from_str(&json_string_without_comment).unwrap();
+        let json_string_without_comment =
+            load_json_file_and_strip_json_comments(ruleset_json_folder.join("Technology.json"));
+        let mut tech_columnes: Vec<TechColumn> = serde_json::from_str(&json_string_without_comment)
+            .expect("Failed to parse Technology.json");
 
         // Store techs and related wonders and buildings costs in a map for faster lookup
         let mut tech_and_wonder_or_building_cost = HashMap::new();
@@ -277,7 +266,7 @@ impl Ruleset {
             };
         }
 
-        let technologies: HashMap<String, Technology> = tech_columnes
+        let technologies: HashMap<String, TechnologyInfo> = tech_columnes
             .into_iter()
             .flat_map(|x| x.techs)
             .map(|x| (x.name.to_owned(), x))
@@ -319,9 +308,8 @@ impl Ruleset {
     }
 }
 
-fn load_json_file_and_strip_json_comments(path: &str) -> String {
-    let json_string_with_comment = fs::read_to_string(path)
-        .unwrap_or_else(|e| panic!("Failed to read JSON file '{}': {}", path, e));
+fn load_json_file_and_strip_json_comments(path: PathBuf) -> String {
+    let json_string_with_comment = fs::read_to_string(path).expect("Failed to read JSON file");
     strip_json_comments(&json_string_with_comment, true)
 }
 

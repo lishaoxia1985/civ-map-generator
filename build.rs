@@ -1,6 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
@@ -48,50 +48,77 @@ fn main() {
 
     let enums_dir = Path::new("src/ruleset/enums");
 
+    /**********************************************
+    Generate enum from JSON files. Each file contains an array of objects,
+    where the 'name' field is located at the top level of each array element.
+    **********************************************/
     // Dynamically generate enum mappings
     let enum_mappings: Vec<(&str, String, String)> = monitored_files
         .iter()
         .map(|&json_file| {
             let enum_name = json_file.strip_suffix(".json").unwrap();
-            let rust_file = to_snake_case(enum_name);
+            let rust_file_name = to_snake_case(enum_name);
 
-            (
-                json_file,
-                format!("{}.rs", rust_file),
-                enum_name.to_string(),
-            )
+            (json_file, rust_file_name, enum_name.to_string())
         })
         .collect();
 
     // Generate Rust files
     // For example:
     //   When `json_file` is "TerrainType.json", `rust_file` is "terrain_type.rs", and `enum_name` is "TerrainType".
-    for (json_file, rust_file, enum_name) in enum_mappings.iter() {
+    for (json_file, rust_file_name, enum_name) in enum_mappings.iter() {
         let json_path = json_dir.join(json_file);
-        let rust_path = enums_dir.join(rust_file);
+        let rust_path = enums_dir.join(format!("{}.rs", rust_file_name));
 
         // Validate JSON file existence
         if !json_path.exists() {
             panic!("JSON file not found: {}", json_path.display());
         }
 
-        create_enum_from_json(
-            json_path
-                .to_str()
-                .expect("JSON path contains invalid UTF-8"),
-            rust_path
-                .to_str()
-                .expect("Rust path contains invalid UTF-8"),
-            enum_name.as_str(),
-        );
+        create_enum_from_json(json_path, rust_path, enum_name.as_str());
     }
+    /**********************************************
+    End of enum generation. Successfully processed JSON arrays where each element
+    contains a top-level 'name' field for enum variant creation.
+    **********************************************/
+
+    /**********************************************
+    Generate enum from JSON files where the 'name' field is NESTED within child objects
+    . Requires path traversal to access enum variant identifiers.
+    **********************************************/
+    // Generate enum `Technology` from JSON file `Technology.json`
+    const TECHNOLOGY_JSON_FILE: &str = "Technology.json";
+    const TECHNOLOGY_RUST_FILE_NAME: &str = "technology";
+    let technology_json_path = json_dir.join(TECHNOLOGY_JSON_FILE);
+    let technology_rust_path = enums_dir.join(format!("{}.rs", TECHNOLOGY_RUST_FILE_NAME));
+    create_technology_enum_from_json(technology_json_path, technology_rust_path);
+
+    // Generates enum `Policy` from a JSON file `PolicyBranch.json`
+    const POLICY_JSON_FILE: &str = "PolicyBranch.json";
+    const POLICY_RUST_FILE_NAME: &str = "policy";
+    let policy_json_path = json_dir.join(POLICY_JSON_FILE);
+    let policy_rust_path = enums_dir.join(format!("{}.rs", POLICY_RUST_FILE_NAME));
+    create_policy_enum_from_json(policy_json_path, policy_rust_path);
+
+    /**********************************************
+    End of enum generation. Successfully processed JSON arrays where 'name' fields are
+    NESTED in child structures (e.g., 'metadata.name') for enum variant creation.
+    **********************************************/
+
+    let mut rust_file_names: Vec<_> = enum_mappings
+        .iter()
+        .map(|(_, rust_file_name, _)| rust_file_name.as_str())
+        .collect();
+
+    rust_file_names.push(TECHNOLOGY_RUST_FILE_NAME);
+    rust_file_names.push(POLICY_RUST_FILE_NAME);
 
     // Generate mod.rs using dynamic enum list
-    generate_mod_file(enums_dir, &enum_mappings);
+    generate_mod_file(enums_dir, &rust_file_names);
 }
 
 /// Generates mod.rs file that re-exports all generated enum types
-fn generate_mod_file(output_dir: &Path, mappings: &[(&str, String, String)]) {
+fn generate_mod_file(output_dir: &Path, rust_file_names: &[&str]) {
     let mod_path = output_dir.join("mod.rs");
     let mut file = File::create(&mod_path)
         .unwrap_or_else(|e| panic!("Failed to create {}: {}", mod_path.display(), e));
@@ -100,10 +127,10 @@ fn generate_mod_file(output_dir: &Path, mappings: &[(&str, String, String)]) {
     writeln!(file, "// Re-exports all generated enum types").unwrap();
     writeln!(file).unwrap();
 
-    for (_, rust_file, enum_name) in mappings {
-        let module_name = rust_file.strip_suffix(".rs").unwrap();
-        writeln!(file, "pub mod {};", module_name).unwrap();
-        writeln!(file, "pub use {}::{};", module_name, enum_name).unwrap();
+    for rust_file_name in rust_file_names {
+        let module_name = rust_file_name;
+        writeln!(file, "mod {};", module_name).unwrap();
+        writeln!(file, "pub use {}::*;", module_name).unwrap();
     }
 
     writeln!(file).unwrap();
@@ -160,26 +187,7 @@ fn to_snake_case(name: &str) -> String {
     result.trim_matches('_').to_string()
 }
 
-/// Creates an enum from a JSON file.
-fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
-    // Load and preprocess JSON file (removing comments)
-    let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
-
-    // Parse JSON into a vector of values
-    let value_list: Vec<Value> = serde_json::from_str(&json_string_without_comment)
-        .unwrap_or_else(|_| panic!("{}'{}'", "Can't serde ", json_path));
-
-    // Extract 'name' field from each JSON object
-    let names: Vec<&str> = value_list
-        .iter()
-        .map(|value| {
-            value
-                .get("name")
-                .and_then(|v| v.as_str())
-                .expect("Can't get name")
-        })
-        .collect();
-
+fn generate_enum_code(enum_name: &str, enum_variants: &[String], names: &[&str]) -> String {
     let mut output = String::new();
     output.push_str("// Auto-generated by build.rs, DO NOT EDIT\n");
     output.push_str("use super::EnumStr;\n"); // Import the EnumStr trait from parent module
@@ -192,28 +200,6 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
         "#[derive(Enum, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize, Debug)]\n",
     );
     output.push_str(&format!("pub enum {} {{\n", enum_name));
-
-    // Convert JSON names to valid Rust enum variant
-    let enum_variants: Vec<String> = names
-        .iter()
-        .map(|name| {
-            let variant: String = name
-                .split_whitespace()
-                .map(|word| {
-                    let mut chars = word.chars();
-                    match chars.next() {
-                        Some(c) => c.to_uppercase().chain(chars).collect(),
-                        None => String::new(),
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("")
-                .chars()
-                .filter(|c| c.is_ascii_alphanumeric())
-                .collect();
-            variant
-        })
-        .collect();
 
     // Add enum variants to output
     for variant in enum_variants.iter() {
@@ -255,13 +241,157 @@ fn create_enum_from_json(json_path: &str, dest_path: &str, enum_name: &str) {
     output.push_str("    }\n");
     output.push_str("}\n");
 
+    output
+}
+
+/// Creates an enum from a JSON file.
+fn create_enum_from_json(json_path: PathBuf, dest_path: PathBuf, enum_name: &str) {
+    // Load and preprocess JSON file (removing comments)
+    let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
+
+    // Parse JSON into a vector of values
+    let value_list: Vec<Value> =
+        serde_json::from_str(&json_string_without_comment).expect("Failed to parse JSON");
+
+    // Extract 'name' field from each JSON object
+    let names: Vec<&str> = value_list
+        .iter()
+        .map(|value| {
+            value
+                .get("name")
+                .and_then(|v| v.as_str())
+                .expect("Can't get name")
+        })
+        .collect();
+
+    // Convert JSON names to valid Rust enum variant
+    let enum_variants: Vec<String> = names
+        .iter()
+        .map(|name| {
+            let variant: String = name
+                .split_whitespace()
+                .map(|word| {
+                    let mut chars = word.chars();
+                    match chars.next() {
+                        Some(c) => c.to_uppercase().chain(chars).collect(),
+                        None => String::new(),
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect();
+            variant
+        })
+        .collect();
+
+    // Generate the Rust code
+    let output = generate_enum_code(enum_name, &enum_variants, &names);
+
     // Write generated code to output file
     let mut file = File::create(dest_path).expect("Could not create output file");
     file.write_all(output.as_bytes())
         .expect("Could not write to file");
 }
 
-fn load_json_file_and_strip_json_comments(path: &str) -> String {
+fn create_technology_enum_from_json(json_path: PathBuf, dest_path: PathBuf) {
+    let enum_name = "Technology";
+
+    // Load and preprocess JSON file (removing comments)
+    let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
+
+    // Parse JSON into a vector of values
+    let value_list: Vec<Value> =
+        serde_json::from_str(&json_string_without_comment).expect("Can't serde current json file");
+    let names: Vec<&str> = value_list
+        .iter()
+        .filter_map(|item| item["techs"].as_array())
+        .flatten()
+        .filter_map(|tech| tech["name"].as_str())
+        .collect();
+
+    // Convert JSON names to valid Rust enum variant
+    let enum_variants: Vec<String> = names
+        .iter()
+        .map(|name| {
+            let variant: String = name
+                .split_whitespace()
+                .map(|word| {
+                    let mut chars = word.chars();
+                    match chars.next() {
+                        Some(c) => c.to_uppercase().chain(chars).collect(),
+                        None => String::new(),
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect();
+            variant
+        })
+        .collect();
+
+    // Generate the Rust code
+    let output = generate_enum_code(enum_name, &enum_variants, &names);
+
+    // Write generated code to output file
+    let mut file = File::create(dest_path).expect("Could not create output file");
+    file.write_all(output.as_bytes())
+        .expect("Could not write to file");
+}
+
+fn create_policy_enum_from_json(json_path: PathBuf, dest_path: PathBuf) {
+    let enum_name = "Policy";
+
+    // Load and preprocess JSON file (remove comments)
+    let json_string_without_comment = load_json_file_and_strip_json_comments(json_path);
+
+    // Parse JSON into a vector of civilization policy trees
+    let value_list: Vec<Value> =
+        serde_json::from_str(&json_string_without_comment).expect("Failed to parse JSON file");
+
+    // Extract all policy names from every civilization's 'policies' array
+    let names: Vec<&str> = value_list
+        .iter()
+        .filter_map(|civ| civ.get("policies").and_then(|p| p.as_array()))
+        .flatten()
+        .filter_map(|policy| policy.get("name").and_then(|n| n.as_str()))
+        .collect();
+
+    // Convert policy names to valid Rust enum variants
+    // - Capitalize first letter of each word
+    // - Remove whitespace and non-alphanumeric characters
+    let enum_variants: Vec<String> = names
+        .iter()
+        .map(|name| {
+            name.split_whitespace()
+                .map(|word| {
+                    let mut chars = word.chars();
+                    chars
+                        .next()
+                        .map(|c| c.to_uppercase().chain(chars).collect::<String>())
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<String>>()
+                .join("")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect()
+        })
+        .collect();
+
+    // Generate Rust enum code
+    let output = generate_enum_code(enum_name, &enum_variants, &names);
+
+    // Write generated code to destination file
+    let mut file = File::create(dest_path).expect("Failed to create output file");
+    file.write_all(output.as_bytes())
+        .expect("Failed to write to file");
+}
+
+fn load_json_file_and_strip_json_comments(path: PathBuf) -> String {
     let json_string_with_comment = fs::read_to_string(path).unwrap();
     strip_json_comments(&json_string_with_comment, true)
 }

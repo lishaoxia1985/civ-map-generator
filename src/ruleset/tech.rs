@@ -8,11 +8,11 @@ pub struct TechColumn {
     pub tech_cost: i16,
     pub building_cost: i16,
     pub wonder_cost: i16,
-    pub techs: Vec<Technology>,
+    pub techs: Vec<TechnologyInfo>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Technology {
+pub struct TechnologyInfo {
     pub name: String,
     #[serde(default)]
     pub cost: i16,
