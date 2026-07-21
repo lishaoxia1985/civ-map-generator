@@ -10,7 +10,7 @@
 //! For production use, consider implementing proper error handling with `Result` types.
 
 use crate::ruleset::enums::*;
-use enum_map::{EnumArray, EnumMap};
+use enum_map::{Enum, EnumArray, EnumMap};
 use serde::de::DeserializeOwned;
 use std::{
     collections::HashMap,
@@ -106,7 +106,7 @@ pub struct Ruleset {
     pub victory_types: EnumMap<VictoryType, VictoryTypeInfo>,
 
     pub global_uniques: GlobalUnique,
-    pub religions: Vec<String>,
+    pub religions: Vec<Religion>,
 }
 
 impl Default for Ruleset {
@@ -195,9 +195,7 @@ impl Ruleset {
         /* **********The JSON file below we should tackle by special way********** */
 
         // serde `Religion`
-        let json_string_without_comment =
-            load_json_file_and_strip_json_comments(ruleset_json_folder.join("Religion.json"));
-        let religions: Vec<String> = serde_json::from_str(&json_string_without_comment).unwrap();
+        let religions: Vec<Religion> = (0..Religion::LENGTH).map(Religion::from_usize).collect();
 
         // serde `global_uniques`
         let json_string_without_comment =

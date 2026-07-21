@@ -24,7 +24,9 @@ impl EnumStr for Ruin {
         match self {
             Ruin::DiscoverCulturalArtifacts => "discover cultural artifacts",
             Ruin::SquattersWillingToWorkForYou => "squatters willing to work for you",
-            Ruin::SquattersWishingToSettleUnderYourRule => "squatters wishing to settle under your rule",
+            Ruin::SquattersWishingToSettleUnderYourRule => {
+                "squatters wishing to settle under your rule"
+            }
             Ruin::YourExploringUnitReceivesTraining => "your exploring unit receives training",
             Ruin::SurvivorsaddsPopulationToACity => "survivors (adds population to a city)",
             Ruin::AStashOfGold => "a stash of gold",
@@ -41,7 +43,9 @@ impl EnumStr for Ruin {
         match s {
             "discover cultural artifacts" => Ruin::DiscoverCulturalArtifacts,
             "squatters willing to work for you" => Ruin::SquattersWillingToWorkForYou,
-            "squatters wishing to settle under your rule" => Ruin::SquattersWishingToSettleUnderYourRule,
+            "squatters wishing to settle under your rule" => {
+                Ruin::SquattersWishingToSettleUnderYourRule
+            }
             "your exploring unit receives training" => Ruin::YourExploringUnitReceivesTraining,
             "survivors (adds population to a city)" => Ruin::SurvivorsaddsPopulationToACity,
             "a stash of gold" => Ruin::AStashOfGold,
