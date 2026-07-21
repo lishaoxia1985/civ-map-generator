@@ -1,4 +1,7 @@
-use super::common::{RequiredTerrain, Yields};
+use super::{
+    common::{RequiredTerrain, Yields},
+    enums::Specialist,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -15,7 +18,7 @@ pub struct BuildingInfo {
     #[serde(default)]
     pub great_person_points: HashMap<String, i8>,
     #[serde(default)]
-    pub specialist_slots: HashMap<String, i8>,
+    pub specialist_slots: HashMap<Specialist, i8>,
     #[serde(default)]
     pub hurry_cost_modifier: i8,
     #[serde(default)]
