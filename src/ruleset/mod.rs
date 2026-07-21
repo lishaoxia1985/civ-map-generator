@@ -89,23 +89,24 @@ pub struct Ruleset {
     pub unit_promotions: EnumMap<UnitPromotion, UnitPromotionInfo>,
     pub unit_types: EnumMap<UnitType, UnitTypeInfo>,
 
-    pub religions: Vec<String>,
     pub beliefs: EnumMap<Belief, BeliefInfo>,
 
     pub nations: EnumMap<Nation, NationInfo>,
     pub city_state_types: EnumMap<CityStateType, CityStateTypeInfo>,
 
     pub policy_branches: EnumMap<PolicyBranch, PolicyBranchInfo>,
-    pub policies: HashMap<String, Policy>,
+    pub policies: EnumMap<Policy, PolicyInfo>,
 
-    pub technologies: HashMap<String, TechnologyInfo>,
+    pub technologies: EnumMap<Technology, TechnologyInfo>,
 
     pub quests: EnumMap<Quest, QuestInfo>,
 
     pub difficulties: EnumMap<Difficulty, DifficultyInfo>,
     pub eras: EnumMap<Era, EraInfo>,
     pub victory_types: EnumMap<VictoryType, VictoryTypeInfo>,
+
     pub global_uniques: GlobalUnique,
+    pub religions: Vec<String>,
 }
 
 impl Default for Ruleset {
@@ -266,18 +267,24 @@ impl Ruleset {
             };
         }
 
-        let technologies: HashMap<String, TechnologyInfo> = tech_columnes
-            .into_iter()
-            .flat_map(|x| x.techs)
-            .map(|x| (x.name.to_owned(), x))
-            .collect();
+        let mut technology_info_iter = tech_columnes.into_iter().flat_map(|x| x.techs);
+
+        let technologies: EnumMap<Technology, TechnologyInfo> = EnumMap::from_fn(|_| {
+            technology_info_iter
+                .next()
+                .expect("Not enough items in JSON file")
+        });
 
         // TODO: Will not use `clone` here in the future.
-        let policies: HashMap<String, Policy> = policy_branches
+        let mut policy_info_iter = policy_branches
             .values()
-            .flat_map(|policy_branch: &PolicyBranchInfo| policy_branch.policies.clone())
-            .map(|x| (x.name.to_owned(), x))
-            .collect();
+            .flat_map(|policy_branch: &PolicyBranchInfo| policy_branch.policies.clone());
+
+        let policies: EnumMap<Policy, PolicyInfo> = EnumMap::from_fn(|_| {
+            policy_info_iter
+                .next()
+                .expect("Not enough items in JSON file")
+        });
 
         Self {
             terrain_types,

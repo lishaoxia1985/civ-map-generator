@@ -9,12 +9,12 @@ pub struct PolicyBranchInfo {
     /// The priority that Civilization choose this policy branch is up to its victory type.
     pub priorities: HashMap<VictoryType, u8>,
     pub uniques: Vec<String>,
-    pub policies: Vec<Policy>,
+    pub policies: Vec<PolicyInfo>,
 }
 
 // TODO: Will not derive `Clone` in the future.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Policy {
+pub struct PolicyInfo {
     pub name: String,
     pub uniques: Vec<String>,
     #[serde(default)]
