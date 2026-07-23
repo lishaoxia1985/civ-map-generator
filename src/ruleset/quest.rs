@@ -8,9 +8,9 @@ pub struct QuestInfo {
     #[serde(default)]
     r#type: String,
     #[serde(default)]
-    influence: i8,
+    influence: i32,
     #[serde(default)]
-    minimum_civs: i8,
+    minimum_civs: i32,
     #[serde(default)]
-    duration: i8,
+    duration: i32,
 }

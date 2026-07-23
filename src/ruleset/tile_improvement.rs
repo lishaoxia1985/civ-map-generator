@@ -13,7 +13,7 @@ pub struct TileImprovementInfo {
     #[serde(default)]
     pub required_tech: String,
     #[serde(default)]
-    pub turns_to_build: i8,
+    pub turns_to_build: i32,
     #[serde(default)]
     pub unique_to: String,
     #[serde(default)]

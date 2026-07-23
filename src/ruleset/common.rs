@@ -6,19 +6,19 @@ use std::sync::LazyLock;
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Yields {
     #[serde(default)]
-    pub food: i8,
+    pub food: i32,
     #[serde(default)]
-    pub production: i8,
+    pub production: i32,
     #[serde(default)]
-    pub science: i8,
+    pub science: i32,
     #[serde(default)]
-    pub gold: i8,
+    pub gold: i32,
     #[serde(default)]
-    pub culture: i8,
+    pub culture: i32,
     #[serde(default)]
-    pub faith: i8,
+    pub faith: i32,
     #[serde(default)]
-    pub happiness: i8,
+    pub happiness: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 pub struct TechColumn {
     pub column_number: u8,
     pub era: String,
-    pub tech_cost: i16,
-    pub building_cost: i16,
-    pub wonder_cost: i16,
+    pub tech_cost: i32,
+    pub building_cost: i32,
+    pub wonder_cost: i32,
     pub techs: Vec<TechnologyInfo>,
 }
 
@@ -15,7 +15,7 @@ pub struct TechColumn {
 pub struct TechnologyInfo {
     pub name: String,
     #[serde(default)]
-    pub cost: i16,
+    pub cost: i32,
     pub row: u8,
     #[serde(default)]
     pub column: u8,

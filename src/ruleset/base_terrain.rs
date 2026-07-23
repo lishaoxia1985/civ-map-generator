@@ -10,7 +10,7 @@ pub struct BaseTerrainInfo {
     #[serde(flatten)]
     pub yields: Yields,
     #[serde(default)]
-    pub movement_cost: i8,
+    pub movement_cost: i32,
     #[serde(rename = "RGB")]
     #[serde(default)]
     pub rgb: [u8; 3],

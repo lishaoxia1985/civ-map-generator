@@ -20,7 +20,7 @@ pub struct BuildingInfo {
     #[serde(default)]
     pub specialist_slots: HashMap<Specialist, i8>,
     #[serde(default)]
-    pub hurry_cost_modifier: i8,
+    pub hurry_cost_modifier: i32,
     #[serde(default)]
     pub required_terrain: RequiredTerrain,
     #[serde(default)]
@@ -31,17 +31,17 @@ pub struct BuildingInfo {
     #[serde(default)]
     pub required_nearby_improved_resources: Vec<String>,
     #[serde(default)]
-    pub maintenance: i8,
+    pub maintenance: i32,
     #[serde(default)]
     pub replaces: String,
     #[serde(default)]
     pub unique_to: String,
     #[serde(default)]
-    pub city_strength: i8,
+    pub city_strength: i32,
     #[serde(default)]
-    pub city_health: i8,
+    pub city_health: i32,
     #[serde(default)]
-    pub cost: i16,
+    pub cost: i32,
     #[serde(default)]
     pub percent_stat_bonus: HashMap<String, i8>,
     #[serde(default)]

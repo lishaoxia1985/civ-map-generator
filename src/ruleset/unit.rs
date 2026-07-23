@@ -6,11 +6,11 @@ use std::collections::HashMap;
 pub struct UnitInfo {
     pub name: String,
     pub unit_type: String,
-    pub movement: i8,
+    pub movement: i32,
     #[serde(default)]
-    pub strength: i16,
+    pub strength: i32,
     #[serde(default)]
-    pub cost: i16,
+    pub cost: i32,
     #[serde(default)]
     pub required_tech: String,
     #[serde(default)]
@@ -22,7 +22,7 @@ pub struct UnitInfo {
     #[serde(default)]
     pub upgrades_to: String,
     #[serde(default)]
-    pub hurry_cost_modifier: i8,
+    pub hurry_cost_modifier: i32,
     #[serde(default)]
     pub uniques: Vec<String>,
     #[serde(default)]

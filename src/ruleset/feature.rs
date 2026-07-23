@@ -11,7 +11,7 @@ pub struct FeatureInfo {
     #[serde(default)]
     pub defence_bonus: f32,
     #[serde(default)]
-    pub movement_cost: i8,
+    pub movement_cost: i32,
     #[serde(default)]
     pub impassable: bool,
     #[serde(default)]

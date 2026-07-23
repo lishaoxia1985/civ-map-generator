@@ -15,7 +15,7 @@ pub struct NaturalWonderInfo {
     #[serde(default)]
     pub unbuildable: bool,
     #[serde(default)]
-    pub weight: i8,
+    pub weight: i32,
     #[serde(default)]
     pub override_stats: bool,
     #[serde(default)]
