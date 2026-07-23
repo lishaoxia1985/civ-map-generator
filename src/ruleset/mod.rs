@@ -39,6 +39,7 @@ mod quest;
 mod resource;
 mod ruin;
 mod specialist;
+mod speed;
 mod tech;
 mod terrain_type;
 mod tile_improvement;
@@ -50,7 +51,7 @@ mod victory_type;
 pub use crate::ruleset::{
     base_terrain::*, belief::*, building::*, city_state_type::*, common::*, difficulty::*, era::*,
     feature::*, global_unique::*, nation::*, natural_wonder::*, policy::*, quest::*, resource::*,
-    ruin::*, specialist::*, tech::*, terrain_type::*, tile_improvement::*, unit::*,
+    ruin::*, specialist::*, speed::*, tech::*, terrain_type::*, tile_improvement::*, unit::*,
     unit_promotion::*, unit_type::*, victory_type::*,
 };
 
@@ -102,6 +103,7 @@ pub struct Ruleset {
     pub quests: EnumMap<Quest, QuestInfo>,
 
     pub difficulties: EnumMap<Difficulty, DifficultyInfo>,
+    pub speeds: EnumMap<Speed, SpeedInfo>,
     pub eras: EnumMap<Era, EraInfo>,
     pub victory_types: EnumMap<VictoryType, VictoryTypeInfo>,
 
@@ -189,6 +191,9 @@ impl Ruleset {
 
         let victory_types: EnumMap<_, _> =
             create_enum_map_from_json_file(ruleset_json_folder.join("VictoryType.json"));
+
+        let speeds: EnumMap<_, _> =
+            create_enum_map_from_json_file(ruleset_json_folder.join("Speed.json"));
 
         /* **********End of Loading standard ruleset JSON file********** */
 
@@ -306,6 +311,7 @@ impl Ruleset {
             technologies,
             quests,
             difficulties,
+            speeds,
             victory_types,
             eras,
             global_uniques,

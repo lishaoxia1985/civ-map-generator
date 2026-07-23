@@ -29,6 +29,8 @@ mod ruin;
 pub use ruin::*;
 mod specialist;
 pub use specialist::*;
+mod speed;
+pub use speed::*;
 mod terrain_type;
 pub use terrain_type::*;
 mod tile_improvement;

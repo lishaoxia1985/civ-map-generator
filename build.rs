@@ -25,6 +25,7 @@ fn main() {
         "Resource.json",
         "Ruin.json",
         "Specialist.json",
+        "Speed.json",
         "TerrainType.json",
         "TileImprovement.json",
         "Unit.json",
